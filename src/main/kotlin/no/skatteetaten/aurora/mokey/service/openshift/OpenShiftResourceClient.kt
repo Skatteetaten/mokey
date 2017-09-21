@@ -19,6 +19,38 @@ class OpenShiftResourceClient(@Value("\${openshift.url}") val baseUrl: String,
     val apiLocation = "/oapi/v1/"
 
     val logger: Logger = LoggerFactory.getLogger(OpenShiftResourceClient::class.java)
+    fun list(resourceUrl:String, labels: Map<String, String>): List<JsonNode> {
+
+        val labelkeys = labels.map {
+            "${it.key}%3D${it.value}"
+        }
+
+
+        val labelSelector = if (labelkeys.size == 1) labelkeys[0] else labelkeys.joinToString { "," }
+
+        return list(resourceUrl, labelSelector)
+
+    }
+    fun list(resourceUrl: String, labelSelector: String? = null): List<JsonNode> {
+
+        val url = labelSelector?.let {
+            "$resourceUrl?labelSelector=$labelSelector"
+        } ?: resourceUrl
+
+        val headers: HttpHeaders = createHeaders(tokenProvider.getToken())
+
+        try {
+            val res = exchange(RequestEntity<Any>(headers, HttpMethod.GET, URI(url)))
+
+            return res.body["items"].toList()
+
+        } catch(e: OpenShiftException) {
+            if (e.cause is HttpClientErrorException && e.cause.statusCode == HttpStatus.NOT_FOUND) {
+                return emptyList()
+            }
+            throw e
+        }
+    }
 
     fun get(resourceUrl: String): ResponseEntity<JsonNode>? {
 
