@@ -1,16 +1,13 @@
 package no.skatteetaten.aurora.mokey
 
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document
 import static org.springframework.restdocs.payload.JsonFieldType.STRING
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
+import static org.springframework.restdocs.payload.PayloadDocumentation.relaxedResponseFields
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters
 
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders
-import org.springframework.restdocs.operation.preprocess.Preprocessors
-import org.springframework.restdocs.payload.PayloadDocumentation
-import org.springframework.restdocs.request.RequestDocumentation
 import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.web.client.RestTemplate
@@ -41,19 +38,17 @@ class OpenShiftRouteControllerTest extends AbstractControllerTest {
     then:
       result
           .andExpect(MockMvcResultMatchers.status().isOk())
-          .andDo(
-          document('route-exists-get',
-              Preprocessors.preprocessResponse(Preprocessors.prettyPrint()),
-              RequestDocumentation.pathParameters(
-                  parameterWithName("namespace").description("The namespace of the route"),
-                  parameterWithName("name").description("The name of the route within the specified namespace")
-              ),
-              PayloadDocumentation.relaxedResponseFields(
-                  fieldWithPath("route.namespace").type(STRING).description("The namespace of the requested route"),
-                  fieldWithPath("route.name").type(STRING).description("The name of the requested route")
-              )))
+          .andDo(prettyDoc('route-exists-get',
+          pathParameters(
+              parameterWithName("namespace").description("The namespace of the route"),
+              parameterWithName("name").description("The name of the route within the specified namespace")
+          ),
+          relaxedResponseFields(
+              fieldWithPath("route.namespace").type(STRING).description("The namespace of the requested route"),
+              fieldWithPath("route.name").type(STRING).description("The name of the requested route")
+          )
+      ))
   }
-
 
   def "Response for nonexisting route"() {
 
@@ -66,9 +61,8 @@ class OpenShiftRouteControllerTest extends AbstractControllerTest {
       result
           .andExpect(MockMvcResultMatchers.status().isNotFound())
           .andDo(
-          document('route-notexists-get',
-              Preprocessors.preprocessResponse(Preprocessors.prettyPrint()),
-              PayloadDocumentation.relaxedResponseFields(
+          prettyDoc('route-notexists-get',
+              relaxedResponseFields(
                   fieldWithPath("errorMessage").type(STRING).description("The error message describing what went wrong")
               )))
   }
