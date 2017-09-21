@@ -1,0 +1,86 @@
+buildscript {
+  ext.kotlin_version = '1.1.4-3'
+  ext.springBootVersion = '1.5.7.RELEASE'
+  ext.auroraStartersVersion = '3.0.0'
+  ext.repos = {
+    maven {
+      url "http://repo1.maven.org/maven2"
+    }
+
+    maven {
+      url "http://jcenter.bintray.com/"
+    }
+
+    mavenLocal()
+  }
+
+  repositories repos
+
+  dependencies {
+    classpath(
+        "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version",
+        "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version",
+        "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version",
+        "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion",
+        'no.skatteetaten.aurora.gradle.plugins:aurora-gradle-plugin:1.2.1'
+    )
+  }
+}
+
+plugins {
+  id "com.gorylenko.gradle-git-properties" version "1.4.17"
+}
+
+ext.aurora = [
+    requireStaging: false
+]
+apply plugin: 'no.skatteetaten.plugins.aurora'
+apply plugin: 'kotlin'
+apply plugin: 'kotlin-spring'
+apply plugin: 'org.springframework.boot'
+
+repositories repos
+
+group = 'no.skatteetaten.aurora'
+
+ext['logback.version'] = '1.2.3'
+
+dependencies {
+  compile(
+      "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version",
+      "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version",
+      "no.skatteetaten.aurora.springboot:aurora-spring-boot-starter:$auroraStartersVersion",
+      "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.7"
+  )
+
+  testCompile(
+      "org.springframework.boot:spring-boot-starter-test",
+      "org.codehaus.groovy:groovy-all",
+      "org.spockframework:spock-core:1.1-groovy-2.4",
+      "org.spockframework:spock-spring:1.1-groovy-2.4",
+      "org.springframework.restdocs:spring-restdocs-mockmvc",
+      "cglib:cglib-nodep:3.1",
+      "org.objenesis:objenesis:2.1"
+  )
+}
+
+springBoot {
+  buildInfo()
+}
+
+compileKotlin {
+  kotlinOptions {
+    suppressWarnings = true
+    jvmTarget = 1.8
+  }
+}
+
+compileTestKotlin.dependsOn = compileTestKotlin.taskDependencies.values - 'compileTestJava'
+compileTestGroovy.dependsOn compileTestKotlin
+compileTestGroovy.classpath += files(compileTestKotlin.destinationDir)
+testClasses.dependsOn compileTestGroovy
+
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '4.1'
+}
