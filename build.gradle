@@ -49,8 +49,9 @@ dependencies {
   compile(
       "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version",
       "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version",
+      "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.7",
       "no.skatteetaten.aurora.springboot:aurora-spring-boot-starter:$auroraStartersVersion",
-      "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.7"
+      "org.springframework.boot:spring-boot-starter-hateoas"
   )
 
   testCompile(
