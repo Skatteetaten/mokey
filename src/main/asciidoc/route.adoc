@@ -1,0 +1,15 @@
+= Route
+
+The route resource is used for getting information about and verifying the existence of a particular route
+
+== Example request
+include::{snippets}/route-exists-get/path-parameters.adoc[]
+include::{snippets}/route-exists-get/httpie-request.adoc[]
+
+== Response
+include::{snippets}/route-exists-get/response-fields.adoc[]
+include::{snippets}/route-exists-get/http-response.adoc[]
+
+== Response for non existing routes
+include::{snippets}/route-notexists-get/response-fields.adoc[]
+include::{snippets}/route-notexists-get/http-response.adoc[]

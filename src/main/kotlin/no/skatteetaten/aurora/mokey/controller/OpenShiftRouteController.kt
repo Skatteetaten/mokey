@@ -15,18 +15,20 @@ import org.springframework.web.bind.annotation.RestController
 
 class RouteResource(val route: Route) : ResourceSupport() {
     init {
-        add(linkTo(methodOn(OpenShiftRouteController::class.java).route(route.namespace, route.routeName)).withSelfRel())
+        add(linkTo(methodOn(OpenShiftRouteController::class.java).route(route.namespace, route.name)).withSelfRel())
     }
 }
 
 @RestController
-@RequestMapping(value = "/route", produces = arrayOf("application/hal+json"))
+@RequestMapping(value = "/api/route", produces = arrayOf("application/hal+json"))
 class OpenShiftRouteController(val routeService: RouteService) {
 
-    @GetMapping("/{namespace}/{routeName}")
-    fun route(@PathVariable namespace: String, @PathVariable routeName: String): HttpEntity<RouteResource> {
+    @GetMapping("/{namespace}/{name}")
+    fun route(@PathVariable namespace: String, @PathVariable name: String): HttpEntity<RouteResource> {
 
-        val route = routeService.findRoute(namespace, routeName)
+        val route = routeService.findRoute(namespace, name)
+                ?: throw NoSuchResourceException("No route named $name in namespace $namespace")
         return ResponseEntity(RouteResource(route), HttpStatus.OK)
     }
 }
+

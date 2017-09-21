@@ -1,0 +1,62 @@
+= Openshift Reference Spring Boot Server
+Bent André Solheim <BentAndre.Solheim@skatteetaten.no>
+{version}
+:doctype: book
+:icons: font
+:toc: left
+:toclevels: 3
+:sectlinks:
+
+[introduction]
+== Introduction
+
+This document gives an overview of the Mokey API (part of the Aurora API).
+
+[[overview]]
+== Overview
+
+[[overview-http-verbs]]
+=== HTTP verbs
+The API tries to follow standard HTTP and ReST conventions in how it uses HTTP verbs.
+|===
+| Verb | Usage
+
+| `GET`
+| Used for fetching resources. Idempotent.
+
+| `POST`
+| Used for creating new resources.
+
+| `PUT`
+| Used for updating existing resources. Only full updates (no patches). Idempotent.
+
+| `DELETE`
+| Used for deleting existing resources. Idempotent.
+|===
+
+[[overview-http-status-codes]]
+=== HTTP status codes
+The API tries to follow standard HTTP and ReST conventions in how it uses HTTP status codes.
+
+|===
+| Status code | Usage
+
+| `200 OK`
+| Standard response for successful HTTP requests. The response payload will vary depending on the endpoint used.
+
+| `204 No Content`
+| The request was successfully processed but did not return any response.
+
+| `400 Bad Request`
+| The request cannot be processed because for client side error (illegal argument or request).
+
+| `404 Not Found`
+| The requested resource count not be found.
+|===
+
+
+[resources]
+== Resources
+
+:leveloffset: +2
+include::route.adoc[]
