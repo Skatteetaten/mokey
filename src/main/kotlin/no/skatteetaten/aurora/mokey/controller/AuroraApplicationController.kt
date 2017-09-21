@@ -2,17 +2,9 @@ package no.skatteetaten.aurora.mokey.controller
 
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-
-
-import io.prometheus.client.CollectorRegistry
-import io.prometheus.client.Gauge
-import no.skatteetaten.aurora.boober.controller.internal.Response
-import no.skatteetaten.aurora.boober.facade.AuroraApplicationFacade
-import no.skatteetaten.aurora.boober.model.AuroraApplication
+import no.skatteetaten.aurora.mokey.facade.AuroraApplicationFacade
+import no.skatteetaten.aurora.mokey.model.AuroraApplication
+import no.skatteetaten.aurora.mokey.model.Response
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping

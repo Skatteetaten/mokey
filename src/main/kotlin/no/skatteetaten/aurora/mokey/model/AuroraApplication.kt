@@ -82,3 +82,9 @@ data class AuroraStatus(val level: AuroraStatusLevel, val comment: String? = "")
         }
     }
 }
+data class Response(
+        val success: Boolean = true,
+        val message: String = "OK",
+        val items: List<Any>,
+        val count: Int = items.size
+)
