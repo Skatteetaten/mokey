@@ -1,0 +1,14 @@
+{
+  "docker": {
+    "maintainer": "Aurora OpenShift Utvikling <utvpaas@skatteetaten.no>",
+    "labels": {
+      "io.k8s.description": "",
+      "io.openshift.tags": "openshift,springboot,kotlin"
+    }
+  },
+  "java": {
+    "mainClass": "no.skatteetaten.aurora.mokey.MainKt",
+    "jvmOpts": "-Dspring.profiles.active=openshift",
+    "applicationArgs": "--logging.config=${LOGBACK_FILE}"
+  }
+}
