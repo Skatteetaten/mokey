@@ -28,7 +28,7 @@ abstract class AbstractControllerTest extends Specification {
         .setControllerAdvice(new ErrorHandler(Mock(ControllerMetrics)))
         .apply(MockMvcRestDocumentation.documentationConfiguration(jUnitRestDocumentation).uris()
         .withScheme("http")
-        .withHost("mokey-aurora.utv.paas.skead.no")
+        .withHost("mokey-aurora.utv.paas.skead.no/mokey")
         .withPort(80)
     ).build()
   }
