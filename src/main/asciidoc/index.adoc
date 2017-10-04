@@ -1,4 +1,4 @@
-= Openshift Reference Spring Boot Server
+= Aurora OpenShift Mokey
 Bent André Solheim <BentAndre.Solheim@skatteetaten.no>
 {version}
 :doctype: book
