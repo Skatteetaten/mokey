@@ -6,24 +6,31 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.relaxedR
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters
 
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders
 import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.web.client.RestTemplate
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.spring.autoconfigure.MetricsAutoConfiguration
+import io.micrometer.spring.autoconfigure.export.StringToDurationConverter
 import no.skatteetaten.aurora.AuroraMetrics
-import no.skatteetaten.aurora.annotations.AuroraApplication
 import no.skatteetaten.aurora.mokey.controller.OpenShiftRouteController
 import no.skatteetaten.aurora.mokey.service.Route
 import no.skatteetaten.aurora.mokey.service.RouteService
 
-@SpringBootTest(classes = [Config, AuroraMetrics, RestTemplate], webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(classes = [Config, AuroraMetrics, RestTemplate, MetricsAutoConfiguration], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class OpenShiftRouteControllerTest extends AbstractControllerTest {
 
   public static final String NAMESPACE = 'aurora'
   public static final String ROUTE = 'mokey'
-  @AuroraApplication
+
+  @Configuration
+  @Import(StringToDurationConverter.class)
   static class Config {}
 
   def routeService = Mock(RouteService)

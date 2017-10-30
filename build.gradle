@@ -1,7 +1,7 @@
 buildscript {
-  ext.kotlin_version = '1.1.4-3'
-  ext.springBootVersion = '1.5.7.RELEASE'
-  ext.auroraStartersVersion = '3.0.0'
+  ext.kotlin_version = '1.1.51'
+  ext.springBootVersion = '1.5.8.RELEASE'
+  ext.auroraStartersVersion = '3.3.0'
   ext.repos = {
     maven {
       url "http://repo1.maven.org/maven2"
@@ -51,8 +51,7 @@ dependencies {
       "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version",
       "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.7",
       "no.skatteetaten.aurora.springboot:aurora-spring-boot-starter:$auroraStartersVersion",
-      "org.springframework.boot:spring-boot-starter-hateoas",
-      "com.google.guava:guava:23.0"
+      "org.apache.httpcomponents:httpclient"
   )
 
   testCompile(

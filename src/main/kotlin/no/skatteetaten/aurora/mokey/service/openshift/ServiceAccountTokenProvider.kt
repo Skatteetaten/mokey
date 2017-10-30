@@ -1,14 +1,13 @@
 package no.skatteetaten.aurora.mokey.service.openshift;
 
-import com.google.common.base.Supplier
-import com.google.common.base.Suppliers
-import com.google.common.io.Files
+import no.skatteetaten.aurora.mokey.extensions.memoize
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Paths
 
 /**
  * Loader for the Application Token that will be used when loading resources from Openshift that does not require
@@ -26,7 +25,8 @@ class ServiceAccountTokenProvider(
 
     private val logger: Logger = LoggerFactory.getLogger(ServiceAccountTokenProvider::class.java)
 
-    private val tokenSupplier: Supplier<String> = Suppliers.memoize({ readToken() })
+    //
+    private val tokenMemoizer = { readToken()}.memoize()
 
     /**
      * Get the Application Token by using the specified tokenOverride if it is set, or else reads the token from the
@@ -35,7 +35,7 @@ class ServiceAccountTokenProvider(
      *
      * @return
      */
-    fun getToken() = tokenSupplier.get()
+    fun getToken() = tokenMemoizer()
 
     fun readToken(): String {
         return if (tokenOverride.isBlank()) {
@@ -48,7 +48,7 @@ class ServiceAccountTokenProvider(
     fun readTokenFromFile(): String {
         logger.info("Reading application token from tokenLocation={}", tokenLocation)
         try {
-            val token: String = Files.toString(File(tokenLocation), Charsets.UTF_8).trimEnd()
+            val token: String = String(Files.readAllBytes(Paths.get(tokenLocation))).trimEnd()
             logger.debug("Read token with length={}, firstLetter={}, lastLetter={}", token.length,
                     token[0], token[token.length - 1])
             return token

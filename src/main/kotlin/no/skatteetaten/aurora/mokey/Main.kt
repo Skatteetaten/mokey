@@ -1,11 +1,14 @@
 package no.skatteetaten.aurora.mokey
 
-import no.skatteetaten.aurora.annotations.AuroraApplication
+import io.micrometer.spring.autoconfigure.export.StringToDurationConverter
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 
-@AuroraApplication
 @SpringBootApplication
+@Configuration
+@Import(StringToDurationConverter::class)
 class Main
 
 fun main(args: Array<String>) {

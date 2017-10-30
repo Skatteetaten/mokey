@@ -13,23 +13,39 @@ mokey:
         tokenLocation: /var/run/secrets/kubernetes.io/serviceaccount/token
 
 spring:
-  profiles:
-    active: local
-
+    profiles:
+        active: local
+    metrics:
+        prometheus:
+            timerPercentilesMax: "PT5S"
+            timerPercentilesMin: "PT0.1S"
+aurora:
+  starter:
+    headerfilter:
+      enabled: false
 logging:
   level:
-    no.skatteetaten: INFO
+    no.skatteetaten: DEBUG
     ske.aurora.filter: INFO
     org:
       jboss: INFO
       hibernate: WARN
       springframework: WARN
       apache:
-        catalina: INFO
-        velocity: INFO
+        catalina: WARN
+        velocity: WARN
 ---
 spring:
     profiles: local
+
+logging:
+    pattern:
+      console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger{15}:%L) %X - %msg %n%rEx{full}"
+    # add mokey.openshift.token to ~/.spring-boot-devtools.properties
+
+mokey:
+  openshift:
+    tokenLocation: /opt/mokey-token
 
 ---
 spring:
