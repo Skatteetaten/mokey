@@ -51,7 +51,8 @@ dependencies {
       "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version",
       "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.7",
       "no.skatteetaten.aurora.springboot:aurora-spring-boot-starter:$auroraStartersVersion",
-      "org.apache.httpcomponents:httpclient"
+      'io.fabric8:openshift-client:3.0.0',
+      'io.fabric8:kubernetes-model:2.0.0'
   )
 
   testCompile(

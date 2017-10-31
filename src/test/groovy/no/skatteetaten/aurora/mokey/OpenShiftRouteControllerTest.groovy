@@ -20,8 +20,7 @@ import io.micrometer.spring.autoconfigure.MetricsAutoConfiguration
 import io.micrometer.spring.autoconfigure.export.StringToDurationConverter
 import no.skatteetaten.aurora.AuroraMetrics
 import no.skatteetaten.aurora.mokey.controller.OpenShiftRouteController
-import no.skatteetaten.aurora.mokey.service.Route
-import no.skatteetaten.aurora.mokey.service.RouteService
+import no.skatteetaten.aurora.mokey.controller.Route
 
 @SpringBootTest(classes = [Config, AuroraMetrics, RestTemplate, MetricsAutoConfiguration], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class OpenShiftRouteControllerTest extends AbstractControllerTest {

@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import io.fabric8.openshift.client.OpenShiftClient
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 import no.skatteetaten.aurora.mokey.facade.AuroraApplicationFacade
@@ -13,10 +14,15 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/aurora/application")
-class AuroraApplicationController(val facade: AuroraApplicationFacade, val registry: CollectorRegistry) {
+class AuroraApplicationController(val facade: AuroraApplicationFacade, val registry: CollectorRegistry, val client: OpenShiftClient) {
 
     @GetMapping("/namespace/{namespace}/application/{application}")
     fun get(@PathVariable namespace: String, @PathVariable application: String): Response {
+
+
+        val get = client.deploymentConfigs().inNamespace(namespace).withName(application).get()
+
+
         val result = facade.findApplication(namespace, application)
 
         val lst: List<AuroraApplication> = result?.let { listOf(it) } ?: emptyList()

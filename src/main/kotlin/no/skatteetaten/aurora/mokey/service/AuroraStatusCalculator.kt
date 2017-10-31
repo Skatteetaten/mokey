@@ -108,6 +108,6 @@ object AuroraStatusCalculator {
             return false
         }
 
-        return ap.stream().anyMatch { p -> Instant.parse(p.startTime).isBefore(threshold) }
+        return ap.stream().anyMatch { p -> Instant.parse(p.startTime.time).isBefore(threshold) }
     }
 }
