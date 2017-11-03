@@ -9,6 +9,6 @@
   "java": {
     "mainClass": "no.skatteetaten.aurora.mokey.MainKt",
     "jvmOpts": "-Dspring.profiles.active=openshift",
-    "applicationArgs": "--logging.config=${LOGBACK_FILE}"
+    "applicationArgs": ""
   }
 }

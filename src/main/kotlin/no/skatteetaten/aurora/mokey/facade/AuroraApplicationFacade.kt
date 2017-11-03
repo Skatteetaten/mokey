@@ -22,12 +22,21 @@ import org.springframework.web.client.RestTemplate
 @Service
 class AuroraApplicationFacade(val restTemplate: RestTemplate,
                               val dockerService: DockerService,
-                              val openshiftClient: OpenShiftClient) {
+                              val openshiftClient: OpenShiftClient,
+                              val mapper: ObjectMapper) {
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationFacade::class.java)
 
+    fun findApplications(namespace: String): List<String> {
+        return openshiftClient.deploymentConfigs().inNamespace(namespace).list().items.map {
+            it.metadata.name
+        }
+    }
+
     fun findApplication(namespace: String, name: String): AuroraApplication? {
 
+
+        logger.debug("finner applikasjon med navn={} i navnerom={}", name, namespace)
         val dc = openshiftClient.deploymentConfigs()
                 .inNamespace(namespace)
                 .withName(name).getOrNull()
@@ -65,28 +74,35 @@ class AuroraApplicationFacade(val restTemplate: RestTemplate,
 
 
         }
-        //in paralell
-        //get status.latestVersion and fetch rc with that name
-        //get all pods for aid
-        //get route urls
-        //get info from prometheus
-        //get management endpoints from applications if managementInterface is present
-
-        //if prometheus status reason is HEALTH_CHECK_FAILED fetch health endpoints from pods
-
     }
 
     fun getAuroraImageStream(dc: DeploymentConfig, name: String, namespace: String): AuroraImageStream? {
-        //todo search for it instead of just use 0
         val triggerFrom = dc.spec.triggers.first().imageChangeParams.from
         val kind = triggerFrom.kind
         if (kind != "ImageStreamTag") {
             return null
         }
 
-        val deployTag = triggerFrom.name.split(":")[1]
+        val triggerName = triggerFrom.name
+
+        //need to find out if we have a development flow.
+        val development = triggerName == "$name:latest"
+
+
+        val deployTag = triggerName.split(":")[1]
 
         return openshiftClient.imageStreams().inNamespace(namespace).withName(name).getOrNull()?.let {
+            if (development) {
+                it.spec
+                val repoUrl = it.status.dockerImageRepository
+                val (registryUrl, group, dockerName) = repoUrl.split("/")
+
+                val tag = "latest"
+                val token = openshiftClient.configuration.oauthToken
+                val env = dockerService.getEnv(registryUrl, "$group/$name", tag, token)
+                return AuroraImageStream(deployTag, registryUrl, group, dockerName, tag, env)
+            }
+
             return it.spec.tags.filter {
                 it.name == deployTag
             }.map {
@@ -95,7 +111,8 @@ class AuroraApplicationFacade(val restTemplate: RestTemplate,
 
                 val (registryUrl, group, nameAndTag) = it.split("/")
                 val (dockerName, tag) = nameAndTag.split(":")
-                AuroraImageStream(deployTag, registryUrl, group, dockerName, tag)
+                val env = dockerService.getEnv(registryUrl, "$group/$dockerName", tag)
+                AuroraImageStream(deployTag, registryUrl, group, dockerName, tag, env)
             }
         }
     }
@@ -181,7 +198,7 @@ class AuroraApplicationFacade(val restTemplate: RestTemplate,
             return null
         }
 
-        val rcName = "name-$versionNumber"
+        val rcName = "$name-$versionNumber"
         return openshiftClient.replicationControllers().inNamespace(namespace).withName(rcName).getOrNull()?.let {
             it.metadata.annotations["openshift.io/deployment.phase"]
         }

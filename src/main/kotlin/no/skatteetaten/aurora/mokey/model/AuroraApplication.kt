@@ -22,7 +22,8 @@ data class AuroraImageStream(val isTag: String,
                              val registryUrl: String,
                              val group: String,
                              val name: String,
-                             val tag: String)
+                             val tag: String,
+                             val env: Map<String, String>)
 
 data class AuroraPod(
         val name: String,

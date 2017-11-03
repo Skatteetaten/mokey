@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller;
 
 import io.micrometer.spring.web.servlet.WebMvcMetrics
+import no.skatteetaten.aurora.mokey.service.NoAccessException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -19,6 +20,11 @@ class ErrorHandler(val metrics: WebMvcMetrics) : ResponseEntityExceptionHandler(
         return handleException(e, request, HttpStatus.INTERNAL_SERVER_ERROR)
     }
 
+    @ExceptionHandler(NoAccessException::class)
+    fun handleNoAccess(e: NoAccessException, request: WebRequest): ResponseEntity<Any>? {
+        return handleException(e, request, HttpStatus.UNAUTHORIZED)
+    }
+
     @ExceptionHandler(NoSuchResourceException::class)
     fun handleResourceNotFound(e: NoSuchResourceException, request: WebRequest): ResponseEntity<Any>? {
         return handleException(e, request, HttpStatus.NOT_FOUND)
@@ -29,6 +35,7 @@ class ErrorHandler(val metrics: WebMvcMetrics) : ResponseEntityExceptionHandler(
         val response = mutableMapOf(Pair("errorMessage", e.message))
         e.cause?.apply { response.put("cause", this.message) }
         val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
+        logger.debug("Handle excption", e)
         return handleExceptionInternal(e, response, headers, httpStatus, request)
     }
 

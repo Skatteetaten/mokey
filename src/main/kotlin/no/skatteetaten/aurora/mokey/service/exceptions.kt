@@ -5,3 +5,7 @@ abstract class ServiceException(message: String?, cause: Throwable?) : RuntimeEx
 }
 
 class OpenShiftException(messages: String?, cause: Throwable?) : ServiceException(messages, cause)
+
+class NoSuchResourceException(message: String) : RuntimeException(message)
+class NoAccessException(message: String) : RuntimeException(message)
+

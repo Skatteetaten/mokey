@@ -52,7 +52,8 @@ dependencies {
       "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.7",
       "no.skatteetaten.aurora.springboot:aurora-spring-boot-starter:$auroraStartersVersion",
       'io.fabric8:openshift-client:3.0.0',
-      'io.fabric8:kubernetes-model:2.0.0'
+      'io.fabric8:kubernetes-model:2.0.0',
+      'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.19.3'
   )
 
   testCompile(
@@ -85,4 +86,10 @@ testClasses.dependsOn compileTestGroovy
 
 task wrapper(type: Wrapper) {
   gradleVersion = '4.1'
+}
+
+kotlin {
+  experimental {
+    coroutines "enable"
+  }
 }

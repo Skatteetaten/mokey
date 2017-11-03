@@ -18,16 +18,16 @@ aurora:
 
 logging:
   level:
-    io.fabric8: DEBUG
-    no.skatteetaten: DEBUG
-    ske.aurora.filter: INFO
+    no.skatteetaten.aurora.mokey: DEBUG
     org:
-      jboss: INFO
       hibernate: WARN
       springframework: WARN
       apache:
         catalina: WARN
         velocity: WARN
+  pattern:
+    console: "%d [%thread] %-5level %logger:%L %X - %msg %n%rEx{full}"
+
 ---
 spring:
     profiles: local
@@ -37,9 +37,6 @@ logging:
       console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
 
-mokey:
-  openshift:
-    tokenLocation: /opt/mokey-token
 
 ---
 spring:
