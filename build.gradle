@@ -53,6 +53,7 @@ dependencies {
       "no.skatteetaten.aurora.springboot:aurora-spring-boot-starter:$auroraStartersVersion",
       'io.fabric8:openshift-client:3.0.0',
       'io.fabric8:kubernetes-model:2.0.0',
+      "org.springframework.retry:spring-retry",
       'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.19.3'
   )
 

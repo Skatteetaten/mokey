@@ -10,6 +10,6 @@ include::{snippets}/route-exists-get/httpie-request.adoc[]
 include::{snippets}/route-exists-get/response-fields.adoc[]
 include::{snippets}/route-exists-get/http-response.adoc[]
 
-== Response for non existing routes
+== Response for non existing route
 include::{snippets}/route-notexists-get/response-fields.adoc[]
 include::{snippets}/route-notexists-get/http-response.adoc[]

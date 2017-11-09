@@ -29,7 +29,7 @@ data class AuroraPod(
         val name: String,
         val status: String,
         val restartCount: Int = 0,
-        val podIP: String,
+        val podIP: String?,
         val isReady: Boolean = false,
         val startTime: Time,
         val deployment: String?,

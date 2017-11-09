@@ -65,7 +65,7 @@ class DockerService(val httpClient: RestTemplate, val objectMapper: ObjectMapper
         }
     }
 
-    fun generateManifestURI(registryUrl: String, name: String, tag: String) = URI("https://$registryUrl/v2/$name/manifests/$tag")
+    fun generateManifestURI(registryUrl: String, name: String, tag: String) = URI("$registryUrl/v2/$name/manifests/$tag")
 
 
 }

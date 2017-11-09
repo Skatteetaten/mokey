@@ -6,6 +6,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import okhttp3.OkHttpClient
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
@@ -19,6 +21,8 @@ import java.util.concurrent.TimeUnit
 @Configuration
 class Configuration {
 
+    val logger: Logger = LoggerFactory.getLogger(no.skatteetaten.aurora.mokey.Configuration::class.java)
+
     @Bean
     @Primary
     fun mapper(): ObjectMapper {
@@ -28,13 +32,28 @@ class Configuration {
 
     @Bean
     fun client(): OpenShiftClient {
-        return DefaultOpenShiftClient("kubernetes.default.svc.cluster.local")
+        logger.debug("Create OpenShift client")
+        val range = (0..3)
+        range.forEach {
+            try {
+                val client = DefaultOpenShiftClient()
+                val supports = client.supportsApiPath("/api/v1")
+                logger.debug("We support v1 api={}", supports)
+                return client
+            } catch (e: Exception) {
+                if (it == range.last) {
+                    throw e
+                }
+                logger.debug("Can not resolve DNS retry")
+            }
+        }
+        throw Exception("Can not create OpenShift client")
     }
 
     @Bean
     fun restTemplate(): RestTemplate {
-
-        //TODO: Configure these parameters
+        logger.debug("Create RestTemplate")
+        //CONFIG
         return RestTemplate(createRequestFactory(1, 1))
     }
 

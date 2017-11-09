@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.controller
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
-import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
@@ -12,6 +11,7 @@ import no.skatteetaten.aurora.mokey.facade.AuroraApplicationFacade
 import no.skatteetaten.aurora.mokey.model.AuroraApplication
 import no.skatteetaten.aurora.mokey.model.Response
 import no.skatteetaten.aurora.mokey.service.NoAccessException
+import no.skatteetaten.aurora.mokey.service.OpenShiftService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.util.StopWatch
@@ -26,7 +26,9 @@ import java.util.regex.Pattern
 
 @RestController
 @RequestMapping("/aurora/application")
-class AuroraApplicationController(val facade: AuroraApplicationFacade, val client: OpenShiftClient) {
+class AuroraApplicationController(
+        val openShiftService: OpenShiftService,
+        val facade: AuroraApplicationFacade) {
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationController::class.java)
 
@@ -63,60 +65,40 @@ class AuroraApplicationController(val facade: AuroraApplicationFacade, val clien
         val allKeys = cache.keys().toList()
         val newKeys = mutableListOf<String>()
 
-        //this model is very simple, we should probably look at evicting old records as well
-        //val projects = client.projects().list().items.map { it.metadata.name }
-        val projects = listOf(namespace)
+        val projects = openShiftService.projects().map { it.metadata.name }
+        //val projects = listOf(namespace)
 
         logger.debug("Fetched {} projects", projects.size)
 
-
+        //CONFIG
         val mtContext = newFixedThreadPoolContext(4, "mookeyPool")
         runBlocking(mtContext) {
-            val request = launch(mtContext) {
-                projects.forEach { namespace ->
-                    logger.debug("Find all applications in namespace={}", namespace)
-                    val applications = async(mtContext) {
-                        facade.findApplications(namespace).map {
-                            namespace to it
-                        }
-                    }
-                    applications.await().forEach {
-                        launch(mtContext) {
-                            val namespace = it.first
-                            val name = it.second
-                            val appKey = "$namespace/$name"
-                            logger.debug("process application in namespace={} name={}", namespace, name)
-                            try {
-                                val app = facade.findApplication(namespace, name)
-                                if (app == null) {
-                                    logger.trace("Remove application {}", appKey)
-                                    cache.remove(appKey)
-                                } else {
-                                    logger.trace("New cache for {}", appKey)
-                                    cache.put(appKey, app)
-                                }
-                                newKeys.add(appKey)
-                            } catch (e: Exception) {
-                                logger.trace("Error when finding application {}", appKey)
-                            }
+            projects.flatMap { namespace ->
+                logger.debug("Find all applications in namespace={}", namespace)
+                openShiftService.deploymentConfigs(namespace).map { dc ->
+                    launch(mtContext) {
+                        facade.findApplication(namespace, dc)?.let {
+                            val appKey = "${it.namespace}/${it.name}"
+                            logger.trace("New cache for {}", appKey)
+                            cache.put(appKey, it)
+                            newKeys.add(appKey)
                         }
                     }
                 }
+            }.forEach { it.join() }
+            val deleteKeys = allKeys - newKeys
+            deleteKeys.forEach {
+                logger.debug("Remove application since it does not exist anymore {}", it)
+                cache.remove(it)
             }
-            request.join()
+
+            cachePopulated = true
+            watch.stop()
+            val keys = cache.keys().toList()
+            logger.debug("cache keys={}", keys)
+            logger.info("number of apps={} time={}", keys.size, watch.totalTimeSeconds)
         }
 
-        val deleteKeys = allKeys - newKeys
-        deleteKeys.forEach {
-            logger.debug("Remove application since it does not exist anymore {}", it)
-            cache.remove(it)
-        }
-
-
-
-        cachePopulated = true
-        watch.stop()
-        logger.debug("DONE! took {}", watch.totalTimeSeconds);
 
     }
 
