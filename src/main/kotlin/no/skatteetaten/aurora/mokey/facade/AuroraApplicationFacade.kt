@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.facade
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.Route
 import io.prometheus.client.Gauge
@@ -14,13 +15,16 @@ import no.skatteetaten.aurora.mokey.service.OpenShiftService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 
 @Service
 class AuroraApplicationFacade(val restTemplate: RestTemplate,
                               val openshiftService: OpenShiftService,
-                              val dockerService: DockerService) {
+                              val dockerService: DockerService,
+                              val mapper: ObjectMapper) {
+
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationFacade::class.java)
 
@@ -34,7 +38,7 @@ class AuroraApplicationFacade(val restTemplate: RestTemplate,
             val managementPath: String? = annotations["console.skatteetaten.no/management-path"]
 
             val name = dc.metadata.name
-            val pods = getPods(namespace, managementPath, dc.spec.selector.mapValues { it.value })
+            val pods = getPods(namespace, name, managementPath, dc.spec.selector.mapValues { it.value })
             val phase = getDeploymentPhase(name, namespace, versionNumber)
             val route = getRouteUrls(namespace, name)
 
@@ -139,7 +143,7 @@ class AuroraApplicationFacade(val restTemplate: RestTemplate,
         return "$scheme://$host$path"
     }
 
-    fun getPods(namespace: String, managementPath: String?, labelMap: Map<String, String>): List<AuroraPod> {
+    fun getPods(namespace: String, name: String, managementPath: String?, labelMap: Map<String, String>): List<AuroraPod> {
 
         logger.debug("find pods namespace={} lables={}", namespace, labelMap)
         return openshiftService.pods(namespace, labelMap).map {
@@ -153,8 +157,8 @@ class AuroraApplicationFacade(val restTemplate: RestTemplate,
                 findManagementEndpoints(ip, managementPath)
             }
 
-            val info = findResource(links["info"])
-            val health = findResource(links["health"])
+            val info = findResource(links["info"], namespace, name)
+            val health = findResource(links["health"], namespace, name)
 
             AuroraPod(
                     name = it.metadata.name,
@@ -171,15 +175,17 @@ class AuroraApplicationFacade(val restTemplate: RestTemplate,
         }
     }
 
-    private fun findResource(url: String?): JsonNode? {
+    private fun findResource(url: String?, namespace: String, name: String): JsonNode? {
         if (url == null) {
             return null
         }
         return try {
             logger.debug("Find resource with url={}", url)
             restTemplate.getForObject(url, JsonNode::class.java)
+        } catch (e: HttpStatusCodeException) {
+            return mapper.readTree(e.responseBodyAsByteArray)
         } catch (e: RestClientException) {
-            //TODO: error handling
+            logger.warn("Error getting resource for namespace={} name={} url={}", namespace, name, url)
             null
         }
     }
@@ -209,7 +215,7 @@ class AuroraApplicationFacade(val restTemplate: RestTemplate,
         }
 
         if (!managementEndpoints.has("_links")) {
-            logger.warn("Management endpoint does not have links at url={}", managementUrl)
+            logger.debug("Management endpoint does not have links at url={}", managementUrl)
             return emptyMap()
         }
         return managementEndpoints["_links"].asMap().mapValues { it.value["href"].asText() }

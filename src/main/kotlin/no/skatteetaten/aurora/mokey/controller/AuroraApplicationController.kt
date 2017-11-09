@@ -2,7 +2,6 @@ package no.skatteetaten.aurora.mokey.controller
 
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.openshift.client.DefaultOpenShiftClient
-import io.fabric8.openshift.client.OpenShiftClient
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
@@ -68,20 +67,26 @@ class AuroraApplicationController(
         val projects = openShiftService.projects().map { it.metadata.name }
         //val projects = listOf(namespace)
 
-        logger.debug("Fetched {} projects", projects.size)
+        logger.info("Fetched {} projects", projects.size)
 
         //CONFIG
-        val mtContext = newFixedThreadPoolContext(4, "mookeyPool")
+        val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
         runBlocking(mtContext) {
             projects.flatMap { namespace ->
                 logger.debug("Find all applications in namespace={}", namespace)
                 openShiftService.deploymentConfigs(namespace).map { dc ->
                     launch(mtContext) {
-                        facade.findApplication(namespace, dc)?.let {
+                        val app = facade.findApplication(namespace, dc)
+
+                        app?.let {
                             val appKey = "${it.namespace}/${it.name}"
                             logger.trace("New cache for {}", appKey)
                             cache.put(appKey, it)
                             newKeys.add(appKey)
+                        }
+
+                        if (app == null) {
+                            logger.error("APP IS NULL! namespace={}, name={}", dc.metadata.namespace, dc.metadata.name)
                         }
                     }
                 }
