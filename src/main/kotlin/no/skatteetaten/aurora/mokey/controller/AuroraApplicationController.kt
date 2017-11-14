@@ -64,6 +64,7 @@ class AuroraApplicationController(
         val allKeys = cache.keys().toList()
         val newKeys = mutableListOf<String>()
 
+
         val projects = openShiftService.projects().map { it.metadata.name }
         //val projects = listOf(namespace)
 
@@ -80,9 +81,11 @@ class AuroraApplicationController(
 
                         app?.let {
                             val appKey = "${it.namespace}/${it.name}"
-                            logger.trace("New cache for {}", appKey)
+                            logger.info("New cache for {}", appKey)
                             cache.put(appKey, it)
-                            newKeys.add(appKey)
+                            synchronized(newKeys) {
+                                newKeys.add(appKey)
+                            }
                         }
 
                         if (app == null) {
@@ -93,7 +96,7 @@ class AuroraApplicationController(
             }.forEach { it.join() }
             val deleteKeys = allKeys - newKeys
             deleteKeys.forEach {
-                logger.debug("Remove application since it does not exist anymore {}", it)
+                logger.info("Remove application since it does not exist anymore {}", it)
                 cache.remove(it)
             }
 

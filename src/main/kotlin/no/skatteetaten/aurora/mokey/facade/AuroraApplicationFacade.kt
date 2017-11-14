@@ -183,6 +183,7 @@ class AuroraApplicationFacade(val restTemplate: RestTemplate,
             logger.debug("Find resource with url={}", url)
             restTemplate.getForObject(url, JsonNode::class.java)
         } catch (e: HttpStatusCodeException) {
+            //TODO check error code 500
             return mapper.readTree(e.responseBodyAsByteArray)
         } catch (e: RestClientException) {
             logger.warn("Error getting resource for namespace={} name={} url={}", namespace, name, url)

@@ -38,7 +38,9 @@ class Configuration {
     @Bean
     fun client(): OpenShiftClient {
         logger.debug("Create OpenShift client")
+        return DefaultOpenShiftClient()
 
+        /*
         val config = OpenShiftConfigBuilder()
                 .withMasterUrl("https://utv-master.paas.skead.no:8443").build()
 
@@ -46,6 +48,8 @@ class Configuration {
                 .dns { resolveDns(it) }
                 .build()
         return DefaultOpenShiftClient(httpClient, config)
+
+        */
     }
 
     private fun resolveDns(hostname: String): MutableList<InetAddress>? {
