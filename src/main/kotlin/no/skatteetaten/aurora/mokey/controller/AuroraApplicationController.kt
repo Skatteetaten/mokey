@@ -87,10 +87,6 @@ class AuroraApplicationController(
                                 newKeys.add(appKey)
                             }
                         }
-
-                        if (app == null) {
-                            logger.error("APP IS NULL! namespace={}, name={}", dc.metadata.namespace, dc.metadata.name)
-                        }
                     }
                 }
             }.forEach { it.join() }
