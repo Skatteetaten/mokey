@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
-import io.fabric8.kubernetes.api.model.Time
 
 
 data class AuroraApplication(
@@ -31,7 +30,7 @@ data class AuroraPod(
         val restartCount: Int = 0,
         val podIP: String?,
         val isReady: Boolean = false,
-        val startTime: Time,
+        val startTime: String,
         val deployment: String?,
         val info: JsonNode?,
         val health: JsonNode? = null,

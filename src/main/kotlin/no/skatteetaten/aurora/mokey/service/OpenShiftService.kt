@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service
 @Service
 class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
-    //TODO: Should we replace this with Retrofit/WebClient something async?
     @Retryable(value = KubernetesClientException::class, maxAttempts = 3, backoff = Backoff(delay = 500))
     fun deploymentConfigs(namespace: String): List<DeploymentConfig> {
         return openShiftClient.deploymentConfigs().inNamespace(namespace).list().items

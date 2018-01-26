@@ -34,44 +34,13 @@ class Configuration {
         return jacksonObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL)
     }
 
-
     @Bean
     fun client(): OpenShiftClient {
-        logger.debug("Create OpenShift client")
         return DefaultOpenShiftClient()
-
-        /*
-        val config = OpenShiftConfigBuilder()
-                .withMasterUrl("https://utv-master.paas.skead.no:8443").build()
-
-        val httpClient = HttpClientUtils.createHttpClient(config).newBuilder()
-                .dns { resolveDns(it) }
-                .build()
-        return DefaultOpenShiftClient(httpClient, config)
-
-        */
-    }
-
-    private fun resolveDns(hostname: String): MutableList<InetAddress>? {
-        val range = (0..3)
-        range.forEach {
-            try {
-                return Dns.SYSTEM.lookup(hostname)
-            } catch (e: Exception) {
-                if (it == range.last) {
-                    throw e
-                }
-                logger.info("Retry dns lookup times={}", it)
-                Thread.sleep(500)
-            }
-        }
-        throw UnknownHostException(hostname)
     }
 
     @Bean
     fun restTemplate(): RestTemplate {
-        logger.debug("Create RestTemplate")
-        //CONFIG
         return RestTemplate(createRequestFactory(1, 1))
     }
 

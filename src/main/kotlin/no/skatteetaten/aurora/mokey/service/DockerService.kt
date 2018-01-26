@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate
 import java.net.URI
 
 
+//TODO: Switch to v2
 @Service
 class DockerService(val httpClient: RestTemplate, val objectMapper: ObjectMapper) {
 
