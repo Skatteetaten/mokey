@@ -14,7 +14,7 @@ import no.skatteetaten.aurora.mokey.controller.ErrorHandler
 import no.skatteetaten.aurora.mokey.controller.internal.ErrorHandler
 import spock.lang.Specification
 
-abstract class AbstractControllerTest extends Specification {
+abstract class AbstractControllerTest extends AbstractSpec {
 
   @Rule
   JUnitRestDocumentation jUnitRestDocumentation = new JUnitRestDocumentation("build/docs/generated-snippets");

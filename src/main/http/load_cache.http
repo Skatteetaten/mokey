@@ -1,4 +1,4 @@
-GET {{apiUrl}}/load?namespace=paas-yaml
+GET {{apiUrl}}/load?namespace=aurora
 Authorization:Bearer {{token}}
 
 ###

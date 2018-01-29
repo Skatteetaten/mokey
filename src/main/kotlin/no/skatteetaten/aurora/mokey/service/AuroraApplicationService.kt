@@ -66,7 +66,7 @@ class AuroraApplicationService(val restTemplate: RestTemplate,
         val trigger = dc.spec.triggers
                 .filter { it.type == "ImageChange" }
                 .map { it.imageChangeParams.from }
-                .firstOrNull { it.kind != "ImageStreamTag" }
+                .firstOrNull { it.kind == "ImageStreamTag" }
 
 
         if (trigger == null) {
@@ -88,22 +88,35 @@ class AuroraApplicationService(val restTemplate: RestTemplate,
                 val registryUrl = "http://$registryUrlPath"
                 val tag = "latest"
                 val token = openshiftService.openShiftClient.configuration.oauthToken
-                val env = dockerService.getEnv(registryUrl, "$group/$name", tag, token)
+                val env = try {
+                    dockerService.getEnv(registryUrl, "$group/$name", tag, token)
+                } catch (e: Exception) {
+                    //TODO: Handle exception
+                    logger.warn("Failed getting docker env", e)
+                    emptyMap<String, String>()
+                }
                 return AuroraImageStream(deployTag, registryUrl, group, dockerName, tag, env)
             }
 
-            return it.spec.tags.filter {
-                it.name == deployTag
-            }.map {
-                it.from.name
-            }.firstOrNull()?.let {
+            return it.spec.tags.filter { it.name == deployTag }
+                    .map { it.from.name }
+                    .firstOrNull()
+                    ?.let {
 
-                val (registryUrlPath, group, nameAndTag) = it.split("/")
-                val (dockerName, tag) = nameAndTag.split(":")
-                val registryUrl = "https://$registryUrlPath"
-                val env = dockerService.getEnv(registryUrl, "$group/$dockerName", tag)
-                AuroraImageStream(deployTag, registryUrl, group, dockerName, tag, env)
-            }
+                        val (registryUrlPath, group, nameAndTag) = it.split("/")
+                        val (dockerName, tag) = nameAndTag.split(":")
+                        val registryUrl = "https://$registryUrlPath"
+
+                        val env = try {
+                            dockerService.getEnv(registryUrl, "$group/$dockerName", tag)
+                        } catch (e: Exception) {
+                            //TODO: Handle exception
+                            logger.warn("Failed getting docker env", e)
+                            emptyMap<String, String>()
+                        }
+
+                        AuroraImageStream(deployTag, registryUrl, group, dockerName, tag, env)
+                    }
         }
     }
 

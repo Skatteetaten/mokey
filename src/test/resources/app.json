@@ -1,0 +1,40 @@
+{
+  "name": "reference",
+  "namespace": "aurora",
+  "affiliation": "aurora",
+  "targetReplicas": 1,
+  "availableReplicas": 1,
+  "managementPath": ":8081/actuator",
+  "deploymentPhase": "Complete",
+  "routeUrl": "http://reference-aurora.utv.paas.skead.no",
+  "pods": [
+    {
+      "name": "reference-2-cvtvg",
+      "status": "Running",
+      "restartCount": 0,
+      "podIP": "10.254.22.151",
+      "startTime": "2018-01-25T09:54:01Z",
+      "deployment": "reference-2",
+      "links": {
+        "info" : ":8081/info",
+        "health": ":8081/healh"
+      },
+      "ready": true,
+      "health": {
+        "status" : "HEALTHY"
+      },
+      "info" : {
+        "name" : "reference"
+      }
+    }
+  ],
+  "imageStream": {
+    "registryUrl": "https://docker-registry.aurora.sits.no:5000",
+    "group": "no_skatteetaten_aurora",
+    "name": "reference",
+    "tag": "1",
+    "env": {
+      "AURORA_VERSION": "1.2.3"
+    }
+  }
+}

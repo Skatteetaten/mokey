@@ -1,4 +1,4 @@
-GET {{apiUrl}}/aurora/application/namespace/paas-yaml/application/whoami
+GET {{apiUrl}}/aurora/application/namespace/aurora/application/red
 Authorization:Bearer {{token}}
 
 ###
