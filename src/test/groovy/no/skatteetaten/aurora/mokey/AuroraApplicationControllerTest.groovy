@@ -8,34 +8,44 @@ import static org.springframework.restdocs.request.RequestDocumentation.pathPara
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Bean
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders
 import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 
 import groovy.json.JsonSlurper
-import io.micrometer.spring.web.servlet.DefaultWebMvcTagsProvider
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Metrics
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.micrometer.spring.web.servlet.WebMvcMetrics
-import no.skatteetaten.aurora.AuroraMetrics
 import no.skatteetaten.aurora.mokey.controller.AuroraApplicationController
 import no.skatteetaten.aurora.mokey.model.AuroraApplication
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
+import spock.mock.DetachedMockFactory
 
 @SpringBootTest(classes = [Config,
-    AuroraMetrics,
     Main,
-    WebMvcMetrics,
-    DefaultWebMvcTagsProvider], webEnvironment = SpringBootTest.WebEnvironment.NONE)
+], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class AuroraApplicationControllerTest extends AbstractControllerTest {
 
   static class Config {
+    private DetachedMockFactory factory = new DetachedMockFactory()
 
+    @Bean
+    MeterRegistry meterRegistry() {
+      new SimpleMeterRegistry()
+    }
+
+    @Bean
+    WebMvcMetrics mvcMetrics() {
+      factory.Mock(WebMvcMetrics)
+    }
   }
 
-  def NAMESPACE="aurora"
-  def APP="reference"
+  def NAMESPACE = "aurora"
+  def APP = "reference"
 
   @Autowired
   ObjectMapper mapper
@@ -44,7 +54,8 @@ class AuroraApplicationControllerTest extends AbstractControllerTest {
 
   def "Response for application"() {
 
-    def app= new JsonSlurper().parse(new File(loadResource("app.json"))) as AuroraApplication
+
+    def app = mapper.readValue(loadResource("app.json"), AuroraApplication)
     cacheService.get("aurora/reference") >> app
 
     when:
@@ -65,7 +76,6 @@ class AuroraApplicationControllerTest extends AbstractControllerTest {
           )
       ))
   }
-
 
   @Override
   protected List<Object> getControllersUnderTest() {

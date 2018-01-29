@@ -17,7 +17,7 @@
       "deployment": "reference-2",
       "links": {
         "info" : ":8081/info",
-        "health": ":8081/healh"
+        "health": ":8081/health"
       },
       "ready": true,
       "health": {
