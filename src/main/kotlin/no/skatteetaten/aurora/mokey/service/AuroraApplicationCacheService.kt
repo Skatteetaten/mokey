@@ -6,6 +6,7 @@ import kotlinx.coroutines.experimental.runBlocking
 import no.skatteetaten.aurora.mokey.model.AuroraApplication
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
@@ -22,22 +23,19 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
 
 
     @Scheduled(fixedRate = 300000, initialDelay = 360)
-    fun load() {
+    @Profile("openshift")
+    fun performLoad() {
+
+        val projects = openShiftService.projects().map { it.metadata.name }
+        load(projects)
+    }
+
+    fun load(projects: List<String>) {
 
         val watch = StopWatch()
         watch.start()
-
-        logger.debug("Start scheduled task")
-
         val allKeys = cache.keys().toList()
         val newKeys = mutableListOf<String>()
-
-        val projects = openShiftService.projects().map { it.metadata.name }
-        //val projects = listOf(namespace)
-
-        logger.info("Fetched {} projects", projects.size)
-
-        //CONFIG
         runBlocking(mtContext) {
             projects.flatMap { namespace ->
                 logger.debug("Find all applications in namespace={}", namespace)

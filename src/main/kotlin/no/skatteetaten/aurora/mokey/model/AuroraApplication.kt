@@ -51,6 +51,7 @@ data class AuroraStatus(val level: AuroraStatusLevel, val comment: String? = "")
 
     companion object {
 
+        //TODO:config
         val AVERAGE_RESTART_OBSERVE_THRESHOLD = 20
         val AVERAGE_RESTART_ERROR_THRESHOLD = 100
         val DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD = 2

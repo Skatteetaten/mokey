@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders
 
 import io.micrometer.spring.web.servlet.WebMvcMetrics
 import no.skatteetaten.aurora.mokey.controller.ErrorHandler
+import no.skatteetaten.aurora.mokey.controller.internal.ErrorHandler
 import spock.lang.Specification
 
 abstract class AbstractControllerTest extends Specification {

@@ -14,6 +14,7 @@ import no.skatteetaten.aurora.mokey.service.NoAccessException
 import no.skatteetaten.aurora.mokey.service.OpenShiftService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.*
 import org.springframework.util.StopWatch
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -51,6 +52,7 @@ class AuroraApplicationController(val auroraApplicationCacheService: AuroraAppli
 
         logger.debug("fant prosjekt")
     }
+
 
 
 

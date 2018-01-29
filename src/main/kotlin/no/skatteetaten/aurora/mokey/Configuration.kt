@@ -11,6 +11,7 @@ import okhttp3.Dns
 import okhttp3.OkHttpClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
@@ -25,8 +26,6 @@ import java.util.concurrent.TimeUnit
 
 @Configuration
 class Configuration {
-
-    val logger: Logger = LoggerFactory.getLogger(no.skatteetaten.aurora.mokey.Configuration::class.java)
 
     @Bean
     @Primary
