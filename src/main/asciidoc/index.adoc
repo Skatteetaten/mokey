@@ -1,5 +1,5 @@
-= Openshift Reference Spring Boot Server
-Bent André Solheim <BentAndre.Solheim@skatteetaten.no>
+= Mokey
+Aurora Openshift Paas <utvpaas@skatteetaten.no>
 {version}
 :doctype: book
 :icons: font
@@ -59,4 +59,4 @@ The API tries to follow standard HTTP and ReST conventions in how it uses HTTP s
 == Resources
 
 :leveloffset: +2
-include::route.adoc[]
+include::application.adoc[]
