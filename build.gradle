@@ -57,6 +57,7 @@ dependencies {
             'io.fabric8:kubernetes-model:2.0.4',
             "org.springframework.retry:spring-retry",
             'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21.2',
+             "org.springframework.boot:spring-boot-starter-security",
     )
 
     testCompile("org.springframework.boot:spring-boot-starter-test",

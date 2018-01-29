@@ -1,0 +1,4 @@
+GET {{apiUrl}}/aurora/application/namespace/paas-yaml/application/whoami
+Authorization:Bearer {{token}}
+
+###

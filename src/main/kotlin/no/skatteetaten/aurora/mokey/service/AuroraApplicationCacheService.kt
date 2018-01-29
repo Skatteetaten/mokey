@@ -17,18 +17,9 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
     val cache = ConcurrentHashMap<String, AuroraApplication>()
     var cachePopulated = false
 
-    val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationCacheService::class.java)
-
-
-    @Scheduled(fixedRate = 300000, initialDelay = 360)
-    @Profile("openshift")
-    fun performLoad() {
-
-        val projects = openShiftService.projects().map { it.metadata.name }
-        load(projects)
-    }
+    val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
 
     fun load(projects: List<String>) {
 

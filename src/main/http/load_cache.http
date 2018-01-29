@@ -1,0 +1,4 @@
+GET {{apiUrl}}/load?namespace=paas-yaml
+Authorization:Bearer {{token}}
+
+###
