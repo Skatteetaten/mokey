@@ -87,6 +87,7 @@ object AuroraStatusCalculator {
     }
 
     @JvmStatic
+    //TODO:handle that this can be empty
     fun findPodStatus(pods: List<JsonNode>): AuroraStatus.AuroraStatusLevel {
         return pods.map { AuroraStatus.fromApplicationStatus(it.get("status").asText(), "").level }
                 .toSortedSet().first()

@@ -42,7 +42,7 @@ class AuroraApplicationService(val restTemplate: RestTemplate,
                     Tag.of("aurora_version", version),
                     Tag.of("aurora_namespace", it.namespace),
                     Tag.of("aurora_name", it.name),
-                    Tag.of("status", status.toString())
+                    Tag.of("status", status.level.toString())
             )
             meterRegistry.counter("AURORA_STATUS", tags).increment()
 
