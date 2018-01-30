@@ -12,7 +12,9 @@ The component is named after the Mokey Fraggle (http://muppet.wikia.com/wiki/Mok
  
 ## Test locally
 Create a file  src/main/http/rest-client.env.json 
- `{
+
+ ```
+ {
     "local":{
       "apiUrl":"http://localhost:8080",
       "token":""
@@ -21,7 +23,8 @@ Create a file  src/main/http/rest-client.env.json
       "apiUrl": "http://url-to-mokey-on-your-cluster"
       "token": ""
     }
-  }`
+  }
+ ```
   
 Fill in the token value with a valid ocp token from `oc whoami -t`
 Run the http commands from Intellij
