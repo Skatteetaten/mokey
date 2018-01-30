@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.sun.org.apache.bcel.internal.classfile.Unknown
 import no.skatteetaten.aurora.mokey.model.AuroraApplication
 import no.skatteetaten.aurora.mokey.model.AuroraPod
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
@@ -8,20 +9,20 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus.AuroraStatusLevel.DOWN
 import no.skatteetaten.aurora.mokey.model.AuroraStatus.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.AuroraStatus.AuroraStatusLevel.OBSERVE
 import no.skatteetaten.aurora.mokey.model.AuroraStatus.AuroraStatusLevel.OFF
+import no.skatteetaten.aurora.mokey.model.AuroraStatus.AuroraStatusLevel.UNKNOWN
 import no.skatteetaten.aurora.mokey.model.AuroraStatus.Companion.AVERAGE_RESTART_ERROR_THRESHOLD
 import java.time.Duration
 import java.time.Instant
-
 
 
 object AuroraStatusCalculator {
 
     fun calculateStatus(app: AuroraApplication): AuroraStatus {
 
-        val lastDeployment= app.deploymentPhase
-        val availableReplicas=app.availableReplicas
-        val targetReplicas=app.targetReplicas
-        val pods=app.pods
+        val lastDeployment = app.deploymentPhase
+        val availableReplicas = app.availableReplicas
+        val targetReplicas = app.targetReplicas
+        val pods = app.pods
         if ("Failed".equals(lastDeployment, ignoreCase = true) && availableReplicas <= 0) {
             return AuroraStatus(DOWN, "DEPLOY_FAILED_NO_PODS")
         }
@@ -73,6 +74,7 @@ object AuroraStatusCalculator {
         }
 
 
+        //TODO: Hva gjør hvis hvis denne er Unknown, vi ikke får svar?
         val podStatus = findPodStatus(pods.mapNotNull { it.health })
 
         if (podStatus != HEALTHY) {
@@ -87,23 +89,23 @@ object AuroraStatusCalculator {
     }
 
     @JvmStatic
-    //TODO:handle that this can be empty
     fun findPodStatus(pods: List<JsonNode>): AuroraStatus.AuroraStatusLevel {
-        return pods.map { AuroraStatus.fromApplicationStatus(it.get("status").asText(), "").level }
-                .toSortedSet().first()
+        return pods.map {
+            val status = it.get("status").asText()
+            AuroraStatus.fromApplicationStatus(status, "").level
+        }.toSortedSet().firstOrNull() ?: UNKNOWN
     }
 
-    internal fun findAverageRestarts(ap: List<AuroraPod>): Int {
+    fun findAverageRestarts(ap: List<AuroraPod>): Int {
         if (ap.isEmpty()) {
             return 0
         }
 
-
-        val totalRestarts = ap.map { it.restartCount }.sum()
+        val totalRestarts=ap.sumBy { it.restartCount }
         return totalRestarts / ap.size
     }
 
-    internal fun hasOldPodsWithDifferentDeployments(ap: List<AuroraPod>, threshold: Instant): Boolean {
+    fun hasOldPodsWithDifferentDeployments(ap: List<AuroraPod>, threshold: Instant): Boolean {
         if (ap.size < 2) {
             return false
         }
