@@ -33,10 +33,11 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
                 openShiftService.deploymentConfigs(namespace).map { dc ->
                     launch(mtContext) {
                         val app = applicationService.findApplication(namespace, dc)
+                        //TODO: Create violationTags
+                        //TODO: Create status
 
                         app?.let {
                             val appKey = "${it.namespace}/${it.name}"
-                            logger.info("New cache for {}", appKey)
                             cache.put(appKey, it)
                             synchronized(newKeys) {
                                 newKeys.add(appKey)

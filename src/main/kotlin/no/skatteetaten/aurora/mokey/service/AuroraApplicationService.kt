@@ -74,6 +74,7 @@ class AuroraApplicationService(val restTemplate: RestTemplate,
         }
         val triggerName = trigger.name
 
+        //we need another way to find this.
         //need to find out if we have a development flow.
         val development = triggerName == "$name:latest"
 
@@ -88,13 +89,7 @@ class AuroraApplicationService(val restTemplate: RestTemplate,
                 val registryUrl = "http://$registryUrlPath"
                 val tag = "latest"
                 val token = openshiftService.openShiftClient.configuration.oauthToken
-                val env = try {
-                    dockerService.getEnv(registryUrl, "$group/$name", tag, token)
-                } catch (e: Exception) {
-                    //TODO: Handle exception
-                    logger.warn("Failed getting docker env", e)
-                    emptyMap<String, String>()
-                }
+                val env = dockerService.getEnv(registryUrl, "$group/$name", tag, token)
                 return AuroraImageStream(deployTag, registryUrl, group, dockerName, tag, env)
             }
 
@@ -102,19 +97,11 @@ class AuroraApplicationService(val restTemplate: RestTemplate,
                     .map { it.from.name }
                     .firstOrNull()
                     ?.let {
-
+                        //TODO: Some urls might not be correct here, postgres straight from dockerHub ski-utv/ski2-test
                         val (registryUrlPath, group, nameAndTag) = it.split("/")
                         val (dockerName, tag) = nameAndTag.split(":")
                         val registryUrl = "https://$registryUrlPath"
-
-                        val env = try {
-                            dockerService.getEnv(registryUrl, "$group/$dockerName", tag)
-                        } catch (e: Exception) {
-                            //TODO: Handle exception
-                            logger.warn("Failed getting docker env", e)
-                            emptyMap<String, String>()
-                        }
-
+                        val env = dockerService.getEnv(registryUrl, "$group/$dockerName", tag)
                         AuroraImageStream(deployTag, registryUrl, group, dockerName, tag, env)
                     }
         }
@@ -175,7 +162,7 @@ class AuroraApplicationService(val restTemplate: RestTemplate,
                     status = it.status.phase,
                     restartCount = containerStatus.restartCount,
                     podIP = ip,
-                    isReady = containerStatus.ready,
+                    ready = containerStatus.ready,
                     deployment = it.metadata.labels["deployment"],
                     links = links,
                     info = info,

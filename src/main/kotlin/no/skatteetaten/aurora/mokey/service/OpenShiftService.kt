@@ -9,12 +9,13 @@ import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.OpenShiftClient
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 
 @Service
-class OpenShiftService(val openShiftClient: OpenShiftClient) {
+class OpenShiftService(val openShiftClient: OpenShiftClient, @Qualifier("user") val userClient: OpenShiftClient) {
 
     @Retryable(value = KubernetesClientException::class, maxAttempts = 3, backoff = Backoff(delay = 500))
     fun deploymentConfigs(namespace: String): List<DeploymentConfig> {
@@ -43,4 +44,7 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
     fun projects(): List<Project> {
         return openShiftClient.projects().list().items
     }
+
+    fun currentUserHasAccess(namespace:String) = userClient.projects().withName(namespace).getOrNull()?.let { true} ?: false
+
 }

@@ -24,36 +24,40 @@ class DockerService(val httpClient: RestTemplate, val objectMapper: ObjectMapper
 
     }
 
-    fun getEnv(registryUrl: String, name: String, tag: String, token: String? = null): Map<String, String> {
+    fun getEnv(registryUrl: String, name: String, tag: String, token: String? = null): Map<String, String>? {
 
-        return getImageManifest(registryUrl, name, tag, token)?.let {
-            val manifestHistory = it.at("/history/0/v1Compatibility").asText()
-            val history = objectMapper.readTree(manifestHistory)
-            val env = history.at("/container_config/Env") as ArrayNode
-            val envMap = mutableMapOf<String, String>()
-            env.elements().forEachRemaining {
-                val (key, value) = it.textValue().split("=")
-                envMap.put(key, value)
+        val manifestURI = generateManifestURI(registryUrl, name, tag)
+        try {
+            return getImageManifest(manifestURI, token)?.let {
+                val manifestHistory = it.at("/history/0/v1Compatibility").asText()
+                val history = objectMapper.readTree(manifestHistory)
+                val env = history.at("/container_config/Env") as ArrayNode
+                val envMap = mutableMapOf<String, String>()
+                env.elements().forEachRemaining {
+                    val (key, value) = it.textValue().split("=")
+                    envMap[key] = value
+                }
+                envMap
             }
-            envMap
-
-        } ?: emptyMap()
+        }catch(e:Exception) {
+            logger.warn("Failed getting docker manifest with url=${manifestURI}")
+            return null
+        }
     }
 
-    fun getImageManifest(registryUrl: String, name: String, tag: String, token: String?): JsonNode? {
+    fun getImageManifest(url:URI, token: String?): JsonNode? {
         val headers = HttpHeaders()
         headers.accept = listOf(DOCKER_IMAGE_MANIFEST)
         token?.let {
             headers.set("Authorization", "Bearer $token")
         }
-        return getManifestWithHeaders(registryUrl, name, tag, headers)
+        return getManifestWithHeaders(url, headers)
     }
 
-    fun getManifestWithHeaders(registryUrl: String, name: String, tag: String, headers: HttpHeaders): JsonNode? {
-        val manifestURI = generateManifestURI(registryUrl, name, tag)
+    fun getManifestWithHeaders(url: URI, headers: HttpHeaders): JsonNode? {
 
-        logger.debug("henter manifest url={}", manifestURI)
-        val req = RequestEntity<String>(headers, HttpMethod.GET, manifestURI)
+        logger.debug("henter manifest url={}", url)
+        val req = RequestEntity<String>(headers, HttpMethod.GET, url)
 
         val res = httpClient.exchange(req, String::class.java)
 

@@ -17,19 +17,19 @@ data class AuroraApplication(
         val imageStream: AuroraImageStream? = null
 )
 
-data class AuroraImageStream(val isTag: String,
+data class AuroraImageStream(val deployTag: String,
                              val registryUrl: String,
                              val group: String,
                              val name: String,
                              val tag: String,
-                             val env: Map<String, String>)
+                             val env: Map<String, String>?)
 
 data class AuroraPod(
         val name: String,
         val status: String,
         val restartCount: Int = 0,
         val podIP: String?,
-        val isReady: Boolean = false,
+        val ready: Boolean = false,
         val startTime: String,
         val deployment: String?,
         val info: JsonNode?,
