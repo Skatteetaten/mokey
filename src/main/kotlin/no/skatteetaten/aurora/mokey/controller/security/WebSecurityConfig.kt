@@ -29,6 +29,8 @@ class WebSecurityConfig(
                 .addFilter(requestHeaderAuthenticationFilter())
                 .authorizeRequests()
                 .requestMatchers(forPort(managementPort)).permitAll()
+                .antMatchers("/docs/index.html").permitAll()
+                .antMatchers("/").permitAll()
                 .anyRequest().authenticated()
     }
 

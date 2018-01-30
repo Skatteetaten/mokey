@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 @RequestMapping(value = "/")
 class IndexController {
 
-    @GetMapping("/")
+    @GetMapping()
     fun index(): String {
         return "redirect:/docs/index.html"
     }
