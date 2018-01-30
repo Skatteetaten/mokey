@@ -1,9 +1,11 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
+import no.skatteetaten.aurora.mokey.model.AuroraApplication
 import no.skatteetaten.aurora.mokey.model.Response
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
 import no.skatteetaten.aurora.mokey.service.NoAccessException
+import no.skatteetaten.aurora.mokey.service.NoSuchResourceException
 import no.skatteetaten.aurora.mokey.service.OpenShiftService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -22,7 +24,7 @@ class AuroraApplicationController(val auroraApplicationCacheService: AuroraAppli
 
 
     @GetMapping("/namespace/{namespace}/application/{application}")
-    fun get(@PathVariable namespace: String, @PathVariable application: String, @AuthenticationPrincipal user: User): Response {
+    fun get(@PathVariable namespace: String, @PathVariable application: String, @AuthenticationPrincipal user: User): AuroraApplication {
 
         if (!openShiftService.currentUserHasAccess(namespace)) {
             throw NoAccessException("User=${user.username} with name=${user.fullName} and tokenSnippet=${user.tokenSnippet} does not have access to project=${namespace}")
@@ -30,9 +32,7 @@ class AuroraApplicationController(val auroraApplicationCacheService: AuroraAppli
 
         logger.debug("finner applikasjon")
         val appKey = "$namespace/$application"
-        return auroraApplicationCacheService.get(appKey)?.let {
-            Response(items = listOf(it))
-        } ?: Response(success = false, message = "Does not exist", items = emptyList())
+        return auroraApplicationCacheService.get(appKey) ?: throw NoSuchResourceException("Does not exist")
     }
 }
 
