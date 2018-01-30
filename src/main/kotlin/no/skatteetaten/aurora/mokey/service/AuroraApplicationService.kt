@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.Route
-import io.prometheus.client.Gauge
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.model.AuroraApplication
 import no.skatteetaten.aurora.mokey.model.AuroraImageStream
@@ -20,11 +21,33 @@ import org.springframework.web.client.RestTemplate
 class AuroraApplicationService(val restTemplate: RestTemplate,
                                val openshiftService: OpenShiftService,
                                val dockerService: DockerService,
-                               val mapper: ObjectMapper) {
+                               val mapper: ObjectMapper,
+                               val meterRegistry: MeterRegistry) {
 
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationService::class.java)
 
+
+    fun handleApplication(namespace: String, dc: DeploymentConfig): AuroraApplication? {
+
+        return findApplication(namespace, dc)?.also {
+
+            val status = AuroraStatusCalculator.calculateStatus(it)
+            val version = it.imageStream?.env?.get("AURORA_VERSION")
+                    ?: it.pods[0].info?.at("auroraVersion")?.asText()
+                    ?: it.imageStream?.deployTag ?: "Unknown"
+
+
+            val tags = listOf(
+                    Tag.of("aurora_version", version),
+                    Tag.of("aurora_namespace", it.namespace),
+                    Tag.of("aurora_name", it.name),
+                    Tag.of("status", status.toString())
+            )
+            meterRegistry.counter("AURORA_STATUS", tags).increment()
+
+        }
+    }
 
     fun findApplication(namespace: String, dc: DeploymentConfig): AuroraApplication? {
         try {
@@ -220,13 +243,5 @@ class AuroraApplicationService(val restTemplate: RestTemplate,
 
     }
 
-    fun calculateHealth(app: AuroraApplication, gauge: Gauge) {
 
-        //denne må bli gjort for hver app
-        val status = AuroraStatusCalculator.calculateStatus(app.pods, app.deploymentPhase, app.targetReplicas, app.availableReplicas)
-
-        val auroraVersion = app.pods[0].info?.at("auroraVersion")?.asText() ?: "Unknown"
-        gauge.labels(app.name, app.namespace, auroraVersion, status.comment)
-                .set(status.level.level.toDouble())
-    }
 }
