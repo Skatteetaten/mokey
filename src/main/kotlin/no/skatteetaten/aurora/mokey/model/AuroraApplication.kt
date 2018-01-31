@@ -7,6 +7,8 @@ data class AuroraApplication(
         val name: String,
         val namespace: String,
         val affiliation: String? = null,
+        val deployTag: String?,
+        val booberDeployId: String?,
         val sprocketDone: String? = null,
         val targetReplicas: Int = 0,
         val availableReplicas: Int = 0,
@@ -14,15 +16,17 @@ data class AuroraApplication(
         val deploymentPhase: String? = null,
         val routeUrl: String? = null,
         val pods: List<AuroraPod>,
-        val imageStream: AuroraImageStream? = null
+        val imageStream: AuroraImageStream? = null,
+        val violationRules:List<String> = emptyList()
 )
 
-data class AuroraImageStream(val deployTag: String,
+data class AuroraImageStream(
                              val registryUrl: String,
                              val group: String,
                              val name: String,
                              val tag: String,
-                             val env: Map<String, String>?)
+                             val localImage: Boolean = false,
+                             val env: Map<String, String>? = null)
 
 data class AuroraPod(
         val name: String,
@@ -32,7 +36,7 @@ data class AuroraPod(
         val ready: Boolean = false,
         val startTime: String,
         val deployment: String?,
-        val info: JsonNode?,
+        val info: JsonNode? = null,
         val health: JsonNode? = null,
         val links: Map<String, String>? = null //cache
 )

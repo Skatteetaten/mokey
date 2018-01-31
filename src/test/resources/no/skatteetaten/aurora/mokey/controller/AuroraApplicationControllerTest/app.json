@@ -2,6 +2,8 @@
   "name": "reference",
   "namespace": "aurora",
   "affiliation": "aurora",
+  "deployTag" : "1",
+  "booberDeployId" : "1337",
   "targetReplicas": 1,
   "availableReplicas": 1,
   "managementPath": ":8081/actuator",
@@ -59,7 +61,6 @@
     }
   ],
   "imageStream": {
-    "deployTag" : "foo",
     "registryUrl": "https://docker-registry.aurora.sits.no:5000",
     "group": "no_skatteetaten_aurora",
     "name": "reference",
