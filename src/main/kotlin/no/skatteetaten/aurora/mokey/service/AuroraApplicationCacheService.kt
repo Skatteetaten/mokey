@@ -32,7 +32,7 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
                 logger.debug("Find all applications in namespace={}", namespace)
                 openShiftService.deploymentConfigs(namespace).map { dc ->
                     launch(mtContext) {
-                        val app = applicationService.findApplication(namespace, dc)
+                        val app = applicationService.handleApplication(namespace, dc)
                         //TODO: Create violationTags
                         //TODO: Create status
 
