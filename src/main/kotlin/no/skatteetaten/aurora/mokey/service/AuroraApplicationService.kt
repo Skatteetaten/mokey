@@ -24,7 +24,7 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
 
             val status = AuroraStatusCalculator.calculateStatus(app)
             val version = app.imageStream?.env?.get("AURORA_VERSION")
-                    ?: app.pods[0].info?.at("auroraVersion")?.asText()
+                    ?: app.pods[0].info?.at("/auroraVersion")?.asText()
                     ?: app.imageStream?.tag ?: "Unknown"
 
 

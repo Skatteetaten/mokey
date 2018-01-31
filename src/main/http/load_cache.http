@@ -1,4 +1,4 @@
-GET {{apiUrl}}/load?namespace=aurora
+GET {{apiUrl}}/load?namespace=folk-medusa-utv
 Authorization:Bearer {{token}}
 
 ###

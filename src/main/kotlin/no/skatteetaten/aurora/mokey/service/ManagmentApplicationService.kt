@@ -50,10 +50,7 @@ class ManagmentApplicationService(val restTemplate: RestTemplate, val mapper: Ob
             logger.debug("Find resource with url={}", url)
             restTemplate.getForObject(url, JsonNode::class.java)
         } catch (e: HttpStatusCodeException) {
-            return mapper.readTree(e.responseBodyAsByteArray).also{
-                logger.warn("Error getting resource namespace=$namespace name=$name url=$url code=${e.statusCode} body=${mapper.writerWithDefaultPrettyPrinter().writeValueAsString(it)}", e)
-            }
-
+            return mapper.readTree(e.responseBodyAsByteArray)
         } catch (e: RestClientException) {
             logger.warn("Error getting resource for namespace={} name={} url={}", namespace, name, url)
             null
