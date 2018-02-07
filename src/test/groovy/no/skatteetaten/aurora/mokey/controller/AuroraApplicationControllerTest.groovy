@@ -21,7 +21,7 @@ import no.skatteetaten.aurora.mokey.controller.AuroraApplicationController
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
 import no.skatteetaten.aurora.mokey.service.OpenShiftService
 
-class AuroraApplicationControllerTest extends AbstractControllerTest {
+class AuroraApplicationControllerTest extends no.skatteetaten.aurora.mokey.AbstractControllerTest {
 
   def NAMESPACE = "aurora"
   def APP = "reference"
