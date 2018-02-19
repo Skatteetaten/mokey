@@ -9,14 +9,14 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class AuroraApplicationService(val meterRegistry: MeterRegistry,
-                               val openShiftApplicationService: OpenShiftApplicationService,
-                               val dockerService: DockerService,
-                               val managmentApplicationService: ManagmentApplicationService) {
-
+class AuroraApplicationService(
+    val meterRegistry: MeterRegistry,
+    val openShiftApplicationService: OpenShiftApplicationService,
+    val dockerService: DockerService,
+    val managmentApplicationService: ManagmentApplicationService
+) {
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationService::class.java)
-
 
     fun handleApplication(namespace: String, dc: DeploymentConfig): AuroraApplication? {
 
@@ -24,29 +24,27 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
 
             val status = AuroraStatusCalculator.calculateStatus(app)
             val version = app.imageStream?.env?.get("AURORA_VERSION")
-                    ?: app.pods[0].info?.at("/auroraVersion")?.asText()
-                    ?: app.imageStream?.tag ?: "Unknown"
-
+                ?: app.pods[0].info?.at("/auroraVersion")?.asText()
+                ?: app.imageStream?.tag ?: "Unknown"
 
             //TODO: Burde vi hatt en annen metrikk for apper som ikke er deployet med Boober?
             val commonTags = listOf(
-                    Tag.of("aurora_version", version),
-                    Tag.of("aurora_namespace", app.namespace),
-                    Tag.of("aurora_name", app.name),
-                    Tag.of("version_strategy", app.deployTag ?: "Unknown"))
+                Tag.of("aurora_version", version),
+                Tag.of("aurora_namespace", app.namespace),
+                Tag.of("aurora_affiliation", app.affiliation),
+                Tag.of("aurora_name", app.name),
+                Tag.of("aurora_deploy_tag", app.deployTag ?: "Unknown")
+            )
 
             app.violationRules.forEach {
                 meterRegistry.counter("aurora_violation_trend", commonTags + Tag.of("violation", it))
-                meterRegistry.gauge("aurora_violation", commonTags + Tag.of("violation", it), 1)
             }
 
-
-            meterRegistry.counter("aurora_status_trend", commonTags + Tag.of("status", status.level.toString())).increment()
-            meterRegistry.gauge("aurora_status", commonTags + Tag.of("status", status.level.toString()), 1)
+            //  meterRegistry.counter("aurora_status_trend", commonTags + Tag.of("status", status.level.toString())).increment()
+            meterRegistry.gauge("aurora_status", commonTags, status.level.level)
 
         }
     }
-
 
     fun findApplication(namespace: String, dc: DeploymentConfig): AuroraApplication? {
         try {
@@ -60,7 +58,11 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             val deployTag = dc.metadata.labels["deployTag"]
             val booberDeployId = dc.metadata.labels["booberDeployId"]
             val name = dc.metadata.name
-            val pods = openShiftApplicationService.getPods(namespace, name, managementPath, dc.spec.selector.mapValues { it.value }).map {
+            val pods = openShiftApplicationService.getPods(
+                namespace,
+                name,
+                managementPath,
+                dc.spec.selector.mapValues { it.value }).map {
                 val links = if (it.podIP == null || managementPath == null) {
                     emptyMap()
                 } else {
@@ -86,24 +88,29 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             }
 
             return AuroraApplication(
-                    name = name,
-                    namespace = namespace,
-                    deployTag = deployTag,
-                    booberDeployId = booberDeployId,
-                    affiliation = dc.metadata.labels["affiliation"],
-                    targetReplicas = dc.spec.replicas,
-                    availableReplicas = dc.status.availableReplicas ?: 0,
-                    deploymentPhase = phase,
-                    routeUrl = route,
-                    managementPath = managementPath,
-                    pods = pods,
-                    imageStream = auroraIs,
-                    sprocketDone = annotations["sprocket.sits.no-deployment-config.done"],
-                    violationRules = violationRules
+                name = name,
+                namespace = namespace,
+                deployTag = deployTag,
+                booberDeployId = booberDeployId,
+                affiliation = dc.metadata.labels["affiliation"],
+                targetReplicas = dc.spec.replicas,
+                availableReplicas = dc.status.availableReplicas ?: 0,
+                deploymentPhase = phase,
+                routeUrl = route,
+                managementPath = managementPath,
+                pods = pods,
+                imageStream = auroraIs,
+                sprocketDone = annotations["sprocket.sits.no-deployment-config.done"],
+                violationRules = violationRules
             )
-
         } catch (e: Exception) {
-            logger.error("Failed getting application name={}, namepsace={} message={}", dc.metadata.name, namespace, e.message, e)
+            logger.error(
+                "Failed getting application name={}, namepsace={} message={}",
+                dc.metadata.name,
+                namespace,
+                e.message,
+                e
+            )
             return null
         }
     }
