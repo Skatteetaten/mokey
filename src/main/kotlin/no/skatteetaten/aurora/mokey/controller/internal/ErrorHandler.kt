@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.controller.internal;
 
-import io.micrometer.spring.web.servlet.WebMvcMetrics
 import no.skatteetaten.aurora.mokey.service.NoAccessException
 import no.skatteetaten.aurora.mokey.service.NoSuchResourceException
 import org.springframework.http.HttpHeaders
@@ -14,7 +13,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import java.lang.Exception
 
 @ControllerAdvice
-class ErrorHandler(val metrics: WebMvcMetrics) : ResponseEntityExceptionHandler() {
+class ErrorHandler : ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(RuntimeException::class)
     fun handleGenericError(e: RuntimeException, request: WebRequest): ResponseEntity<Any>? {
@@ -32,7 +31,6 @@ class ErrorHandler(val metrics: WebMvcMetrics) : ResponseEntityExceptionHandler(
     }
 
     private fun handleException(e: Exception, request: WebRequest, httpStatus: HttpStatus): ResponseEntity<Any>? {
-        metrics.tagWithException(e)
         val response = mutableMapOf(Pair("errorMessage", e.message))
         e.cause?.apply { response.put("cause", this.message) }
         val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }

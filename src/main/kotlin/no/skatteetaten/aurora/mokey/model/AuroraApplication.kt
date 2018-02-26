@@ -17,7 +17,7 @@ data class AuroraApplication(
         val routeUrl: String? = null,
         val pods: List<AuroraPod>,
         val imageStream: AuroraImageStream? = null,
-        val violationRules:List<String> = emptyList()
+        val violationRules: Set<String> = emptySet()
 )
 
 data class AuroraImageStream(

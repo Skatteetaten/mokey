@@ -6,8 +6,6 @@ import kotlinx.coroutines.experimental.runBlocking
 import no.skatteetaten.aurora.mokey.model.AuroraApplication
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Profile
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
 import java.util.concurrent.ConcurrentHashMap
@@ -57,6 +55,15 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
             val keys = cache.keys().toList()
             logger.debug("cache keys={}", keys)
             logger.info("number of apps={} time={}", keys.size, watch.totalTimeSeconds)
+            val violations = cache.values.filter { it.violationRules.isNotEmpty() }
+                    .flatMap {
+                        val aid = "${it.namespace}/${it.name}"
+                        it.violationRules.map { it to aid }
+                    }.groupBy(keySelector = { it.first }, valueTransform = { it.second })
+
+            violations.map {
+                logger.info("Violation rule ${it.key} applications=${it.value}")
+            }
         }
 
     }

@@ -1,4 +1,4 @@
-GET {{apiUrl}}/aurora/application/namespace/aurora/application/red
+GET {{apiUrl}}/aurora/namespace/paas-ref/application/referanse
 Authorization:Bearer {{token}}
 
 ###

@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
@@ -7,12 +8,15 @@ import no.skatteetaten.aurora.mokey.model.AuroraApplication
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.web.client.HttpStatusCodeException
+import org.springframework.web.client.RestClientException
 
 @Service
 class AuroraApplicationService(val meterRegistry: MeterRegistry,
                                val openShiftApplicationService: OpenShiftApplicationService,
                                val dockerService: DockerService,
-                               val managmentApplicationService: ManagmentApplicationService) {
+                               val managmentApplicationService: ManagmentApplicationService,
+                               val mapper: ObjectMapper) {
 
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationService::class.java)
@@ -24,13 +28,12 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
 
             val status = AuroraStatusCalculator.calculateStatus(app)
             val version = app.imageStream?.env?.get("AURORA_VERSION")
-                    ?: app.pods[0].info?.at("/auroraVersion")?.asText()
-                    ?: app.imageStream?.tag ?: "Unknown"
-
+                    ?: if (app.pods.isNotEmpty()) app.pods[0].info?.at("/auroraVersion")?.asText() else null
+                            ?: app.imageStream?.tag
 
             //TODO: Burde vi hatt en annen metrikk for apper som ikke er deployet med Boober?
             val commonTags = listOf(
-                    Tag.of("aurora_version", version),
+                    Tag.of("aurora_version", version ?: "Unknown"),
                     Tag.of("aurora_namespace", app.namespace),
                     Tag.of("aurora_name", app.name),
                     Tag.of("version_strategy", app.deployTag ?: "Unknown"))
@@ -50,7 +53,7 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
 
     fun findApplication(namespace: String, dc: DeploymentConfig): AuroraApplication? {
         try {
-            val violationRules = mutableListOf<String>()
+            val violationRules = mutableSetOf<String>()
             logger.info("finner applikasjon med navn={} i navnerom={}", dc.metadata.name, namespace)
             val annotations = dc.metadata.annotations ?: emptyMap()
 
@@ -64,15 +67,53 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                 val links = if (it.podIP == null || managementPath == null) {
                     emptyMap()
                 } else {
-                    managmentApplicationService.findManagementEndpoints(it.podIP, managementPath).also {
-                        if (it.isEmpty()) {
-                            violationRules.add("NOT_VALID_MANAGEMENT_ENDPOINT")
+                    //TODO:Refactor
+                    try {
+                        managmentApplicationService.findManagementEndpoints(it.podIP, managementPath).also {
+                            if (it.isEmpty()) {
+                                violationRules.add("MANAGEMENT_ENDPOINT_NOT_VALID_FORMAT")
+                            }
                         }
+                    } catch (e: HttpStatusCodeException) {
+
+                        violationRules.add("MANAGEMENT_ENDPOINT_ERROR_${e.statusCode}")
+                        null
+                    } catch (e: Exception) {
+                        violationRules.add("MANAGEMENT_ENDPOINT_ERROR_HTTP")
+                        //   logger.warn("Error getting management endpoints name=${name} namespace=${namespace}", e)
+                        null
                     }
                 }
 
-                val info = managmentApplicationService.findResource(links["info"], namespace, name)
-                val health = managmentApplicationService.findResource(links["health"], namespace, name)
+                val info = try {
+                    links?.let { managmentApplicationService.findResource(links["info"], namespace, name) }
+                } catch (e: HttpStatusCodeException) {
+                    violationRules.add("MANAGEMENT_INFO_ERROR_${e.statusCode}")
+                    null
+                } catch (e: RestClientException) {
+                    violationRules.add("MANAGEMENT_INFO_ERROR_HTTP")
+                    null
+                }
+
+                val health = try {
+                    links?.let { managmentApplicationService.findResource(links["health"], namespace, name) }
+                } catch (e: HttpStatusCodeException) {
+                    if (e.statusCode.is5xxServerError) {
+                        try {
+                            mapper.readTree(e.responseBodyAsByteArray)
+                        } catch (e: Exception) {
+                            violationRules.add("MANAGEMENT_HEALTH_ERROR_INVALID_JSON")
+                            null
+                        }
+                    } else {
+                        violationRules.add("MANAGEMENT_HEALTH_ERROR_${e.statusCode}")
+                        null
+                    }
+                } catch (e: RestClientException) {
+                    violationRules.add("MANAGEMENT_HEALTH_ERROR_HTTP")
+                    null
+                }
+
                 it.copy(links = links, info = info, health = health)
             }
 
@@ -81,7 +122,21 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
 
             val auroraIs = openShiftApplicationService.getAuroraImageStream(dc, name, namespace)?.let {
                 val token = if (it.localImage) openShiftApplicationService.token else null
-                val env = dockerService.getEnv(it.registryUrl, "${it.group}/${it.name}", it.tag, token)
+
+                val env = try {
+                    val env = dockerService.getEnv(it.registryUrl, "${it.group}/${it.name}", it.tag, token)
+                    if (env == null || env.isEmpty()) {
+                        violationRules.add("DOCKER_EMPTY_ENV_ERROR")
+                    }
+                    env
+                } catch (e: HttpStatusCodeException) {
+                    violationRules.add("DOCKER_ENDPOINT_ERROR_${e.statusCode}")
+                    null
+                } catch (e: Exception) {
+                    violationRules.add("DOCKER_ENDPOINT_ERROR_HTTP")
+                    //       logger.warn("Error getting management endpoints", e)
+                    null
+                }
                 it.copy(env = env)
             }
 

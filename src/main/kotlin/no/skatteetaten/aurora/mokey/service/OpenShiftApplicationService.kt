@@ -50,11 +50,16 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
                     .map { it.from.name }
                     .firstOrNull()
                     ?.let {
-                        //TODO: Some urls might not be correct here, postgres straight from dockerHub ski-utv/ski2-test
-                        val (registryUrlPath, group, nameAndTag) = it.split("/")
-                        val (dockerName, tag) = nameAndTag.split(":")
-                        val registryUrl = "https://$registryUrlPath"
-                        AuroraImageStream(registryUrl, group, dockerName, tag)
+                        try {
+                            val (registryUrlPath, group, nameAndTag) = it.split("/")
+                            val (dockerName, tag) = nameAndTag.split(":")
+                            val registryUrl = "https://$registryUrlPath"
+                            AuroraImageStream(registryUrl, group, dockerName, tag)
+                        } catch (e: Exception) {
+                            //TODO: Some urls might not be correct here, postgres straight from dockerHub ski-utv/ski2-test
+                            logger.warn("Error splitting up deployTag ${it}")
+                            null
+                        }
                     }
         }
     }
