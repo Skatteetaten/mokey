@@ -40,7 +40,7 @@ class DockerService(val httpClient: RestTemplate, val objectMapper: ObjectMapper
                 }
     }
 
-    private fun findEnv(jsonNode: JsonNode): MutableMap<String, String> {
+    private fun findEnv(jsonNode: JsonNode): Map<String, String> {
         val env = jsonNode.at("/container_config/Env") as ArrayNode
         val envMap = mutableMapOf<String, String>()
         env.elements()
