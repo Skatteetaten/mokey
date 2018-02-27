@@ -36,16 +36,15 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                     Tag.of("aurora_version", version ?: "Unknown"),
                     Tag.of("aurora_namespace", app.namespace),
                     Tag.of("aurora_name", app.name),
+                    Tag.of("aurora_affiliation", app.affiliation),
                     Tag.of("version_strategy", app.deployTag ?: "Unknown"))
 
             app.violationRules.forEach {
-                meterRegistry.counter("aurora_violation_trend", commonTags + Tag.of("violation", it))
-                meterRegistry.gauge("aurora_violation", commonTags + Tag.of("violation", it), 1)
+                meterRegistry.counter("aurora_violation", commonTags + Tag.of("violation", it))
             }
 
+            meterRegistry.gauge("aurora_status", commonTags, status.level.level)
 
-            meterRegistry.counter("aurora_status_trend", commonTags + Tag.of("status", status.level.toString())).increment()
-            meterRegistry.gauge("aurora_status", commonTags + Tag.of("status", status.level.toString()), 1)
 
         }
     }
