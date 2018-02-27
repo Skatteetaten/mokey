@@ -8,6 +8,7 @@ import io.fabric8.openshift.client.OpenShiftClient
 import okhttp3.OkHttpClient
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
@@ -33,8 +34,9 @@ class Main {
 
 
     @Bean
-    fun restTemplate(): RestTemplate {
-        return RestTemplate(createRequestFactory(1, 1))
+    fun restTemplate(builder: RestTemplateBuilder): RestTemplate {
+        return builder.requestFactory(createRequestFactory(2, 2)).build()
+
     }
 
     @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)

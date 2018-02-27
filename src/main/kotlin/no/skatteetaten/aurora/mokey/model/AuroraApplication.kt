@@ -3,21 +3,21 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.databind.JsonNode
 
 
-data class AuroraApplication(
+data class AuroraApplication @JvmOverloads constructor(
         val name: String,
         val namespace: String,
         val affiliation: String? = null,
-        val deployTag: String?,
-        val booberDeployId: String?,
+        val deployTag: String? = null,
+        val booberDeployId: String? = null,
         val sprocketDone: String? = null,
         val targetReplicas: Int = 0,
         val availableReplicas: Int = 0,
         val managementPath: String? = null,
         val deploymentPhase: String? = null,
         val routeUrl: String? = null,
-        val pods: List<AuroraPod>,
+        val pods: List<AuroraPod> = listOf(),
         val imageStream: AuroraImageStream? = null,
-        val violationRules:List<String> = emptyList()
+        val violationRules: Set<String> = emptySet()
 )
 
 data class AuroraImageStream(

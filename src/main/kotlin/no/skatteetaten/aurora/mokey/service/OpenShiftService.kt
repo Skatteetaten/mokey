@@ -20,30 +20,33 @@ import org.springframework.stereotype.Service
 @Service
 class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
-    @Retryable(value = KubernetesClientException::class, maxAttempts = 3, backoff = Backoff(delay = 500))
+    @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
     fun deploymentConfigs(namespace: String): List<DeploymentConfig> {
         return openShiftClient.deploymentConfigs().inNamespace(namespace).list().items
     }
-    @Retryable(value = KubernetesClientException::class, maxAttempts = 3, backoff = Backoff(delay = 500))
+
+    @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
     fun imageStream(namespace: String, name: String): ImageStream? {
         return openShiftClient.imageStreams().inNamespace(namespace).withName(name).getOrNull()
     }
 
-    @Retryable(value = KubernetesClientException::class, maxAttempts = 3, backoff = Backoff(delay = 500))
+    @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
     fun route(namespace: String, name: String): Route? {
         return openShiftClient.routes().inNamespace(namespace).withName(name).getOrNull()
     }
-    @Retryable(value = KubernetesClientException::class, maxAttempts = 3, backoff = Backoff(delay = 500))
+
+    @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
     fun pods(namespace: String, labelMap: Map<String, String>): List<Pod> {
         return openShiftClient.pods().inNamespace(namespace).withLabels(labelMap).list().items
 
     }
-    @Retryable(value = KubernetesClientException::class, maxAttempts = 3, backoff = Backoff(delay = 500))
+
+    @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
     fun rc(namespace: String, name: String): ReplicationController? {
         return openShiftClient.replicationControllers().inNamespace(namespace).withName(name).getOrNull()
     }
 
-    @Retryable(value = Exception::class, maxAttempts = 3, backoff = Backoff(delay = 500))
+    @Retryable(value = [(Exception::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
     fun projects(): List<Project> {
         return openShiftClient.projects().list().items
     }

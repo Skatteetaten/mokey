@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import java.net.URI
 
-//TODO: Switch to v2
 @Service
 class DockerService(val httpClient: RestTemplate, val objectMapper: ObjectMapper) {
 
@@ -21,40 +20,57 @@ class DockerService(val httpClient: RestTemplate, val objectMapper: ObjectMapper
 
     companion object {
         val DOCKER_IMAGE_MANIFEST: MediaType = MediaType.valueOf("application/vnd.docker.container.image.v1+json ")
-
+        val DOCKER_IMAGE_MANIFEST_V2: MediaType = MediaType.valueOf("application/vnd.docker.distribution.manifest.v2+json")
     }
 
     fun getEnv(registryUrl: String, name: String, tag: String, token: String? = null): Map<String, String>? {
 
         val manifestURI = generateManifestURI(registryUrl, name, tag)
-        try {
-            return getImageManifest(manifestURI, token)?.let {
-                val manifestHistory = it.at("/history/0/v1Compatibility").asText()
-                val history = objectMapper.readTree(manifestHistory)
-                val env = history.at("/container_config/Env") as ArrayNode
-                val envMap = mutableMapOf<String, String>()
-                env.elements().forEachRemaining {
+        return getImageManifest(manifestURI, token)
+                ?.let {
+                    val schemaVersion = it.at("/schemaVersion").asText()
+                    if (schemaVersion == "2") {
+                        getImageBlog(registryUrl, name, it.at("/config/digest").asText(), token)
+                                ?.let { findEnv(it) }
+                    } else {
+                        val manifestHistory = it.at("/history/0/v1Compatibility").asText()
+                        findEnv(objectMapper.readTree(manifestHistory))
+                    }
+
+                }
+    }
+
+    private fun findEnv(jsonNode: JsonNode): Map<String, String> {
+        val env = jsonNode.at("/container_config/Env") as ArrayNode
+        val envMap = mutableMapOf<String, String>()
+        env.elements()
+                .forEachRemaining {
                     val (key, value) = it.textValue().split("=")
                     envMap[key] = value
                 }
-                envMap
-            }
-        }catch(e:Exception) {
-            logger.warn("Failed getting docker manifest with url=${manifestURI}")
-            return null
-        }
+        return envMap
     }
 
-    fun getImageManifest(url:URI, token: String?): JsonNode? {
+    fun getImageBlog(registryUrl: String, name: String, blobId: String, token: String?): JsonNode? {
+
         val headers = HttpHeaders()
         headers.accept = listOf(DOCKER_IMAGE_MANIFEST)
         token?.let {
             headers.set("Authorization", "Bearer $token")
         }
-        return getManifestWithHeaders(url, headers)
+        return getWithHeaders(URI("$registryUrl/v2/$name/blobs/$blobId"), headers)
     }
 
-    fun getManifestWithHeaders(url: URI, headers: HttpHeaders): JsonNode? {
+    fun getImageManifest(url: URI, token: String?): JsonNode? {
+        val headers = HttpHeaders()
+        headers.accept = listOf(DOCKER_IMAGE_MANIFEST_V2)
+        token?.let {
+            headers.set("Authorization", "Bearer $token")
+        }
+        return getWithHeaders(url, headers)
+    }
+
+    fun getWithHeaders(url: URI, headers: HttpHeaders = HttpHeaders()): JsonNode? {
 
         logger.debug("henter manifest url={}", url)
         val req = RequestEntity<String>(headers, HttpMethod.GET, url)
@@ -67,6 +83,4 @@ class DockerService(val httpClient: RestTemplate, val objectMapper: ObjectMapper
     }
 
     fun generateManifestURI(registryUrl: String, name: String, tag: String) = URI("$registryUrl/v2/$name/manifests/$tag")
-
-
 }

@@ -1,4 +1,4 @@
-GET {{apiUrl}}/load?namespace=folk-medusa-utv
+GET {{apiUrl}}/load?namespace=paas-ref
 Authorization:Bearer {{token}}
 
 ###

@@ -16,8 +16,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 
-import no.skatteetaten.aurora.mokey.controller.AbstractControllerTest
-import no.skatteetaten.aurora.mokey.controller.AuroraApplicationController
+import no.skatteetaten.aurora.mokey.AbstractControllerTest
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
 import no.skatteetaten.aurora.mokey.service.OpenShiftService
 
@@ -50,31 +49,45 @@ class AuroraApplicationControllerTest extends AbstractControllerTest {
           ),
           relaxedResponseFields(
               fieldWithPath("name").type(STRING).description("The name of the application"),
-              fieldWithPath("namespace").type(STRING).description("The namespace/project the application is running in"),
-              fieldWithPath("affiliation").type(STRING).optional().description("The affiliation the namespace belongs to"),
+              fieldWithPath("namespace").type(STRING).
+                  description("The namespace/project the application is running in"),
+              fieldWithPath("affiliation").type(STRING).optional().
+                  description("The affiliation the namespace belongs to"),
               fieldWithPath("targetReplicas").type(NUMBER).description("Desired number of replicas"),
               fieldWithPath("availableReplicas").type(NUMBER).description("Number of replicas that is available"),
-              fieldWithPath("managementPath").type(STRING).optional().description("The path to the managementInterface root"),
+              fieldWithPath("managementPath").type(STRING).optional().
+                  description("The path to the managementInterface root"),
               fieldWithPath("deploymentPhase").type(STRING).description("The path to the managementInterface root"),
               fieldWithPath("routeUrl").type(STRING).optional().description("The url to the route if any"),
-              fieldWithPath("deployTag").type(STRING).optional().description("The deploy tag show the strategy used for deploying new versions of this application"),
-              fieldWithPath("booberDeployId").type(STRING).optional().description("Set to the id for the last deploy with boober. If unset this application is not deployed with boober"),
-              fieldWithPath("sprocketDone").type(STRING).optional().description("Status of Sprocket. Controller used for old db/sts integration"),
+              fieldWithPath("deployTag").type(STRING).optional().
+                  description("The deploy tag show the strategy used for deploying new versions of this application"),
+              fieldWithPath("booberDeployId").type(STRING).optional().description(
+                  "Set to the id for the last deploy with boober. If unset this application is not deployed with boober"),
+              fieldWithPath("sprocketDone").type(STRING).optional().
+                  description("Status of Sprocket. Controller used for old db/sts integration"),
               fieldWithPath("pods[].name").type(STRING).description("Name of pod"),
               fieldWithPath("pods[].status").type(STRING).description("Status of pod"),
               fieldWithPath("pods[].restartCount").type(NUMBER).description("Number of times the pod has restarted"),
               fieldWithPath("pods[].podIP").type(STRING).description("IP address of pod"),
               fieldWithPath("pods[].startTime").type(STRING).description("Time the pod was started in zulu format."),
-              fieldWithPath("pods[].deployment").type(STRING).optional().description("The deployment this pod was created in"),
-              fieldWithPath("pods[].info").type(OBJECT).optional().description("An json object that represents the INFO enpoint from the pod"),
-              fieldWithPath("pods[].health").type(OBJECT).optional().description("An json object that represents the HEALTH enpoint from the management interface"),
-              fieldWithPath("pods[].links").type(OBJECT).optional().description("An json object that represents the links in the management interface"),
+              fieldWithPath("pods[].deployment").type(STRING).optional().
+                  description("The deployment this pod was created in"),
+              fieldWithPath("pods[].info").type(OBJECT).optional().
+                  description("An json object that represents the INFO enpoint from the pod"),
+              fieldWithPath("pods[].health").type(OBJECT).optional().
+                  description("An json object that represents the HEALTH enpoint from the management interface"),
+              fieldWithPath("pods[].links").type(OBJECT).optional().
+                  description("An json object that represents the links in the management interface"),
               fieldWithPath("pods[].ready").type(BOOLEAN).description("Is this pod ready to receive requests"),
               fieldWithPath("imageStream.registryUrl").type(STRING).description("URL to Docker registry for the image"),
-              fieldWithPath("imageStream.group").type(STRING).description("What group/user in the docker registry is this application in "),
-              fieldWithPath("imageStream.name").type(STRING).description("The name of the application in the docker registry"),
-              fieldWithPath("imageStream.tag").type(STRING).description("The tag/version of the docker image that we update from"),
-              fieldWithPath("imageStream.env").type(OBJECT).optional().description("ENV variables from the image in the registry")
+              fieldWithPath("imageStream.group").type(STRING).
+                  description("What group/user in the docker registry is this application in "),
+              fieldWithPath("imageStream.name").type(STRING).
+                  description("The name of the application in the docker registry"),
+              fieldWithPath("imageStream.tag").type(STRING).
+                  description("The tag/version of the docker image that we update from"),
+              fieldWithPath("imageStream.env").type(OBJECT).optional().
+                  description("ENV variables from the image in the registry")
           )
       ))
   }
