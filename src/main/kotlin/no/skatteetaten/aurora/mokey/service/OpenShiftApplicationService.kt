@@ -115,6 +115,7 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
         }
 
         val rcName = "$name-$versionNumber"
+        //TODO: ReplicaSet vs ReplicationController
         return openshiftService.rc(namespace, rcName)?.let {
             it.metadata.annotations["openshift.io/deployment.phase"]
         }

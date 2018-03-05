@@ -56,6 +56,7 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             logger.info("finner applikasjon med navn={} i navnerom={}", dc.metadata.name, namespace)
             val annotations = dc.metadata.annotations ?: emptyMap()
 
+            //TODO: Wrong variable name
             val versionNumber = dc.status.latestVersion ?: 0
             val managementPath: String? = annotations["console.skatteetaten.no/management-path"]
 
@@ -63,10 +64,12 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             val booberDeployId = dc.metadata.labels["booberDeployId"]
             val name = dc.metadata.name
             val pods = openShiftApplicationService.getPods(namespace, name, managementPath, dc.spec.selector.mapValues { it.value }).map {
-                val links = if (it.podIP == null || managementPath == null) {
+                val links = if (it.podIP == null) {
+                    emptyMap()
+                } else if (managementPath == null) {
+                    violationRules.add("MANAGEMENT_PATH_MISSING")
                     emptyMap()
                 } else {
-                    //TODO:Refactor
                     try {
                         managmentApplicationService.findManagementEndpoints(it.podIP, managementPath).also {
                             if (it.isEmpty()) {
@@ -79,7 +82,6 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                         null
                     } catch (e: Exception) {
                         violationRules.add("MANAGEMENT_ENDPOINT_ERROR_HTTP")
-                        //   logger.warn("Error getting management endpoints name=${name} namespace=${namespace}", e)
                         null
                     }
                 }
@@ -117,6 +119,8 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             }
 
             val phase = openShiftApplicationService.getDeploymentPhase(name, namespace, versionNumber)
+
+            //TODO: Will only fetch main Route. Do we need labels here? label app=name
             val route = openShiftApplicationService.getRouteUrls(namespace, name)
 
             val auroraIs = openShiftApplicationService.getAuroraImageStream(dc, name, namespace)?.let {

@@ -4,6 +4,7 @@ import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
 import no.skatteetaten.aurora.mokey.model.AuroraApplication
+import no.skatteetaten.aurora.mokey.model.AuroraPublicApplication
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -14,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap
 class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val applicationService: AuroraApplicationService) {
     val cache = ConcurrentHashMap<String, AuroraApplication>()
     var cachePopulated = false
-
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationCacheService::class.java)
     val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
@@ -31,8 +31,6 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
                 openShiftService.deploymentConfigs(namespace).map { dc ->
                     launch(mtContext) {
                         val app = applicationService.handleApplication(namespace, dc)
-                        //TODO: Create violationTags
-                        //TODO: Create status
 
                         app?.let {
                             val appKey = "${it.namespace}/${it.name}"
@@ -71,4 +69,15 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
     fun get(key: String): AuroraApplication? {
         return cache[key]
     }
+
+    /*
+    fun getAppsInAffiliations(affiliation: List<String>): List<AuroraPublicApplication> {
+
+        return cache.filter {
+            affiliation.contains(it.key.affiliation)
+        }.map{
+           //transform to AuroraPublicApplication
+        }
+
+    } */
 }
