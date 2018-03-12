@@ -50,7 +50,8 @@ Classes that represent data collected from the cluster for an application.
 
 ApplicationId:: name and Environment
 Environment:: name and an affiliation.
-ApplicationData:: Container object for all data collected for a given application.
+ApplicationData:: Container object for all data collected for a given application. Gives access to calculated entities
+via properties.
 
 === Calculated Entities
 
@@ -58,7 +59,7 @@ Classes that represent concepts calculated from the <<collected-data, Collected 
 
 ApplicationViolation:: A reference to an <<non-functional-requirement, NFR>> that has not been met for a given
 application with a description of why it was not met and what can be done to fix it.
-Aurora Status:: The representation of the application status based on data collected from OpenShift and from the
+AuroraStatus:: The representation of the application status based on data collected from OpenShift and from the
 application itself from its Management Interface (ref needed).
 
 
@@ -82,7 +83,13 @@ ApplicationDataService:: Responsible for collecting <<application-data, Applicat
 Knows of all the details of collecting data from OpenShift. Also knows how to identify which applications are currently
 running on the cluster.
 
-OpenShiftService:: -
+AuroraStatusCalculator:: Service object for calculating the AuroraStatus for an application. Configured with different
+kinds of thresholds that affects status transitions (AVERAGE_RESTART_OBSERVE_THRESHOLD, AVERAGE_RESTART_ERROR_THRESHOLD,
+DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD).
+
+NfrAuditor:: Service object for determining if an application violates any of the current non functional requirements.
+
+OpenShiftService:: Low level communication and serialization handling.
 
 
 == Cache
