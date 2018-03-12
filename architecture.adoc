@@ -25,6 +25,18 @@ updated individually for each application as the collection process progresses.
 
 Upon completion of a crawl of the cluster, the Cache is updated to remove entries for applications that no longer exist.
 
+=== Implementation Details
+ApplicationDataCrawler:: Responsible for the core parallelized data collection workflow. Does not collect any data
+by itself and does not know of any of the underlying details of OpenShift or OpenShift objects. Handles parallelization
+and *triggering* of data collection and cache update. Workflow component.
+
+ApplicationDataService:: Responsible for collecting <<application-data, Application Data>> given an <<ApplicationId>>.
+Knows of all the details of collecting data from OpenShift. Also knows how to identify which applications are currently
+running on the cluster.
+
+ApplicationDataCacheService:: Responsible for containing the cache of the individual ApplicationData entries.
+
+
 == Reference Data
 
 Non Functional Requirement (NFR):: A description of a non functional requirement for applications running on Aurora
@@ -34,6 +46,7 @@ NFR Violation Cause:: Maybe declare causes for NFR violations?
 
 NFR Violation Fix:: Maybe declare fixes for NFR violations?
 
+[[application-data]]
 == Application Data
 
 All pieces of relevant data for an application collectible from the Aurora OpenShift cluster based on the needs of the
