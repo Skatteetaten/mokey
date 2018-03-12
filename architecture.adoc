@@ -5,7 +5,7 @@
 Mokey is an application that collects data about running applications on an Aurora OpenShift cluster and exposes that
 information via a ReST API in a cached and fast-to-access manner.
 
-The collection process is scheduled and parallellized, and information about the applications is updated in real time as
+The collection process is scheduled and parallelized, and information about the applications is updated in real time as
 the process progresses.
 
 This document is a description of the overall architecture of the module, divided into two main sections;
@@ -81,14 +81,21 @@ by itself and does not know of any of the underlying details of OpenShift or Ope
 and *triggering* of data collection and cache update. Workflow component.
 
 ApplicationDataService:: Responsible for collecting <<application-data, Application Data>> given an <<ApplicationId>>.
-Knows of all the details of collecting data from OpenShift. Also knows how to identify which applications are currently
-running on the cluster.
+Knows of OpenShift objects, but not how to collect them (done via OpenShiftService). Also knows how to identify which
+applications are currently running on the cluster.
 
-AuroraStatusCalculator:: Service object for calculating the AuroraStatus for an application. Configured with different
-kinds of thresholds that affects status transitions (AVERAGE_RESTART_OBSERVE_THRESHOLD, AVERAGE_RESTART_ERROR_THRESHOLD,
+AuroraStatusCalculator:: Service object for determining the AuroraStatus for an application. Configured with different
+kinds of thresholds that affect status transitions (AVERAGE_RESTART_OBSERVE_THRESHOLD, AVERAGE_RESTART_ERROR_THRESHOLD,
 DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD).
 
 NfrAuditor:: Service object for determining if an application violates any of the current non functional requirements.
+Operates from a set of NfrRules.
+
+NfrRule:: Implementation of a check that will generate an NfrViolation if the <<non-functional-requirement, Nrf>>
+associated with the current NfrRule has been violated for a given Application Data instance.
+
+ApplicationManagementInterface:: Accessor object for the Management Interface for a given application. *Note:* This
+may quite possibly be better implemented as a Service.
 
 OpenShiftService:: Low level communication and serialization handling.
 
