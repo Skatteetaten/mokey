@@ -1,34 +1,48 @@
 package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
+import no.skatteetaten.aurora.mokey.service.AuroraStatusCalculator
+
+interface AuroraApplication {
+    val name: String
+    val namespace: String
+    val affiliation: String
+    val status: String
+    val deployTag: String
+    val auroraVersion: String
+}
 
 
-data class AuroraPublicApplication @JvmOverloads constructor(
-        val name: String,
-        val namespace: String,
-        val affiliation: String,
-        val auroraStatus: AuroraStatus,
-        val deployTag: String,
-        val auroraVersion: String
-)
+data class AuroraApplicationPublic(
+    override val name: String,
+    override val namespace: String,
+    override val affiliation: String,
+    override val status: String,
+    override val deployTag: String,
+    override val auroraVersion: String
+) : AuroraApplication
 
 
-data class AuroraApplication @JvmOverloads constructor(
-        val name: String,
-        val namespace: String,
-        val affiliation: String? = null,
-        val deployTag: String? = null,
-        val booberDeployId: String? = null,
-        val sprocketDone: String? = null,
-        val targetReplicas: Int = 0,
-        val availableReplicas: Int = 0,
-        val managementPath: String? = null,
-        val deploymentPhase: String? = null,
-        val routeUrl: String? = null,
-        val pods: List<AuroraPod> = listOf(),
-        val imageStream: AuroraImageStream? = null,
-        val violationRules: Set<String> = emptySet()
-)
+data class AuroraApplicationInternal(
+    override val name: String,
+    override val namespace: String,
+    override val affiliation: String,
+    override val deployTag: String,
+    override val auroraVersion: String,
+    val booberDeployId: String? = null,
+    val sprocketDone: String? = null,
+    val targetReplicas: Int = 0,
+    val availableReplicas: Int = 0,
+    val managementPath: String? = null,
+    val deploymentPhase: String? = null,
+    val routeUrl: String? = null,
+    val pods: List<AuroraPod> = listOf(),
+    val imageStream: AuroraImageStream? = null,
+    val violationRules: Set<String> = emptySet()
+) : AuroraApplication {
+    override val status: String
+        get() = AuroraStatusCalculator.calculateStatus(this).level.toString()
+}
 
 data class AuroraImageStream(
                              val registryUrl: String,

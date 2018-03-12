@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
-import no.skatteetaten.aurora.mokey.model.AuroraApplication
+import no.skatteetaten.aurora.mokey.model.AuroraApplicationInternal
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -22,22 +22,18 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationService::class.java)
 
 
-    fun handleApplication(namespace: String, dc: DeploymentConfig): AuroraApplication? {
+    fun handleApplication(namespace: String, dc: DeploymentConfig): AuroraApplicationInternal? {
 
         return findApplication(namespace, dc)?.also { app ->
 
             val status = AuroraStatusCalculator.calculateStatus(app)
-            val version = app.imageStream?.env?.get("AURORA_VERSION")
-                    ?: if (app.pods.isNotEmpty()) app.pods[0].info?.at("/auroraVersion")?.asText() else null
-                            ?: app.imageStream?.tag
-
             //TODO: Burde vi hatt en annen metrikk for apper som ikke er deployet med Boober?
             val commonTags = listOf(
-                    Tag.of("aurora_version", version ?: "Unknown"),
+                    Tag.of("aurora_version", app.auroraVersion),
                     Tag.of("aurora_namespace", app.namespace),
                     Tag.of("aurora_name", app.name),
                     Tag.of("aurora_affiliation", app.affiliation),
-                    Tag.of("version_strategy", app.deployTag ?: "Unknown"))
+                    Tag.of("version_strategy", app.deployTag))
 
             app.violationRules.forEach {
                 meterRegistry.counter("aurora_violation", commonTags + Tag.of("violation", it))
@@ -50,7 +46,7 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
     }
 
 
-    fun findApplication(namespace: String, dc: DeploymentConfig): AuroraApplication? {
+    fun findApplication(namespace: String, dc: DeploymentConfig): AuroraApplicationInternal? {
         try {
             val violationRules = mutableSetOf<String>()
             logger.info("finner applikasjon med navn={} i navnerom={}", dc.metadata.name, namespace)
@@ -143,12 +139,16 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                 it.copy(env = env)
             }
 
-            return AuroraApplication(
+            val version = auroraIs?.env?.get("AURORA_VERSION")
+                ?: if (pods.isNotEmpty()) pods[0].info?.at("/auroraVersion")?.asText() else null
+                    ?: auroraIs?.tag
+
+            return AuroraApplicationInternal(
                     name = name,
                     namespace = namespace,
-                    deployTag = deployTag,
+                    deployTag = deployTag ?: "",
                     booberDeployId = booberDeployId,
-                    affiliation = dc.metadata.labels["affiliation"],
+                    affiliation = dc.metadata.labels["affiliation"] ?: "",
                     targetReplicas = dc.spec.replicas,
                     availableReplicas = dc.status.availableReplicas ?: 0,
                     deploymentPhase = phase,
@@ -157,7 +157,8 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                     pods = pods,
                     imageStream = auroraIs,
                     sprocketDone = annotations["sprocket.sits.no-deployment-config.done"],
-                    violationRules = violationRules
+                    violationRules = violationRules,
+                    auroraVersion = version ?: ""
             )
 
         } catch (e: Exception) {

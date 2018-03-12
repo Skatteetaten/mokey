@@ -4,7 +4,8 @@ import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
 import no.skatteetaten.aurora.mokey.model.AuroraApplication
-import no.skatteetaten.aurora.mokey.model.AuroraPublicApplication
+import no.skatteetaten.aurora.mokey.model.AuroraApplicationInternal
+import no.skatteetaten.aurora.mokey.model.AuroraApplicationPublic
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -13,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val applicationService: AuroraApplicationService) {
-    val cache = ConcurrentHashMap<String, AuroraApplication>()
+    val cache = ConcurrentHashMap<String, AuroraApplicationInternal>()
     var cachePopulated = false
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationCacheService::class.java)
@@ -70,14 +71,25 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
         return cache[key]
     }
 
-    /*
-    fun getAppsInAffiliations(affiliation: List<String>): List<AuroraPublicApplication> {
+    fun getAffiliations(): List<String> {
+        return cache.map { it.value.affiliation.toLowerCase() }
+            .filter(String::isNotBlank)
+            .distinct()
+    }
 
+    fun getAppsInAffiliations(affiliation: List<String>): List<AuroraApplicationPublic> {
         return cache.filter {
-            affiliation.contains(it.key.affiliation)
-        }.map{
-           //transform to AuroraPublicApplication
+            affiliation.contains(it.value.affiliation)
+        }.map{ val (_, app) = it
+           AuroraApplicationPublic(
+               app.name,
+               app.namespace,
+               app.affiliation,
+               AuroraStatusCalculator.calculateStatus(app).level.toString(),
+               app.deployTag,
+               app.auroraVersion
+           )
         }
 
-    } */
+    }
 }

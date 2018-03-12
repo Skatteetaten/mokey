@@ -2,8 +2,7 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.AuroraApplication
-import no.skatteetaten.aurora.mokey.model.AuroraPublicApplication
-import no.skatteetaten.aurora.mokey.model.Response
+import no.skatteetaten.aurora.mokey.model.AuroraApplicationPublic
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
 import no.skatteetaten.aurora.mokey.service.NoAccessException
 import no.skatteetaten.aurora.mokey.service.NoSuchResourceException
@@ -17,20 +16,22 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
-
 @RestController
-@RequestMapping("/aurora")
+@RequestMapping("/api")
 class AuroraApplicationController(val auroraApplicationCacheService: AuroraApplicationCacheService, val openShiftService: OpenShiftService) {
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationController::class.java)
 
-    /*
+    @GetMapping("/public/affiliations")
+    fun publicApplications(): List<String> {
+        return auroraApplicationCacheService.getAffiliations()
+    }
+
+
     @GetMapping("/public")
-    fun publicApplications(@RequestParam("affiliation") affiliation: List<String>): List<AuroraPublicApplication> {
-
+    fun publicApplications(@RequestParam("affiliation") affiliation: List<String>): List<AuroraApplicationPublic> {
         return auroraApplicationCacheService.getAppsInAffiliations(affiliation)
-
-    } */
+    }
 
     @GetMapping("/namespace/{namespace}/application/{application}")
     fun get(@PathVariable namespace: String, @PathVariable application: String, @AuthenticationPrincipal user: User): AuroraApplication {

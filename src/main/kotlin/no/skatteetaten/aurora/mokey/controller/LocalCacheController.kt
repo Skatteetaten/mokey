@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 
 
 @RestController
-@RequestMapping("/load")
+@RequestMapping("/api/load")
 //@Profile("local")
 class LocalCacheController(val auroraApplicationCacheService: AuroraApplicationCacheService, val openShiftService: OpenShiftService) {
 

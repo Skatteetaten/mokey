@@ -1,8 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.sun.org.apache.bcel.internal.classfile.Unknown
-import no.skatteetaten.aurora.mokey.model.AuroraApplication
+import no.skatteetaten.aurora.mokey.model.AuroraApplicationInternal
 import no.skatteetaten.aurora.mokey.model.AuroraPod
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatus.AuroraStatusLevel.DOWN
@@ -17,7 +16,7 @@ import java.time.Instant
 
 object AuroraStatusCalculator {
 
-    fun calculateStatus(app: AuroraApplication): AuroraStatus {
+    fun calculateStatus(app: AuroraApplicationInternal): AuroraStatus {
 
         val lastDeployment = app.deploymentPhase
         val availableReplicas = app.availableReplicas
