@@ -8,11 +8,45 @@ information via a ReST API in a cached and fast-to-access manner.
 The collection process is scheduled and parallellized, and information about the applications is updated in real time as
 the process progresses.
 
+
+
 = Core Concepts
 
-== Schedule
+This section contains a description of the core concepts of the module, with implementation and domain model details.
 
-Triggers the Crawler based on a configurable schedule (periodic).
+[[reference-data]]
+== Reference Data
+
+Classes and objects that represent static data and rules.
+
+Non Functional Requirement (NFR):: A description of a non functional requirement for applications running on Aurora
+OpenShift.
+
+NFR Violation Cause:: Maybe declare causes for NFR violations?
+
+NFR Violation Fix:: Maybe declare fixes for NFR violations?
+
+
+[[application-data]]
+== Application Data
+
+All pieces of relevant data for an application collectible or calculated from the Aurora OpenShift cluster based on the
+needs of the clients of the API. Intended as an internal representation to be used as a base for external resources.
+
+[[collected-data]]
+=== Collected Data
+
+Classes that represent data collected from the cluster for an application.
+
+=== Calculated Entities
+
+Classes that represent concepts calculated from the <<collected-data, Collected Data>>.
+
+Application Violation:: A reference to an NFR that has not been met for a given application with a description of
+why it was not met and what can be done to fix it.
+
+Aurora Status:: -
+
 
 == Crawler
 
@@ -37,34 +71,16 @@ running on the cluster.
 ApplicationDataCacheService:: Responsible for containing the cache of the individual ApplicationData entries.
 
 
-== Reference Data
-
-Non Functional Requirement (NFR):: A description of a non functional requirement for applications running on Aurora
-OpenShift.
-
-NFR Violation Cause:: Maybe declare causes for NFR violations?
-
-NFR Violation Fix:: Maybe declare fixes for NFR violations?
-
-[[application-data]]
-== Application Data
-
-All pieces of relevant data for an application collectible from the Aurora OpenShift cluster based on the needs of the
-clients of the API.
-
-=== Collected Data
-
-=== Calculated Entities
-
-Application Violation:: A reference to an NFR that has not been met for a given application with a description of
-why it was not met and what can be done to fix it.
-
-Aurora Status:: -
-
 == Cache
 
 Used for generating API responses based on the Application Data. The cache contains an Application Data entry for each
 application running on the cluster.
+
+
+== Crawler Schedule
+
+Triggers the Crawler based on a configurable schedule (periodic).
+
 
 == API
 
