@@ -31,4 +31,4 @@ Run the http commands from Intellij
 
 ## Architecture
 
-The architecture of Mokey is described in a separate document [here](architecture.adoc)
+The architecture of Mokey is described in a separate document [here](architecture.adoc).

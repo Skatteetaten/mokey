@@ -1,1 +1,68 @@
 = Architecture
+
+= Introduction
+
+Mokey is an application that collects data about running applications on an Aurora OpenShift cluster and exposes that
+information via a ReST API in a cached and fast-to-access manner.
+
+The collection process is scheduled and parallellized, and information about the applications is updated in real time as
+the process progresses.
+
+= Core Concepts
+
+== Schedule
+
+Triggers the Crawler based on a configurable schedule (periodic).
+
+== Crawler
+
+The core workflow for collecting Application Data from the Aurora OpenShift cluster and updating the Cache with the
+collected data.
+
+The Crawler starts by collecting a handle for each application running on the cluster, and then collects information for
+those application in parallel. The collected information per application is called Application Data and the Cache is
+updated individually for each application as the collection process progresses.
+
+Old data gone.
+
+== Application Data
+
+All pieces of relevant data for an application collectible from the Aurora OpenShift cluster based on the needs of the
+clients of the API.
+
+== Reference Data
+
+Non Functional Requirement (NFR):: A description of a non functional requirement for applications running on Aurora
+OpenShift.
+
+NFR Violation Cause:: Maybe declare causes for NFR violations?
+
+NFR Violation Fix:: Maybe declare fixes for NFR violations?
+
+
+== Collected Data
+
+== Calculated Entities
+
+Application Violation:: A reference to an NFR that has not been met for a given application with a description of
+why it was not met and what can be done to fix it.
+
+Aurora Status:: -
+
+== Cache
+
+Used for generating API responses based on the Application Data. The cache contains an Application Data entry for each
+application running on the cluster.
+
+== API
+
+A ReST API with resource representations for different parts of the Application Data. All responses are generated from
+data in the Cache.
+
+
+= API Resources
+
+
+= Notes
+
+* We should proably model NFRs.
