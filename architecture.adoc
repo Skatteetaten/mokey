@@ -8,18 +8,24 @@ information via a ReST API in a cached and fast-to-access manner.
 The collection process is scheduled and parallellized, and information about the applications is updated in real time as
 the process progresses.
 
+This document is a description of the overall architecture of the module, divided into two main sections;
+<<core-concepts, the Core Concepts>> and <<api-resources, the API resources>>, describing the internal aspects of the
+module, and the externally exposed resources, respectively.
 
 
-= Core Concepts
+[[core-concepts]]
+= Core Concepts (Internal)
 
 This section contains a description of the core concepts of the module, with implementation and domain model details.
+It does not contain any details of the resources that are exposed from the API, only the classes and objects that are
+used to support the internal crawling workflow.
 
 [[reference-data]]
 == Reference Data
 
 Classes and objects that represent static data and rules.
 
-NonFunctionalRequirement (NFR):: A description of a non functional requirement for applications running on Aurora
+[[non-functional-requirement]]NonFunctionalRequirement (NFR):: A description of a non functional requirement for applications running on Aurora
 OpenShift.
 
 NfrViolationCause:: Maybe declare causes for NFR violations?
@@ -84,14 +90,15 @@ application running on the cluster.
 Triggers the Crawler based on a configurable schedule (periodic).
 
 
-== API
-
-A ReST API with resource representations for different parts of the Application Data. All responses are generated from
-data in the Cache. The resources exposed by the API is detailed in <<api-resources, its own section>>.
-
 
 [[api-resources]]
 = API Resources
+
+A ReST API with resource representations for different parts of the Application Data. All responses are generated from
+data in the Cache. The resources exposed by the API is detailed below.
+
+NFR:: A representation of a <<non-functional-requirement, Non Functional Requirement>>.
+Application:: A basic handle for an application running on an Aurora OpenShift cluster with key identification properties.
 
 
 = Notes
