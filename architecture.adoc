@@ -44,16 +44,18 @@ needs of the clients of the API. Intended as an internal representation to be us
 
 Classes that represent data collected from the cluster for an application.
 
+ApplicationId:: name and Environment
+Environment:: name and an affiliation.
 ApplicationData:: Container object for all data collected for a given application.
 
 === Calculated Entities
 
 Classes that represent concepts calculated from the <<collected-data, Collected Data>>.
 
-ApplicationViolation:: A reference to an NFR that has not been met for a given application with a description of
-why it was not met and what can be done to fix it.
-
-Aurora Status:: -
+ApplicationViolation:: A reference to an <<non-functional-requirement, NFR>> that has not been met for a given
+application with a description of why it was not met and what can be done to fix it.
+Aurora Status:: The representation of the application status based on data collected from OpenShift and from the
+application itself from its Management Interface (ref needed).
 
 
 == Crawler
