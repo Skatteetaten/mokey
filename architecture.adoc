@@ -38,8 +38,9 @@ NfrViolationFix:: Maybe declare fixes for NFR violations?
 [[application-data]]
 == Application Data
 
-All pieces of relevant data for an application collectible or calculated from the Aurora OpenShift cluster based on the
-needs of the clients of the API. Intended as an internal representation to be used as a base for external resources.
+All pieces of relevant data for an application based on the needs of the clients of the API. The data is collected from
+the Aurora OpenShift cluster, or calculated from it. Intended as an internal representation to be used as a base for
+external resources.
 
 Package: no.skatteetaten.aurora.mokey.model
 
