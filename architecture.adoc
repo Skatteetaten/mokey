@@ -19,12 +19,12 @@ This section contains a description of the core concepts of the module, with imp
 
 Classes and objects that represent static data and rules.
 
-Non Functional Requirement (NFR):: A description of a non functional requirement for applications running on Aurora
+NonFunctionalRequirement (NFR):: A description of a non functional requirement for applications running on Aurora
 OpenShift.
 
-NFR Violation Cause:: Maybe declare causes for NFR violations?
+NfrViolationCause:: Maybe declare causes for NFR violations?
 
-NFR Violation Fix:: Maybe declare fixes for NFR violations?
+NfrViolationFix:: Maybe declare fixes for NFR violations?
 
 
 [[application-data]]
@@ -38,11 +38,13 @@ needs of the clients of the API. Intended as an internal representation to be us
 
 Classes that represent data collected from the cluster for an application.
 
+ApplicationData:: Container object for all data collected for a given application.
+
 === Calculated Entities
 
 Classes that represent concepts calculated from the <<collected-data, Collected Data>>.
 
-Application Violation:: A reference to an NFR that has not been met for a given application with a description of
+ApplicationViolation:: A reference to an NFR that has not been met for a given application with a description of
 why it was not met and what can be done to fix it.
 
 Aurora Status:: -
