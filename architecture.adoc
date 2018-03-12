@@ -20,15 +20,10 @@ The core workflow for collecting Application Data from the Aurora OpenShift clus
 collected data.
 
 The Crawler starts by collecting a handle for each application running on the cluster, and then collects information for
-those application in parallel. The collected information per application is called Application Data and the Cache is
+those applications in parallel. The collected information per application is called Application Data and the Cache is
 updated individually for each application as the collection process progresses.
 
-Old data gone.
-
-== Application Data
-
-All pieces of relevant data for an application collectible from the Aurora OpenShift cluster based on the needs of the
-clients of the API.
+Upon completion of a crawl of the cluster, the Cache is updated to remove entries for applications that no longer exist.
 
 == Reference Data
 
@@ -39,10 +34,14 @@ NFR Violation Cause:: Maybe declare causes for NFR violations?
 
 NFR Violation Fix:: Maybe declare fixes for NFR violations?
 
+== Application Data
 
-== Collected Data
+All pieces of relevant data for an application collectible from the Aurora OpenShift cluster based on the needs of the
+clients of the API.
 
-== Calculated Entities
+=== Collected Data
+
+=== Calculated Entities
 
 Application Violation:: A reference to an NFR that has not been met for a given application with a description of
 why it was not met and what can be done to fix it.
@@ -57,9 +56,10 @@ application running on the cluster.
 == API
 
 A ReST API with resource representations for different parts of the Application Data. All responses are generated from
-data in the Cache.
+data in the Cache. The resources exposed by the API is detailed in <<api-resources, its own section>>.
 
 
+[[api-resources]]
 = API Resources
 
 
