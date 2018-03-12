@@ -58,7 +58,7 @@ via properties.
 
 Classes that represent concepts calculated from the <<collected-data, Collected Data>>.
 
-ApplicationViolation:: A reference to an <<non-functional-requirement, NFR>> that has not been met for a given
+ApplicationNfrViolation:: A reference to an <<non-functional-requirement, NFR>> that has not been met for a given
 application with a description of why it was not met and what can be done to fix it.
 AuroraStatus:: The representation of the application status based on data collected from OpenShift and from the
 application itself from its Management Interface (ref needed).
@@ -70,8 +70,8 @@ The core workflow for collecting Application Data from the Aurora OpenShift clus
 collected data.
 
 The Crawler starts by collecting a handle for each application running on the cluster, and then collects information for
-those applications in parallel. The collected information per application is called Application Data and the Cache is
-updated individually for each application as the collection process progresses.
+those applications in parallel. The collected information per application is called Application Data and the Cache (see
+<<cache, the Cache section)>> is updated individually for each application as the collection process progresses.
 
 Upon completion of a crawl of the cluster, the Cache is updated to remove entries for applications that no longer exist.
 
@@ -100,6 +100,7 @@ may quite possibly be better implemented as a Service.
 OpenShiftService:: Low level communication and serialization handling.
 
 
+[[cache]]
 == Cache
 
 Used for generating API responses based on the Application Data. The cache contains an Application Data entry for each
