@@ -25,6 +25,8 @@ used to support the internal crawling workflow.
 
 Classes and objects that represent static data and rules.
 
+Package: no.skatteetaten.aurora.mokey.model
+
 [[non-functional-requirement]]NonFunctionalRequirement (NFR):: A description of a non functional requirement for applications running on Aurora
 OpenShift.
 
@@ -38,6 +40,8 @@ NfrViolationFix:: Maybe declare fixes for NFR violations?
 
 All pieces of relevant data for an application collectible or calculated from the Aurora OpenShift cluster based on the
 needs of the clients of the API. Intended as an internal representation to be used as a base for external resources.
+
+Package: no.skatteetaten.aurora.mokey.model
 
 [[collected-data]]
 === Collected Data
@@ -78,6 +82,8 @@ ApplicationDataService:: Responsible for collecting <<application-data, Applicat
 Knows of all the details of collecting data from OpenShift. Also knows how to identify which applications are currently
 running on the cluster.
 
+OpenShiftService:: -
+
 
 == Cache
 
@@ -99,6 +105,8 @@ Triggers the Crawler based on a configurable schedule (periodic).
 
 A ReST API with resource representations for different parts of the Application Data. All responses are generated from
 data in the Cache. The resources exposed by the API is detailed below.
+
+Package: no.skatteetaten.aurora.mokey.controller.resources
 
 NFR:: A representation of a <<non-functional-requirement, Non Functional Requirement>>.
 Application:: A basic handle for an application running on an Aurora OpenShift cluster with key identification properties.
