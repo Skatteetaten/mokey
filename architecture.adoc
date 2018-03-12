@@ -18,7 +18,7 @@ module, and the externally exposed resources, respectively.
 
 This section contains a description of the core concepts of the module, with implementation and domain model details.
 It does not contain any details of the resources that are exposed from the API, only the classes and objects that are
-used to support the internal crawling workflow.
+used to support the internal data collection workflow; crawling.
 
 [[reference-data]]
 == Reference Data
