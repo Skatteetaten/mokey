@@ -85,7 +85,7 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
                app.name,
                app.namespace,
                app.affiliation,
-               AuroraStatusCalculator.calculateStatus(app).level.toString(),
+               app.status,
                app.deployTag,
                app.auroraVersion
            )
