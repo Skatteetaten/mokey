@@ -28,3 +28,7 @@ Create a file  src/main/http/rest-client.env.json
   
 Fill in the token value with a valid ocp token from `oc whoami -t`
 Run the http commands from Intellij
+
+## Architecture
+
+The architecture of Mokey is described in a separate document [here](architecture.adoc)
