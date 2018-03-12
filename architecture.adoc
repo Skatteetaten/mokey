@@ -64,14 +64,21 @@ AuroraStatus:: The representation of the application status based on data collec
 application itself from its Management Interface (ref needed).
 
 
+[[cache]]
+== Cache
+
+Used for generating API responses based on the ApplicationData. The cache contains an ApplicationData entry for each
+application running on the cluster and is populated by the Crawler (described next).
+
+
 == Crawler
 
 The core workflow for collecting Application Data from the Aurora OpenShift cluster and updating the Cache with the
 collected data.
 
 The Crawler starts by collecting a handle for each application running on the cluster, and then collects information for
-those applications in parallel. The collected information per application is called Application Data and the Cache (see
-<<cache, the Cache section)>> is updated individually for each application as the collection process progresses.
+those applications in parallel. The collected information per application is called Application Data and the Cache
+is updated individually for each application as the collection process progresses.
 
 Upon completion of a crawl of the cluster, the Cache is updated to remove entries for applications that no longer exist.
 
@@ -99,12 +106,6 @@ may quite possibly be better implemented as a Service.
 
 OpenShiftService:: Low level communication and serialization handling.
 
-
-[[cache]]
-== Cache
-
-Used for generating API responses based on the Application Data. The cache contains an Application Data entry for each
-application running on the cluster.
 
 === Implementation Details
 ApplicationDataCacheService:: Responsible for containing the cache of the individual ApplicationData entries.
