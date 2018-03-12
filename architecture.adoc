@@ -76,13 +76,14 @@ ApplicationDataService:: Responsible for collecting <<application-data, Applicat
 Knows of all the details of collecting data from OpenShift. Also knows how to identify which applications are currently
 running on the cluster.
 
-ApplicationDataCacheService:: Responsible for containing the cache of the individual ApplicationData entries.
-
 
 == Cache
 
 Used for generating API responses based on the Application Data. The cache contains an Application Data entry for each
 application running on the cluster.
+
+=== Implementation Details
+ApplicationDataCacheService:: Responsible for containing the cache of the individual ApplicationData entries.
 
 
 == Crawler Schedule
