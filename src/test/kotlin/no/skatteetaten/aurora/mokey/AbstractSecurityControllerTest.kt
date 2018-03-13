@@ -1,20 +1,26 @@
 package no.skatteetaten.aurora.mokey
 
-import org.junit.jupiter.api.BeforeAll
+import no.skatteetaten.aurora.mokey.controller.security.User
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Import
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.stereotype.Component
+import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.setup.MockMvcBuilders
-import org.springframework.web.context.WebApplicationContext
 
+@ExtendWith(SpringExtension::class)
+@Import(TestUserDetailsService::class)
 open class AbstractSecurityControllerTest : AbstractTest() {
 
     @Autowired
-    lateinit var webAppContext: WebApplicationContext
-
     lateinit var mockMvc: MockMvc
+}
 
-    @BeforeAll
-    fun setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webAppContext).build()
+@Component
+private class TestUserDetailsService : UserDetailsService {
+    override fun loadUserByUsername(username: String?): UserDetails {
+        return User(username ?: "username", "token", "fullName")
     }
 }
