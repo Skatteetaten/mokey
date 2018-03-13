@@ -27,10 +27,6 @@ buildscript {
   }
 }
 
-plugins {
-  id "com.gorylenko.gradle-git-properties" version "1.4.17"
-}
-
 ext.aurora = [
     requireStaging: false
 ]
@@ -45,12 +41,9 @@ repositories repos
 
 group = 'no.skatteetaten.aurora'
 
-ext['logback.version'] = '1.2.3'
-
 dependencies {
 
   compile(
-      "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version",
       "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version",
       'org.jetbrains.kotlin:kotlin-stdlib-jdk8',
       'com.fasterxml.jackson.module:jackson-module-kotlin',
