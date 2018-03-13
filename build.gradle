@@ -1,101 +1,101 @@
 buildscript {
-    ext.kotlin_version = '1.2.21'
-    ext.springBootVersion = '1.5.9.RELEASE'
-    ext.auroraStartersVersion = '3.5.0'
-    ext.repos = {
-        maven {
-            url "http://repo1.maven.org/maven2"
-        }
-
-        maven {
-            url "http://jcenter.bintray.com/"
-        }
-
-      mavenLocal()
+  ext.kotlin_version = '1.2.30'
+  ext.springBootVersion = '2.0.0.RELEASE'
+  ext.auroraStartersVersion = '1.0.0'
+  ext.repos = {
+    maven {
+      url "http://repo1.maven.org/maven2"
     }
 
-    repositories repos
-
-    dependencies {
-        classpath(
-                "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version",
-                "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version",
-                "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version",
-                "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion",
-                'no.skatteetaten.aurora.gradle.plugins:aurora-gradle-plugin:1.2.1',
-        )
+    maven {
+      url "http://jcenter.bintray.com/"
     }
+
+    mavenLocal()
+  }
+
+  repositories repos
+
+  dependencies {
+    classpath(
+        "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version",
+        "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version",
+        "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version",
+        "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion",
+        'no.skatteetaten.aurora.gradle.plugins:aurora-gradle-plugin:1.2.1',
+    )
+  }
 }
 
 plugins {
-    id "com.gorylenko.gradle-git-properties" version "1.4.17"
+  id "com.gorylenko.gradle-git-properties" version "1.4.17"
 }
 
 ext.aurora = [
-        requireStaging: false
+    requireStaging: false
 ]
 
 apply plugin: 'no.skatteetaten.plugins.aurora'
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-spring'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
 
 repositories repos
 
 group = 'no.skatteetaten.aurora'
 
 ext['logback.version'] = '1.2.3'
-ext['jackson.version'] = '2.9.2'
 
 dependencies {
-    compile(
-            "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version",
-            "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version",
-            "com.fasterxml.jackson.module:jackson-module-kotlin",
-            "no.skatteetaten.aurora.springboot:aurora-spring-boot-starter:$auroraStartersVersion",
-            'io.fabric8:openshift-client:3.1.8',
-            'io.fabric8:kubernetes-model:2.0.4',
-            "org.springframework.retry:spring-retry",
-            'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21.2',
-             "org.springframework.boot:spring-boot-starter-security",
-    )
 
-    testCompile("org.springframework.boot:spring-boot-starter-test",
-            "org.codehaus.groovy:groovy-all",
-            "org.spockframework:spock-core:1.1-groovy-2.4",
-            "org.spockframework:spock-spring:1.1-groovy-2.4",
-            "org.springframework.restdocs:spring-restdocs-mockmvc",
-            "cglib:cglib-nodep:3.1",
-            "org.objenesis:objenesis:2.1",
-            'io.fabric8:openshift-server-mock:3.1.8',
-            "org.springframework.restdocs:spring-restdocs-mockmvc"
-    )
+  compile(
+      "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version",
+      "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version",
+      'org.jetbrains.kotlin:kotlin-stdlib-jdk8',
+      'com.fasterxml.jackson.module:jackson-module-kotlin',
+      "no.skatteetaten.aurora.springboot:aurora-spring-boot2-starter:$auroraStartersVersion",
+      'io.fabric8:openshift-client:3.1.8',
+      'io.fabric8:kubernetes-model:2.0.4',
+      "org.springframework.retry:spring-retry",
+      'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21.2',
+      'org.springframework.boot:spring-boot-starter-security'
+  )
 
+  testCompile(
+      'org.springframework.restdocs:spring-restdocs-mockmvc',
+      'org.springframework.security:spring-security-test',
+      'org.junit.jupiter:junit-jupiter-api:5.1.0',
+      'io.fabric8:openshift-server-mock:3.1.8',
+      'org.springframework.boot:spring-boot-starter-test',
+      'io.mockk:mockk:1.7.10'
+  )
+
+  testRuntime('org.junit.jupiter:junit-jupiter-engine:5.1.0')
 
 }
 
 springBoot {
-    buildInfo()
+  buildInfo()
 }
 
 compileKotlin {
-    kotlinOptions {
-        suppressWarnings = true
-        jvmTarget = 1.8
-    }
+  kotlinOptions {
+    suppressWarnings = true
+    jvmTarget = 1.8
+  }
 }
 
-compileTestKotlin.dependsOn = compileTestKotlin.taskDependencies.values - 'compileTestJava'
-compileTestGroovy.dependsOn compileTestKotlin
-compileTestGroovy.classpath += files(compileTestKotlin.destinationDir)
-testClasses.dependsOn compileTestGroovy
-
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.1'
+  gradleVersion = '4.6'
+}
+
+test {
+  useJUnitPlatform()
 }
 
 kotlin {
-    experimental {
-        coroutines "enable"
-    }
+  experimental {
+    coroutines "enable"
+  }
 }

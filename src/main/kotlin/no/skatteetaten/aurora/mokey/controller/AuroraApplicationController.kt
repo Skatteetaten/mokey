@@ -24,7 +24,6 @@ class AuroraApplicationController(val auroraApplicationCacheService: AuroraAppli
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationController::class.java)
 
-
     /*
     @GetMapping("/public")
     fun publicApplications(@RequestParam("affiliation") affiliation: List<String>): List<AuroraPublicApplication> {

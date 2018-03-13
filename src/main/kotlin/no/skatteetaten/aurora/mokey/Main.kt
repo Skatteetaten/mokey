@@ -35,8 +35,7 @@ class Main {
 
     @Bean
     fun restTemplate(builder: RestTemplateBuilder): RestTemplate {
-        return builder.requestFactory(createRequestFactory(2, 2)).build()
-
+        return builder.requestFactory({ createRequestFactory(2, 2) }).build()
     }
 
     @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)
