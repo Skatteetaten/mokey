@@ -1,4 +1,4 @@
-GET {{apiUrl}}/load?namespace=paas-ref&namespace=paas-bjarte-dev
+GET {{apiUrl}}/load?namespace=paas-mokey
 Authorization:Bearer {{token}}
 
 ###
