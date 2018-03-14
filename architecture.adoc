@@ -2,8 +2,7 @@
 
 = Introduction
 
-Mokey is an application that collects data about running applications on an Aurora OpenShift cluster and exposes that
-information via a ReST API in a cached and fast-to-access manner.
+Mokey is an application that collects data about running applications on an Aurora OpenShift cluster and sends this to Brio as an event.
 
 The collection process is scheduled and parallelized, and information about the applications is updated in real time as
 the process progresses.
@@ -23,24 +22,15 @@ used to support the internal data collection workflow; crawling.
 [[reference-data]]
 == Reference Data
 
-Classes and objects that represent static data and rules.
-
-Package: no.skatteetaten.aurora.mokey.model
-
-[[non-functional-requirement]]NonFunctionalRequirement (NFR):: A description of a non functional requirement for applications running on Aurora
-OpenShift.
-
-NfrViolationCause:: Maybe declare causes for NFR violations?
-
-NfrViolationFix:: Maybe declare fixes for NFR violations?
-
 
 [[application-data]]
 == Application Data
 
 All pieces of relevant data for an application based on the needs of the clients of the API. The data is collected from
 the Aurora OpenShift cluster, or calculated from it. Intended as an internal representation to be used as a base for
-external resources.
+external resources. 
+
+If retrieving some external resource failes this needs to be modeled as data that will be cache. Lets say we have a health check. If this times out there must be information about this that is cached. This can be modeled as an Either<Failure,T> where Failure has a status code and a message and T is the given type for the resource you want to fetch.
 
 Package: no.skatteetaten.aurora.mokey.model
 
@@ -53,13 +43,12 @@ ApplicationId:: name and Environment
 Environment:: name and an affiliation.
 ApplicationData:: Container object for all data collected for a given application. Gives access to calculated entities
 via properties.
+InstanceData: For each instance of an application we need information about management interface and /info /health of that managementInterface
 
 === Calculated Entities
 
 Classes that represent concepts calculated from the <<collected-data, Collected Data>>.
 
-ApplicationNfrViolation:: A reference to an <<non-functional-requirement, NFR>> that has not been met for a given
-application with a description of why it was not met and what can be done to fix it.
 AuroraStatus:: The representation of the application status based on data collected from OpenShift and from the
 application itself from its Management Interface (ref needed).
 
@@ -69,6 +58,7 @@ application itself from its Management Interface (ref needed).
 
 Used for generating API responses based on the ApplicationData. The cache contains an ApplicationData entry for each
 application running on the cluster and is populated by the Crawler (described next).
+Note that we need a seperate entity for the cache, it might be sensible to structure this differently then the internal representation and we are more robust regarding internal changes.
 
 
 == Crawler
@@ -78,9 +68,9 @@ collected data.
 
 The Crawler starts by collecting a handle for each application running on the cluster, and then collects information for
 those applications in parallel. The collected information per application is called Application Data and the Cache
-is updated individually for each application as the collection process progresses.
+is updated individually for each application as the collection process progresses. AuroraStatus is calculated at the same time and exposed as a metric
 
-Upon completion of a crawl of the cluster, the Cache is updated to remove entries for applications that no longer exist.
+Upon completion of a crawl of the cluster, a crawlCompletedEvent will be sent to Brio with the start time.
 
 === Implementation Details
 ApplicationDataCrawler:: Responsible for the core parallelized data collection workflow. Does not collect any data
@@ -95,40 +85,18 @@ AuroraStatusCalculator:: Service object for determining the AuroraStatus for an 
 kinds of thresholds that affect status transitions (AVERAGE_RESTART_OBSERVE_THRESHOLD, AVERAGE_RESTART_ERROR_THRESHOLD,
 DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD).
 
-NfrAuditor:: Service object for determining if an application violates any of the current non functional requirements.
-Operates from a set of NfrRules.
+ApplicationManagementService:: Service that talks to Red fraggle to get management information about instances of an application.
 
-NfrRule:: Implementation of a check that will generate an NfrViolation if the <<non-functional-requirement, Nrf>>
-associated with the current NfrRule has been violated for a given Application Data instance.
-
-ApplicationManagementInterface:: Accessor object for the Management Interface for a given application. *Note:* This
-may quite possibly be better implemented as a Service.
-
+BrioService : Service for sending events to beige. ApplicationChanged and CrawlCompletedEvent
 OpenShiftService:: Low level communication and serialization handling.
-
-
-=== Implementation Details
-ApplicationDataCacheService:: Responsible for containing the cache of the individual ApplicationData entries.
-
 
 == Crawler Schedule
 
 Triggers the Crawler based on a configurable schedule (periodic).
 
 
-
-[[api-resources]]
-= API Resources
-
-A ReST API with resource representations for different parts of the Application Data. All responses are generated from
-data in the Cache. The resources exposed by the API is detailed below.
-
-Package: no.skatteetaten.aurora.mokey.controller.resources
-
-NFR:: A representation of a <<non-functional-requirement, Non Functional Requirement>>.
-Application:: A basic handle for an application running on an Aurora OpenShift cluster with key identification properties.
-
-
-= Notes
-
-* We should proably model NFRs.
+== Interactions
+Mokey crawls and sends events to Brio. 
+Gobo fetches information from Brio to expose to Console/Wallboard/Truesight/whatever
+Mokey calls Red (url might be in different cluster) to fetch information from running instances
+Clerk (suggested new name for Auditor fraggle) reads cached data from Gobo and checks for NFR
