@@ -3,8 +3,8 @@ package no.skatteetaten.aurora.mokey.service
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.Route
 import no.skatteetaten.aurora.mokey.extensions.ensureStartWith
-import no.skatteetaten.aurora.mokey.model.AuroraImageStream
-import no.skatteetaten.aurora.mokey.model.AuroraPod
+import no.skatteetaten.aurora.mokey.model.ImageDetails
+import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -17,7 +17,7 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
 
     val token = openshiftService.openShiftClient.configuration.oauthToken
 
-    fun getAuroraImageStream(dc: DeploymentConfig, name: String, namespace: String): AuroraImageStream? {
+    fun getAuroraImageStream(dc: DeploymentConfig, name: String, namespace: String): ImageDetails? {
         val trigger = dc.spec.triggers
                 .filter { it.type == "ImageChange" }
                 .map { it.imageChangeParams.from }
@@ -43,7 +43,7 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
 
                 val registryUrl = "http://$registryUrlPath"
                 val tag = "latest"
-                return AuroraImageStream(registryUrl, group, dockerName, tag, true)
+                return ImageDetails(registryUrl, group, dockerName, tag, true)
             }
 
             return it.spec.tags.filter { it.name == deployTag }
@@ -54,7 +54,7 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
                             val (registryUrlPath, group, nameAndTag) = it.split("/")
                             val (dockerName, tag) = nameAndTag.split(":")
                             val registryUrl = "https://$registryUrlPath"
-                            AuroraImageStream(registryUrl, group, dockerName, tag)
+                            ImageDetails(registryUrl, group, dockerName, tag)
                         } catch (e: Exception) {
                             //TODO: Some urls might not be correct here, postgres straight from dockerHub ski-utv/ski2-test
                             logger.warn("Error splitting up deployTag ${it}")
@@ -90,12 +90,12 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
         return "$scheme://$host$path"
     }
 
-    fun getPods(namespace: String, name: String, managementPath: String?, labelMap: Map<String, String>): List<AuroraPod> {
+    fun getPods(namespace: String, name: String, managementPath: String?, labelMap: Map<String, String>): List<PodDetails> {
 
         logger.debug("find pods namespace={} lables={}", namespace, labelMap)
         return openshiftService.pods(namespace, labelMap).map {
             val status = it.status.containerStatuses.first()
-            AuroraPod(
+            PodDetails(
                     name = it.metadata.name,
                     status = it.status.phase,
                     restartCount = status.restartCount,

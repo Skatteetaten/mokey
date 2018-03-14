@@ -2,7 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.model.AuroraApplicationInternal
-import no.skatteetaten.aurora.mokey.model.AuroraPod
+import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatus.AuroraStatusLevel.DOWN
 import no.skatteetaten.aurora.mokey.model.AuroraStatus.AuroraStatusLevel.HEALTHY
@@ -95,7 +95,7 @@ object AuroraStatusCalculator {
         }.toSortedSet().firstOrNull() ?: UNKNOWN
     }
 
-    fun findAverageRestarts(ap: List<AuroraPod>): Int {
+    fun findAverageRestarts(ap: List<PodDetails>): Int {
         if (ap.isEmpty()) {
             return 0
         }
@@ -104,7 +104,7 @@ object AuroraStatusCalculator {
         return totalRestarts / ap.size
     }
 
-    fun hasOldPodsWithDifferentDeployments(ap: List<AuroraPod>, threshold: Instant): Boolean {
+    fun hasOldPodsWithDifferentDeployments(ap: List<PodDetails>, threshold: Instant): Boolean {
         if (ap.size < 2) {
             return false
         }
