@@ -10,10 +10,6 @@ class User(
         val fullName: String? = null
 ) : SpringSecurityUser(username, token, true, true, true, true, listOf()) {
 
-    constructor() : this("-", "-", "-") {
-
-    }
-
     val tokenSnippet: String
         get() = token.substring(0, min(token.length, 5))
 
