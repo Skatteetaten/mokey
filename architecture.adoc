@@ -2,7 +2,7 @@
 
 = Introduction
 
-Mokey is an application that collects data about running applications on an Aurora OpenShift cluster and caches this in a Redis datastore. The key for the cache is ApplicationId.
+Mokey is an application that collects data about running applications on an Aurora OpenShift cluster and sends this to Brio as an event.
 
 The collection process is scheduled and parallelized, and information about the applications is updated in real time as
 the process progresses.
@@ -70,7 +70,7 @@ The Crawler starts by collecting a handle for each application running on the cl
 those applications in parallel. The collected information per application is called Application Data and the Cache
 is updated individually for each application as the collection process progresses. AuroraStatus is calculated at the same time and exposed as a metric
 
-Upon completion of a crawl of the cluster, the Cache is updated to remove entries for applications that no longer exist.
+Upon completion of a crawl of the cluster, a crawlCompletedEvent will be sent to Brio with the start time.
 
 === Implementation Details
 ApplicationDataCrawler:: Responsible for the core parallelized data collection workflow. Does not collect any data
@@ -87,6 +87,7 @@ DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD).
 
 ApplicationManagementService:: Service that talks to Red fraggle to get management information about instances of an application.
 
+BrioService : Service for sending events to beige. ApplicationChanged and CrawlCompletedEvent
 OpenShiftService:: Low level communication and serialization handling.
 
 == Crawler Schedule
@@ -95,7 +96,7 @@ Triggers the Crawler based on a configurable schedule (periodic).
 
 
 == Interactions
-Mokey populates a Redis data store with data. 
-Gobo fetches information from that Redis to expose to Console/Wallboard/Truesight/whatever
+Mokey crawls and sends events to Brio. 
+Gobo fetches information from Brio to expose to Console/Wallboard/Truesight/whatever
 Mokey calls Red (url might be in different cluster) to fetch information from running instances
-Clerk (suggested new name for Auditor fraggle) reads cached data from Gobo/redis and checks for NFR
+Clerk (suggested new name for Auditor fraggle) reads cached data from Gobo and checks for NFR
