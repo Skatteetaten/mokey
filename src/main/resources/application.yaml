@@ -8,11 +8,6 @@ spring:
     profiles:
         active: local
 
-management:
-    endpoint:
-        health:
-            show-details: "ALWAYS"
-
 aurora:
   starter:
     headerfilter:
