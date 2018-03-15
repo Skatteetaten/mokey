@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
+import no.skatteetaten.aurora.mokey.service.AuroraStatusCalculator
 import no.skatteetaten.aurora.mokey.service.NoAccessException
 import no.skatteetaten.aurora.mokey.service.NoSuchResourceException
 import no.skatteetaten.aurora.mokey.service.OpenShiftService
@@ -20,6 +21,18 @@ import org.springframework.web.bind.annotation.RestController
 class AuroraApplicationController(val auroraApplicationCacheService: AuroraApplicationCacheService, val openShiftService: OpenShiftService) {
 
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationController::class.java)
+
+    @GetMapping("/application")
+    fun getAllApplications(@RequestParam("affiliation") affiliation: List<String>): List<AuroraApplication> {
+        return auroraApplicationCacheService.getAppsInAffiliations(affiliation).map {
+            AuroraApplication(
+                ApplicationId(it.name, Environment.fromNamespace(it.namespace)),
+                AuroraStatusCalculator.calculateStatus(it).level.toString(),
+                Version( it.deployTag, it.auroraVersion )
+
+            )
+        }
+    }
 
     @GetMapping("/public/affiliations")
     fun publicApplications(): List<String> {

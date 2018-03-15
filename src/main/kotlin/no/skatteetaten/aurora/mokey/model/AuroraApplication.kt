@@ -24,7 +24,7 @@ fun fromApplicationStatus(status: String): AuroraStatusLevel {
 }
 
 data class ApplicationData(
-    val name: String?,
+    val name: String,
     val namespace: String,
     val deployTag: String,
     val booberDeployId: String?,
