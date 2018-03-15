@@ -1,8 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
-import no.skatteetaten.aurora.mokey.model.AuroraApplication
-import no.skatteetaten.aurora.mokey.model.AuroraApplicationPublic
+import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
 import no.skatteetaten.aurora.mokey.service.NoAccessException
 import no.skatteetaten.aurora.mokey.service.NoSuchResourceException
@@ -27,22 +26,21 @@ class AuroraApplicationController(val auroraApplicationCacheService: AuroraAppli
         return auroraApplicationCacheService.getAffiliations()
     }
 
-
     @GetMapping("/public")
-    fun publicApplications(@RequestParam("affiliation") affiliation: List<String>): List<AuroraApplicationPublic> {
+    fun publicApplications(@RequestParam("affiliation") affiliation: List<String>): List<ApplicationData> {
         return auroraApplicationCacheService.getAppsInAffiliations(affiliation)
     }
 
     @GetMapping("/namespace/{namespace}/application/{application}")
-    fun get(@PathVariable namespace: String, @PathVariable application: String, @AuthenticationPrincipal user: User): AuroraApplication {
+    fun get(@PathVariable namespace: String, @PathVariable application: String, @AuthenticationPrincipal user: User): ApplicationData? {
 
         if (!openShiftService.currentUserHasAccess(namespace)) {
             throw NoAccessException("User=${user.username} with name=${user.fullName} and tokenSnippet=${user.tokenSnippet} does not have access to project=${namespace}")
         }
 
         logger.debug("finner applikasjon")
-        val appKey = "$namespace/$application"
-        return auroraApplicationCacheService.get(appKey) ?: throw NoSuchResourceException("Does not exist")
+        val applicationId = ApplicationId(application, Environment.fromNamespace(namespace))
+        return auroraApplicationCacheService.get(applicationId) ?: throw NoSuchResourceException("Does not exist")
     }
 }
 

@@ -3,8 +3,7 @@ package no.skatteetaten.aurora.mokey.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
-import no.skatteetaten.aurora.mokey.model.AuroraApplicationInternal
+import no.skatteetaten.aurora.mokey.model.ApplicationData
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -22,31 +21,27 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationService::class.java)
 
 
-    fun handleApplication(namespace: String, dc: DeploymentConfig): AuroraApplicationInternal? {
+    fun handleApplication(namespace: String, dc: DeploymentConfig): ApplicationData? {
 
         return findApplication(namespace, dc)?.also { app ->
 
-            val status = AuroraStatusCalculator.calculateStatus(app)
-            //TODO: Burde vi hatt en annen metrikk for apper som ikke er deployet med Boober?
-            val commonTags = listOf(
-                    Tag.of("aurora_version", app.auroraVersion),
-                    Tag.of("aurora_namespace", app.namespace),
-                    Tag.of("aurora_name", app.name),
-                    Tag.of("aurora_affiliation", app.affiliation),
-                    Tag.of("version_strategy", app.deployTag))
-
-            app.violationRules.forEach {
-                meterRegistry.counter("aurora_violation", commonTags + Tag.of("violation", it))
-            }
-
-            meterRegistry.gauge("aurora_status", commonTags, status.level.level)
+//            val status = AuroraStatusCalculator.calculateStatus(app)
+//            //TODO: Burde vi hatt en annen metrikk for apper som ikke er deployet med Boober?
+//            val commonTags = listOf(
+//                    Tag.of("aurora_version", app.auroraVersion),
+//                    Tag.of("aurora_namespace", app.namespace),
+//                    Tag.of("aurora_name", app.name),
+//                    Tag.of("aurora_affiliation", app.affiliation),
+//                    Tag.of("version_strategy", app.deployTag))
+//
+//            meterRegistry.gauge("aurora_status", commonTags, status.level.level)
 
 
         }
     }
 
 
-    fun findApplication(namespace: String, dc: DeploymentConfig): AuroraApplicationInternal? {
+    fun findApplication(namespace: String, dc: DeploymentConfig): ApplicationData? {
         try {
             val violationRules = mutableSetOf<String>()
             logger.info("finner applikasjon med navn={} i navnerom={}", dc.metadata.name, namespace)
@@ -60,14 +55,12 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             val booberDeployId = dc.metadata.labels["booberDeployId"]
             val name = dc.metadata.name
             val pods = openShiftApplicationService.getPods(namespace, name, managementPath, dc.spec.selector.mapValues { it.value }).map {
-                val links = if (it.podIP == null) {
-                    emptyMap()
-                } else if (managementPath == null) {
+                val links = if (managementPath == null) {
                     violationRules.add("MANAGEMENT_PATH_MISSING")
                     emptyMap()
                 } else {
                     try {
-                        managmentApplicationService.findManagementEndpoints(it.podIP, managementPath).also {
+                        managmentApplicationService.findManagementEndpoints(it.openShiftPodExcerpt.podIP, managementPath).also {
                             if (it.isEmpty()) {
                                 violationRules.add("MANAGEMENT_ENDPOINT_NOT_VALID_FORMAT")
                             }
@@ -111,7 +104,7 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                     null
                 }
 
-                it.copy(links = links, info = info, health = health)
+                it.copy(links = links)//, info = info, health = health)
             }
 
             val phase = openShiftApplicationService.getDeploymentPhase(name, namespace, versionNumber)
@@ -120,7 +113,8 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             val route = openShiftApplicationService.getRouteUrls(namespace, name)
 
             val auroraIs = openShiftApplicationService.getAuroraImageStream(dc, name, namespace)?.let {
-                val token = if (it.localImage) openShiftApplicationService.token else null
+                val token = null
+//                val token = if (it.localImage) openShiftApplicationService.token else null
 
                 val env = try {
                     val env = dockerService.getEnv(it.registryUrl, "${it.group}/${it.name}", it.tag, token)
@@ -139,11 +133,12 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                 it.copy(env = env)
             }
 
+//            val version = auroraIs?.env?.get("AURORA_VERSION")
+//                ?: if (pods.isNotEmpty()) pods[0].info?.at("/auroraVersion")?.asText() else null
+//                    ?: auroraIs?.tag
             val version = auroraIs?.env?.get("AURORA_VERSION")
-                ?: if (pods.isNotEmpty()) pods[0].info?.at("/auroraVersion")?.asText() else null
-                    ?: auroraIs?.tag
 
-            return AuroraApplicationInternal(
+            return ApplicationData(
                     name = name,
                     namespace = namespace,
                     deployTag = deployTag ?: "",
@@ -166,4 +161,5 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             return null
         }
     }
+
 }
