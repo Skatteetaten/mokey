@@ -1,0 +1,134 @@
+= Architecture
+
+= Introduction
+
+Mokey is an application that collects data about running applications on an Aurora OpenShift cluster and exposes that
+information via a ReST API in a cached and fast-to-access manner.
+
+The collection process is scheduled and parallelized, and information about the applications is updated in real time as
+the process progresses.
+
+This document is a description of the overall architecture of the module, divided into two main sections;
+<<core-concepts, the Core Concepts>> and <<api-resources, the API resources>>, describing the internal aspects of the
+module, and the externally exposed resources, respectively.
+
+
+[[core-concepts]]
+= Core Concepts (Internal)
+
+This section contains a description of the core concepts of the module, with implementation and domain model details.
+It does not contain any details of the resources that are exposed from the API, only the classes and objects that are
+used to support the internal data collection workflow; crawling.
+
+[[reference-data]]
+== Reference Data
+
+Classes and objects that represent static data and rules.
+
+Package: no.skatteetaten.aurora.mokey.model
+
+[[non-functional-requirement]]NonFunctionalRequirement (NFR):: A description of a non functional requirement for applications running on Aurora
+OpenShift.
+
+NfrViolationCause:: Maybe declare causes for NFR violations?
+
+NfrViolationFix:: Maybe declare fixes for NFR violations?
+
+
+[[application-data]]
+== Application Data
+
+All pieces of relevant data for an application based on the needs of the clients of the API. The data is collected from
+the Aurora OpenShift cluster, or calculated from it. Intended as an internal representation to be used as a base for
+external resources.
+
+Package: no.skatteetaten.aurora.mokey.model
+
+[[collected-data]]
+=== Collected Data
+
+Classes that represent data collected from the cluster for an application.
+
+ApplicationId:: name and Environment
+Environment:: name and an affiliation.
+ApplicationData:: Container object for all data collected for a given application. Gives access to calculated entities
+via properties.
+
+=== Calculated Entities
+
+Classes that represent concepts calculated from the <<collected-data, Collected Data>>.
+
+ApplicationNfrViolation:: A reference to an <<non-functional-requirement, NFR>> that has not been met for a given
+application with a description of why it was not met and what can be done to fix it.
+AuroraStatus:: The representation of the application status based on data collected from OpenShift and from the
+application itself from its Management Interface (ref needed).
+
+
+[[cache]]
+== Cache
+
+Used for generating API responses based on the ApplicationData. The cache contains an ApplicationData entry for each
+application running on the cluster and is populated by the Crawler (described next).
+
+
+== Crawler
+
+The core workflow for collecting Application Data from the Aurora OpenShift cluster and updating the Cache with the
+collected data.
+
+The Crawler starts by collecting a handle for each application running on the cluster, and then collects information for
+those applications in parallel. The collected information per application is called Application Data and the Cache
+is updated individually for each application as the collection process progresses.
+
+Upon completion of a crawl of the cluster, the Cache is updated to remove entries for applications that no longer exist.
+
+=== Implementation Details
+ApplicationDataCrawler:: Responsible for the core parallelized data collection workflow. Does not collect any data
+by itself and does not know of any of the underlying details of OpenShift or OpenShift objects. Handles parallelization
+and *triggering* of data collection and cache update. Workflow component.
+
+ApplicationDataService:: Responsible for collecting <<application-data, Application Data>> given an <<ApplicationId>>.
+Knows of OpenShift objects, but not how to collect them (done via OpenShiftService). Also knows how to identify which
+applications are currently running on the cluster.
+
+AuroraStatusCalculator:: Service object for determining the AuroraStatus for an application. Configured with different
+kinds of thresholds that affect status transitions (AVERAGE_RESTART_OBSERVE_THRESHOLD, AVERAGE_RESTART_ERROR_THRESHOLD,
+DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD).
+
+NfrAuditor:: Service object for determining if an application violates any of the current non functional requirements.
+Operates from a set of NfrRules.
+
+NfrRule:: Implementation of a check that will generate an NfrViolation if the <<non-functional-requirement, Nrf>>
+associated with the current NfrRule has been violated for a given Application Data instance.
+
+ApplicationManagementInterface:: Accessor object for the Management Interface for a given application. *Note:* This
+may quite possibly be better implemented as a Service.
+
+OpenShiftService:: Low level communication and serialization handling.
+
+
+=== Implementation Details
+ApplicationDataCacheService:: Responsible for containing the cache of the individual ApplicationData entries.
+
+
+== Crawler Schedule
+
+Triggers the Crawler based on a configurable schedule (periodic).
+
+
+
+[[api-resources]]
+= API Resources
+
+A ReST API with resource representations for different parts of the Application Data. All responses are generated from
+data in the Cache. The resources exposed by the API is detailed below.
+
+Package: no.skatteetaten.aurora.mokey.controller.resources
+
+NFR:: A representation of a <<non-functional-requirement, Non Functional Requirement>>.
+Application:: A basic handle for an application running on an Aurora OpenShift cluster with key identification properties.
+
+
+= Notes
+
+* We should proably model NFRs.
