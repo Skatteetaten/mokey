@@ -1,27 +1,28 @@
 package no.skatteetaten.aurora.mokey.model
 
-import no.skatteetaten.aurora.mokey.controller.ImageDetails
-import no.skatteetaten.aurora.mokey.controller.PodDetails
+data class PodDetails(
+    val openShiftPodExcerpt: OpenShiftPodExcerpt,
+    val links: Map<String, String>? = null
+)
 
-enum class AuroraStatusLevel(val level: Int) {
-    DOWN(4),
-    UNKNOWN(3),
-    OBSERVE(2),
-    OFF(1),
-    HEALTHY(0)
-}
+data class OpenShiftPodExcerpt(
+    val name: String,
+    val status: String,
+    val restartCount: Int = 0,
+    val ready: Boolean = false,
+    val podIP: String,
+    val startTime: String,
+    val deployment: String?
+)
 
-fun fromApplicationStatus(status: String): AuroraStatusLevel {
-    return when (status.toUpperCase()) {
-        "UP" -> AuroraStatusLevel.HEALTHY
-        "OBSERVE" -> AuroraStatusLevel.OBSERVE
-        "COMMENT" -> AuroraStatusLevel.OBSERVE
-        "UNKNOWN" -> AuroraStatusLevel.UNKNOWN
-        "OUT_OF_SERVICE" -> AuroraStatusLevel.DOWN
-        "DOWN" -> AuroraStatusLevel.DOWN
-        else -> AuroraStatusLevel.UNKNOWN
-    }
-}
+data class ImageDetails(
+    val buildTime: String,
+    val registryUrl: String,
+    val group: String,
+    val name: String,
+    val tag: String,
+    val env: Map<String, String>? = null
+)
 
 data class ApplicationData(
     val name: String,
@@ -29,7 +30,7 @@ data class ApplicationData(
     val deployTag: String,
     val booberDeployId: String?,
     val affiliation: String,
-    val targetReplicas: Int?,
+    val targetReplicas: Int,
     val availableReplicas: Int,
     val deploymentPhase: String?,
     val routeUrl: String?,

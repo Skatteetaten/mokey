@@ -23,25 +23,19 @@ class AuroraApplicationController(val auroraApplicationCacheService: AuroraAppli
     val logger: Logger = LoggerFactory.getLogger(AuroraApplicationController::class.java)
 
     @GetMapping("/application")
-    fun getAllApplications(@RequestParam("affiliation") affiliation: List<String>): List<AuroraApplication> {
+    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<AuroraApplication> {
         return auroraApplicationCacheService.getAppsInAffiliations(affiliation).map {
             AuroraApplication(
                 ApplicationId(it.name, Environment.fromNamespace(it.namespace)),
-                AuroraStatusCalculator.calculateStatus(it).level.toString(),
+                AuroraStatusCalculator.calculateStatus(it),
                 Version( it.deployTag, it.auroraVersion )
-
             )
         }
     }
 
-    @GetMapping("/public/affiliations")
-    fun publicApplications(): List<String> {
+    @GetMapping("/affiliations")
+    fun getAffiliations(): List<String> {
         return auroraApplicationCacheService.getAffiliations()
-    }
-
-    @GetMapping("/public")
-    fun publicApplications(@RequestParam("affiliation") affiliation: List<String>): List<ApplicationData> {
-        return auroraApplicationCacheService.getAppsInAffiliations(affiliation)
     }
 
     @GetMapping("/namespace/{namespace}/application/{application}")

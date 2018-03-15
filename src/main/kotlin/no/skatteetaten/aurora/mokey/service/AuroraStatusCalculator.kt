@@ -1,15 +1,14 @@
 package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.controller.AuroraStatus
-import no.skatteetaten.aurora.mokey.controller.PodDetails
+import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.DOWN
+import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.HEALTHY
+import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.OBSERVE
+import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.OFF
+import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.UNKNOWN
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.DOWN
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OBSERVE
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.UNKNOWN
-import no.skatteetaten.aurora.mokey.model.fromApplicationStatus
+import no.skatteetaten.aurora.mokey.model.PodDetails
 import java.time.Duration
 import java.time.Instant
 
@@ -23,7 +22,7 @@ object AuroraStatusCalculator {
 
         val lastDeployment = app.deploymentPhase
         val availableReplicas = app.availableReplicas
-        val targetReplicas = app.targetReplicas!!
+        val targetReplicas = app.targetReplicas
         if ("Failed".equals(lastDeployment, ignoreCase = true) && availableReplicas <= 0) {
             return AuroraStatus(DOWN, "DEPLOY_FAILED_NO_PODS")
         }
@@ -37,8 +36,7 @@ object AuroraStatusCalculator {
         }
 
         if (!"Complete".equals(lastDeployment, ignoreCase = true)) {
-            return AuroraStatus(HEALTHY,
-                "DEPLOYMENT_IN_PROGRESS")
+            return AuroraStatus(HEALTHY, "DEPLOYMENT_IN_PROGRESS")
         }
 
         if (targetReplicas > availableReplicas && availableReplicas == 0) {
@@ -88,8 +86,22 @@ object AuroraStatusCalculator {
         return AuroraStatus(UNKNOWN, "")
     }
 
+    fun fromApplicationStatus(status: String): AuroraStatusLevel {
+        return when (status.toUpperCase()) {
+            "UP" -> AuroraStatusLevel.HEALTHY
+            "OBSERVE" -> AuroraStatusLevel.OBSERVE
+            "COMMENT" -> AuroraStatusLevel.OBSERVE
+            "UNKNOWN" -> AuroraStatusLevel.UNKNOWN
+            "OUT_OF_SERVICE" -> AuroraStatusLevel.DOWN
+            "DOWN" -> AuroraStatusLevel.DOWN
+            else -> AuroraStatusLevel.UNKNOWN
+        }
+    }
+
     fun findPodStatus(pods: List<PodDetails>): AuroraStatusLevel {
-        return pods.map { fromApplicationStatus(it.openShiftPodExcerpt.status) }.toSortedSet().firstOrNull() ?: UNKNOWN
+        // TODO: Health endpoint
+        return HEALTHY
+//        return pods.map { fromApplicationStatus(it.openShiftPodExcerpt.status) }.toSortedSet().firstOrNull() ?: HEALTHY
     }
 
     fun findAverageRestarts(ap: List<PodDetails>): Int {
