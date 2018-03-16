@@ -30,7 +30,7 @@ class ApplicationControllerTest : AbstractSecurityControllerTest() {
     @Test
     @WithUserDetails
     fun `Get AuroraApplication given user with access`() {
-        val id = ApplicationId("reference", Environment("aurora", "aurora"))
+        val id = ApplicationId("reference", Environment("aurora", "aurora")).toString()
         given(cacheService.get(id)).willReturn(loadApplication("app.json"))
         given(openShiftService.currentUserHasAccess(NAMESPACE)).willReturn(true)
 

@@ -3,11 +3,10 @@ package no.skatteetaten.aurora.mokey.service
 import io.fabric8.openshift.api.model.DeploymentConfigBuilder
 import io.mockk.every
 import io.mockk.mockk
+import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
 import no.skatteetaten.aurora.mokey.model.Environment
-import no.skatteetaten.aurora.mokey.model.ApplicationData
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class AuroraApplicationCacheTest {
@@ -24,6 +23,7 @@ class AuroraApplicationCacheTest {
         .build()
 
     private val app = ApplicationData(
+        applicationId = ApplicationId(name, Environment.fromNamespace(project)),
         name = name,
         namespace = project,
         affiliation = "starwars",
@@ -43,9 +43,8 @@ class AuroraApplicationCacheTest {
 
         service.load(listOf(project))
 
-        assertTrue(service.cachePopulated)
         assertEquals(1, service.cache.size)
-        assertEquals(app, service.get(ApplicationId(name, Environment.fromNamespace(project))))
+        assertEquals(app, service.get(app.id.toString()))
     }
 
     @Test
@@ -66,8 +65,7 @@ class AuroraApplicationCacheTest {
         service.load(listOf(project))
         service.load(listOf(project2))
 
-        assertTrue(service.cachePopulated)
         assertEquals(1, service.cache.size)
-        assertEquals(app2, service.get(ApplicationId(name2, Environment.fromNamespace(project2))))
+        assertEquals(app2, service.get(app2.id.toString()))
     }
 }

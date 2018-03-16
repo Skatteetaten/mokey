@@ -56,7 +56,7 @@ class ApplicationConfig {
 @EnableScheduling
 class Main(val applicationCacheService: AuroraApplicationCacheService) : CommandLineRunner {
     override fun run(vararg args: String?) {
-        applicationCacheService.load(listOf("aurora"))
+        applicationCacheService.load(listOf("aurora", "paas", "sirius-utv1"))
     }
 
 }

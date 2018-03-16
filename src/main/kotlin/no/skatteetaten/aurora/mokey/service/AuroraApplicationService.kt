@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.micrometer.core.instrument.MeterRegistry
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.slf4j.Logger
@@ -60,13 +62,15 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             //                ?: if (pods.isNotEmpty()) pods[0].info?.at("/auroraVersion")?.asText() else null
             //                    ?: auroraIs?.tag
             val version = auroraIs?.env?.get("AURORA_VERSION")
+            val affiliation = dc.metadata.labels["affiliation"]
 
             return ApplicationData(
+                applicationId = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)),
                 name = name,
                 namespace = namespace,
                 deployTag = dc.metadata.labels["deployTag"] ?: "",
                 booberDeployId = dc.metadata.labels["booberDeployId"],
-                affiliation = dc.metadata.labels["affiliation"] ?: "",
+                affiliation = affiliation,
                 targetReplicas = dc.spec.replicas,
                 availableReplicas = dc.status.availableReplicas ?: 0,
                 deploymentPhase = phase,

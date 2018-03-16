@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationId
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
 import no.skatteetaten.aurora.mokey.service.AuroraStatusCalculator
@@ -27,9 +26,10 @@ class ApplicationController(val auroraApplicationCacheService: AuroraApplication
 fun toApplication(data: ApplicationData): Application {
     val environment = Environment.fromNamespace(data.namespace)
     return Application(
-        ApplicationId(data.name, environment).toString(),
-        data.name,
+        data.id,
+        data.affiliation,
         environment.name,
+        data.name,
         AuroraStatusCalculator.calculateStatus(data).copy(comment = "N/A"),
         Version(data.deployTag, data.auroraVersion)
     )

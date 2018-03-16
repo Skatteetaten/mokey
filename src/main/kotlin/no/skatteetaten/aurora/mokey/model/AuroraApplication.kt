@@ -1,5 +1,7 @@
 package no.skatteetaten.aurora.mokey.model
 
+import java.security.MessageDigest
+
 data class PodDetails(
     val openShiftPodExcerpt: OpenShiftPodExcerpt,
     val links: Map<String, String>? = null
@@ -24,10 +26,11 @@ data class ImageDetails(
 )
 
 data class ApplicationData(
+    private val applicationId: ApplicationId,
+    val deployTag: String,
     val name: String,
     val namespace: String,
-    val deployTag: String,
-    val affiliation: String,
+    val affiliation: String?,
     val targetReplicas: Int,
     val availableReplicas: Int,
     val booberDeployId: String? = null,
@@ -37,20 +40,37 @@ data class ApplicationData(
     val imageStream: ImageDetails? = null,
     val sprocketDone: String? = null,
     val auroraVersion: String? = null
-)
+) {
+    val id: String
+        get() = applicationId.toString().sha256("apsldga019238")
+}
 
 data class ApplicationId(val name: String, val environment: Environment) {
     override fun toString(): String {
-        return "${environment.affiliation}/${environment.name}/$name"
+        return listOf(environment.affiliation, environment.name, name).joinToString("/")
     }
 }
 
 data class Environment(val name: String, val affiliation: String) {
     companion object {
-        fun fromNamespace(namespace: String): Environment {
-            val affiliation = namespace.substringBefore("-")
-            val name = namespace.substringAfter("-")
-            return Environment(name, affiliation)
+        fun fromNamespace(namespace: String, affiliation: String? = null): Environment {
+            val theAffiliation = affiliation ?: namespace.substringBefore("-")
+            val name = namespace.replace("$theAffiliation-", "")
+            return Environment(name, theAffiliation)
         }
     }
+}
+
+private fun String.sha256(salt: String): String {
+    val HEX_CHARS = "0123456789ABCDEF"
+    val bytes = MessageDigest
+        .getInstance("SHA-256")
+        .digest((this + salt).toByteArray())
+    val result = StringBuilder(bytes.size * 2)
+    bytes.forEach {
+        val i = it.toInt()
+        result.append(HEX_CHARS[i shr 4 and 0x0f])
+        result.append(HEX_CHARS[i and 0x0f])
+    }
+    return result.toString()
 }

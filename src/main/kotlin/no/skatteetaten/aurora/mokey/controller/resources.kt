@@ -2,8 +2,9 @@ package no.skatteetaten.aurora.mokey.controller
 
 data class Application(
     val id: String,
+    val affiliation: String?,
+    val environment: String,
     val name: String,
-    val environmentName: String,
     val status: AuroraStatus,
     val version: Version
 )
