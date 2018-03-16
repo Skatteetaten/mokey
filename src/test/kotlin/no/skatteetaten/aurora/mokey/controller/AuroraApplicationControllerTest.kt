@@ -28,10 +28,11 @@ class AuroraApplicationControllerTest : AbstractSecurityControllerTest() {
     @Test
     @WithUserDetails
     fun `Get AuroraApplication given user with access`() {
-        given(cacheService.get("aurora/reference")).willReturn(loadApplication("app.json"))
+        val id = ApplicationId("reference", Environment("aurora", "aurora"))
+        given(cacheService.get(id)).willReturn(loadApplication("app.json"))
         given(openShiftService.currentUserHasAccess(NAMESPACE)).willReturn(true)
 
-        mockMvc.perform(get("/aurora/namespace/{namespace}/application/{name}", NAMESPACE, APP))
+        mockMvc.perform(get("/api/namespace/{namespace}/application/{name}", NAMESPACE, APP))
                 .andExpect(status().isOk)
     }
 }

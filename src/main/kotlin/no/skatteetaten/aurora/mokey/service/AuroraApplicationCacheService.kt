@@ -32,7 +32,7 @@ class AuroraApplicationCacheService(val openShiftService: OpenShiftService, val 
                 openShiftService.deploymentConfigs(namespace).map { dc ->
                     launch(mtContext) {
                         val appId = ApplicationId(dc.metadata.name, Environment.fromNamespace(namespace))
-                        val app = applicationService.handleApplication(namespace, dc)
+                        val app = applicationService.handleApplication(dc)
 
                         app?.let {
                             cache[appId] = app

@@ -38,7 +38,6 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
                 val registryUrl = "http://$registryUrlPath"
                 val tag = "latest"
                 return ImageDetails(
-                    buildTime = "",
                     name = dockerName,
                     registryUrl = registryUrl,
                     group = group,
@@ -56,7 +55,6 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
                         val (dockerName, tag) = nameAndTag.split(":")
                         val registryUrl = "https://$registryUrlPath"
                         ImageDetails(
-                            buildTime = "",
                             name = dockerName,
                             registryUrl = registryUrl,
                             group = group,

@@ -54,8 +54,6 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             val pods = openShiftApplicationService.getPods(dc).map(handleManagementInterface(managementPath, violationRules))
             val phase = openShiftApplicationService.getDeploymentPhase(name, namespace, versionNumber)
 
-            //TODO: Will only fetch main Route. Do we need labels here? label app=name
-            val route = openShiftApplicationService.getRouteUrls(namespace, name)
             val auroraIs = openShiftApplicationService.getAuroraImageStream(dc)?.let(handleDockerEnv(violationRules))
 
             //            val version = auroraIs?.env?.get("AURORA_VERSION")
@@ -72,12 +70,11 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                 targetReplicas = dc.spec.replicas,
                 availableReplicas = dc.status.availableReplicas ?: 0,
                 deploymentPhase = phase,
-                routeUrl = route,
                 managementPath = managementPath,
                 pods = pods,
                 imageStream = auroraIs,
                 sprocketDone = annotations["sprocket.sits.no-deployment-config.done"],
-                violationRules = violationRules,
+//                violationRules = violationRules,
                 auroraVersion = version ?: ""
             )
         } catch (e: Exception) {

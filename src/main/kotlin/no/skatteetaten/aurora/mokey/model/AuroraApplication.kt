@@ -16,7 +16,6 @@ data class OpenShiftPodExcerpt(
 )
 
 data class ImageDetails(
-    val buildTime: String,
     val registryUrl: String,
     val group: String,
     val name: String,
@@ -28,16 +27,14 @@ data class ApplicationData(
     val name: String,
     val namespace: String,
     val deployTag: String,
-    val booberDeployId: String?,
     val affiliation: String,
     val targetReplicas: Int,
     val availableReplicas: Int,
-    val deploymentPhase: String?,
-    val routeUrl: String?,
-    val managementPath: String?,
-    val pods: List<PodDetails>,
-    val imageStream: ImageDetails?,
-    val sprocketDone: String?,
-    val violationRules: MutableSet<String>,
-    val auroraVersion: String
+    val booberDeployId: String? = null,
+    val deploymentPhase: String? = null,
+    val managementPath: String? = null,
+    val pods: List<PodDetails> = emptyList(),
+    val imageStream: ImageDetails? = null,
+    val sprocketDone: String? = null,
+    val auroraVersion: String? = null
 )
