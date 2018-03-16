@@ -3,8 +3,8 @@ package no.skatteetaten.aurora.mokey.service
 import io.fabric8.openshift.api.model.DeploymentConfigBuilder
 import io.mockk.every
 import io.mockk.mockk
-import no.skatteetaten.aurora.mokey.controller.ApplicationId
-import no.skatteetaten.aurora.mokey.controller.Environment
+import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue

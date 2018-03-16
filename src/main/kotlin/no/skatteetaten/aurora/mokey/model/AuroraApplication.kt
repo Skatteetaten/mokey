@@ -38,3 +38,19 @@ data class ApplicationData(
     val sprocketDone: String? = null,
     val auroraVersion: String? = null
 )
+
+data class ApplicationId(val name: String, val environment: Environment) {
+    override fun toString(): String {
+        return "${environment.affiliation}/${environment.name}/$name"
+    }
+}
+
+data class Environment(val name: String, val affiliation: String) {
+    companion object {
+        fun fromNamespace(namespace: String): Environment {
+            val affiliation = namespace.substringBefore("-")
+            val name = namespace.substringAfter("-")
+            return Environment(name, affiliation)
+        }
+    }
+}

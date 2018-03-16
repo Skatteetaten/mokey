@@ -3,8 +3,8 @@ package no.skatteetaten.aurora.mokey.service
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
-import no.skatteetaten.aurora.mokey.controller.ApplicationId
-import no.skatteetaten.aurora.mokey.controller.Environment
+import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

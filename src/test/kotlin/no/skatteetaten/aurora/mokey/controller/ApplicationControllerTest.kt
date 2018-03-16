@@ -1,6 +1,8 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
+import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
 import no.skatteetaten.aurora.mokey.service.OpenShiftService
 import org.junit.jupiter.api.Test
@@ -12,9 +14,9 @@ import org.springframework.security.test.context.support.WithUserDetails
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@WebMvcTest(AuroraApplicationController::class)
+@WebMvcTest(ApplicationController::class)
 @AutoConfigureWebClient
-class AuroraApplicationControllerTest : AbstractSecurityControllerTest() {
+class ApplicationControllerTest : AbstractSecurityControllerTest() {
 
     private val NAMESPACE = "aurora"
     private val APP = "reference"
