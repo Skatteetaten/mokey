@@ -1,6 +1,7 @@
 import no.skatteetaten.aurora.gradle.plugins.AuroraPlugin
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
     val kotlinVersion = "1.2.30"
@@ -21,6 +22,18 @@ buildscript {
     dependencies {
         classpath("no.skatteetaten.aurora.gradle.plugins:aurora-gradle-plugin:1.2.1")
     }
+}
+
+val jar: Jar by tasks
+jar.enabled = true
+
+val bootJar: BootJar by tasks
+bootJar.enabled = false
+bootJar.classifier="boot"
+
+
+springBoot {
+    buildInfo()
 }
 
 extra["aurora"]= mapOf(
@@ -69,9 +82,13 @@ kotlin {
     experimental.coroutines = Coroutines.ENABLE
 }
 
-
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions {
+        jvmTarget="1.8"
+        //freeCompilerArgs = listOf("-Xjsr305=strict")
+
+
+    }
 }
 
 val test by tasks.getting(Test::class) {
