@@ -24,7 +24,11 @@ buildscript {
 }
 
 ext {
-    set("aurora", mapOf("requireStaging" to false))
+    set("aurora", mapOf(
+            "requireStaging" to false,
+            "applySpockSupport" to false
+
+    ))
 }
 
 apply {
