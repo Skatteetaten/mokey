@@ -23,13 +23,12 @@ buildscript {
     }
 }
 
-apply {
-    plugin("no.skatteetaten.plugins.aurora")
-}
-
-
 ext {
     set("aurora", mapOf("requireStaging" to false))
+}
+
+apply {
+    plugin("no.skatteetaten.plugins.aurora")
 }
 
 group = "no.skatteetaten.aurora"
