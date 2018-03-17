@@ -23,13 +23,10 @@ buildscript {
     }
 }
 
-ext {
-    set("aurora", mapOf(
+extra["aurora"]= mapOf(
             "requireStaging" to false,
             "applySpockSupport" to false
-
-    ))
-}
+)
 
 apply {
     plugin("no.skatteetaten.plugins.aurora")
