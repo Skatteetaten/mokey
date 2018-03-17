@@ -5,8 +5,8 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
     val kotlinVersion = "1.2.30"
-    id("org.jetbrains.kotlin.jvm") version kotlinVersion
-    id("org.jetbrains.kotlin.plugin.spring") version kotlinVersion
+    kotlin("jvm") version kotlinVersion
+    kotlin("plugin.spring") version kotlinVersion
     id("io.spring.dependency-management") version "1.0.4.RELEASE"
     id("nebula.info") version "3.6.0"
     id("com.github.ksoichiro.build.info") version "0.2.0"
