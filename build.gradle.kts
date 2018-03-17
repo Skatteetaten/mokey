@@ -5,11 +5,15 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
     val kotlinVersion = "1.2.30"
-    id("org.springframework.boot") version "2.0.0.RELEASE"
     id("org.jetbrains.kotlin.jvm") version kotlinVersion
     id("org.jetbrains.kotlin.plugin.spring") version kotlinVersion
     id("io.spring.dependency-management") version "1.0.4.RELEASE"
+    id("nebula.info") version "3.6.0"
+    id("com.github.ksoichiro.build.info") version "0.2.0"
+
+
 }
+
 
 buildscript {
 
@@ -21,19 +25,15 @@ buildscript {
 
     dependencies {
         classpath("no.skatteetaten.aurora.gradle.plugins:aurora-gradle-plugin:1.2.1")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.0.RELEASE")
+
     }
+
 }
-
-val jar: Jar by tasks
-jar.enabled = true
-
-val bootJar: BootJar by tasks
-bootJar.enabled = false
-bootJar.classifier="boot"
-
-
-springBoot {
-    buildInfo()
+dependencyManagement {
+    imports {
+        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    }
 }
 
 extra["aurora"]= mapOf(
