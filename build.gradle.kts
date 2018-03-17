@@ -1,8 +1,16 @@
+import no.skatteetaten.aurora.gradle.plugins.AuroraPlugin
+import org.jetbrains.kotlin.gradle.dsl.Coroutines
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+plugins {
+    val kotlinVersion = "1.2.30"
+    id("org.springframework.boot") version "2.0.0.RELEASE"
+    id("org.jetbrains.kotlin.jvm") version kotlinVersion
+    id("org.jetbrains.kotlin.plugin.spring") version kotlinVersion
+    id("io.spring.dependency-management") version "1.0.4.RELEASE"
+}
+
 buildscript {
-    var kotlin_version: String by extra
-    kotlin_version = "1.2.30"
 
     repositories {
         mavenCentral()
@@ -11,27 +19,19 @@ buildscript {
     }
 
     dependencies {
-        classpath(kotlin("gradle-plugin", kotlin_version))
-        classpath(kotlin("noarg", kotlin_version))
-        classpath(kotlin("allopen", kotlin_version))
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.0.RELEASE")
         classpath("no.skatteetaten.aurora.gradle.plugins:aurora-gradle-plugin:1.2.1")
     }
 }
 
 apply {
-    plugin("kotlin")
-    plugin("kotlin-spring")
-    plugin("org.springframework.boot")
-    plugin("io.spring.dependency-management")
     plugin("no.skatteetaten.plugins.aurora")
 }
 
-plugins {
-    java
+configure<AuroraPlugin> {
+    ext {
+        aurora.requireStaging = false
+    }
 }
-
-val kotlin_version: String by extra
 
 group = "no.skatteetaten.aurora"
 
@@ -42,10 +42,10 @@ repositories {
 }
 
 dependencies {
-    compile(kotlin("reflect", kotlin_version))
-    compile(kotlin("stdlib-jdk8", kotlin_version))
+    compile(kotlin("reflect"))
+    compile(kotlin("stdlib-jdk8"))
     compile("com.fasterxml.jackson.module:jackson-module-kotlin")
-    compile("no.skatteetaten.aurora.springboot:aurora-spring-boot2-starter:1.0.0")
+    compile("no.skatteetaten.aurora.springboot:aurora-spring-boot2-starter:1.1.0")
     compile("io.fabric8:openshift-client:3.1.8")
     compile("io.fabric8:kubernetes-model:2.0.4")
     compile("org.springframework.retry:spring-retry")
@@ -56,10 +56,18 @@ dependencies {
     testCompile("org.springframework.security:spring-security-test")
     testCompile("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testCompile("io.fabric8:openshift-server-mock:3.1.8")
-    testCompile("org.springframework.boot:spring-boot-starter-test")
+    testCompile("org.springframework.boot:spring-boot-starter-test") {
+        exclude(module = "junit")
+    }
     testCompile("io.mockk:mockk:1.7.10")
 
-    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.1.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")
+    // testRuntime("org.junit.jupiter:junit-jupiter-engine:5.1.0")
+}
+
+kotlin {
+    experimental.coroutines = Coroutines.ENABLE
 }
 
 
