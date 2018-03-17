@@ -27,10 +27,9 @@ apply {
     plugin("no.skatteetaten.plugins.aurora")
 }
 
-configure<AuroraPlugin> {
-    ext {
-        aurora.requireStaging = false
-    }
+
+ext {
+    set("aurora", mapOf("requireStaging" to false))
 }
 
 group = "no.skatteetaten.aurora"
