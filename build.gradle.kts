@@ -6,7 +6,6 @@ plugins {
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
     id("org.springframework.boot") version "2.0.0.RELEASE" apply false
-    id("io.spring.dependency-management") version "1.0.4.RELEASE"
     id("nebula.info") version "3.6.0"
     id("com.github.ksoichiro.build.info") version "0.2.0"
 }
