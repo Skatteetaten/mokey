@@ -7,11 +7,10 @@ plugins {
     val kotlinVersion = "1.2.30"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
+    id("org.springframework.boot") version "2.0.0.RELEASE" apply false
     id("io.spring.dependency-management") version "1.0.4.RELEASE"
     id("nebula.info") version "3.6.0"
     id("com.github.ksoichiro.build.info") version "0.2.0"
-
-
 }
 
 
@@ -25,8 +24,6 @@ buildscript {
 
     dependencies {
         classpath("no.skatteetaten.aurora.gradle.plugins:aurora-gradle-plugin:1.2.1")
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.0.RELEASE")
-
     }
 
 }
@@ -42,6 +39,7 @@ extra["aurora"]= mapOf(
 )
 
 apply {
+    plugin("io.spring.dependency-management")
     plugin("no.skatteetaten.plugins.aurora")
 }
 
@@ -66,7 +64,6 @@ dependencies {
 
     testCompile("org.springframework.restdocs:spring-restdocs-mockmvc")
     testCompile("org.springframework.security:spring-security-test")
-    testCompile("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testCompile("io.fabric8:openshift-server-mock:3.1.8")
     testCompile("org.springframework.boot:spring-boot-starter-test") {
         exclude(module = "junit")
