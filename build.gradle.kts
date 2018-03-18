@@ -1,7 +1,5 @@
-import no.skatteetaten.aurora.gradle.plugins.AuroraPlugin
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
     val kotlinVersion = "1.2.30"
@@ -83,8 +81,6 @@ tasks.withType<KotlinCompile> {
     kotlinOptions {
         jvmTarget="1.8"
         //freeCompilerArgs = listOf("-Xjsr305=strict")
-
-
     }
 }
 
