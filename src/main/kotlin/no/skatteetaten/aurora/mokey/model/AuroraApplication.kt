@@ -3,7 +3,7 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.databind.JsonNode
 
 
-data class AuroraPublicApplication @JvmOverloads constructor(
+data class AuroraPublicApplication(
         val name: String,
         val namespace: String,
         val affiliation: String,
@@ -13,7 +13,7 @@ data class AuroraPublicApplication @JvmOverloads constructor(
 )
 
 
-data class AuroraApplication @JvmOverloads constructor(
+data class AuroraApplication(
         val name: String,
         val namespace: String,
         val affiliation: String? = null,
