@@ -2,7 +2,7 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.Environment
-import no.skatteetaten.aurora.mokey.service.CachedApplicationDataService
+import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.mokey.service.AuroraStatusCalculator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api")
-class ApplicationController(val cachedApplicationDataService: CachedApplicationDataService) {
+class ApplicationController(val applicationDataService: ApplicationDataService) {
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationController::class.java)
 
     @GetMapping("/application")
     fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<Application> {
-        return cachedApplicationDataService.findAllApplicationDataByAffiliations(affiliation).map(::toApplication)
+        return applicationDataService.findAllApplicationData(affiliation).map(::toApplication)
     }
 }
 

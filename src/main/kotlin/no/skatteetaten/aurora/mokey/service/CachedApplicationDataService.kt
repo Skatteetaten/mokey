@@ -9,11 +9,25 @@ import org.springframework.util.StopWatch
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
-class CachedApplicationDataService(val openShiftApplicationDataService: OpenShiftApplicationDataService) {
+class CachedApplicationDataService(val openShiftApplicationDataService: OpenShiftApplicationDataService): ApplicationDataService {
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     val logger: Logger = LoggerFactory.getLogger(CachedApplicationDataService::class.java)
+
+    override fun getAffiliations(): List<String> {
+        return cache.mapNotNull { it.value.affiliation }
+                .filter(String::isNotBlank)
+                .distinct()
+    }
+
+    override fun findApplicationDataById(id: String): ApplicationData? {
+        return cache[id]
+    }
+
+    override fun findAllApplicationData(affiliation: List<String>): List<ApplicationData> {
+        return cache.filter { affiliation.contains(it.value.affiliation) }.map { it.value }
+    }
 
     // @Scheduled(fixedRate = 300000, initialDelay = 360)
     fun refreshCache(environments: List<Environment>? = null) {
@@ -52,19 +66,5 @@ class CachedApplicationDataService(val openShiftApplicationDataService: OpenShif
         val keys = cache.keys().toList()
         logger.debug("cache keys={}", keys)
         logger.info("number of apps={} time={}", keys.size, time.totalTimeSeconds)
-    }
-
-    fun getAffiliations(): List<String> {
-        return cache.mapNotNull { it.value.affiliation }
-                .filter(String::isNotBlank)
-                .distinct()
-    }
-
-    fun findApplicationDataById(id: String): ApplicationData? {
-        return cache[id]
-    }
-
-    fun findAllApplicationDataByAffiliations(affiliation: List<String>): List<ApplicationData> {
-        return cache.filter { affiliation.contains(it.value.affiliation) }.map { it.value }
     }
 }
