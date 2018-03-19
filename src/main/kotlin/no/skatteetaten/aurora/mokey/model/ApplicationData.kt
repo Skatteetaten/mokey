@@ -5,7 +5,7 @@ import no.skatteetaten.aurora.mokey.controller.AuroraStatus
 import java.security.MessageDigest
 
 data class ApplicationData(
-        private val applicationId: ApplicationId,
+        val id: String,
         val auroraStatus: AuroraStatus,
         val deployTag: String,
         val name: String,
@@ -17,10 +17,7 @@ data class ApplicationData(
         val imageDetails: ImageDetails? = null,
         val deployDetails: DeployDetails,
         val sprocketDone: String? = null
-) {
-    val id: String
-        get() = applicationId.toString().sha256("apsldga019238")
-}
+)
 
 data class PodDetails(
         val openShiftPodExcerpt: OpenShiftPodExcerpt,
@@ -52,20 +49,6 @@ data class ImageDetails(
 
     val imageBuildTime: String
         get() = environmentVariables["IMAGE_BUILD_TIME"] ?: ""
-}
-
-private fun String.sha256(salt: String): String {
-    val HEX_CHARS = "0123456789ABCDEF"
-    val bytes = MessageDigest
-            .getInstance("SHA-256")
-            .digest((this + salt).toByteArray())
-    val result = StringBuilder(bytes.size * 2)
-    bytes.forEach {
-        val i = it.toInt()
-        result.append(HEX_CHARS[i shr 4 and 0x0f])
-        result.append(HEX_CHARS[i and 0x0f])
-    }
-    return result.toString()
 }
 
 data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)

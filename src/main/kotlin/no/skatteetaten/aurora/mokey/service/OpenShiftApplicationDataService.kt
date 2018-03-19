@@ -8,6 +8,7 @@ import no.skatteetaten.aurora.mokey.model.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.security.MessageDigest
 
 @Service
 class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
@@ -63,8 +64,9 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
             val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
             val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
+            val id = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)).toString().sha256("apsldga019238")
             return ApplicationData(
-                    applicationId = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)),
+                    id = id,
                     auroraStatus = auroraStatus,
                     name = name,
                     namespace = namespace,
@@ -136,4 +138,18 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
             it.metadata.annotations["openshift.io/deployment.phase"]
         }
     }
+}
+
+private fun String.sha256(salt: String): String {
+    val HEX_CHARS = "0123456789ABCDEF"
+    val bytes = MessageDigest
+            .getInstance("SHA-256")
+            .digest((this + salt).toByteArray())
+    val result = StringBuilder(bytes.size * 2)
+    bytes.forEach {
+        val i = it.toInt()
+        result.append(HEX_CHARS[i shr 4 and 0x0f])
+        result.append(HEX_CHARS[i and 0x0f])
+    }
+    return result.toString()
 }
