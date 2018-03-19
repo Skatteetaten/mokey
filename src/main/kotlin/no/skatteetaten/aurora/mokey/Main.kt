@@ -58,7 +58,7 @@ class ApplicationConfig {
 class Main(val applicationDataService: CachedApplicationDataService) : CommandLineRunner {
     override fun run(vararg args: String?) {
         val environments = listOf("aurora", "paas", "sirius-utv1").map { Environment.fromNamespace(it) }
-        applicationDataService.refreshCache(environments)
+        applicationDataService.refreshCache(/*environments*/)
     }
 
 }

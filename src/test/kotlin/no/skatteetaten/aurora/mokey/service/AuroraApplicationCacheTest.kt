@@ -21,7 +21,7 @@ class AuroraApplicationCacheTest {
     private val dc = DeploymentConfigBuilder()
         .withNewMetadata().withName(name).withNamespace(project).endMetadata()
         .build()
-
+/*
     private val app = ApplicationData(
         applicationId = ApplicationId(name, Environment.fromNamespace(project)),
         name = name,
@@ -61,5 +61,5 @@ class AuroraApplicationCacheTest {
 
         assertEquals(1, service.cache.size)
         assertEquals(app2, service.findApplicationDataById(app2.id.toString()))
-    }
+    }*/
 }

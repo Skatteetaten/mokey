@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import no.skatteetaten.aurora.mokey.service.AuroraStatusCalculator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
@@ -26,12 +25,12 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
 fun toApplication(data: ApplicationData): ApplicationResource {
     val environment = Environment.fromNamespace(data.namespace)
     return ApplicationResource(
-        data.id,
-        data.affiliation,
-        environment.name,
-        data.name,
-        AuroraStatusCalculator.calculateStatus(data).copy(comment = "N/A"),
-        Version(data.deployTag, data.imageDetails?.auroraVersion)
+            data.id,
+            data.affiliation,
+            environment.name,
+            data.name,
+            data.auroraStatus.copy(comment = "N/A"),
+            Version(data.deployTag, data.imageDetails?.auroraVersion)
     )
 }
 

@@ -2,23 +2,21 @@ package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.controller.AuroraStatus
 import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel
-import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.DOWN
-import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.HEALTHY
-import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.OBSERVE
-import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.OFF
-import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.UNKNOWN
-import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.*
+import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.PodDetails
+import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
 
-object AuroraStatusCalculator {
+@Service
+class AuroraStatusCalculator {
 
     val AVERAGE_RESTART_OBSERVE_THRESHOLD = 20
     val AVERAGE_RESTART_ERROR_THRESHOLD = 100
     val DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD = 2
 
-    fun calculateStatus(app: ApplicationData): AuroraStatus {
+    fun calculateStatus(app: DeployDetails, pods: List<PodDetails>): AuroraStatus {
 
         val lastDeployment = app.deploymentPhase
         val availableReplicas = app.availableReplicas
@@ -44,12 +42,12 @@ object AuroraStatusCalculator {
         }
 
         val threshold = Instant.now().minus(Duration.ofHours(DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD.toLong()))
-        if (hasOldPodsWithDifferentDeployments(app.pods, threshold)) {
+        if (hasOldPodsWithDifferentDeployments(pods, threshold)) {
 
             return AuroraStatus(DOWN, "DIFFERENT_DEPLOYMENTS")
         }
 
-        val averageRestarts = findAverageRestarts(app.pods)
+        val averageRestarts = findAverageRestarts(pods)
 
         if (averageRestarts > AVERAGE_RESTART_ERROR_THRESHOLD) {
             return AuroraStatus(DOWN, "AVERAGE_RESTART_ABOVE_THRESHOLD")
@@ -73,7 +71,7 @@ object AuroraStatusCalculator {
         }
 
         //TODO: Hva gjør hvis hvis denne er Unknown, vi ikke får svar?
-        val podStatus = findPodStatus(app.pods)
+        val podStatus = findPodStatus(pods)
 
         if (podStatus != HEALTHY) {
             return AuroraStatus(podStatus, "POD_HEALTH_CHECK")
