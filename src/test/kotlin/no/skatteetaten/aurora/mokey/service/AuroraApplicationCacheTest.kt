@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test
 
 class AuroraApplicationCacheTest {
     private val openShiftService = mockk<OpenShiftService>()
-    private val applicationService = mockk<AuroraApplicationService>()
+    private val applicationService = mockk<OpenShiftApplicationDataService>()
 
-    private val service = AuroraApplicationCacheService(openShiftService, applicationService)
+    private val service = CachedApplicationDataService(applicationService)
 
     private val project = "starwars-jedi"
     private val name = "yoda"
@@ -39,12 +39,10 @@ class AuroraApplicationCacheTest {
     @Test
     fun `should scrape deploymentConfigs and add cache`() {
         every { openShiftService.deploymentConfigs(project) } returns listOf(dc)
-        every { applicationService.handleApplication(dc) } returns app
-
-        service.load(listOf(project))
+        every { applicationService.createApplicationData(dc) } returns app
 
         assertEquals(1, service.cache.size)
-        assertEquals(app, service.get(app.id.toString()))
+        assertEquals(app, service.findApplicationDataById(app.id.toString()))
     }
 
     @Test
@@ -58,14 +56,11 @@ class AuroraApplicationCacheTest {
         val app2 = app.copy(name=name2, namespace = project2)
 
         every { openShiftService.deploymentConfigs(project) } returns listOf(dc)
-        every { applicationService.handleApplication(dc) } returns app
+        every { applicationService.createApplicationData(dc) } returns app
         every { openShiftService.deploymentConfigs(project2) } returns listOf(dc2)
-        every { applicationService.handleApplication(dc2) } returns app2
-
-        service.load(listOf(project))
-        service.load(listOf(project2))
+        every { applicationService.createApplicationData(dc2) } returns app2
 
         assertEquals(1, service.cache.size)
-        assertEquals(app2, service.get(app2.id.toString()))
+        assertEquals(app2, service.findApplicationDataById(app2.id.toString()))
     }
 }

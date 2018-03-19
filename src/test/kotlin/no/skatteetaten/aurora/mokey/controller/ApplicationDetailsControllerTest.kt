@@ -4,7 +4,7 @@ import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
 import no.skatteetaten.aurora.mokey.model.Environment
-import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
+import no.skatteetaten.aurora.mokey.service.CachedApplicationDataService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient
@@ -21,12 +21,12 @@ class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
     private val ID = "123"
 
     @MockBean
-    lateinit var auroraApplicationCacheService: AuroraApplicationCacheService
+    lateinit var cachedApplicationDataService: CachedApplicationDataService
 
     @Test
     @WithUserDetails
     fun `Get AuroraDetails given user with access`() {
-        given(auroraApplicationCacheService.get(ID)).willReturn(
+        given(cachedApplicationDataService.findApplicationDataById(ID)).willReturn(
                 ApplicationData(
                         ApplicationId("name", Environment("env", "affiliation")),
                         "deployTag",

@@ -5,7 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
-import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
+import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.service.CachedApplicationDataService
 import okhttp3.OkHttpClient
 import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.SpringApplication
@@ -44,8 +45,8 @@ class ApplicationConfig {
     private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
 
         val okHttpClientBuilder = OkHttpClient().newBuilder()
-            .readTimeout(readTimeout, TimeUnit.SECONDS)
-            .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
+                .readTimeout(readTimeout, TimeUnit.SECONDS)
+                .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
 
 
         return OkHttp3ClientHttpRequestFactory(okHttpClientBuilder.build())
@@ -54,9 +55,10 @@ class ApplicationConfig {
 
 @SpringBootApplication
 @EnableScheduling
-class Main(val applicationCacheService: AuroraApplicationCacheService) : CommandLineRunner {
+class Main(val applicationDataService: CachedApplicationDataService) : CommandLineRunner {
     override fun run(vararg args: String?) {
-        applicationCacheService.load(listOf("aurora", "paas", "sirius-utv1"))
+        val environments = listOf("aurora", "paas", "sirius-utv1").map { Environment.fromNamespace(it) }
+        applicationDataService.refreshCache(environments)
     }
 
 }

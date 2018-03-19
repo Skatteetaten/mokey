@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
+import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.service.CachedApplicationDataService
 import no.skatteetaten.aurora.mokey.service.OpenShiftService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -10,16 +11,15 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/load")
 //@Profile("local")
-class LocalCacheController(val auroraApplicationCacheService: AuroraApplicationCacheService, val openShiftService: OpenShiftService) {
+class LocalCacheController(val cachedApplicationDataService: CachedApplicationDataService, val openShiftService: OpenShiftService) {
 
     @GetMapping()
-    fun get(@RequestParam namespace: List<String>) {
-        auroraApplicationCacheService.load(namespace)
+    fun get(@RequestParam namespaces: List<String>) {
+        cachedApplicationDataService.refreshCache(namespaces.map { Environment.fromNamespace(it) })
     }
 
     @GetMapping("/all")
     fun all() {
-        val projects = openShiftService.projects().map { it.metadata.name }
-        auroraApplicationCacheService.load(projects)
+        cachedApplicationDataService.refreshCache()
     }
 }
