@@ -22,6 +22,10 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
 
     val logger: Logger = LoggerFactory.getLogger(OpenShiftApplicationDataService::class.java)
 
+    fun findAllEnvironments(): List<Environment> {
+        return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
+    }
+
     fun findAllApplications(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
         return runBlocking(mtContext) {
             val map = environments
@@ -33,10 +37,6 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
                     .map { it.await() }
             map
         }
-    }
-
-    private fun findAllEnvironments(): List<Environment> {
-        return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
     }
 
     fun createApplicationData(dc: DeploymentConfig): ApplicationData {
@@ -66,21 +66,15 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
             val pods = getPods(dc).map(handleManagementInterface(managementPath, violationRules))
             val phase = getDeploymentPhase(name, namespace, versionNumber)
 
-            val auroraIs = getAuroraImageStream(dc)
+            val imageDetails = getImageDetails(dc)
 
-            val deployTag = dc.spec.triggers.find { it.type == "ImageChange" }
-                    ?.imageChangeParams?.from?.name?.split(":")?.lastOrNull()
-
-            val version = getAuroraVersion(dc, deployTag ?: "default")
-                    ?: if (pods.isNotEmpty()) pods[0].info?.at("/auroraVersion")?.asText() else null
-                            ?: auroraIs?.tag
             val affiliation = dc.metadata.labels["affiliation"]
 
             return ApplicationData(
                     applicationId = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)),
                     name = name,
                     namespace = namespace,
-                    deployTag = dc.metadata.labels["deployTag"] ?: deployTag ?: "",
+                    deployTag = dc.metadata.labels["deployTag"] ?: "",
                     booberDeployId = dc.metadata.labels["booberDeployId"],
                     affiliation = affiliation,
                     targetReplicas = dc.spec.replicas,
@@ -88,10 +82,9 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
                     deploymentPhase = phase,
                     managementPath = managementPath,
                     pods = pods,
-                    imageStream = auroraIs,
-                    sprocketDone = annotations["sprocket.sits.no-deployment-config.done"],
+                    imageDetails = imageDetails,
+                    sprocketDone = annotations["sprocket.sits.no-deployment-config.done"]
 //                violationRules = violationRules,
-                    auroraVersion = version ?: ""
             )
         } catch (e: Exception) {
             logger.error("Failed getting application name={}, namepsace={} message={}", name, namespace, e.message, e)
@@ -155,62 +148,18 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
         }
     }
 
-    fun getAuroraVersion(dc: DeploymentConfig, deployTag: String): String? {
+    fun getImageDetails(dc: DeploymentConfig): ImageDetails? {
+
+        val deployTag = dc.spec.triggers.find { it.type == "ImageChange" }
+                ?.imageChangeParams?.from?.name?.split(":")?.lastOrNull()
+                ?: return null
+
         val tag = openshiftService.imageStreamTag(dc.metadata.namespace, dc.metadata.name, deployTag)
-        return tag?.auroraVersion
-    }
-
-    fun getAuroraImageStream(dc: DeploymentConfig): ImageDetails? {
-        val trigger = dc.spec.triggers
-                .filter { it.type == "ImageChange" }
-                .map { it.imageChangeParams.from }
-                .firstOrNull { it.kind == "ImageStreamTag" } ?: return null
-
-        val triggerName = trigger.name
-
-        //we need another way to find this.
-        //need to find out if we have a development flow.
-        val development = triggerName == "${dc.metadata.name}:latest"
-        val deployTag = triggerName.split(":").lastOrNull()
-
-        return openshiftService.imageStream(dc.metadata.namespace, dc.metadata.name)?.let {
-            if (development) {
-                val repoUrl = it.status.dockerImageRepository
-                val (registryUrlPath, group, dockerName) = repoUrl.split("/")
-
-                val registryUrl = "http://$registryUrlPath"
-                val tag = "latest"
-                return ImageDetails(
-                        name = dockerName,
-                        registryUrl = registryUrl,
-                        group = group,
-                        tag = tag,
-                        env = null
-                )
-            }
-
-            return it.spec.tags.filter { it.name == deployTag }
-                    .map { it.from.name }
-                    .firstOrNull()
-                    ?.let {
-                        try {
-                            val (registryUrlPath, group, nameAndTag) = it.split("/")
-                            val (dockerName, tag) = nameAndTag.split(":")
-                            val registryUrl = "https://$registryUrlPath"
-                            ImageDetails(
-                                    name = dockerName,
-                                    registryUrl = registryUrl,
-                                    group = group,
-                                    tag = tag,
-                                    env = null
-                            )
-                        } catch (e: Exception) {
-                            //TODO: Some urls might not be correct here, postgres straight from dockerHub ski-utv/ski2-test
-                            logger.warn("Error splitting up deployTag $it")
-                            null
-                        }
-                    }
-        }
+        val environmentVariables = tag?.image?.dockerImageMetadata?.containerConfig?.env?.map {
+            val (key, value) = it.split("=")
+            key to value
+        }?.toMap()
+        return ImageDetails(tag?.image?.dockerImageReference, environmentVariables ?: mapOf())
     }
 
     fun getPods(dc: DeploymentConfig): List<PodDetails> {

@@ -29,7 +29,6 @@ class AuroraApplicationCacheTest {
         affiliation = "starwars",
         targetReplicas = 1,
         availableReplicas = 1,
-        auroraVersion = "1.0.1-b1.0.0-flange-1.8.0",
         booberDeployId = "roflmao12",
         deploymentPhase = "Completed",
         deployTag = "1",

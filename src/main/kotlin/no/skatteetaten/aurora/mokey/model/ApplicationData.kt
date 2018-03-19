@@ -15,9 +15,8 @@ data class ApplicationData(
         val deploymentPhase: String? = null,
         val managementPath: String? = null,
         val pods: List<PodDetails> = emptyList(),
-        val imageStream: ImageDetails? = null,
-        val sprocketDone: String? = null,
-        val auroraVersion: String? = null
+        val imageDetails: ImageDetails? = null,
+        val sprocketDone: String? = null
 ) {
     val id: String
         get() = applicationId.toString().sha256("apsldga019238")
@@ -40,12 +39,12 @@ data class OpenShiftPodExcerpt(
 )
 
 data class ImageDetails(
-        val registryUrl: String,
-        val group: String,
-        val name: String,
-        val tag: String,
-        val env: Map<String, String>? = null
-)
+        val dockerImageReference: String?,
+        val environmentVariables: Map<String, String>
+) {
+    val auroraVersion: String
+        get() = environmentVariables["AURORA_VERSION"] ?: ""
+}
 
 private fun String.sha256(salt: String): String {
     val HEX_CHARS = "0123456789ABCDEF"

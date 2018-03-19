@@ -18,20 +18,20 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
     val logger: Logger = LoggerFactory.getLogger(ApplicationController::class.java)
 
     @GetMapping("/application")
-    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<Application> {
+    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<ApplicationResource> {
         return applicationDataService.findAllApplicationData(affiliation).map(::toApplication)
     }
 }
 
-fun toApplication(data: ApplicationData): Application {
+fun toApplication(data: ApplicationData): ApplicationResource {
     val environment = Environment.fromNamespace(data.namespace)
-    return Application(
+    return ApplicationResource(
         data.id,
         data.affiliation,
         environment.name,
         data.name,
         AuroraStatusCalculator.calculateStatus(data).copy(comment = "N/A"),
-        Version(data.deployTag, data.auroraVersion)
+        Version(data.deployTag, data.imageDetails?.auroraVersion)
     )
 }
 

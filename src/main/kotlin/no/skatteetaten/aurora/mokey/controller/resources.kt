@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
-data class Application(
+data class ApplicationResource(
     val id: String,
     val affiliation: String?,
     val environment: String,
@@ -21,6 +21,12 @@ enum class AuroraStatusLevel(val level: Int) {
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
 
-data class ApplicationDetails(
-    val application: Application
+data class ApplicationDetailsResource(
+        val application: ApplicationResource,
+        val imageDetails: ImageDetailsResource
+)
+
+data class ImageDetailsResource(
+        val dockerImageReference: String?,
+        val environmentVariables: Map<String, String>?
 )

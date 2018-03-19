@@ -69,16 +69,10 @@ fun DefaultOpenShiftClient.customImageStreamTag(namespace: String, name: String,
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class ImageStreamTag(val image: Image?) {
-    val auroraVersion: String
-        get() = image?.dockerImageMetadata?.containerConfig?.env
-            ?.find { it.contains("AURORA_VERSION") }
-            ?.split("=")
-            ?.lastOrNull() ?: ""
-}
+data class ImageStreamTag(val image: Image?)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class Image(val dockerImageMetadata: Metadata)
+data class Image(val dockerImageMetadata: Metadata, val dockerImageReference: String)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Metadata(@JsonProperty("ContainerConfig") val containerConfig: ContainerConfig)

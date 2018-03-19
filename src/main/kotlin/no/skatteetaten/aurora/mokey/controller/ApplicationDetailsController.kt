@@ -18,7 +18,7 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
     val logger: Logger = LoggerFactory.getLogger(ApplicationDetailsController::class.java)
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDetails? {
+    fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDetailsResource? {
 
         return applicationDataService.findApplicationDataById(id)
                 ?.let(::toApplicationDetails)
@@ -26,5 +26,10 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
     }
 }
 
-fun toApplicationDetails(it: ApplicationData) = ApplicationDetails(toApplication(it))
+fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
+    return ApplicationDetailsResource(
+            toApplication(it),
+            ImageDetailsResource(it.imageDetails?.dockerImageReference, it.imageDetails?.environmentVariables)
+    )
+}
 
