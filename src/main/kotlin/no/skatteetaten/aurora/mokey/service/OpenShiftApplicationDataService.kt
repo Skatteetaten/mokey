@@ -76,7 +76,8 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
 
             val imageDetails = getImageDetails(dc)
 
-            val phase = getDeploymentPhaseFromReplicationController(namespace, name, dc.status.latestVersion)
+            val latestVersion = dc.status.latestVersion ?: null
+            val phase = latestVersion?.let { getDeploymentPhaseFromReplicationController(namespace, name, it) }
             val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
             val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
@@ -142,11 +143,7 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
         }
     }
 
-    private fun getDeploymentPhaseFromReplicationController(namespace: String, name: String, versionNumber: Long?): String? {
-
-        if (versionNumber == null) {
-            return null
-        }
+    private fun getDeploymentPhaseFromReplicationController(namespace: String, name: String, versionNumber: Long): String? {
 
         val rcName = "$name-$versionNumber"
         //TODO: ReplicaSet vs ReplicationController
