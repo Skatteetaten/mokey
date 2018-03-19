@@ -1,10 +1,10 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
+import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.AuroraApplicationCacheService
-import no.skatteetaten.aurora.mokey.service.OpenShiftService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient
@@ -14,27 +14,31 @@ import org.springframework.security.test.context.support.WithUserDetails
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@WebMvcTest(ApplicationController::class)
+@WebMvcTest(ApplicationDetailsController::class)
 @AutoConfigureWebClient
-class ApplicationControllerTest : AbstractSecurityControllerTest() {
+class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
 
-    private val NAMESPACE = "aurora"
-    private val APP = "reference"
-
-    @MockBean
-    lateinit var openShiftService: OpenShiftService
+    private val ID = "123"
 
     @MockBean
-    lateinit var cacheService: AuroraApplicationCacheService
+    lateinit var auroraApplicationCacheService: AuroraApplicationCacheService
 
     @Test
     @WithUserDetails
-    fun `Get AuroraApplication given user with access`() {
-        val id = ApplicationId("reference", Environment("aurora", "aurora")).toString()
-        given(cacheService.get(id)).willReturn(loadApplication("app.json"))
-        given(openShiftService.currentUserHasAccess(NAMESPACE)).willReturn(true)
+    fun `Get AuroraDetails given user with access`() {
+        given(auroraApplicationCacheService.get(ID)).willReturn(
+                ApplicationData(
+                        ApplicationId("name", Environment("env", "affiliation")),
+                        "deployTag",
+                        "name",
+                        "namespace",
+                        "affiliation",
+                        availableReplicas = 1,
+                        targetReplicas = 1
+                )
+        )
 
-        mockMvc.perform(get("/api/namespace/{namespace}/application/{name}", NAMESPACE, APP))
+        mockMvc.perform(get("/api/applicationdetails/{id}", "123"))
                 .andExpect(status().isOk)
     }
 }
