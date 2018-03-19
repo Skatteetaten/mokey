@@ -1,13 +1,7 @@
 buildscript {
   ext.repos = {
-    maven {
-      url "http://repo1.maven.org/maven2"
-    }
-
-    maven {
-      url "http://jcenter.bintray.com/"
-    }
-
+    mavenCentral()
+    jcenter()
     mavenLocal()
   }
 
@@ -60,14 +54,14 @@ dependencies {
   testCompile(
       'org.springframework.restdocs:spring-restdocs-mockmvc',
       'org.springframework.security:spring-security-test',
-      'org.junit.jupiter:junit-jupiter-api:5.1.0',
+      'org.junit.jupiter:junit-jupiter-api',
       'io.fabric8:openshift-server-mock:3.1.8',
       'org.springframework.boot:spring-boot-starter-test',
       'io.mockk:mockk:1.7.10'
   )
 
-  testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")
+  testImplementation("org.junit.jupiter:junit-jupiter-api")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
 springBoot {
