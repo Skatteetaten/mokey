@@ -65,41 +65,46 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
         //
         //            meterRegistry.gauge("aurora_status", commonTags, status.level.level)
 
+        return try {
+            tryCreateApplicationData(dc)
+        } catch (e: Exception) {
+            val namespace = dc.metadata.namespace
+            val name = dc.metadata.name
+            logger.error("Failed getting application name={}, namepsace={} message={}", name, namespace, e.message, e)
+            throw e
+        }
+    }
+
+    private fun tryCreateApplicationData(dc: DeploymentConfig): ApplicationData {
         val affiliation = dc.metadata.labels["affiliation"]
         val namespace = dc.metadata.namespace
         val name = dc.metadata.name
 
         val annotations = dc.metadata.annotations ?: emptyMap()
+        val pods = getPodDetails(dc)
 
-        try {
-            val pods = getPodDetails(dc)
+        val imageDetails = getImageDetails(dc)
 
-            val imageDetails = getImageDetails(dc)
+        val latestVersion = dc.status.latestVersion ?: null
+        val phase = latestVersion?.let { getDeploymentPhaseFromReplicationController(namespace, name, it) }
+        val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
+        val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
-            val latestVersion = dc.status.latestVersion ?: null
-            val phase = latestVersion?.let { getDeploymentPhaseFromReplicationController(namespace, name, it) }
-            val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
-            val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
-
-            val id = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)).toString()
-            return ApplicationData(
-                    id = id,
-                    auroraStatus = auroraStatus,
-                    name = name,
-                    namespace = namespace,
-                    deployTag = dc.metadata.labels["deployTag"] ?: "",
-                    booberDeployId = dc.metadata.labels["booberDeployId"],
-                    affiliation = affiliation,
-                    managementPath = annotations["console.skatteetaten.no/management-path"],
-                    pods = pods,
-                    imageDetails = imageDetails,
-                    deployDetails = deployDetails,
-                    sprocketDone = annotations["sprocket.sits.no-deployment-config.done"]
-            )
-        } catch (e: Exception) {
-            logger.error("Failed getting application name={}, namepsace={} message={}", name, namespace, e.message, e)
-            throw e
-        }
+        val id = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)).toString()
+        return ApplicationData(
+                id = id,
+                auroraStatus = auroraStatus,
+                name = name,
+                namespace = namespace,
+                deployTag = dc.metadata.labels["deployTag"] ?: "",
+                booberDeployId = dc.metadata.labels["booberDeployId"],
+                affiliation = affiliation,
+                managementPath = annotations["console.skatteetaten.no/management-path"],
+                pods = pods,
+                imageDetails = imageDetails,
+                deployDetails = deployDetails,
+                sprocketDone = annotations["sprocket.sits.no-deployment-config.done"]
+        )
     }
 
     private fun getImageDetails(dc: DeploymentConfig): ImageDetails? {

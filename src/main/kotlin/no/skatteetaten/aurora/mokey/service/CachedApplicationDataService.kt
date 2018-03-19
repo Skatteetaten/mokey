@@ -35,29 +35,14 @@ class CachedApplicationDataService(val openShiftApplicationDataService: OpenShif
     // @Scheduled(fixedRate = 300000, initialDelay = 360)
     fun refreshCache(affiliations: List<String>? = null) {
 
-        fun withStopWatch(block: () -> Unit): StopWatch {
-            return StopWatch().also {
-                it.start()
-                block()
-                it.stop()
-            }
-        }
-
         val allKeys = cache.keys().toList()
         val newKeys = mutableListOf<String>()
 
         val time = withStopWatch {
-            val applications = if (affiliations != null) {
-                openShiftApplicationDataService.findAllApplicationData(affiliations)
-            } else {
-                openShiftApplicationDataService.findAllApplicationData()
-            }
-
+            val applications = openShiftApplicationDataService.findAllApplicationData(affiliations)
             applications.forEach {
                 cache[it.id] = it
-                synchronized(newKeys) {
-                    newKeys.add(it.id)
-                }
+                newKeys.add(it.id)
             }
         }
 
@@ -69,5 +54,13 @@ class CachedApplicationDataService(val openShiftApplicationDataService: OpenShif
         val keys = cache.keys().toList()
         logger.debug("cache keys={}", keys)
         logger.info("number of apps={} time={}", keys.size, time.totalTimeSeconds)
+    }
+
+    fun withStopWatch(block: () -> Unit): StopWatch {
+        return StopWatch().also {
+            it.start()
+            block()
+            it.stop()
+        }
     }
 }
