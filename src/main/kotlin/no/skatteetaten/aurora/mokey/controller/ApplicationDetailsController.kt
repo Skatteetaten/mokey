@@ -29,7 +29,12 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
 fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
     return ApplicationDetailsResource(
             toApplication(it),
-            ImageDetailsResource(it.imageDetails?.dockerImageReference, it.imageDetails?.environmentVariables)
+
+            ImageDetailsResource(
+                    it.imageDetails?.dockerImageReference,
+                    it.imageDetails?.imageBuildTime,
+                    it.imageDetails?.environmentVariables
+            )
     )
 }
 

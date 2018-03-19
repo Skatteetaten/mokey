@@ -44,6 +44,9 @@ data class ImageDetails(
 ) {
     val auroraVersion: String
         get() = environmentVariables["AURORA_VERSION"] ?: ""
+
+    val imageBuildTime: String
+        get() = environmentVariables["IMAGE_BUILD_TIME"] ?: ""
 }
 
 private fun String.sha256(salt: String): String {
