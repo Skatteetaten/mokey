@@ -1,8 +1,5 @@
 package no.skatteetaten.aurora.mokey.service
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
@@ -11,14 +8,11 @@ import no.skatteetaten.aurora.mokey.model.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.web.client.HttpStatusCodeException
-import org.springframework.web.client.RestClientException
 
 @Service
 class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
                                       val auroraStatusCalculator: AuroraStatusCalculator,
-                                      val managmentApplicationService: ManagmentApplicationService,
-                                      val mapper: ObjectMapper) {
+                                      val managementEndpointFactory: ManagementEndpointFactory) {
 
     val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
 
@@ -61,9 +55,7 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
         val annotations = dc.metadata.annotations ?: emptyMap()
 
         try {
-            val managementPath: String? = annotations["console.skatteetaten.no/management-path"]
-
-            val pods = getAllPodDetails(dc)
+            val pods = getPodDetails(dc)
 
             val imageDetails = getImageDetails(dc)
 
@@ -79,7 +71,7 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
                     deployTag = dc.metadata.labels["deployTag"] ?: "",
                     booberDeployId = dc.metadata.labels["booberDeployId"],
                     affiliation = affiliation,
-                    managementPath = managementPath,
+                    managementPath = annotations["console.skatteetaten.no/management-path"],
                     pods = pods,
                     imageDetails = imageDetails,
                     deployDetails = deployDetails,
@@ -105,95 +97,30 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
         return ImageDetails(tag?.image?.dockerImageReference, environmentVariables ?: mapOf())
     }
 
-    fun getAllPodDetails(dc: DeploymentConfig): List<PodDetails> {
+    fun getPodDetails(dc: DeploymentConfig): List<PodDetails> {
         val annotations = dc.metadata.annotations ?: emptyMap()
         val managementPath: String? = annotations["console.skatteetaten.no/management-path"]
 
         val labelMap = dc.spec.selector.mapValues { it.value }
-        val pods = openshiftService.pods(dc.metadata.namespace, labelMap)
-                .map { getPodDetails(it, managementPath) }
-        return pods
-    }
-
-    private fun getPodDetails(it: Pod, managementPath: String?): PodDetails {
-
-        val podIP = it.status.podIP ?: null
-        val managementData = if (managementPath != null && podIP != null) getManagementData(podIP, managementPath) else null
-
-        val status = it.status.containerStatuses.first()
-        return PodDetails(
-                OpenShiftPodExcerpt(
-                        name = it.metadata.name,
-                        status = it.status.phase,
-                        restartCount = status.restartCount,
-                        ready = status.ready,
-                        podIP = podIP,
-                        deployment = it.metadata.labels["deployment"],
-                        startTime = it.status.startTime
-                ),
-                managementData
-        )
-    }
-
-    private fun getManagementData(podIP: String, managementPath: String): ManagementData {
-
-        val violationRules: MutableSet<String> = mutableSetOf()
-        val links = getManagementLinks(podIP, managementPath, violationRules)
-        val info = getInfoEndpointResponse(links, violationRules)
-        val health = getHealthEndpointResponse(links, violationRules)
-        val managementData = ManagementData(links, info, health)
-
-        return managementData
-    }
-
-    private fun getHealthEndpointResponse(links: Map<String, String>?, violationRules: MutableSet<String>): JsonNode? {
-        val health = try {
-            links?.let { managmentApplicationService.findResource(links["health"]) }
-        } catch (e: HttpStatusCodeException) {
-            if (e.statusCode.is5xxServerError) {
-                try {
-                    mapper.readTree(e.responseBodyAsByteArray)
-                } catch (e: Exception) {
-                    violationRules.add("MANAGEMENT_HEALTH_ERROR_INVALID_JSON")
-                    null
-                }
-            } else {
-                violationRules.add("MANAGEMENT_HEALTH_ERROR_${e.statusCode}")
-                null
+        return openshiftService.pods(dc.metadata.namespace, labelMap).map {
+            val podIP = it.status.podIP ?: null
+            val managementData = if (managementPath == null || podIP == null) null else {
+                val managementEndpoint = managementEndpointFactory.create(podIP, managementPath)
+                managementEndpoint.getManagementData()
             }
-        } catch (e: RestClientException) {
-            violationRules.add("MANAGEMENT_HEALTH_ERROR_HTTP")
-            null
-        }
-        return health
-    }
-
-    private fun getInfoEndpointResponse(links: Map<String, String>?, violationRules: MutableSet<String>): JsonNode? {
-        val info: JsonNode? = try {
-            links?.let { managmentApplicationService.findResource(links["info"]) }
-        } catch (e: HttpStatusCodeException) {
-            violationRules.add("MANAGEMENT_INFO_ERROR_${e.statusCode}")
-            null
-        } catch (e: RestClientException) {
-            violationRules.add("MANAGEMENT_INFO_ERROR_HTTP")
-            null
-        }
-        return info
-    }
-
-    private fun getManagementLinks(podIP: String, managementPath: String, violationRules: MutableSet<String>): Map<String, String>? {
-        return try {
-            managmentApplicationService.findManagementLinks(podIP, managementPath).also {
-                if (it.isEmpty()) {
-                    violationRules.add("MANAGEMENT_ENDPOINT_NOT_VALID_FORMAT")
-                }
-            }
-        } catch (e: HttpStatusCodeException) {
-            violationRules.add("MANAGEMENT_ENDPOINT_ERROR_${e.statusCode}")
-            null
-        } catch (e: Exception) {
-            violationRules.add("MANAGEMENT_ENDPOINT_ERROR_HTTP")
-            null
+            val status = it.status.containerStatuses.first()
+            PodDetails(
+                    OpenShiftPodExcerpt(
+                            name = it.metadata.name,
+                            status = it.status.phase,
+                            restartCount = status.restartCount,
+                            ready = status.ready,
+                            podIP = podIP,
+                            deployment = it.metadata.labels["deployment"],
+                            startTime = it.status.startTime
+                    ),
+                    managementData
+            )
         }
     }
 
