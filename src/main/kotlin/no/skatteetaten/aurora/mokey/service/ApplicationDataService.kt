@@ -7,5 +7,5 @@ interface ApplicationDataService {
 
     fun findApplicationDataById(id: String): ApplicationData?
 
-    fun findAllApplicationData(affiliation: List<String>): List<ApplicationData>
+    fun findAllApplicationData(affiliations: List<String>? = null): List<ApplicationData>
 }

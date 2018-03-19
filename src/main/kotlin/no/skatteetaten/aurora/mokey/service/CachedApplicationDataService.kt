@@ -1,15 +1,16 @@
 package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.Environment
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
-class CachedApplicationDataService(val openShiftApplicationDataService: OpenShiftApplicationDataService): ApplicationDataService {
+@Primary
+class CachedApplicationDataService(val openShiftApplicationDataService: OpenShiftApplicationDataService) : ApplicationDataService {
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
@@ -25,12 +26,14 @@ class CachedApplicationDataService(val openShiftApplicationDataService: OpenShif
         return cache[id]
     }
 
-    override fun findAllApplicationData(affiliation: List<String>): List<ApplicationData> {
-        return cache.filter { affiliation.contains(it.value.affiliation) }.map { it.value }
+    override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
+        return cache
+                .map { it.value }
+                .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
     }
 
     // @Scheduled(fixedRate = 300000, initialDelay = 360)
-    fun refreshCache(environments: List<Environment>? = null) {
+    fun refreshCache(affiliations: List<String>? = null) {
 
         fun withStopWatch(block: () -> Unit): StopWatch {
             return StopWatch().also {
@@ -44,10 +47,10 @@ class CachedApplicationDataService(val openShiftApplicationDataService: OpenShif
         val newKeys = mutableListOf<String>()
 
         val time = withStopWatch {
-            val applications = if (environments != null) {
-                openShiftApplicationDataService.findAllApplications(environments)
+            val applications = if (affiliations != null) {
+                openShiftApplicationDataService.findAllApplicationData(affiliations)
             } else {
-                openShiftApplicationDataService.findAllApplications()
+                openShiftApplicationDataService.findAllApplicationData()
             }
 
             applications.forEach {
