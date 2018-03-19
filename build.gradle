@@ -6,11 +6,16 @@ buildscript {
     }
 
     maven {
+      url "${nexusUrl}/content/groups/public"
+    }
+
+    maven {
       url "http://jcenter.bintray.com/"
     }
 
     mavenLocal()
   }
+
 
   repositories repos
 
@@ -31,31 +36,30 @@ plugins {
 
 ext.aurora = [
     requireStaging: false,
-    applySpockSupport: false
+    applySpockSupport: false,
+    applyDeliveryBundleConfig: false
 ]
 
 apply plugin: 'io.spring.dependency-management'
-apply plugin: 'no.skatteetaten.plugins.aurora'
+//apply plugin: 'no.skatteetaten.plugins.aurora'
+apply plugin: "application"
+apply plugin: "java"
+apply plugin: "maven"
 
 repositories repos
 jar {
   enabled = true
+  classifier='Leveransepakke'
 }
 
 bootJar {
   enabled= false
 }
+project.sourceCompatibility = '1.8'
+distZip.classifier="Leveransepakke"
 
- /*
-distBootZip {
-  enabled=false
-}
 
-distBootTar {
-  enabled=false
-}
-*/
-
+startScripts.enabled = false
 group = 'no.skatteetaten.aurora'
 
 dependencies {
@@ -84,6 +88,21 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")
 
+}
+
+def releasesUrl = "${nexusUrl}/content/repositories/releases"
+def snapshotUrl = "${nexusUrl}/content/repositories/snapshots"
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      snapshotRepository(url: snapshotUrl) {
+        authentication(userName: nexusUsername, password: nexusPassword)
+      }
+      repository(url: releasesUrl) {
+        authentication(userName: nexusUsername, password: nexusPassword)
+      }
+    }
+  }
 }
 
 springBoot {
