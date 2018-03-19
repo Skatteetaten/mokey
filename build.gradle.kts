@@ -75,13 +75,15 @@ kotlin {
     experimental.coroutines = Coroutines.ENABLE
 }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        jvmTarget="1.8"
-        //freeCompilerArgs = listOf("-Xjsr305=strict")
+tasks {
+    withType<KotlinCompile> {
+        kotlinOptions {
+            jvmTarget="1.8"
+            //freeCompilerArgs = listOf("-Xjsr305=strict")
+        }
     }
-}
 
-val test by tasks.getting(Test::class) {
-    useJUnitPlatform()
+    withType<Test> {
+        useJUnitPlatform()
+    }
 }
