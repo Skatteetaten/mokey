@@ -13,7 +13,6 @@ class ManagmentApplicationService(val restTemplate: RestTemplate, val mapper: Ob
 
     val logger: Logger = LoggerFactory.getLogger(ManagmentApplicationService::class.java)
 
-
     fun findManagementEndpoints(podIP: String, managementPath: String): Map<String, String> {
         logger.debug("Find management endpoints ip={}, path={}", podIP, managementPath)
         val managementUrl = "http://${podIP}$managementPath"
@@ -28,7 +27,6 @@ class ManagmentApplicationService(val restTemplate: RestTemplate, val mapper: Ob
 
     }
 
-
     fun findResource(url: String?): JsonNode? {
         if (url == null) {
             return null
@@ -37,6 +35,4 @@ class ManagmentApplicationService(val restTemplate: RestTemplate, val mapper: Ob
         return restTemplate.getForObject(url, JsonNode::class.java)
 
     }
-
-
 }

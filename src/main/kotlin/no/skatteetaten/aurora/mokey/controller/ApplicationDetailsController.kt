@@ -1,8 +1,8 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
+import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import no.skatteetaten.aurora.mokey.service.NoSuchResourceException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -20,9 +20,11 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
     @GetMapping("/{id}")
     fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDetails? {
 
-        return applicationDataService.findApplicationDataById(id)?.let {
-            ApplicationDetails(toApplication(it))
-        } ?: throw NoSuchResourceException("Does not exist")
+        return applicationDataService.findApplicationDataById(id)
+                ?.let(::toApplicationDetails)
+                ?: throw NoSuchResourceException("Does not exist")
     }
 }
+
+fun toApplicationDetails(it: ApplicationData) = ApplicationDetails(toApplication(it))
 

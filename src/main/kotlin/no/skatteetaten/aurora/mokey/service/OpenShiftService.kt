@@ -33,10 +33,6 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return openShiftClient.imageStreams().inNamespace(namespace).withName(name).getOrNull()
     }
 
-    fun route(namespace: String, name: String): Route? {
-        return openShiftClient.routes().inNamespace(namespace).withName(name).getOrNull()
-    }
-
     fun pods(namespace: String, labelMap: Map<String, String>): List<Pod> {
         return openShiftClient.pods().inNamespace(namespace).withLabels(labelMap).list().items
     }
