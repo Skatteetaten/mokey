@@ -66,9 +66,14 @@ project.sourceCompatibility = '1.8'
 
 */
 
-//distZip.classifier="Leveransepakke"
-distZip.baseName = "mokey-boot"
-distTar.baseName = "mokey-boot"
+bootDistZip.classifier="Leveransepakke"
+bootDistZip.baseName = "mokey"
+bootDistTar.classifier="Leveransepakke"
+bootDistTar.baseName = "mokey"
+distZip.classifier="Leveransepakke"
+distTar.classifier="Leveransepakke"
+//distZip.baseName = "mokey-boot"
+//distTar.baseName = "mokey-boot"
 startScripts.enabled = false
 distZip.properties.each { println it }
 
