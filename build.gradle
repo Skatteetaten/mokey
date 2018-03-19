@@ -36,46 +36,16 @@ plugins {
 
 ext.aurora = [
     requireStaging: false,
-    applySpockSupport: false,
-    applyDeliveryBundleConfig: false
+    applySpockSupport: false
 ]
 
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'no.skatteetaten.plugins.aurora'
-apply plugin: "application"
-/*
-apply plugin: "java"
-apply plugin: "maven"
-*/
 
 repositories repos
-jar {
-  enabled = true
-//  classifier='Leveransepakke'
-}
 
-bootJar {
-  enabled= false
-}
-bootDistTar.enabled = false
-bootDistZip.enabled = false
-
-/*
-project.sourceCompatibility = '1.8'
-
-
-*/
-
-bootDistZip.classifier="Leveransepakke"
-bootDistZip.baseName = "mokey"
-bootDistTar.classifier="Leveransepakke"
-bootDistTar.baseName = "mokey"
-distZip.classifier="Leveransepakke"
-distTar.classifier="Leveransepakke"
-//distZip.baseName = "mokey-boot"
-//distTar.baseName = "mokey-boot"
-startScripts.enabled = false
-distZip.properties.each { println it }
+[bootJar, distTar, bootDistTar, bootDistZip, jar].each { it.enabled = !it.enabled }
+configurations.archives.artifacts.removeIf { !it.archiveTask.is(distZip)}
 
 group = 'no.skatteetaten.aurora'
 
@@ -106,23 +76,6 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")
 
 }
-/*
-
-def releasesUrl = "${nexusUrl}/content/repositories/releases"
-def snapshotUrl = "${nexusUrl}/content/repositories/snapshots"
-uploadArchives {
-  repositories {
-    mavenDeployer {
-      snapshotRepository(url: snapshotUrl) {
-        authentication(userName: nexusUsername, password: nexusPassword)
-      }
-      repository(url: releasesUrl) {
-        authentication(userName: nexusUsername, password: nexusPassword)
-      }
-    }
-  }
-}
-*/
 
 springBoot {
   buildInfo()
@@ -148,15 +101,3 @@ kotlin {
     coroutines "enable"
   }
 }
-
-
-//assemble.dependsOn.removeIf { true }
-//assemble.dependsOn.removeIf { it.class.simpleName == 'SinglePublishedArtifact' }
-//assemble.dependsOn.each {
-//  println it.class.simpleName
-//}
-
-//distTar.enabled = false
-//tasks.each {
-//  println it.name + " " + it.dependsOn + " " + it.enabled
-//}
