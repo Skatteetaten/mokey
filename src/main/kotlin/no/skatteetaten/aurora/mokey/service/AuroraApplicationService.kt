@@ -61,14 +61,16 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             //            val version = auroraIs?.env?.get("AURORA_VERSION")
             //                ?: if (pods.isNotEmpty()) pods[0].info?.at("/auroraVersion")?.asText() else null
             //                    ?: auroraIs?.tag
-            val version = auroraIs?.env?.get("AURORA_VERSION")
+            val deployTag = dc.spec.triggers.find { it.type == "ImageChange" }
+                ?.imageChangeParams?.from?.name?.split(":")?.lastOrNull()
+            val version = openShiftApplicationService.getAuroraVersion(dc, deployTag ?: "default")
             val affiliation = dc.metadata.labels["affiliation"]
 
             return ApplicationData(
                 applicationId = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)),
                 name = name,
                 namespace = namespace,
-                deployTag = dc.metadata.labels["deployTag"] ?: "",
+                deployTag = dc.metadata.labels["deployTag"] ?: deployTag ?: "",
                 booberDeployId = dc.metadata.labels["booberDeployId"],
                 affiliation = affiliation,
                 targetReplicas = dc.spec.replicas,
@@ -79,7 +81,7 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                 imageStream = auroraIs,
                 sprocketDone = annotations["sprocket.sits.no-deployment-config.done"],
 //                violationRules = violationRules,
-                auroraVersion = version ?: ""
+                auroraVersion = version
             )
         } catch (e: Exception) {
             logger.error("Failed getting application name={}, namepsace={} message={}", name, namespace, e.message, e)

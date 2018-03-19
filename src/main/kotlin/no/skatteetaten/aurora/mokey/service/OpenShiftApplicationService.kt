@@ -17,6 +17,11 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
 
     val token = openshiftService.openShiftClient.configuration.oauthToken
 
+    fun getAuroraVersion(dc: DeploymentConfig, deployTag: String): String {
+        val tag = openshiftService.imageStreamTag(dc.metadata.namespace, dc.metadata.name, deployTag)
+        return tag?.auroraVersion ?: ""
+    }
+
     fun getAuroraImageStream(dc: DeploymentConfig): ImageDetails? {
         val trigger = dc.spec.triggers
             .filter { it.type == "ImageChange" }
@@ -97,7 +102,7 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
     }
 
     fun getPods(dc: DeploymentConfig): List<PodDetails> {
-            val labelMap = dc.spec.selector.mapValues { it.value }
+        val labelMap = dc.spec.selector.mapValues { it.value }
         return openshiftService.pods(dc.metadata.namespace, labelMap).map {
             val status = it.status.containerStatuses.first()
             PodDetails(

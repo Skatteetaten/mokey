@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
-
 @RestController
 @RequestMapping("/api/load")
 //@Profile("local")
@@ -23,6 +22,4 @@ class LocalCacheController(val auroraApplicationCacheService: AuroraApplicationC
         val projects = openShiftService.projects().map { it.metadata.name }
         auroraApplicationCacheService.load(projects)
     }
-
-
 }
