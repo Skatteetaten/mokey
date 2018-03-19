@@ -44,7 +44,8 @@ apply plugin: 'no.skatteetaten.plugins.aurora'
 
 repositories repos
 
-[bootJar, distTar, bootDistTar, bootDistZip, jar].each { it.enabled = !it.enabled }
+jar.enabled = true
+[bootJar, distTar, bootDistTar, bootDistZip]*.enabled = false
 configurations.archives.artifacts.removeIf { !it.archiveTask.is(distZip)}
 
 group = 'no.skatteetaten.aurora'
