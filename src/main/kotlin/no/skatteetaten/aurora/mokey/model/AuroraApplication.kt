@@ -1,10 +1,12 @@
 package no.skatteetaten.aurora.mokey.model
 
+import com.fasterxml.jackson.databind.JsonNode
 import java.security.MessageDigest
 
 data class PodDetails(
     val openShiftPodExcerpt: OpenShiftPodExcerpt,
-    val links: Map<String, String>? = null
+    val links: Map<String, String>? = null,
+    val info: JsonNode? = null
 )
 
 data class OpenShiftPodExcerpt(

@@ -17,9 +17,9 @@ class OpenShiftApplicationService(val openshiftService: OpenShiftService) {
 
     val token = openshiftService.openShiftClient.configuration.oauthToken
 
-    fun getAuroraVersion(dc: DeploymentConfig, deployTag: String): String {
+    fun getAuroraVersion(dc: DeploymentConfig, deployTag: String): String? {
         val tag = openshiftService.imageStreamTag(dc.metadata.namespace, dc.metadata.name, deployTag)
-        return tag?.auroraVersion ?: ""
+        return tag?.auroraVersion
     }
 
     fun getAuroraImageStream(dc: DeploymentConfig): ImageDetails? {

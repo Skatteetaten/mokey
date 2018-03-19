@@ -1,12 +1,12 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.micrometer.core.instrument.MeterRegistry
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
 import no.skatteetaten.aurora.mokey.model.Environment
-import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,7 +17,6 @@ import org.springframework.web.client.RestClientException
 @Service
 class AuroraApplicationService(val meterRegistry: MeterRegistry,
                                val openShiftApplicationService: OpenShiftApplicationService,
-                               val dockerService: DockerService,
                                val managmentApplicationService: ManagmentApplicationService,
                                val mapper: ObjectMapper) {
 
@@ -56,14 +55,14 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
             val pods = openShiftApplicationService.getPods(dc).map(handleManagementInterface(managementPath, violationRules))
             val phase = openShiftApplicationService.getDeploymentPhase(name, namespace, versionNumber)
 
-            val auroraIs = openShiftApplicationService.getAuroraImageStream(dc)?.let(handleDockerEnv(violationRules))
+            val auroraIs = openShiftApplicationService.getAuroraImageStream(dc)
 
-            //            val version = auroraIs?.env?.get("AURORA_VERSION")
-            //                ?: if (pods.isNotEmpty()) pods[0].info?.at("/auroraVersion")?.asText() else null
-            //                    ?: auroraIs?.tag
             val deployTag = dc.spec.triggers.find { it.type == "ImageChange" }
                 ?.imageChangeParams?.from?.name?.split(":")?.lastOrNull()
+
             val version = openShiftApplicationService.getAuroraVersion(dc, deployTag ?: "default")
+                            ?: if (pods.isNotEmpty()) pods[0].info?.at("/auroraVersion")?.asText() else null
+                                ?: auroraIs?.tag
             val affiliation = dc.metadata.labels["affiliation"]
 
             return ApplicationData(
@@ -81,34 +80,11 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                 imageStream = auroraIs,
                 sprocketDone = annotations["sprocket.sits.no-deployment-config.done"],
 //                violationRules = violationRules,
-                auroraVersion = version
+                auroraVersion = version ?: ""
             )
         } catch (e: Exception) {
             logger.error("Failed getting application name={}, namepsace={} message={}", name, namespace, e.message, e)
             return null
-        }
-    }
-
-    private fun handleDockerEnv(violationRules: MutableSet<String>): (ImageDetails) -> ImageDetails {
-        return {
-            val token = null
-            //                val token = if (it.localImage) openShiftApplicationService.token else null
-
-            val env = try {
-                val env = dockerService.getEnv(it.registryUrl, "${it.group}/${it.name}", it.tag, token)
-                if (env == null || env.isEmpty()) {
-                    violationRules.add("DOCKER_EMPTY_ENV_ERROR")
-                }
-                env
-            } catch (e: HttpStatusCodeException) {
-                violationRules.add("DOCKER_ENDPOINT_ERROR_${e.statusCode}")
-                null
-            } catch (e: Exception) {
-                violationRules.add("DOCKER_ENDPOINT_ERROR_HTTP")
-                //       logger.warn("Error getting management endpoints", e)
-                null
-            }
-            it.copy(env = env)
         }
     }
 
@@ -135,7 +111,7 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                 }
             }
 
-            val info = try {
+            val info: JsonNode? = try {
                 links?.let { managmentApplicationService.findResource(links["info"]) }
             } catch (e: HttpStatusCodeException) {
                 violationRules.add("MANAGEMENT_INFO_ERROR_${e.statusCode}")
@@ -164,7 +140,7 @@ class AuroraApplicationService(val meterRegistry: MeterRegistry,
                 null
             }
 
-            it.copy(links = links) //, info = info, health = health)
+            it.copy(links = links, info = info) //, info = info, health = health)
         }
     }
 }

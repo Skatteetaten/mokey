@@ -63,7 +63,8 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
 fun DefaultOpenShiftClient.customImageStreamTag(namespace: String, name: String, tag: String): ImageStreamTag? {
     val url = this.openshiftUrl.toURI().resolve("namespaces/$namespace/imagestreamtags/$name:$tag")
     return try {
-        val response = this.httpClient.newCall(Request.Builder().url(url.toString()).build()).execute()
+        val request = Request.Builder().url(url.toString()).build()
+        val response = this.httpClient.newCall(request).execute()
         jacksonObjectMapper().readValue(response.body()?.bytes(), ImageStreamTag::class.java)
     } catch (e: Exception) {
         throw KubernetesClientException("error occurred while fetching imageStreamTag" +
