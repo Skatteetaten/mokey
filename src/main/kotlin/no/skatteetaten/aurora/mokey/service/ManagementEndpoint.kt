@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mokey.extensions.asMap
@@ -32,7 +33,8 @@ data class ManagementLinks(private val links: Map<String, String>) {
     companion object {
         fun parseManagementResponse(response: JsonNode): ManagementLinks {
             return try {
-                val links = response[MANAGEMENT.key].asMap()
+                val asMap = response[MANAGEMENT.key].asMap()
+                val links = asMap
                         .mapValues { it.value["href"].asText()!! }
                 ManagementLinks(links)
             } catch (e: Exception) {
@@ -75,26 +77,21 @@ class ManagementEndpoint private constructor(
 
             logger.debug("Getting resource with url={}", url)
             try {
-                return restTemplate.getForObject<JsonNode>(url, JsonNode::class.java)!!
+                val responseText = try {
+                    restTemplate.getForObject(url, String::class.java)!!
+                } catch (e: HttpStatusCodeException) {
+                    if (!e.statusCode.is5xxServerError) throw e
+                    String(e.responseBodyAsByteArray)
+                }
+                return jacksonObjectMapper().readTree(responseText)
             } catch (e: Exception) {
-                var cause = e
                 val errorCode = when (e) {
-                    is HttpStatusCodeException -> {
-                        if (e.statusCode.is5xxServerError) {
-                            try {
-                                return jacksonObjectMapper().readTree(e.responseBodyAsByteArray)
-                            } catch (e: Exception) {
-                                cause = e
-                                "INVALID_JSON"
-                            }
-                        } else {
-                            "ERROR_${e.statusCode}"
-                        }
-                    }
+                    is HttpStatusCodeException -> "ERROR_${e.statusCode}"
                     is RestClientException -> "ERROR_HTTP"
+                    is JsonParseException -> "INVALID_JSON"
                     else -> "ERROR_UNKNOWN"
                 }
-                throw ManagementEndpointException(endpoint, errorCode, cause)
+                throw ManagementEndpointException(endpoint, errorCode, e)
             }
         }
     }
