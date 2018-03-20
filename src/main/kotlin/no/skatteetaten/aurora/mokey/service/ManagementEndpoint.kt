@@ -19,9 +19,9 @@ class ManagementEndpointFactory(val restTemplate: RestTemplate) {
 }
 
 class ManagementEndpoint(
-        private val restTemplate: RestTemplate,
-        val links: Map<String, String>,
-        val violationRules: MutableSet<String> = mutableSetOf()
+    private val restTemplate: RestTemplate,
+    val links: Map<String, String>,
+    val violationRules: MutableSet<String> = mutableSetOf()
 ) {
 
     fun getManagementData(): ManagementData {
@@ -71,7 +71,6 @@ class ManagementEndpoint(
         }
         logger.debug("Find resource with url={}", url)
         return restTemplate.getForObject(url, JsonNode::class.java)
-
     }
 
     companion object {
@@ -86,10 +85,19 @@ class ManagementEndpoint(
 
         private fun getManagementLinks(restTemplate: RestTemplate, managementUrl: String, violationRules: MutableSet<String>): Map<String, String> {
             val links = try {
-                findManagementLinks(restTemplate, managementUrl).also {
-                    if (it.isEmpty()) {
-                        violationRules.add("MANAGEMENT_ENDPOINT_NOT_VALID_FORMAT")
-                    }
+                val managementEndpoints = restTemplate.getForObject(managementUrl, JsonNode::class.java)
+
+                if (!managementEndpoints.has("_links")) {
+                    logger.debug("Management endpoint does not have links at url={}", managementUrl)
+                    emptyMap()
+                } else {
+                    managementEndpoints["_links"].asMap()
+                        .mapValues { it.value["href"].asText() }
+                        .also {
+                            if (it.isEmpty()) {
+                                violationRules.add("MANAGEMENT_ENDPOINT_NOT_VALID_FORMAT")
+                            }
+                        }
                 }
             } catch (e: HttpStatusCodeException) {
                 violationRules.add("MANAGEMENT_ENDPOINT_ERROR_${e.statusCode}")
