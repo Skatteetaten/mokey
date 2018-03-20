@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.controller.AuroraStatus
+import no.skatteetaten.aurora.mokey.service.ManagementLinks
 import java.security.MessageDigest
 
 data class ApplicationData(
@@ -25,7 +26,7 @@ data class PodDetails(
 )
 
 data class ManagementData(
-        val links: Map<String, String>? = null,
+        val links: ManagementLinks,
         val info: JsonNode? = null,
         val health: JsonNode? = null
 )

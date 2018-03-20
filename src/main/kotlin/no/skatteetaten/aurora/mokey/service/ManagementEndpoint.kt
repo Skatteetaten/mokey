@@ -3,7 +3,7 @@ package no.skatteetaten.aurora.mokey.service
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mokey.extensions.asMap
-import no.skatteetaten.aurora.mokey.model.ManagementData
+import no.skatteetaten.aurora.mokey.service.Endpoint.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -18,59 +18,47 @@ class ManagementEndpointFactory(val restTemplate: RestTemplate) {
     }
 }
 
-class ManagementEndpoint(
-    private val restTemplate: RestTemplate,
-    val links: Map<String, String>,
-    val violationRules: MutableSet<String> = mutableSetOf()
+class ManagementEndpointException(val endpoint: Endpoint, val errorCode: String, cause: Exception? = null)
+    : RuntimeException("${endpoint}_$errorCode", cause)
+
+enum class Endpoint(val key: String) { HEALTH("health"), INFO("info"), MANAGEMENT("_links") }
+
+data class ManagementLinks(private val links: Map<String, String>) {
+
+    fun linkFor(endpoint: Endpoint): String {
+        return links[endpoint.key] ?: throw ManagementEndpointException(endpoint, "LINK_MISSING")
+    }
+
+    companion object {
+        fun parseManagementResponse(response: JsonNode): ManagementLinks {
+            return try {
+                val links = response[MANAGEMENT.key].asMap()
+                        .mapValues { it.value["href"].asText()!! }
+                ManagementLinks(links)
+            } catch (e: Exception) {
+                throw ManagementEndpointException(MANAGEMENT, "INVALID_FORMAT", e)
+            }
+        }
+    }
+}
+
+class ManagementEndpoint private constructor(
+        private val restTemplate: RestTemplate,
+        val links: ManagementLinks
 ) {
 
-    fun getManagementData(): ManagementData {
-
-        val info = getInfoEndpointResponse()
-        val health = getHealthEndpointResponse()
-
-        return ManagementData(links, info, health)
+    @Throws(ManagementEndpointException::class)
+    fun getHealthEndpointResponse(): JsonNode {
+        return findJsonResource(HEALTH)
     }
 
-    fun getHealthEndpointResponse(): JsonNode? {
-        return try {
-            findResource(links["health"])
-        } catch (e: HttpStatusCodeException) {
-            if (e.statusCode.is5xxServerError) {
-                try {
-                    jacksonObjectMapper().readTree(e.responseBodyAsByteArray)
-                } catch (e: Exception) {
-                    violationRules.add("MANAGEMENT_HEALTH_ERROR_INVALID_JSON")
-                    null
-                }
-            } else {
-                violationRules.add("MANAGEMENT_HEALTH_ERROR_${e.statusCode}")
-                null
-            }
-        } catch (e: RestClientException) {
-            violationRules.add("MANAGEMENT_HEALTH_ERROR_HTTP")
-            null
-        }
+    @Throws(ManagementEndpointException::class)
+    fun getInfoEndpointResponse(): JsonNode {
+        return findJsonResource(INFO)
     }
 
-    fun getInfoEndpointResponse(): JsonNode? {
-        return try {
-            findResource(links["info"])
-        } catch (e: HttpStatusCodeException) {
-            violationRules.add("MANAGEMENT_INFO_ERROR_${e.statusCode}")
-            null
-        } catch (e: RestClientException) {
-            violationRules.add("MANAGEMENT_INFO_ERROR_HTTP")
-            null
-        }
-    }
-
-    private fun findResource(url: String?): JsonNode? {
-        if (url == null) {
-            return null
-        }
-        logger.debug("Find resource with url={}", url)
-        return restTemplate.getForObject(url, JsonNode::class.java)
+    private fun findJsonResource(endpoint: Endpoint): JsonNode {
+        return findJsonResource(restTemplate, endpoint, links.linkFor(endpoint))
     }
 
     companion object {
@@ -78,45 +66,36 @@ class ManagementEndpoint(
 
         fun create(restTemplate: RestTemplate, managementUrl: String): ManagementEndpoint {
 
-            val violationRules: MutableSet<String> = mutableSetOf()
-            val links = getManagementLinks(restTemplate, managementUrl, violationRules)
-            return ManagementEndpoint(restTemplate, links, violationRules)
+            val response = findJsonResource(restTemplate, Endpoint.MANAGEMENT, managementUrl)
+            val links = ManagementLinks.parseManagementResponse(response)
+            return ManagementEndpoint(restTemplate, links)
         }
 
-        private fun getManagementLinks(restTemplate: RestTemplate, managementUrl: String, violationRules: MutableSet<String>): Map<String, String> {
-            val links = try {
-                val managementEndpoints = restTemplate.getForObject(managementUrl, JsonNode::class.java)
+        private fun findJsonResource(restTemplate: RestTemplate, endpoint: Endpoint, url: String): JsonNode {
 
-                if (!managementEndpoints.has("_links")) {
-                    logger.debug("Management endpoint does not have links at url={}", managementUrl)
-                    emptyMap()
-                } else {
-                    managementEndpoints["_links"].asMap()
-                        .mapValues { it.value["href"].asText() }
-                        .also {
-                            if (it.isEmpty()) {
-                                violationRules.add("MANAGEMENT_ENDPOINT_NOT_VALID_FORMAT")
-                            }
-                        }
-                }
-            } catch (e: HttpStatusCodeException) {
-                violationRules.add("MANAGEMENT_ENDPOINT_ERROR_${e.statusCode}")
-                null
+            logger.debug("Getting resource with url={}", url)
+            try {
+                return restTemplate.getForObject<JsonNode>(url, JsonNode::class.java)!!
             } catch (e: Exception) {
-                violationRules.add("MANAGEMENT_ENDPOINT_ERROR_HTTP")
-                null
+                var cause = e
+                val errorCode = when (e) {
+                    is HttpStatusCodeException -> {
+                        if (e.statusCode.is5xxServerError) {
+                            try {
+                                return jacksonObjectMapper().readTree(e.responseBodyAsByteArray)
+                            } catch (e: Exception) {
+                                cause = e
+                                "INVALID_JSON"
+                            }
+                        } else {
+                            "ERROR_${e.statusCode}"
+                        }
+                    }
+                    is RestClientException -> "ERROR_HTTP"
+                    else -> "ERROR_UNKNOWN"
+                }
+                throw ManagementEndpointException(endpoint, errorCode, cause)
             }
-            return links ?: emptyMap()
-        }
-
-        private fun findManagementLinks(restTemplate: RestTemplate, managementUrl: String): Map<String, String> {
-            val managementEndpoints = restTemplate.getForObject(managementUrl, JsonNode::class.java)
-
-            if (!managementEndpoints.has("_links")) {
-                logger.debug("Management endpoint does not have links at url={}", managementUrl)
-                return emptyMap()
-            }
-            return managementEndpoints["_links"].asMap().mapValues { it.value["href"].asText() }
         }
     }
 }

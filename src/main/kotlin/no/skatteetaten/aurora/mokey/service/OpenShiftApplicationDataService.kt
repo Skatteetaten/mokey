@@ -4,13 +4,7 @@ import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
-import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationId
-import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.Environment
-import no.skatteetaten.aurora.mokey.model.ImageDetails
-import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
-import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.model.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -134,10 +128,9 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
         val labelMap = dc.spec.selector.mapValues { it.value }
         return openshiftService.pods(dc.metadata.namespace, labelMap).map {
             val podIP = it.status.podIP ?: null
-            val managementData = if (managementPath == null || podIP == null) null else {
-                val managementEndpoint = managementEndpointFactory.create("http://$podIP$managementPath")
-                managementEndpoint.getManagementData()
-            }
+            val managementData = if (managementPath != null && podIP != null)
+                getManagementData("http://$podIP$managementPath")
+            else null
             val status = it.status.containerStatuses.first()
             PodDetails(
                     OpenShiftPodExcerpt(
@@ -152,6 +145,16 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
                     managementData
             )
         }
+    }
+
+    fun getManagementData(url: String): ManagementData {
+
+        val managementEndpoint = managementEndpointFactory.create(url)
+
+        val info = managementEndpoint.getInfoEndpointResponse()
+        val health = managementEndpoint.getHealthEndpointResponse()
+
+        return ManagementData(managementEndpoint.links, info, health)
     }
 
     private fun getDeploymentPhaseFromReplicationController(namespace: String, name: String, versionNumber: Long): String? {
