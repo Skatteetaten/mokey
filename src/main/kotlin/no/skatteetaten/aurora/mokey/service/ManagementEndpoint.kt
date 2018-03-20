@@ -13,14 +13,14 @@ import org.springframework.web.client.RestTemplate
 
 @Service
 class ManagementEndpointFactory(val restTemplate: RestTemplate) {
-    fun create(podIP: String, managementPath: String): ManagementEndpoint {
-        return ManagementEndpoint.create(restTemplate, podIP, managementPath)
+    fun create(managementUrl: String): ManagementEndpoint {
+        return ManagementEndpoint.create(restTemplate, managementUrl)
     }
 }
 
 class ManagementEndpoint(
         private val restTemplate: RestTemplate,
-        private val links: Map<String, String>,
+        val links: Map<String, String>,
         val violationRules: MutableSet<String> = mutableSetOf()
 ) {
 
@@ -77,16 +77,16 @@ class ManagementEndpoint(
     companion object {
         val logger: Logger = LoggerFactory.getLogger(ManagementEndpoint::class.java)
 
-        fun create(restTemplate: RestTemplate, podIP: String, managementPath: String): ManagementEndpoint {
+        fun create(restTemplate: RestTemplate, managementUrl: String): ManagementEndpoint {
 
             val violationRules: MutableSet<String> = mutableSetOf()
-            val links = getManagementLinks(restTemplate, podIP, managementPath, violationRules)
+            val links = getManagementLinks(restTemplate, managementUrl, violationRules)
             return ManagementEndpoint(restTemplate, links, violationRules)
         }
 
-        private fun getManagementLinks(restTemplate: RestTemplate, podIP: String, managementPath: String, violationRules: MutableSet<String>): Map<String, String> {
+        private fun getManagementLinks(restTemplate: RestTemplate, managementUrl: String, violationRules: MutableSet<String>): Map<String, String> {
             val links = try {
-                findManagementLinks(restTemplate, podIP, managementPath).also {
+                findManagementLinks(restTemplate, managementUrl).also {
                     if (it.isEmpty()) {
                         violationRules.add("MANAGEMENT_ENDPOINT_NOT_VALID_FORMAT")
                     }
@@ -101,10 +101,7 @@ class ManagementEndpoint(
             return links ?: emptyMap()
         }
 
-        private fun findManagementLinks(restTemplate: RestTemplate, podIP: String, managementPath: String): Map<String, String> {
-            logger.debug("Find management endpoints ip={}, path={}", podIP, managementPath)
-            val managementUrl = "http://${podIP}$managementPath"
-
+        private fun findManagementLinks(restTemplate: RestTemplate, managementUrl: String): Map<String, String> {
             val managementEndpoints = restTemplate.getForObject(managementUrl, JsonNode::class.java)
 
             if (!managementEndpoints.has("_links")) {

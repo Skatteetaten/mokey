@@ -4,7 +4,13 @@ import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
-import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.model.ImageDetails
+import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
+import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -129,7 +135,7 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
         return openshiftService.pods(dc.metadata.namespace, labelMap).map {
             val podIP = it.status.podIP ?: null
             val managementData = if (managementPath == null || podIP == null) null else {
-                val managementEndpoint = managementEndpointFactory.create(podIP, managementPath)
+                val managementEndpoint = managementEndpointFactory.create("http://$podIP$managementPath")
                 managementEndpoint.getManagementData()
             }
             val status = it.status.containerStatuses.first()
