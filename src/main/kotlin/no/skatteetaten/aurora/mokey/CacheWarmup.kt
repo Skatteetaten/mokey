@@ -6,7 +6,7 @@ import org.springframework.beans.factory.InitializingBean
 import org.springframework.stereotype.Component
 
 @Component
-class StartupHandler(val applicationDataService: ApplicationDataServiceCacheDecorator) : InitializingBean {
+class CacheWarmup(val applicationDataService: ApplicationDataServiceCacheDecorator) : InitializingBean {
     override fun afterPropertiesSet() {
         val environments = listOf("aurora", "paas", "sirius-utv1").map { Environment.fromNamespace(it) }
         applicationDataService.refreshCache(/*environments*/)
