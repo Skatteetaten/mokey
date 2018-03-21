@@ -3,7 +3,7 @@ package no.skatteetaten.aurora.mokey.service
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 
 interface ApplicationDataService {
-    fun getAffiliations(): List<String>
+    fun findAllAffiliations(): List<String>
 
     fun findApplicationDataById(id: String): ApplicationData?
 

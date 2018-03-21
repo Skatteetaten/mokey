@@ -5,11 +5,13 @@ import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
 import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
+@ApplicationDataSource(CLUSTER)
 class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
                                       val auroraStatusCalculator: AuroraStatusCalculator,
                                       val managementEndpointFactory: ManagementEndpointFactory) : ApplicationDataService {
@@ -18,7 +20,7 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
 
     val logger: Logger = LoggerFactory.getLogger(OpenShiftApplicationDataService::class.java)
 
-    override fun getAffiliations(): List<String> {
+    override fun findAllAffiliations(): List<String> {
         return findAllEnvironments().map { it.affiliation }.toSet().toList()
     }
 

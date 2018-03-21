@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import no.skatteetaten.aurora.mokey.service.CachedApplicationDataService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
@@ -16,6 +15,6 @@ class AffiliationController(val applicationDataService: ApplicationDataService) 
 
     @GetMapping()
     fun getAffiliations(): List<String> {
-        return applicationDataService.getAffiliations()
+        return applicationDataService.findAllAffiliations()
     }
 }

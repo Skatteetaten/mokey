@@ -1,6 +1,8 @@
 package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.service.DataSources.CACHE
+import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
@@ -10,13 +12,14 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Service
 @Primary
-class CachedApplicationDataService(val openShiftApplicationDataService: OpenShiftApplicationDataService) : ApplicationDataService {
+@ApplicationDataSource(CACHE)
+class CachedApplicationDataService(@ApplicationDataSource(CLUSTER) val applicationDataService: ApplicationDataService) : ApplicationDataService {
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     val logger: Logger = LoggerFactory.getLogger(CachedApplicationDataService::class.java)
 
-    override fun getAffiliations(): List<String> {
+    override fun findAllAffiliations(): List<String> {
         return cache.mapNotNull { it.value.affiliation }
                 .filter(String::isNotBlank)
                 .distinct()
@@ -39,7 +42,7 @@ class CachedApplicationDataService(val openShiftApplicationDataService: OpenShif
         val newKeys = mutableListOf<String>()
 
         val time = withStopWatch {
-            val applications = openShiftApplicationDataService.findAllApplicationData(affiliations)
+            val applications = applicationDataService.findAllApplicationData(affiliations)
             applications.forEach {
                 cache[it.id] = it
                 newKeys.add(it.id)
