@@ -55,6 +55,7 @@ dependencies {
       'org.springframework.restdocs:spring-restdocs-mockmvc',
       'org.springframework.security:spring-security-test',
       'org.junit.jupiter:junit-jupiter-api',
+      'org.junit.jupiter:junit-jupiter-params:5.1.0',
       'io.fabric8:openshift-server-mock:3.1.8',
       'org.springframework.boot:spring-boot-starter-test',
       'io.mockk:mockk:1.7.10'
@@ -69,6 +70,13 @@ springBoot {
 }
 
 compileKotlin {
+  kotlinOptions {
+    suppressWarnings = true
+    jvmTarget = 1.8
+  }
+}
+
+compileTestKotlin {
   kotlinOptions {
     suppressWarnings = true
     jvmTarget = 1.8
