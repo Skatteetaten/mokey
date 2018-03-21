@@ -2,7 +2,9 @@ package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.MissingNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import jdk.nashorn.internal.ir.EmptyNode
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.service.Endpoint.*
 import org.slf4j.Logger
@@ -77,13 +79,13 @@ class ManagementEndpoint private constructor(
 
             logger.debug("Getting resource with url={}", url)
             try {
-                val responseText = try {
-                    restTemplate.getForObject(url, String::class.java)!!
+                val responseText: String? = try {
+                    restTemplate.getForObject(url, String::class.java)
                 } catch (e: HttpStatusCodeException) {
                     if (!e.statusCode.is5xxServerError) throw e
                     String(e.responseBodyAsByteArray)
-                }
-                return jacksonObjectMapper().readTree(responseText)
+                } ?: ""
+                return jacksonObjectMapper().readTree(responseText) ?: MissingNode.getInstance()
             } catch (e: Exception) {
                 val errorCode = when (e) {
                     is HttpStatusCodeException -> "ERROR_${e.statusCode}"
