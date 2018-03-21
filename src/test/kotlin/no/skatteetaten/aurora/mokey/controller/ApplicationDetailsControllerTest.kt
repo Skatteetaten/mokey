@@ -3,8 +3,9 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
-import no.skatteetaten.aurora.mokey.service.CachedApplicationDataService
+import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient
@@ -21,26 +22,24 @@ class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
     private val ID = "123"
 
     @MockBean
-    lateinit var cachedApplicationDataService: CachedApplicationDataService
-/*
+    lateinit var applicationDataService: ApplicationDataService
 
     @Test
     @WithUserDetails
-    fun `Get AuroraDetails given user with access`() {
-        given(cachedApplicationDataService.findApplicationDataById(ID)).willReturn(
+    fun `should get applicationdetails given user with access`() {
+        given(applicationDataService.findApplicationDataById(ID)).willReturn(
                 ApplicationData(
-                        ApplicationId("name", Environment("env", "affiliation")),
+                        ApplicationId("name", Environment("env", "affiliation")).toString(),
+                        AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
                         "deployTag",
                         "name",
                         "namespace",
                         "affiliation",
-                        availableReplicas = 1,
-                        targetReplicas = 1
+                        deployDetails = DeployDetails("Complete", 1, 1)
                 )
         )
 
         mockMvc.perform(get("/api/applicationdetails/{id}", "123"))
                 .andExpect(status().isOk)
     }
-*/
 }

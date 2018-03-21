@@ -13,12 +13,14 @@ import org.springframework.context.annotation.Primary
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
 
 @Configuration
+@EnableScheduling
 class ApplicationConfig {
     @Bean
     @Primary
@@ -34,18 +36,18 @@ class ApplicationConfig {
     @Bean
     fun restTemplate(builder: RestTemplateBuilder): RestTemplate {
         return builder.requestFactory({ createRequestFactory(2, 2) })
-            .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
-                request.headers.accept = mutableListOf(MediaType.APPLICATION_JSON)
-                execution.execute(request, body)
-            }).build()
+                .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
+                    request.headers.accept = mutableListOf(MediaType.APPLICATION_JSON)
+                    execution.execute(request, body)
+                }).build()
     }
 
     @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)
     private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
 
         val okHttpClientBuilder = OkHttpClient().newBuilder()
-            .readTimeout(readTimeout, TimeUnit.SECONDS)
-            .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
+                .readTimeout(readTimeout, TimeUnit.SECONDS)
+                .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
 
 
         return OkHttp3ClientHttpRequestFactory(okHttpClientBuilder.build())
