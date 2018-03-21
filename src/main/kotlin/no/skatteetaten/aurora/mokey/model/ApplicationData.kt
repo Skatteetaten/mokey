@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.controller.AuroraStatus
+import no.skatteetaten.aurora.mokey.service.Endpoint
 import no.skatteetaten.aurora.mokey.service.ManagementLinks
 
 data class ApplicationData(
@@ -24,18 +25,22 @@ data class PodDetails(
         val managementData: ManagementData
 )
 
-data class ManagementData private constructor(
+data class ManagementEndpointError(
+        val message: String,
+        val endpoint: Endpoint,
+        val code: String,
+        val rootCause: String? = null
+)
+
+data class ManagementData constructor(
         val links: ManagementLinks? = null,
         val info: JsonNode? = null,
         val health: JsonNode? = null,
-        val errorMessage: String? = null
+        val errors: List<ManagementEndpointError> = emptyList()
 ) {
-    constructor(errorMessage: String) : this(null, null, null, errorMessage)
-    constructor(links: ManagementLinks, info: JsonNode? = null, health: JsonNode? = null) : this(links, info, health, null)
-
     companion object {
-        fun withError(message: String): ManagementData {
-            return ManagementData(message)
+        fun withConfigError(message: String): ManagementData {
+            return ManagementData(errors = listOf(ManagementEndpointError(message, Endpoint.MANAGEMENT, "CONFIGURATION")))
         }
     }
 }

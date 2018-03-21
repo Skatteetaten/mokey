@@ -1,5 +1,8 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
+import no.skatteetaten.aurora.mokey.service.Endpoint
+
 data class ApplicationResource(
         val id: String,
         val affiliation: String?,
@@ -33,8 +36,15 @@ data class ImageDetailsResource(
         val environmentVariables: Map<String, String>?
 )
 
+data class PodResource(val managementData: ManagementDataResource)
+
 data class ManagementDataResource(
-        val errorMessage: String?
+        val errors: List<ManagementEndpointErrorResource>
 )
 
-data class PodResource(val managementData: ManagementDataResource)
+data class ManagementEndpointErrorResource(
+        val message: String,
+        val endpoint: Endpoint,
+        val code: String,
+        val rootCause: String? = null
+)

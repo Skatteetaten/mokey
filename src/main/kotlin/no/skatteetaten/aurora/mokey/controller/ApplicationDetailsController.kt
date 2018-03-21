@@ -6,10 +6,7 @@ import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/applicationdetails")
@@ -24,6 +21,13 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
                 ?.let(::toApplicationDetails)
                 ?: throw NoSuchResourceException("Does not exist")
     }
+
+    @GetMapping("")
+    fun getAll(@RequestParam affiliation: String, @AuthenticationPrincipal user: User): List<ApplicationDetailsResource> {
+
+        return applicationDataService.findAllApplicationData(listOf(affiliation))
+                .map(::toApplicationDetails)
+    }
 }
 
 fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
@@ -35,7 +39,11 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                     it.imageDetails?.imageBuildTime,
                     it.imageDetails?.environmentVariables
             ),
-            it.pods.map { PodResource(ManagementDataResource(it.managementData.errorMessage)) }
+            it.pods.map {
+                PodResource(ManagementDataResource(it.managementData.errors.map {
+                    ManagementEndpointErrorResource(it.message, it.endpoint, it.code, it.rootCause)
+                }))
+            }
     )
 }
 
