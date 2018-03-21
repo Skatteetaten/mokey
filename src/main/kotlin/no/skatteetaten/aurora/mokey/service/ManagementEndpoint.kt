@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import jdk.nashorn.internal.ir.EmptyNode
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.service.Endpoint.*
 import org.slf4j.Logger
@@ -68,6 +67,7 @@ class ManagementEndpoint private constructor(
     companion object {
         val logger: Logger = LoggerFactory.getLogger(ManagementEndpoint::class.java)
 
+        @Throws(ManagementEndpointException::class)
         fun create(restTemplate: RestTemplate, managementUrl: String): ManagementEndpoint {
 
             val response = findJsonResource(restTemplate, Endpoint.MANAGEMENT, managementUrl)
