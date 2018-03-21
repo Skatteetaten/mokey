@@ -21,7 +21,7 @@ data class ApplicationData(
 
 data class PodDetails(
         val openShiftPodExcerpt: OpenShiftPodExcerpt,
-        val managementData: ManagementResult<ManagementData>
+        val managementData: Result<ManagementData, ManagementEndpointError>
 )
 
 data class ManagementEndpointError(
@@ -31,11 +31,24 @@ data class ManagementEndpointError(
         val rootCause: String? = null
 )
 
-data class ManagementResult<out T>(val value: T? = null, val error: ManagementEndpointError? = null)
+
+data class Result<out Value, out Error>(val value: Value? = null, val error: Error? = null) {
+
+    fun <Value2, Error2> map(valueMapper: (Value) -> Value2, errorMapper: (Error) -> Error2): Result<Value2, Error2> {
+        value?.let {
+            return Result(value = valueMapper(it))
+        }
+
+        return Result(error = errorMapper(error!!))
+
+    }
+}
+
+
 data class ManagementData constructor(
         val links: ManagementLinks? = null,
-        val info: ManagementResult<JsonNode>,
-        val health: ManagementResult<JsonNode>
+        val info: Result<JsonNode, ManagementEndpointError>,
+        val health: Result<JsonNode, ManagementEndpointError>
 )
 
 
