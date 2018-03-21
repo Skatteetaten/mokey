@@ -12,13 +12,13 @@ import org.springframework.stereotype.Service
 
 @Service
 @ApplicationDataSource(CLUSTER)
-class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
+class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
                                       val auroraStatusCalculator: AuroraStatusCalculator,
                                       val managementEndpointFactory: ManagementEndpointFactory) : ApplicationDataService {
 
     val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
 
-    val logger: Logger = LoggerFactory.getLogger(OpenShiftApplicationDataService::class.java)
+    val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 
     override fun findAllAffiliations(): List<String> {
         return findAllEnvironments().map { it.affiliation }.toSet().toList()
@@ -149,14 +149,18 @@ class OpenShiftApplicationDataService(val openshiftService: OpenShiftService,
         }
     }
 
-    fun getManagementData(url: String): ManagementData {
+    fun getManagementData(url: String): ManagementData? {
 
-        val managementEndpoint = managementEndpointFactory.create(url)
+        return try {
+            val managementEndpoint = managementEndpointFactory.create(url)
 
-        val info = managementEndpoint.getInfoEndpointResponse()
-        val health = managementEndpoint.getHealthEndpointResponse()
+            val info = managementEndpoint.getInfoEndpointResponse()
+            val health = managementEndpoint.getHealthEndpointResponse()
 
-        return ManagementData(managementEndpoint.links, info, health)
+            ManagementData(managementEndpoint.links, info, health)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun getDeploymentPhaseFromReplicationController(namespace: String, name: String, versionNumber: Long): String? {

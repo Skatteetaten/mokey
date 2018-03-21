@@ -13,11 +13,11 @@ import java.util.concurrent.ConcurrentHashMap
 @Service
 @Primary
 @ApplicationDataSource(CACHE)
-class CachedApplicationDataService(@ApplicationDataSource(CLUSTER) val applicationDataService: ApplicationDataService) : ApplicationDataService {
+class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val applicationDataService: ApplicationDataService) : ApplicationDataService {
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
-    val logger: Logger = LoggerFactory.getLogger(CachedApplicationDataService::class.java)
+    val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceCacheDecorator::class.java)
 
     override fun findAllAffiliations(): List<String> {
         return cache.mapNotNull { it.value.affiliation }

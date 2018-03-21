@@ -9,7 +9,7 @@ import org.junit.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
 
-class CachedApplicationDataServiceTest {
+class ApplicationDataServiceCacheDecoratorTest {
 
     val app1Id = "some_id"
     val app1v1 = ApplicationData(
@@ -24,7 +24,7 @@ class CachedApplicationDataServiceTest {
     val app1v2 = app1v1.copy(deployTag = "prod")
 
     val sourceApplicationDataService = mock(ApplicationDataService::class.java)
-    val applicationDataService = CachedApplicationDataService(sourceApplicationDataService)
+    val applicationDataService = ApplicationDataServiceCacheDecorator(sourceApplicationDataService)
 
     @Test
     fun `should update cache from OpenShiftApplicationDataService`() {
