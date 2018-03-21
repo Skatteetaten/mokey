@@ -23,7 +23,7 @@ class ApplicationDataServiceCacheDecoratorTest {
     )
     val app1v2 = app1v1.copy(deployTag = "prod")
 
-    val sourceApplicationDataService = mock(ApplicationDataServiceOpenShift::class.java)
+    val sourceApplicationDataService = mock(ApplicationDataService::class.java)
     val applicationDataService = ApplicationDataServiceCacheDecorator(sourceApplicationDataService)
 
     @Test
