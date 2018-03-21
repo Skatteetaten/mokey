@@ -42,6 +42,10 @@ data class ManagementData constructor(
         fun withConfigError(message: String): ManagementData {
             return ManagementData(errors = listOf(ManagementEndpointError(message, Endpoint.MANAGEMENT, "CONFIGURATION")))
         }
+
+        fun withUnexpectedError(message: String, e: Exception): ManagementData {
+            return ManagementData(errors = listOf(ManagementEndpointError(message, Endpoint.MANAGEMENT, "UNEXPECTED", e.message)))
+        }
     }
 }
 

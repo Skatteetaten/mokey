@@ -12,11 +12,18 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         if (hostAddress.isNullOrBlank()) return ManagementData.withConfigError("Host address is missing")
         if (endpointPath.isNullOrBlank()) return ManagementData.withConfigError("Management Path is missing")
 
-        val managementUrl = "http://$hostAddress$endpointPath"
-        return load(managementUrl)
+        return load("http://$hostAddress$endpointPath")
     }
 
     fun load(url: String): ManagementData {
+        try {
+            return tryLoad(url)
+        } catch (e: Exception) {
+            return ManagementData.withUnexpectedError("Unexpected error while loading management data", e)
+        }
+    }
+
+    private fun tryLoad(url: String): ManagementData {
         val managementEndpoint = try {
             managementEndpointFactory.create(url)
         } catch (e: ManagementEndpointException) {

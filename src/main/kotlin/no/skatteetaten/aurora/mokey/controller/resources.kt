@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import no.skatteetaten.aurora.mokey.service.Endpoint
 
@@ -39,6 +40,8 @@ data class ImageDetailsResource(
 data class PodResource(val managementData: ManagementDataResource)
 
 data class ManagementDataResource(
+        val info: JsonNode?,
+        val health: JsonNode?,
         val errors: List<ManagementEndpointErrorResource>
 )
 

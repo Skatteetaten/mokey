@@ -40,9 +40,12 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                     it.imageDetails?.environmentVariables
             ),
             it.pods.map {
-                PodResource(ManagementDataResource(it.managementData.errors.map {
-                    ManagementEndpointErrorResource(it.message, it.endpoint, it.code, it.rootCause)
-                }))
+                PodResource(ManagementDataResource(
+                        it.managementData.info,
+                        it.managementData.health,
+                        it.managementData.errors.map {
+                            ManagementEndpointErrorResource(it.message, it.endpoint, it.code, it.rootCause)
+                        }))
             }
     )
 }
