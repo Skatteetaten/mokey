@@ -5,8 +5,9 @@ import no.skatteetaten.aurora.mokey.AbstractTest
 import no.skatteetaten.aurora.mokey.ApplicationConfig
 import no.skatteetaten.aurora.mokey.service.Endpoint.MANAGEMENT
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.DynamicTest.dynamicTest
 import org.junit.jupiter.api.TestFactory
@@ -28,6 +29,11 @@ class ManagementEndpointTest : AbstractTest() {
     val server = MockRestServiceServer.createServer(restTemplate)
 
     val managementUrl = "http://localhost:8081/management"
+
+    @BeforeEach
+    fun resetMocks() {
+        server.reset()
+    }
 
     @Test
     fun `should use links from management response for health and info endpoints`() {
