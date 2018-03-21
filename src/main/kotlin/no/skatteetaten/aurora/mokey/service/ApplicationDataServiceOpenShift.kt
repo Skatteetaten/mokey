@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
 @ApplicationDataSource(CLUSTER)
 class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
                                       val auroraStatusCalculator: AuroraStatusCalculator,
-                                      val managementEndpointFactory: ManagementEndpointFactory) : ApplicationDataService {
+                                      val managementDataService: ManagementDataService) : ApplicationDataService {
 
     val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
 
@@ -130,9 +130,8 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         val labelMap = dc.spec.selector.mapValues { it.value }
         return openshiftService.pods(dc.metadata.namespace, labelMap).map {
             val podIP = it.status.podIP ?: null
-            val managementData = if (managementPath != null && podIP != null)
-                getManagementData("http://$podIP$managementPath")
-            else null
+            val managementData = managementDataService.load(podIP, managementPath)
+
             val status = it.status.containerStatuses.first()
             PodDetails(
                     OpenShiftPodExcerpt(
@@ -146,20 +145,6 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
                     ),
                     managementData
             )
-        }
-    }
-
-    fun getManagementData(url: String): ManagementData? {
-
-        return try {
-            val managementEndpoint = managementEndpointFactory.create(url)
-
-            val info = managementEndpoint.getInfoEndpointResponse()
-            val health = managementEndpoint.getHealthEndpointResponse()
-
-            ManagementData(managementEndpoint.links, info, health)
-        } catch (e: Exception) {
-            null
         }
     }
 

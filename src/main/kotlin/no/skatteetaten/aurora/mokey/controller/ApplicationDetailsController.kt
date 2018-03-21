@@ -34,7 +34,8 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                     it.imageDetails?.dockerImageReference,
                     it.imageDetails?.imageBuildTime,
                     it.imageDetails?.environmentVariables
-            )
+            ),
+            it.pods.map { PodResource(ManagementDataResource(it.managementData.errorMessage)) }
     )
 }
 

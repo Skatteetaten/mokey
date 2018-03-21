@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.controller.AuroraStatus
 import no.skatteetaten.aurora.mokey.service.ManagementLinks
-import java.security.MessageDigest
 
 data class ApplicationData(
         val id: String,
@@ -22,14 +21,24 @@ data class ApplicationData(
 
 data class PodDetails(
         val openShiftPodExcerpt: OpenShiftPodExcerpt,
-        val managementData: ManagementData?
+        val managementData: ManagementData
 )
 
-data class ManagementData(
-        val links: ManagementLinks,
+data class ManagementData private constructor(
+        val links: ManagementLinks? = null,
         val info: JsonNode? = null,
-        val health: JsonNode? = null
-)
+        val health: JsonNode? = null,
+        val errorMessage: String? = null
+) {
+    constructor(errorMessage: String) : this(null, null, null, errorMessage)
+    constructor(links: ManagementLinks, info: JsonNode? = null, health: JsonNode? = null) : this(links, info, health, null)
+
+    companion object {
+        fun withError(message: String): ManagementData {
+            return ManagementData(message)
+        }
+    }
+}
 
 data class OpenShiftPodExcerpt(
         val name: String,
