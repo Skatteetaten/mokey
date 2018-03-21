@@ -45,6 +45,9 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
             return ManagementResult(error = error)
         }
 
+        //TODO: Add env endpoing
+
+        //TODO: Marshal this a a Info class
         val info = try {
             ManagementResult(value = managementEndpoint.getInfoEndpointResponse())
         } catch (e: ManagementEndpointException) {
@@ -52,6 +55,7 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
                     e.endpoint, e.errorCode, e.cause?.message))
         }
 
+        //TODO: Marshal this a a Health class not as jsonNode
         val health = try {
             ManagementResult(value = managementEndpoint.getHealthEndpointResponse())
         } catch (e: ManagementEndpointException) {

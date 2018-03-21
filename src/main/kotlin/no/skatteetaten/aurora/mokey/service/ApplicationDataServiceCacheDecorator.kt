@@ -17,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap
 @ApplicationDataSource(CACHE)
 class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val applicationDataService: ApplicationDataService) : ApplicationDataService {
 
+
+    //TODO: replace with Redis
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceCacheDecorator::class.java)
