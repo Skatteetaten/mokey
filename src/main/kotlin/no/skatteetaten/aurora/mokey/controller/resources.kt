@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.databind.JsonNode
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import no.skatteetaten.aurora.mokey.service.Endpoint
 
 data class ApplicationResource(
@@ -9,21 +8,13 @@ data class ApplicationResource(
         val affiliation: String?,
         val environment: String,
         val name: String,
-        val status: AuroraStatus,
+        val status: AuroraStatusResource,
         val version: Version
 )
 
-data class AuroraStatus(val level: AuroraStatusLevel, val comment: String)
-
-enum class AuroraStatusLevel(val level: Int) {
-    DOWN(4),
-    UNKNOWN(3),
-    OBSERVE(2),
-    OFF(1),
-    HEALTHY(0)
-}
-
 data class Version(val deployTag: String?, val auroraVersion: String?)
+
+data class AuroraStatusResource(val code: String, val comment: String? = null)
 
 data class ApplicationDetailsResource(
         val application: ApplicationResource,

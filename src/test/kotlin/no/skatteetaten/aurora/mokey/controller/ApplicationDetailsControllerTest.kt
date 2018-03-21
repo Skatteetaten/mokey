@@ -1,10 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
-import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationId
-import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.model.*
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given

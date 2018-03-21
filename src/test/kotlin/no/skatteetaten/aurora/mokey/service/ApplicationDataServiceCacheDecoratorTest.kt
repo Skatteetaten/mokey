@@ -1,8 +1,8 @@
 package no.skatteetaten.aurora.mokey.service
 
-import no.skatteetaten.aurora.mokey.controller.AuroraStatus
-import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test

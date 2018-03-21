@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
-import no.skatteetaten.aurora.mokey.controller.AuroraStatus
 import no.skatteetaten.aurora.mokey.service.Endpoint
 import no.skatteetaten.aurora.mokey.service.ManagementLinks
 

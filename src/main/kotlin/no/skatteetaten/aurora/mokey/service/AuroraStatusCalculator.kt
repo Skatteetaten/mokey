@@ -1,8 +1,8 @@
 package no.skatteetaten.aurora.mokey.service
 
-import no.skatteetaten.aurora.mokey.controller.AuroraStatus
-import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel
-import no.skatteetaten.aurora.mokey.controller.AuroraStatusLevel.*
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.*
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service

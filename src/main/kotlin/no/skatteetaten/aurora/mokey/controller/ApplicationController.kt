@@ -29,7 +29,7 @@ fun toApplication(data: ApplicationData): ApplicationResource {
             data.affiliation,
             environment.name,
             data.name,
-            data.auroraStatus.copy(comment = "N/A"),
+            data.auroraStatus.let { AuroraStatusResource(it.level.toString()) },
             Version(data.deployTag, data.imageDetails?.auroraVersion)
     )
 }
