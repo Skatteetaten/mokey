@@ -1,19 +1,14 @@
 package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.service.DataSources.CACHE
-import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
-@Primary
-@ApplicationDataSource(CACHE)
-class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val applicationDataService: ApplicationDataService) : ApplicationDataService {
+class ApplicationDataServiceCacheDecorator(val applicationDataService: ApplicationDataServiceOpenShift) : ApplicationDataService {
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
 

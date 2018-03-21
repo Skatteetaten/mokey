@@ -1,5 +1,8 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import no.skatteetaten.aurora.mokey.model.ManagementData
+import no.skatteetaten.aurora.mokey.model.ManagementResult
+import no.skatteetaten.aurora.mokey.model.PodDetails
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.service.Endpoint
 
@@ -19,8 +22,9 @@ data class AuroraStatusResource(val code: String, val comment: String? = null)
 data class ApplicationDetailsResource(
         val application: ApplicationResource,
         val imageDetails: ImageDetailsResource,
-        val podResources: List<PodResource>
+        val podResources: List<PodDetails>
 )
+//TODO: Transform
 
 data class ImageDetailsResource(
         val dockerImageReference: String?,
@@ -28,7 +32,8 @@ data class ImageDetailsResource(
         val environmentVariables: Map<String, String>?
 )
 
-data class PodResource(val managementData: ManagementDataResource)
+data class PodResource(val managementData: ManagementResult<ManagementData>)
+
 
 data class ManagementDataResource(
         val info: JsonNode?,

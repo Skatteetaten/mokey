@@ -21,7 +21,7 @@ data class ApplicationData(
 
 data class PodDetails(
         val openShiftPodExcerpt: OpenShiftPodExcerpt,
-        val managementData: ManagementData
+        val managementData: ManagementResult<ManagementData>
 )
 
 data class ManagementEndpointError(
@@ -31,22 +31,13 @@ data class ManagementEndpointError(
         val rootCause: String? = null
 )
 
+data class ManagementResult<out T>(val value: T? = null, val error: ManagementEndpointError? = null)
 data class ManagementData constructor(
         val links: ManagementLinks? = null,
-        val info: JsonNode? = null,
-        val health: JsonNode? = null,
-        val errors: List<ManagementEndpointError> = emptyList()
-) {
-    companion object {
-        fun withConfigError(message: String): ManagementData {
-            return ManagementData(errors = listOf(ManagementEndpointError(message, Endpoint.MANAGEMENT, "CONFIGURATION")))
-        }
+        val info: ManagementResult<JsonNode>,
+        val health: ManagementResult<JsonNode>
+)
 
-        fun withUnexpectedError(message: String, e: Exception): ManagementData {
-            return ManagementData(errors = listOf(ManagementEndpointError(message, Endpoint.MANAGEMENT, "UNEXPECTED", e.message)))
-        }
-    }
-}
 
 data class OpenShiftPodExcerpt(
         val name: String,

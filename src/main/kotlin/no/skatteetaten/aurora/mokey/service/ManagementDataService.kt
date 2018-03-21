@@ -1,51 +1,64 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
+import no.skatteetaten.aurora.mokey.model.ManagementResult
 import org.springframework.stereotype.Service
 
 @Service
 class ManagementDataService(val managementEndpointFactory: ManagementEndpointFactory) {
 
-    fun load(hostAddress: String?, endpointPath: String?): ManagementData {
+    fun load(hostAddress: String?, endpointPath: String?): ManagementResult<ManagementData> {
 
-        if (hostAddress.isNullOrBlank()) return ManagementData.withConfigError("Host address is missing")
-        if (endpointPath.isNullOrBlank()) return ManagementData.withConfigError("Management Path is missing")
+        if (hostAddress.isNullOrBlank()) return ManagementResult(
+                error = ManagementEndpointError(
+                        message = "Host address is missing",
+                        endpoint = Endpoint.MANAGEMENT,
+                        code = "CONFIGURATION"))
+
+        if (endpointPath.isNullOrBlank()) return ManagementResult(
+                error = ManagementEndpointError(
+                        message = "Management Path is missing",
+                        endpoint = Endpoint.MANAGEMENT,
+                        code = "CONFIGURATION"))
 
         return load("http://$hostAddress$endpointPath")
     }
 
-    fun load(url: String): ManagementData {
-        try {
-            return tryLoad(url)
+    fun load(url: String): ManagementResult<ManagementData> {
+        return try {
+            tryLoad(url)
         } catch (e: Exception) {
-            return ManagementData.withUnexpectedError("Unexpected error while loading management data", e)
+            ManagementResult(error = ManagementEndpointError(
+                    "Unexpected error while loading management data",
+                    Endpoint.MANAGEMENT, "UNEXPECTED", e.message))
         }
     }
 
-    private fun tryLoad(url: String): ManagementData {
+    private fun tryLoad(url: String): ManagementResult<ManagementData> {
         val managementEndpoint = try {
             managementEndpointFactory.create(url)
         } catch (e: ManagementEndpointException) {
-            val error = ManagementEndpointError("Error when contacting management endpoint", e.endpoint, e.errorCode, e.cause?.message)
-            return ManagementData(errors = listOf(error))
+            val error = ManagementEndpointError("Error when contacting management endpoint",
+                    e.endpoint, e.errorCode, e.cause?.message)
+            return ManagementResult(error = error)
         }
 
-        val errors = mutableListOf<ManagementEndpointError>()
         val info = try {
-            managementEndpoint.getInfoEndpointResponse()
+            ManagementResult(value = managementEndpoint.getInfoEndpointResponse())
         } catch (e: ManagementEndpointException) {
-            errors += ManagementEndpointError("Error when contacting info endpoint", e.endpoint, e.errorCode, e.cause?.message)
-            null
+            ManagementResult<JsonNode>(error = ManagementEndpointError("Error when contacting info endpoint",
+                    e.endpoint, e.errorCode, e.cause?.message))
         }
 
         val health = try {
-            managementEndpoint.getHealthEndpointResponse()
+            ManagementResult(value = managementEndpoint.getHealthEndpointResponse())
         } catch (e: ManagementEndpointException) {
-            errors += ManagementEndpointError("Error when contacting health endpoint", e.endpoint, e.errorCode, e.cause?.message)
-            null
+            ManagementResult<JsonNode>(error = ManagementEndpointError("Error when contacting health endpoint",
+                    e.endpoint, e.errorCode, e.cause?.message))
         }
 
-        return ManagementData(managementEndpoint.links, info, health, errors)
+        return ManagementResult(value = ManagementData(managementEndpoint.links, info, health))
     }
 }

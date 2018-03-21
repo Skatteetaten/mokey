@@ -39,14 +39,7 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                     it.imageDetails?.imageBuildTime,
                     it.imageDetails?.environmentVariables
             ),
-            it.pods.map {
-                PodResource(ManagementDataResource(
-                        it.managementData.info,
-                        it.managementData.health,
-                        it.managementData.errors.map {
-                            ManagementEndpointErrorResource(it.message, it.endpoint, it.code, it.rootCause)
-                        }))
-            }
+            it.pods
     )
 }
 
