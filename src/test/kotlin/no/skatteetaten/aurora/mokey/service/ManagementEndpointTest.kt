@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.Arguments.of
 import org.junit.jupiter.params.provider.ArgumentsProvider
 import org.junit.jupiter.params.provider.ArgumentsSource
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -57,37 +58,38 @@ class ManagementEndpointTest : AbstractTest() {
         managementEndpoint.getInfoEndpointResponse()
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{0} as {1} yields {2} for management endpoint")
     @ArgumentsSource(TestDataProvider::class)
-    fun `should handle management link responses`(it: TestData) {
+    fun `should handle management link responses`(response: String, mediaType: MediaType, errorCode: String?, responseCode: HttpStatus) {
 
-        server.expect(once(), requestTo(managementUrl)).andRespond(withStatus(it.responseCode).body(it.response).contentType(it.mediaType))
+        server.expect(once(), requestTo(managementUrl)).andRespond(withStatus(responseCode).body(response).contentType(mediaType))
 
         val create: () -> Unit = { ManagementEndpoint.create(restTemplate, managementUrl) }
-        if (it.errorCode != null) {
+        if (errorCode != "SUCCESS") {
             val e = assertThrows(ManagementEndpointException::class.java, create)
             assertThat(e.endpoint).isEqualTo(MANAGEMENT)
-            assertThat(e.errorCode).isEqualTo(it.errorCode)
+            assertThat(e.errorCode).isEqualTo(errorCode)
         } else {
             create.invoke()
         }
     }
 
-    data class TestData(val response: String, val mediaType: MediaType, val errorCode: String? = null, val responseCode: HttpStatus = OK)
-
     class TestDataProvider : ArgumentsProvider {
+        fun args(response: String, mediaType: MediaType, errorCode: String="SUCCESS", responseCode: HttpStatus = OK) =
+                Arguments.of(response, mediaType, errorCode, responseCode)
+
         override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
-                TestData("{}", APPLICATION_JSON),
-                TestData("{ \"_links\": {}}", APPLICATION_JSON),
-                TestData("", APPLICATION_JSON),
-                TestData("{}", APPLICATION_JSON, responseCode = INTERNAL_SERVER_ERROR),
-                TestData("{ \"_links\": { \"health\": null}}", APPLICATION_JSON, "INVALID_FORMAT"),
-                TestData("{ _links: {}}", APPLICATION_JSON, "INVALID_JSON"),
-                TestData("", APPLICATION_JSON, "ERROR_404", NOT_FOUND),
-                TestData("<html><body><h1>hello</h1></body></html>", TEXT_HTML, "INVALID_JSON"),
-                TestData("<html><body><h1>hello</h1></body></html>", TEXT_HTML, "INVALID_JSON", INTERNAL_SERVER_ERROR),
-                TestData("<html><body><h1>hello</h1></body></html>", APPLICATION_JSON, "INVALID_JSON", INTERNAL_SERVER_ERROR)
-        ).map { Arguments.of(it) }
+                args("{}", APPLICATION_JSON),
+                args("{ \"_links\": {}}", APPLICATION_JSON),
+                args("", APPLICATION_JSON),
+                args("{}", APPLICATION_JSON, responseCode = INTERNAL_SERVER_ERROR),
+                args("{ \"_links\": { \"health\": null}}", APPLICATION_JSON, "INVALID_FORMAT"),
+                args("{ _links: {}}", APPLICATION_JSON, "INVALID_JSON"),
+                args("", APPLICATION_JSON, "ERROR_404", NOT_FOUND),
+                args("<html><body><h1>hello</h1></body></html>", TEXT_HTML, "INVALID_JSON"),
+                args("<html><body><h1>hello</h1></body></html>", TEXT_HTML, "INVALID_JSON", INTERNAL_SERVER_ERROR),
+                args("<html><body><h1>hello</h1></body></html>", APPLICATION_JSON, "INVALID_JSON", INTERNAL_SERVER_ERROR)
+        )
     }
 
     private fun withJsonResponse(resourceName: String) = withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
