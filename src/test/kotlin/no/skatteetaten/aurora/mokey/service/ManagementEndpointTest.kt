@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.Arguments.of
 import org.junit.jupiter.params.provider.ArgumentsProvider
 import org.junit.jupiter.params.provider.ArgumentsSource
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -59,30 +58,51 @@ class ManagementEndpointTest : AbstractTest() {
     }
 
     @ParameterizedTest(name = "{0} as {1} yields {2} for management endpoint")
-    @ArgumentsSource(TestDataProvider::class)
-    fun `should handle management link responses`(response: String, mediaType: MediaType, errorCode: String?, responseCode: HttpStatus) {
+    @ArgumentsSource(ErrorCases::class)
+    fun `should fail on management error responses`(response: String, mediaType: MediaType, errorCode: String?, responseCode: HttpStatus) {
 
         server.expect(once(), requestTo(managementUrl)).andRespond(withStatus(responseCode).body(response).contentType(mediaType))
 
-        val create: () -> Unit = { ManagementEndpoint.create(restTemplate, managementUrl) }
-        if (errorCode != "SUCCESS") {
-            val e = assertThrows(ManagementEndpointException::class.java, create)
-            assertThat(e.endpoint).isEqualTo(MANAGEMENT)
-            assertThat(e.errorCode).isEqualTo(errorCode)
-        } else {
-            create.invoke()
+        val e = assertThrows(ManagementEndpointException::class.java) {
+            ManagementEndpoint.create(restTemplate, managementUrl)
+        }
+        assertThat(e.endpoint).isEqualTo(MANAGEMENT)
+        assertThat(e.errorCode).isEqualTo(errorCode)
+    }
+
+    @ParameterizedTest(name = "{0} as {1} is handled without error")
+    @ArgumentsSource(SuccessCases::class)
+    fun `should handle management link responses with missing data`(response: String, mediaType: MediaType, responseCode: HttpStatus) {
+
+        server.expect(once(), requestTo(managementUrl)).andRespond(withStatus(responseCode).body(response).contentType(mediaType))
+
+        val managementEndpoint = ManagementEndpoint.create(restTemplate, managementUrl)
+        listOf(
+                { managementEndpoint.getHealthEndpointResponse() },
+                { managementEndpoint.getInfoEndpointResponse() }
+        ).forEach {
+            val e = assertThrows(ManagementEndpointException::class.java, { it.invoke() })
+            assertThat(e.errorCode).isEqualTo("LINK_MISSING")
         }
     }
 
-    class TestDataProvider : ArgumentsProvider {
-        fun args(response: String, mediaType: MediaType, errorCode: String="SUCCESS", responseCode: HttpStatus = OK) =
-                Arguments.of(response, mediaType, errorCode, responseCode)
+    class SuccessCases : ArgumentsProvider {
+        fun args(response: String, mediaType: MediaType, responseCode: HttpStatus = OK) =
+                Arguments.of(response, mediaType, responseCode)
 
         override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
                 args("{}", APPLICATION_JSON),
                 args("{ \"_links\": {}}", APPLICATION_JSON),
                 args("", APPLICATION_JSON),
-                args("{}", APPLICATION_JSON, responseCode = INTERNAL_SERVER_ERROR),
+                args("{}", APPLICATION_JSON, INTERNAL_SERVER_ERROR)
+        )
+    }
+
+    class ErrorCases : ArgumentsProvider {
+        fun args(response: String, mediaType: MediaType, errorCode: String, responseCode: HttpStatus = OK) =
+                Arguments.of(response, mediaType, errorCode, responseCode)
+
+        override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
                 args("{ \"_links\": { \"health\": null}}", APPLICATION_JSON, "INVALID_FORMAT"),
                 args("{ _links: {}}", APPLICATION_JSON, "INVALID_JSON"),
                 args("", APPLICATION_JSON, "ERROR_404", NOT_FOUND),
