@@ -51,15 +51,15 @@ dependencies {
       'org.springframework.boot:spring-boot-starter-security'
   )
 
-  testCompile(
+  [
       'org.springframework.restdocs:spring-restdocs-mockmvc',
       'org.springframework.security:spring-security-test',
       'org.junit.jupiter:junit-jupiter-api',
-      'org.junit.jupiter:junit-jupiter-params:5.1.0',
-      'io.fabric8:openshift-server-mock:3.1.8',
+      "org.junit.jupiter:junit-jupiter-params:${dependencyManagement.importedProperties['junit-jupiter.version']}",
       'org.springframework.boot:spring-boot-starter-test',
+      'io.fabric8:openshift-server-mock:3.1.8',
       'io.mockk:mockk:1.7.10'
-  )
+  ].each { testCompile(it) { exclude group: 'junit' } }
 
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
