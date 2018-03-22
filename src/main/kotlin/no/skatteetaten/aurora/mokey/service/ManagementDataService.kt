@@ -3,11 +3,14 @@ package no.skatteetaten.aurora.mokey.service
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
-import no.skatteetaten.aurora.mokey.model.Result
+import no.skatteetaten.aurora.mokey.service.Endpoint.MANAGEMENT
+import no.skatteetaten.aurora.utils.Either
+import no.skatteetaten.aurora.utils.Left
+import no.skatteetaten.aurora.utils.Right
 import org.springframework.stereotype.Service
 
-typealias ManagementResult = Result<ManagementData, ManagementEndpointError>
-typealias ManagementEdnpointResult = Result<JsonNode, ManagementEndpointError>
+typealias ManagementResult = Either<ManagementEndpointError, ManagementData>
+typealias ManagementEdnpointResult = Either<ManagementEndpointError, JsonNode>
 
 @Service
 class ManagementDataService(val managementEndpointFactory: ManagementEndpointFactory) {
@@ -15,14 +18,14 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
 
     fun load(hostAddress: String?, endpointPath: String?): ManagementResult {
 
-        if (hostAddress.isNullOrBlank()) return Result(
-                error = ManagementEndpointError(
+        if (hostAddress.isNullOrBlank()) return Left(
+                ManagementEndpointError(
                         message = "Host address is missing",
-                        endpoint = Endpoint.MANAGEMENT,
+                        endpoint = MANAGEMENT,
                         code = "CONFIGURATION"))
 
-        if (endpointPath.isNullOrBlank()) return Result(
-                error = ManagementEndpointError(
+        if (endpointPath.isNullOrBlank()) return Left(
+                ManagementEndpointError(
                         message = "Management Path is missing",
                         endpoint = Endpoint.MANAGEMENT,
                         code = "CONFIGURATION"))
@@ -34,7 +37,7 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         return try {
             tryLoad(url)
         } catch (e: Exception) {
-            Result(error = ManagementEndpointError(
+            Left(ManagementEndpointError(
                     "Unexpected error while loading management data",
                     Endpoint.MANAGEMENT, "UNEXPECTED", e.message))
         }
@@ -46,27 +49,27 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         } catch (e: ManagementEndpointException) {
             val error = ManagementEndpointError("Error when contacting management endpoint",
                     e.endpoint, e.errorCode, e.cause?.message)
-            return Result(error = error)
+            return Left(error)
         }
 
         //TODO: Add env endpoing
 
         //TODO: Marshal this a a Info class
         val info: ManagementEdnpointResult = try {
-            Result(value = managementEndpoint.getInfoEndpointResponse())
+            Right(managementEndpoint.getInfoEndpointResponse())
         } catch (e: ManagementEndpointException) {
-            Result(error = ManagementEndpointError("Error when contacting info endpoint",
+            Left(ManagementEndpointError("Error when contacting info endpoint",
                     e.endpoint, e.errorCode, e.cause?.message))
         }
 
         //TODO: Marshal this a a Health class not as jsonNode
         val health: ManagementEdnpointResult = try {
-            Result(value = managementEndpoint.getHealthEndpointResponse())
+            Right(managementEndpoint.getHealthEndpointResponse())
         } catch (e: ManagementEndpointException) {
-            Result(error = ManagementEndpointError("Error when contacting health endpoint",
+            Left(ManagementEndpointError("Error when contacting health endpoint",
                     e.endpoint, e.errorCode, e.cause?.message))
         }
 
-        return ManagementResult(value = ManagementData(managementEndpoint.links, info, health))
+        return Right(ManagementData(managementEndpoint.links, info, health))
     }
 }
