@@ -4,8 +4,11 @@ import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
-import no.skatteetaten.aurora.mokey.model.Result
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.utils.Either
+import no.skatteetaten.aurora.utils.Left
+import no.skatteetaten.aurora.utils.Right
+import no.skatteetaten.aurora.utils.fold
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -39,24 +42,28 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
 
 fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
 
-    fun toResource(dataResult: Result<ManagementData, ManagementEndpointError>): Result<ManagementDataResource, ManagementEndpointErrorResource> {
+    fun toResource(dataResult: Either<ManagementEndpointError, ManagementData>): Either<ManagementEndpointErrorResource, ManagementDataResource> {
 
-        val errorMapper: (ManagementEndpointError) -> ManagementEndpointErrorResource = { e ->
-            ManagementEndpointErrorResource(
+        val errorMapper: (ManagementEndpointError) -> Left<ManagementEndpointErrorResource> = { e ->
+            Left(ManagementEndpointErrorResource(
                     message = e.message,
                     code = e.code,
                     endpoint = e.endpoint,
                     rootCause = e.rootCause
-            )
+            ))
         }
-        return dataResult.map(
-                valueMapper = { v ->
-                    ManagementDataResource(
-                            info = v.info.map({ it -> it }, errorMapper),
-                            health = v.health.map({ it -> it }, errorMapper)
+
+
+        return dataResult.fold(
+                right = {
+                    Right(
+                            ManagementDataResource(
+                                    info = it.info.fold(errorMapper, { i -> Right(i) }),
+                                    health = it.health.fold(errorMapper, { i -> Right(i) })
+                            )
                     )
                 },
-                errorMapper = errorMapper
+                left = errorMapper
         )
     }
 

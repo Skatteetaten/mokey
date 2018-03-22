@@ -4,6 +4,7 @@ import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 @SpringBootApplication
@@ -14,6 +15,7 @@ fun main(args: Array<String>) {
 }
 
 @Component
+@ConditionalOnProperty(name = ["mokey.cache"], matchIfMissing = true)
 class CacheWarmup(val applicationDataService: ApplicationDataServiceCacheDecorator) : InitializingBean {
     override fun afterPropertiesSet() {
         val environments = listOf("aurora", "paas", "sirius-utv1")//.map { Environment.fromNamespace(it) }
