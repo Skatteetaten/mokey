@@ -29,7 +29,7 @@ class PodServiceTest {
     @Test
     fun `should collect pods only for current dc in current namespace`() {
         val dc = DeploymentConfigDataBuilder().build()
-        every { openShiftService.pods("namespace", mapOf("name" to "name")) } returns listOf()
+        every { openShiftService.pods("namespace", mapOf("name" to "app-name")) } returns listOf()
         podService.getPodDetails(dc)
     }
 

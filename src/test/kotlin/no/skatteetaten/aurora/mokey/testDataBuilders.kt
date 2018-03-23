@@ -16,7 +16,7 @@ import no.skatteetaten.aurora.mokey.service.*
 import no.skatteetaten.aurora.utils.Right
 
 data class DeploymentConfigDataBuilder(
-        val dcName: String = "name",
+        val dcName: String = "app-name",
         val dcNamespace: String = "namespace",
         val dcAffiliation: String = "affiliation",
         val dcManagementPath: String = "/management-path",
@@ -52,12 +52,12 @@ data class DeploymentConfigDataBuilder(
     }
 }
 
-data class ReplicationControllerDataBuilder(private val deploymentPhase: String = "deploymentPhase") {
+data class ReplicationControllerDataBuilder(private val phase: String = "deploymentPhase") {
 
     fun build(): ReplicationController {
         return newReplicationController {
             metadata {
-                annotations = mapOf("openshift.io/deployment.phase" to deploymentPhase)
+                annotations = mapOf("openshift.io/deployment.phase" to phase)
             }
         }
     }
