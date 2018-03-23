@@ -10,13 +10,11 @@ class PodService(val openshiftService: OpenShiftService,
                  val managementDataService: ManagementDataService) {
 
     fun getPodDetails(dc: DeploymentConfig): List<PodDetails> {
-        val annotations = dc.metadata.annotations ?: emptyMap()
-        val managementPath: String? = annotations["console.skatteetaten.no/management-path"]
 
         val labelMap = dc.spec.selector.mapValues { it.value }
         return openshiftService.pods(dc.metadata.namespace, labelMap).map {
             val podIP = it.status.podIP ?: null
-            val managementData = managementDataService.load(podIP, managementPath)
+            val managementData = managementDataService.load(podIP, dc.managementPath)
 
             val status = it.status.containerStatuses.first()
             PodDetails(
@@ -34,3 +32,8 @@ class PodService(val openshiftService: OpenShiftService,
         }
     }
 }
+
+// Should move all custom annotations and labels to extension properties?
+val DeploymentConfig.managementPath: String?
+    get() = (metadata.annotations ?: emptyMap())["console.skatteetaten.no/management-path"]
+
