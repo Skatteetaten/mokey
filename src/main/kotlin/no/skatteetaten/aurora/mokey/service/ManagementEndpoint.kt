@@ -23,7 +23,7 @@ class ManagementEndpointFactory(val restTemplate: RestTemplate) {
 class ManagementEndpointException(val endpoint: Endpoint, val errorCode: String, cause: Exception? = null)
     : RuntimeException("${endpoint}_$errorCode", cause)
 
-enum class Endpoint(val key: String) { HEALTH("health"), INFO("info"), MANAGEMENT("_links") }
+enum class Endpoint(val key: String) { HEALTH("health"), INFO("info"), ENV("env"), MANAGEMENT("_links") }
 
 data class ManagementLinks(private val links: Map<String, String>) {
 
@@ -58,6 +58,11 @@ class ManagementEndpoint private constructor(
     @Throws(ManagementEndpointException::class)
     fun getInfoEndpointResponse(): JsonNode {
         return findJsonResource(INFO)
+    }
+
+    @Throws(ManagementEndpointException::class)
+    fun getEnvEndpointResponse(): JsonNode {
+        return findJsonResource(ENV)
     }
 
     private fun findJsonResource(endpoint: Endpoint): JsonNode {

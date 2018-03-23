@@ -2,7 +2,8 @@ package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.service.Endpoint
-import no.skatteetaten.aurora.utils.Either
+
+open class ValueOrError<V, E>(val value: V?, val error: E?)
 
 data class ApplicationResource(
         val id: String,
@@ -29,12 +30,14 @@ data class ImageDetailsResource(
         val environmentVariables: Map<String, String>?
 )
 
-data class PodResource(val managementData: Either<ManagementEndpointErrorResource, ManagementDataResource>)
+class ValueOrManagementError<V>(value: V?, error: ManagementEndpointErrorResource?) : ValueOrError<V, ManagementEndpointErrorResource>(value, error)
 
+data class PodResource(val managementData: ValueOrManagementError<ManagementDataResource>)
 
 data class ManagementDataResource(
-        val info: Either<ManagementEndpointErrorResource, JsonNode>,
-        val health: Either<ManagementEndpointErrorResource, JsonNode>
+        val info: ValueOrManagementError<JsonNode>,
+        val health: ValueOrManagementError<JsonNode>,
+        val env: ValueOrManagementError<JsonNode>
 )
 
 data class ManagementEndpointErrorResource(

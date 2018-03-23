@@ -6,17 +6,11 @@ import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.utils.Either
-import no.skatteetaten.aurora.utils.Left
-import no.skatteetaten.aurora.utils.Right
 import no.skatteetaten.aurora.utils.fold
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/applicationdetails")
@@ -42,28 +36,29 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
 
 fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
 
-    fun toResource(dataResult: Either<ManagementEndpointError, ManagementData>): Either<ManagementEndpointErrorResource, ManagementDataResource> {
+    fun toResource(dataResult: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
 
-        val errorMapper: (ManagementEndpointError) -> Left<ManagementEndpointErrorResource> = { e ->
-            Left(ManagementEndpointErrorResource(
+        val errorMapper: (ManagementEndpointError) -> ManagementEndpointErrorResource = { e ->
+            ManagementEndpointErrorResource(
                     message = e.message,
                     code = e.code,
                     endpoint = e.endpoint,
                     rootCause = e.rootCause
-            ))
+            )
         }
 
+        fun <T> eitherToOr(either: Either<ManagementEndpointError, T>): ValueOrManagementError<T> =
+                either.fold({ ValueOrManagementError(null, errorMapper(it)) }, { ValueOrManagementError(it, null) })
 
         return dataResult.fold(
                 right = {
-                    Right(
-                            ManagementDataResource(
-                                    info = it.info.fold(errorMapper, { i -> Right(i) }),
-                                    health = it.health.fold(errorMapper, { i -> Right(i) })
-                            )
-                    )
+                    ValueOrManagementError(ManagementDataResource(
+                            eitherToOr(it.info),
+                            eitherToOr(it.health),
+                            eitherToOr(it.env)
+                    ), null)
                 },
-                left = errorMapper
+                left = { ValueOrManagementError(null, errorMapper(it)) }
         )
     }
 
