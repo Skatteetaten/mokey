@@ -6,6 +6,7 @@ import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
 import java.util.concurrent.ConcurrentHashMap
@@ -35,7 +36,7 @@ class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val a
                 .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
     }
 
-    // @Scheduled(fixedRate = 300000, initialDelay = 360)
+    @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
     fun refreshCache(affiliations: List<String>? = null) {
 
         val allKeys = cache.keys().toList()
