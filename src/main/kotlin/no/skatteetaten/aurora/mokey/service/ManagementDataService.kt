@@ -47,7 +47,7 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         val managementEndpoint = try {
             managementEndpointFactory.create(url)
         } catch (e: ManagementEndpointException) {
-            val error = ManagementEndpointError("Error when contacting management endpoint",
+            val error = ManagementEndpointError("Error when contacting management endpoint, url=$url",
                     e.endpoint, e.errorCode, e.cause?.message)
             return Left(error)
         }
