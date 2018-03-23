@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey
 
 import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
 import org.springframework.beans.factory.InitializingBean
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -15,11 +16,17 @@ fun main(args: Array<String>) {
 }
 
 @Component
-@ConditionalOnProperty(name = ["mokey.cache"], matchIfMissing = true)
-class CacheWarmup(val applicationDataService: ApplicationDataServiceCacheDecorator) : InitializingBean {
-    override fun afterPropertiesSet() {
-        val environments = listOf("aurora", "paas", "sirius-utv1")//.map { Environment.fromNamespace(it) }
-        applicationDataService.refreshCache(environments)
+@ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
+class CacheWarmup(
+        val applicationDataService: ApplicationDataServiceCacheDecorator,
+        @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
+) : InitializingBean {
 
+    val affiliations: List<String>?
+        get() = if (affiliationsConfig.isBlank()) null
+        else affiliationsConfig.split(",").map { it.trim() }
+
+    override fun afterPropertiesSet() {
+        applicationDataService.refreshCache(affiliations)
     }
 }

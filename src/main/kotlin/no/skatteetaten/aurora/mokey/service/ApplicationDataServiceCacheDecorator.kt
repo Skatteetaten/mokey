@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Service
 @Primary
-@ConditionalOnProperty(name = ["mokey.cache"], matchIfMissing = true)
+@ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 @ApplicationDataSource(CACHE)
 class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val applicationDataService: ApplicationDataService) : ApplicationDataService {
 
