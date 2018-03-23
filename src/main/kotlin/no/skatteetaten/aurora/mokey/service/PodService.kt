@@ -1,33 +1,38 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.openshift.api.model.DeploymentConfig
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service
 
 @Service
-class PodService(val openshiftService: OpenShiftService,
+class PodService(val openShiftService: OpenShiftService,
                  val managementDataService: ManagementDataService) {
 
     fun getPodDetails(dc: DeploymentConfig): List<PodDetails> {
 
-        val labelMap = dc.spec.selector.mapValues { it.value }
-        return openshiftService.pods(dc.metadata.namespace, labelMap).map {
-            val podIP = it.status.podIP ?: null
-            val managementData = managementDataService.load(podIP, dc.managementPath)
+        val pods = openShiftService.pods(dc.metadata.namespace, dc.spec.selector)
+        return pods.map { pod: Pod ->
+            val managementResult = managementDataService.load(pod.status.podIP, dc.managementPath)
+            createPodDetails(pod, managementResult)
+        }
+    }
 
-            val status = it.status.containerStatuses.first()
-            PodDetails(
+    companion object {
+        fun createPodDetails(pod: Pod, managementResult: ManagementResult): PodDetails {
+            val status = pod.status.containerStatuses.first()
+            return PodDetails(
                     OpenShiftPodExcerpt(
-                            name = it.metadata.name,
-                            status = it.status.phase,
+                            name = pod.metadata.name,
+                            status = pod.status.phase,
                             restartCount = status.restartCount,
                             ready = status.ready,
-                            podIP = podIP,
-                            deployment = it.metadata.labels["deployment"],
-                            startTime = it.status.startTime
+                            podIP = pod.status.podIP,
+                            deployment = pod.metadata.labels["deployment"],
+                            startTime = pod.status.startTime
                     ),
-                    managementData
+                    managementResult
             )
         }
     }

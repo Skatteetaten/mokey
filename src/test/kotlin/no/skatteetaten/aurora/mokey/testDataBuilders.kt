@@ -16,11 +16,12 @@ import no.skatteetaten.aurora.mokey.service.*
 import no.skatteetaten.aurora.utils.Right
 
 data class DeploymentConfigDataBuilder(
-        private val dcName: String = "name",
-        private val dcNamespace: String = "namespace",
-        private val dcAffiliation: String = "affiliation",
-        private val dcManagementPath: String = "/management-path",
-        private val dcDeployTag: String = "name:tag") {
+        val dcName: String = "name",
+        val dcNamespace: String = "namespace",
+        val dcAffiliation: String = "affiliation",
+        val dcManagementPath: String = "/management-path",
+        val dcDeployTag: String = "name:tag",
+        val dcSelector: Map<String, String> = mapOf("name" to dcName)) {
 
     fun build(): DeploymentConfig {
         return newDeploymentConfig {
@@ -35,7 +36,7 @@ data class DeploymentConfigDataBuilder(
             }
             spec {
                 replicas = 1
-                selector = emptyMap()
+                selector = dcSelector
                 triggers = listOf(
                         newDeploymentTriggerPolicy {
                             type = "ImageChange"
@@ -63,8 +64,8 @@ data class ReplicationControllerDataBuilder(private val deploymentPhase: String 
 }
 
 data class PodDataBuilder(
-        private val podName: String = "name",
-        private val ip: String = "127.0.0.1") {
+        val podName: String = "name",
+        val ip: String = "127.0.0.1") {
 
     fun build(): Pod {
         return newPod {
@@ -93,7 +94,7 @@ data class ManagementDataBuilder(
         val env: JsonNode = MissingNode.getInstance()
 ) {
 
-    fun build(): Right<ManagementData> {
+    fun build(): ManagementResult {
         return Right(ManagementData(ManagementLinks(emptyMap()), Right(info), Right(health), Right(env)))
     }
 }
