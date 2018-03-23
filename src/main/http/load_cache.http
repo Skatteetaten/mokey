@@ -1,4 +1,0 @@
-GET {{apiUrl}}/load?namespace=paas-ref&namespace=paas-bjarte-dev
-Authorization:Bearer {{token}}
-
-###
