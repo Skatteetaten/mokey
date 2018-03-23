@@ -30,7 +30,7 @@ data class ImageDetailsResource(
         val environmentVariables: Map<String, String>?
 )
 
-class ValueOrManagementError<V>(value: V?, error: ManagementEndpointErrorResource?) : ValueOrError<V, ManagementEndpointErrorResource>(value, error)
+class ValueOrManagementError<V>(value: V? = null, error: ManagementEndpointErrorResource? = null) : ValueOrError<V, ManagementEndpointErrorResource>(value, error)
 
 data class PodResource(val managementData: ValueOrManagementError<ManagementDataResource>)
 

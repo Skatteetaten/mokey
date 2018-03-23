@@ -40,6 +40,7 @@ class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val a
                 .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
     }
 
+    //TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
     fun cache() {
         refreshCache()

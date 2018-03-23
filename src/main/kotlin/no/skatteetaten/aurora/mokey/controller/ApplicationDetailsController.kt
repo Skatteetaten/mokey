@@ -48,7 +48,7 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
         }
 
         fun <T> eitherToOr(either: Either<ManagementEndpointError, T>): ValueOrManagementError<T> =
-                either.fold({ ValueOrManagementError(null, errorMapper(it)) }, { ValueOrManagementError(it, null) })
+                either.fold({ ValueOrManagementError(error = errorMapper(it)) }, { ValueOrManagementError(it) })
 
         return dataResult.fold(
                 right = {
@@ -56,9 +56,9 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                             eitherToOr(it.info),
                             eitherToOr(it.health),
                             eitherToOr(it.env)
-                    ), null)
+                    ))
                 },
-                left = { ValueOrManagementError(null, errorMapper(it)) }
+                left = { ValueOrManagementError(error = errorMapper(it)) }
         )
     }
 
