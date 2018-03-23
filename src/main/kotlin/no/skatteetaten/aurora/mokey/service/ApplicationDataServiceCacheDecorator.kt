@@ -37,6 +37,10 @@ class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val a
     }
 
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
+    fun cache() {
+        refreshCache()
+    }
+
     fun refreshCache(affiliations: List<String>? = null) {
 
         val allKeys = cache.keys().toList()
