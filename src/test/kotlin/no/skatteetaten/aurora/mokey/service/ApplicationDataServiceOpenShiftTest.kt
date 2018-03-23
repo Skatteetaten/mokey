@@ -4,8 +4,6 @@ import assertk.assert
 import assertk.assertions.contains
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
-import io.fabric8.kubernetes.api.model.ObjectMeta
-import io.fabric8.kubernetes.api.model.ReplicationController
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -13,6 +11,7 @@ import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ProjectDataBuilder
+import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import org.junit.jupiter.api.BeforeEach
@@ -52,7 +51,8 @@ class ApplicationDataServiceOpenShiftTest {
     fun `find application data by id`() {
         val dc = DeploymentConfigDataBuilder().build()
         every { openShiftService.deploymentConfigs("affiliation") } returns listOf(dc)
-        every { openShiftService.rc("namespace", "name-1") } returns ReplicationController().apply { metadata = ObjectMeta().apply { annotations = mapOf("openshift.io/deployment.phase" to "deploymentPhase") } }
+        val replicationController = ReplicationControllerDataBuilder().build()
+        every { openShiftService.rc("namespace", "name-1") } returns replicationController
 
         val podDetails = PodDetailsDataBuilder().build()
         every { podService.getPodDetails(dc) } returns listOf(podDetails)
