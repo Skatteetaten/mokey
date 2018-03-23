@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.service.Endpoint
 import no.skatteetaten.aurora.mokey.service.ManagementLinks
+import no.skatteetaten.aurora.utils.Either
 
 data class ApplicationData(
         val id: String,
@@ -21,7 +22,7 @@ data class ApplicationData(
 
 data class PodDetails(
         val openShiftPodExcerpt: OpenShiftPodExcerpt,
-        val managementData: ManagementData
+        val managementData: Either<ManagementEndpointError, ManagementData>
 )
 
 data class ManagementEndpointError(
@@ -31,22 +32,14 @@ data class ManagementEndpointError(
         val rootCause: String? = null
 )
 
-data class ManagementData constructor(
-        val links: ManagementLinks? = null,
-        val info: JsonNode? = null,
-        val health: JsonNode? = null,
-        val errors: List<ManagementEndpointError> = emptyList()
-) {
-    companion object {
-        fun withConfigError(message: String): ManagementData {
-            return ManagementData(errors = listOf(ManagementEndpointError(message, Endpoint.MANAGEMENT, "CONFIGURATION")))
-        }
 
-        fun withUnexpectedError(message: String, e: Exception): ManagementData {
-            return ManagementData(errors = listOf(ManagementEndpointError(message, Endpoint.MANAGEMENT, "UNEXPECTED", e.message)))
-        }
-    }
-}
+data class ManagementData(
+        val links: ManagementLinks? = null,
+        val info: Either<ManagementEndpointError, JsonNode>,
+        val health: Either<ManagementEndpointError, JsonNode>,
+        val env: Either<ManagementEndpointError, JsonNode>
+)
+
 
 data class OpenShiftPodExcerpt(
         val name: String,

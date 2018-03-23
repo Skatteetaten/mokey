@@ -1,8 +1,12 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import com.fasterxml.jackson.databind.node.MissingNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.model.*
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.mokey.service.ManagementLinks
+import no.skatteetaten.aurora.utils.Right
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient
@@ -24,17 +28,27 @@ class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
     @Test
     @WithUserDetails
     fun `should get applicationdetails given user with access`() {
-        given(applicationDataService.findApplicationDataById(ID)).willReturn(
-                ApplicationData(
-                        ApplicationId("name", Environment("env", "affiliation")).toString(),
-                        AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
-                        "deployTag",
-                        "name",
-                        "namespace",
-                        "affiliation",
-                        deployDetails = DeployDetails("Complete", 1, 1)
-                )
+        val applicationData = ApplicationData(
+                ApplicationId("name", Environment("env", "affiliation")).toString(),
+                AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
+                "deployTag",
+                "name",
+                "namespace",
+                "affiliation",
+                deployDetails = DeployDetails("Complete", 1, 1),
+                pods = listOf(
+                        PodDetails(
+                                OpenShiftPodExcerpt("pod-1", "OK", 0, true, "10.0.0.1", "", null),
+                                Right(ManagementData(
+                                        ManagementLinks(emptyMap()),
+                                        Right(MissingNode.getInstance()),
+                                        Right(MissingNode.getInstance()),
+                                        Right(MissingNode.getInstance())
+                                ))
+                        ))
         )
+
+        given(applicationDataService.findApplicationDataById(ID)).willReturn(applicationData)
 
         mockMvc.perform(get("/api/applicationdetails/{id}", "123"))
                 .andExpect(status().isOk)

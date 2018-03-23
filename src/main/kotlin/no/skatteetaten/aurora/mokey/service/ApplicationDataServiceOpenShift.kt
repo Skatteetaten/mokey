@@ -43,14 +43,13 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
         return runBlocking(mtContext) {
-            val map = environments
+            environments
                     .flatMap { environment ->
                         logger.debug("Find all applications in namespace={}", environment)
                         val deploymentConfigs = openshiftService.deploymentConfigs(environment.namespace)
                         deploymentConfigs.map { dc -> async(mtContext) { createApplicationData(dc) } }
                     }
                     .map { it.await() }
-            map
         }
     }
 

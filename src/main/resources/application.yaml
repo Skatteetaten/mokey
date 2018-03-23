@@ -26,6 +26,11 @@ logging:
 spring:
     profiles: local
 
+mokey:
+    cache:
+        enabled: true
+        affiliations: aurora,paas,sirius,safir
+
 logging:
     pattern:
       console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
