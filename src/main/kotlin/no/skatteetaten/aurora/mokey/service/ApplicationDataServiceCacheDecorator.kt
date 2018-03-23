@@ -5,6 +5,7 @@ import no.skatteetaten.aurora.mokey.service.DataSources.CACHE
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Primary
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -13,9 +14,12 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Service
 @Primary
+@ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 @ApplicationDataSource(CACHE)
 class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val applicationDataService: ApplicationDataService) : ApplicationDataService {
 
+
+    //TODO: replace with Redis
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceCacheDecorator::class.java)
@@ -36,6 +40,7 @@ class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val a
                 .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
     }
 
+    //TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
     fun cache() {
         refreshCache()

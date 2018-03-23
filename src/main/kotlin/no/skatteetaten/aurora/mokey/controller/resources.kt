@@ -3,6 +3,8 @@ package no.skatteetaten.aurora.mokey.controller
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.service.Endpoint
 
+open class ValueOrError<V, E>(val value: V?, val error: E?)
+
 data class ApplicationResource(
         val id: String,
         val affiliation: String?,
@@ -28,12 +30,14 @@ data class ImageDetailsResource(
         val environmentVariables: Map<String, String>?
 )
 
-data class PodResource(val managementData: ManagementDataResource)
+class ValueOrManagementError<V>(value: V? = null, error: ManagementEndpointErrorResource? = null) : ValueOrError<V, ManagementEndpointErrorResource>(value, error)
+
+data class PodResource(val managementData: ValueOrManagementError<ManagementDataResource>)
 
 data class ManagementDataResource(
-        val info: JsonNode?,
-        val health: JsonNode?,
-        val errors: List<ManagementEndpointErrorResource>
+        val info: ValueOrManagementError<JsonNode>,
+        val health: ValueOrManagementError<JsonNode>,
+        val env: ValueOrManagementError<JsonNode>
 )
 
 data class ManagementEndpointErrorResource(

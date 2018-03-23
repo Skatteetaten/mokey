@@ -14,16 +14,13 @@ class AuroraRestTemplateTagsProvider : RestTemplateExchangeTagsProvider {
     override fun getTags(urlTemplate: String?, request: HttpRequest,
                          response: ClientHttpResponse?): Iterable<Tag> {
 
-        val host = request.uri.host ?: "none"
-        val clientName = when {
-            host.startsWith("172") -> "docker-internal"
-            host.startsWith("10") -> "management"
-            else -> "docker"
-        }
+        val host = request.uri.host?.let {
+            "{management}/${it.substringAfterLast("/")}"
+        } ?: "none"
 
         return Arrays.asList(RestTemplateExchangeTags.method(request),
                 RestTemplateExchangeTags.status(response),
-                Tag.of("clientName", clientName))
+                Tag.of("clientName", host))
     }
 
 }

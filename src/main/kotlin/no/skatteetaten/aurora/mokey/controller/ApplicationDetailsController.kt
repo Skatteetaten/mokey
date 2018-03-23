@@ -2,7 +2,11 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ManagementData
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.utils.Either
+import no.skatteetaten.aurora.utils.fold
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -31,6 +35,33 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
 }
 
 fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
+
+    fun toResource(dataResult: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
+
+        val errorMapper: (ManagementEndpointError) -> ManagementEndpointErrorResource = { e ->
+            ManagementEndpointErrorResource(
+                    message = e.message,
+                    code = e.code,
+                    endpoint = e.endpoint,
+                    rootCause = e.rootCause
+            )
+        }
+
+        fun <T> eitherToOr(either: Either<ManagementEndpointError, T>): ValueOrManagementError<T> =
+                either.fold({ ValueOrManagementError(error = errorMapper(it)) }, { ValueOrManagementError(it) })
+
+        return dataResult.fold(
+                right = {
+                    ValueOrManagementError(ManagementDataResource(
+                            eitherToOr(it.info),
+                            eitherToOr(it.health),
+                            eitherToOr(it.env)
+                    ))
+                },
+                left = { ValueOrManagementError(error = errorMapper(it)) }
+        )
+    }
+
     return ApplicationDetailsResource(
             toApplication(it),
 
@@ -39,14 +70,7 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                     it.imageDetails?.imageBuildTime,
                     it.imageDetails?.environmentVariables
             ),
-            it.pods.map {
-                PodResource(ManagementDataResource(
-                        it.managementData.info,
-                        it.managementData.health,
-                        it.managementData.errors.map {
-                            ManagementEndpointErrorResource(it.message, it.endpoint, it.code, it.rootCause)
-                        }))
-            }
+            it.pods.map { PodResource(toResource(it.managementData)) }
     )
 }
 
