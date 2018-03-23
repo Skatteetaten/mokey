@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.service
 
-import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
@@ -91,7 +90,7 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         val pods = podService.getPodDetails(dc)
         val imageDetails = imageService.getImageDetails(dc)
 
-        val phase = latestVersion?.let { getReplicationController(namespace, name, it)?.deploymentPhase }
+        val phase = latestVersion?.let { openshiftService.rc(namespace, "$name-$it")?.deploymentPhase }
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
@@ -110,10 +109,5 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
                 deployDetails = deployDetails,
                 sprocketDone = dc.sprocketDone
         )
-    }
-
-    private fun getReplicationController(namespace: String, name: String, versionNumber: Long): ReplicationController? {
-        //TODO: ReplicaSet vs ReplicationController
-        return openshiftService.rc(namespace, "$name-$versionNumber")
     }
 }
