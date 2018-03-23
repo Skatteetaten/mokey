@@ -31,7 +31,6 @@ data class DeploymentConfigDataBuilder(
         private val dcNamespace: String = "namespace",
         private val dcAffiliation: String = "affiliation",
         private val dcManagementPath: String = "/management-path",
-        private val dcTriggerType: String = "ImageChange",
         private val dcDeployTag: String = "name:tag") {
 
     fun build(): DeploymentConfig {
@@ -50,7 +49,7 @@ data class DeploymentConfigDataBuilder(
                 selector = emptyMap()
                 triggers = listOf(
                         newDeploymentTriggerPolicy {
-                            type = dcTriggerType
+                            type = "ImageChange"
                             imageChangeParams {
                                 from {
                                     name = dcDeployTag
@@ -75,7 +74,8 @@ data class ReplicationControllerDataBuilder(private val deploymentPhase: String 
 }
 
 data class PodDataBuilder(
-        private val podName: String = "name") {
+        private val podName: String = "name",
+        private val ip: String = "127.0.0.1") {
 
     fun build(): Pod {
         return newPod {
@@ -84,7 +84,7 @@ data class PodDataBuilder(
                 labels = mapOf("deployment" to "deployment")
             }
             status {
-                podIP = "127.0.0.1"
+                podIP = ip
                 startTime = ""
                 phase = "phase"
                 containerStatuses = listOf(
