@@ -32,8 +32,3 @@ class PodService(val openshiftService: OpenShiftService,
         }
     }
 }
-
-// Should move all custom annotations and labels to extension properties?
-val DeploymentConfig.managementPath: String?
-    get() = (metadata.annotations ?: emptyMap())["console.skatteetaten.no/management-path"]
-

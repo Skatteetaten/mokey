@@ -1,10 +1,14 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
-import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -44,14 +48,13 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
         return runBlocking(mtContext) {
-            val map = environments
+            environments
                     .flatMap { environment ->
                         logger.debug("Find all applications in namespace={}", environment)
                         val deploymentConfigs = openshiftService.deploymentConfigs(environment.namespace)
                         deploymentConfigs.map { dc -> async(mtContext) { createApplicationData(dc) } }
                     }
                     .map { it.await() }
-            map
         }
     }
 
@@ -79,7 +82,7 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
     }
 
     private fun tryCreateApplicationData(dc: DeploymentConfig): ApplicationData {
-        val affiliation = dc.metadata.labels["affiliation"]
+        val affiliation = dc.affiliation
         val namespace = dc.metadata.namespace
         val name = dc.metadata.name
         val annotations = dc.metadata.annotations ?: emptyMap()
@@ -88,7 +91,7 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         val pods = podService.getPodDetails(dc)
         val imageDetails = imageService.getImageDetails(dc)
 
-        val phase = latestVersion?.let { getDeploymentPhaseFromReplicationController(namespace, name, it) }
+        val phase = latestVersion?.let { getReplicationController(namespace, name, it)?.deploymentPhase }
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
@@ -98,22 +101,19 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
                 auroraStatus = auroraStatus,
                 name = name,
                 namespace = namespace,
-                deployTag = dc.metadata.labels["deployTag"] ?: "",
-                booberDeployId = dc.metadata.labels["booberDeployId"],
+                deployTag = dc.deployTag,
+                booberDeployId = dc.booberDeployId,
                 affiliation = affiliation,
-                managementPath = annotations["console.skatteetaten.no/management-path"],
+                managementPath = dc.managementPath,
                 pods = pods,
                 imageDetails = imageDetails,
                 deployDetails = deployDetails,
-                sprocketDone = annotations["sprocket.sits.no-deployment-config.done"]
+                sprocketDone = dc.sprocketDone
         )
     }
 
-    private fun getDeploymentPhaseFromReplicationController(namespace: String, name: String, versionNumber: Long): String? {
-        val rcName = "$name-$versionNumber"
+    private fun getReplicationController(namespace: String, name: String, versionNumber: Long): ReplicationController? {
         //TODO: ReplicaSet vs ReplicationController
-        return openshiftService.rc(namespace, rcName)?.let {
-            it.metadata.annotations["openshift.io/deployment.phase"]
-        }
+        return openshiftService.rc(namespace, "$name-$versionNumber")
     }
 }
