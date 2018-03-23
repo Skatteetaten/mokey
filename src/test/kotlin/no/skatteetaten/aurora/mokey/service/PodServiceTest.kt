@@ -7,8 +7,8 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
+import no.skatteetaten.aurora.mokey.ManagementDataBuilder
 import no.skatteetaten.aurora.mokey.PodDataBuilder
-import no.skatteetaten.aurora.mokey.model.ManagementData
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -28,7 +28,7 @@ class PodServiceTest {
         val dc = DeploymentConfigDataBuilder().build()
         val pod = PodDataBuilder().build()
         every { openShiftService.pods("namespace", emptyMap()) } returns listOf(pod)
-        every { managementDataService.load("127.0.0.1", "/management-path") } returns ManagementData()
+        every { managementDataService.load("127.0.0.1", "/management-path") } returns ManagementDataBuilder().build()
 
         val podDetailsList = podService.getPodDetails(dc)
 

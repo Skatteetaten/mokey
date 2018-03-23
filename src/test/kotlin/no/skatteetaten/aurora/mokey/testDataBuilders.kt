@@ -1,18 +1,9 @@
 package no.skatteetaten.aurora.mokey
 
-import com.fkorotkov.kubernetes.metadata
-import com.fkorotkov.kubernetes.newContainerStatus
-import com.fkorotkov.kubernetes.newPod
-import com.fkorotkov.kubernetes.newReplicationController
-import com.fkorotkov.kubernetes.status
-import com.fkorotkov.openshift.from
-import com.fkorotkov.openshift.imageChangeParams
-import com.fkorotkov.openshift.metadata
-import com.fkorotkov.openshift.newDeploymentConfig
-import com.fkorotkov.openshift.newDeploymentTriggerPolicy
-import com.fkorotkov.openshift.newProject
-import com.fkorotkov.openshift.spec
-import com.fkorotkov.openshift.status
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.MissingNode
+import com.fkorotkov.kubernetes.*
+import com.fkorotkov.openshift.*
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
@@ -21,10 +12,8 @@ import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
-import no.skatteetaten.aurora.mokey.service.ContainerConfig
-import no.skatteetaten.aurora.mokey.service.Image
-import no.skatteetaten.aurora.mokey.service.ImageStreamTag
-import no.skatteetaten.aurora.mokey.service.Metadata
+import no.skatteetaten.aurora.mokey.service.*
+import no.skatteetaten.aurora.utils.Right
 
 data class DeploymentConfigDataBuilder(
         private val dcName: String = "name",
@@ -98,6 +87,17 @@ data class PodDataBuilder(
     }
 }
 
+data class ManagementDataBuilder(
+        val info: JsonNode = MissingNode.getInstance(),
+        val health: JsonNode = MissingNode.getInstance(),
+        val env: JsonNode = MissingNode.getInstance()
+) {
+
+    fun build(): Right<ManagementData> {
+        return Right(ManagementData(ManagementLinks(emptyMap()), Right(info), Right(health), Right(env)))
+    }
+}
+
 data class PodDetailsDataBuilder(
         private val name: String = "name",
         private val status: String = "status") {
@@ -105,7 +105,7 @@ data class PodDetailsDataBuilder(
     fun build(): PodDetails {
         return PodDetails(
                 OpenShiftPodExcerpt(name = name, status = status, deployment = "deployment", podIP = "127.0.0.1", startTime = ""),
-                ManagementData())
+                ManagementDataBuilder().build())
     }
 }
 

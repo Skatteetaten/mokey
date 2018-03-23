@@ -84,7 +84,6 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         val affiliation = dc.affiliation
         val namespace = dc.metadata.namespace
         val name = dc.metadata.name
-        val annotations = dc.metadata.annotations ?: emptyMap()
         val latestVersion = dc.status.latestVersion ?: null
 
         val pods = podService.getPodDetails(dc)
