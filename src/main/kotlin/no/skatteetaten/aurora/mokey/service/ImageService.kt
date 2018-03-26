@@ -11,10 +11,22 @@ class ImageService(val openshiftService: OpenShiftService) {
         val imageStreamTag = dc.imageStreamTag ?: return null
 
         val tag = openshiftService.imageStreamTag(dc.metadata.namespace, dc.metadata.name, imageStreamTag)
-        val environmentVariables = tag?.image?.dockerImageMetadata?.containerConfig?.env?.map {
-            val (key, value) = it.split("=")
-            key to value
-        }?.toMap()
-        return ImageDetails(tag?.image?.dockerImageReference, environmentVariables ?: mapOf())
+        val env = tag?.image?.dockerImageMetadata?.containerConfig?.env ?: emptyList()
+        val environmentVariables = assignmentStringsToMap(env)
+        return ImageDetails(tag?.image?.dockerImageReference, environmentVariables)
+    }
+
+    companion object {
+        /**
+         * This method does not handle corner cases very well. It is assumed that the caller follows the general
+         * contract outlined in the parameter description.
+         * @param env a list of String where each String is on the form "NAME=VALUE"
+         */
+        internal fun assignmentStringsToMap(env: List<String>): Map<String, String> {
+            return env.map {
+                val (key, value) = it.split("=")
+                key to value
+            }.toMap()
+        }
     }
 }

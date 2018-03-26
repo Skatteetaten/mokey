@@ -29,4 +29,10 @@ class ImageServiceTest {
         val imageDetails = imageService.getImageDetails(dc)
         assert(imageDetails?.dockerImageReference).isEqualTo("dockerImageReference")
     }
+
+    @Test
+    fun `should split assignment strings on assignment operator to create a map`() {
+        val map = ImageService.assignmentStringsToMap(listOf("KEY=VALUE", "KEY2=VALUE2"))
+        assert(map).isEqualTo(mapOf("KEY" to "VALUE", "KEY2" to "VALUE2"))
+    }
 }
