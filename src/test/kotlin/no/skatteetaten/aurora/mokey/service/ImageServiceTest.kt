@@ -22,12 +22,12 @@ class ImageServiceTest {
 
     @Test
     fun `get image details`() {
-        val dc = DeploymentConfigDataBuilder().build()
-        val imageStreamTag = ImageStreamTagDataBuilder().build()
-        every { openShiftService.imageStreamTag("namespace", "app-name", "tag") } returns imageStreamTag
+        val dcBuilder = DeploymentConfigDataBuilder()
+        val istBuilder = ImageStreamTagDataBuilder()
+        every { openShiftService.imageStreamTag(dcBuilder.dcNamespace, dcBuilder.dcName, "tag") } returns istBuilder.build()
 
-        val imageDetails = imageService.getImageDetails(dc)
-        assert(imageDetails?.dockerImageReference).isEqualTo("dockerImageReference")
+        val imageDetails = imageService.getImageDetails(dcBuilder.build())
+        assert(imageDetails?.dockerImageReference).isEqualTo(istBuilder.dockerImageReference)
     }
 
     @Test

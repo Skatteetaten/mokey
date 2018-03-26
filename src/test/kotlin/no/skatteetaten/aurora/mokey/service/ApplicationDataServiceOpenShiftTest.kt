@@ -49,10 +49,11 @@ class ApplicationDataServiceOpenShiftTest {
 
     @Test
     fun `find application data by id`() {
-        val dc = DeploymentConfigDataBuilder().build()
-        every { openShiftService.deploymentConfigs("affiliation") } returns listOf(dc)
+        val dcBuilder = DeploymentConfigDataBuilder()
+        val dc = dcBuilder.build()
+        every { openShiftService.deploymentConfigs(dcBuilder.dcAffiliation) } returns listOf(dc)
         val replicationController = ReplicationControllerDataBuilder().build()
-        every { openShiftService.rc("namespace", "app-name-1") } returns replicationController
+        every { openShiftService.rc(dcBuilder.dcNamespace, "app-name-1") } returns replicationController
 
         val podDetails = PodDetailsDataBuilder().build()
         every { podService.getPodDetails(dc) } returns listOf(podDetails)
@@ -65,7 +66,7 @@ class ApplicationDataServiceOpenShiftTest {
         val id = "affiliation::affiliation::app-name"
         val applicationData = applicationDataServiceOpenShift.findApplicationDataById(id)
 
-        assert(applicationData?.name).isEqualTo("app-name")
+        assert(applicationData?.name).isEqualTo(dcBuilder.dcName)
         assert(applicationData?.auroraStatus?.level).isEqualTo(AuroraStatusLevel.HEALTHY)
     }
 

@@ -19,7 +19,7 @@ data class DeploymentConfigDataBuilder(
         val dcName: String = "app-name",
         val dcNamespace: String = "namespace",
         val dcAffiliation: String = "affiliation",
-        val dcManagementPath: String = "/management-path",
+        val dcManagementPath: String = ":8081/actuator",
         val dcDeployTag: String = "name:tag",
         val dcSelector: Map<String, String> = mapOf("name" to dcName)) {
 
@@ -53,7 +53,7 @@ data class DeploymentConfigDataBuilder(
     }
 }
 
-data class ReplicationControllerDataBuilder(private val phase: String = "deploymentPhase") {
+data class ReplicationControllerDataBuilder(val phase: String = "deploymentPhase") {
 
     fun build(): ReplicationController = newReplicationController { deploymentPhase = phase }
 }
@@ -95,8 +95,8 @@ data class ManagementDataBuilder(
 }
 
 data class PodDetailsDataBuilder(
-        private val name: String = "name",
-        private val status: String = "status") {
+        val name: String = "name",
+        val status: String = "status") {
 
     fun build(): PodDetails {
         return PodDetails(
@@ -105,15 +105,15 @@ data class PodDetailsDataBuilder(
     }
 }
 
-data class ImageDetailsDataBuilder(private val dockerImageReference: String = "dockerImageReference",
-                                   private val environmentVariables: Map<String, String> = emptyMap()) {
+data class ImageDetailsDataBuilder(val dockerImageReference: String = "dockerImageReference",
+                                   val environmentVariables: Map<String, String> = emptyMap()) {
 
     fun build(): ImageDetails {
         return ImageDetails(dockerImageReference, environmentVariables)
     }
 }
 
-data class ProjectDataBuilder(private val pName: String = "affiliation-name") {
+data class ProjectDataBuilder(val pName: String = "affiliation-name") {
 
     fun build(): Project {
         return newProject {
@@ -124,7 +124,7 @@ data class ProjectDataBuilder(private val pName: String = "affiliation-name") {
     }
 }
 
-data class ImageStreamTagDataBuilder(private val dockerImageReference: String = "dockerImageReference") {
+data class ImageStreamTagDataBuilder(val dockerImageReference: String = "dockerImageReference") {
 
     fun build(): ImageStreamTag {
         return ImageStreamTag(
