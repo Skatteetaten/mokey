@@ -25,11 +25,12 @@ data class DeploymentConfigDataBuilder(
 
     fun build(): DeploymentConfig {
         return newDeploymentConfig {
+            managementPath = dcManagementPath
+            affiliation = dcAffiliation
+
             metadata {
                 name = dcName
                 namespace = dcNamespace
-                labels = mapOf("affiliation" to dcAffiliation)
-                annotations = mapOf("console.skatteetaten.no/management-path" to dcManagementPath)
             }
             status {
                 latestVersion = 1
@@ -54,13 +55,7 @@ data class DeploymentConfigDataBuilder(
 
 data class ReplicationControllerDataBuilder(private val phase: String = "deploymentPhase") {
 
-    fun build(): ReplicationController {
-        return newReplicationController {
-            metadata {
-                annotations = mapOf("openshift.io/deployment.phase" to phase)
-            }
-        }
-    }
+    fun build(): ReplicationController = newReplicationController { deploymentPhase = phase }
 }
 
 data class PodDataBuilder(
