@@ -45,7 +45,7 @@ dependencies {
       'com.fasterxml.jackson.module:jackson-module-kotlin',
       "no.skatteetaten.aurora.springboot:aurora-spring-boot2-starter:1.0.0",
       'io.fabric8:openshift-client:3.1.8',
-      'io.fabric8:kubernetes-model:2.0.4',
+      'com.fkorotkov:kubernetes-dsl:1.0',
       "org.springframework.retry:spring-retry",
       'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21.2',
       'org.springframework.boot:spring-boot-starter-security'
@@ -58,7 +58,8 @@ dependencies {
       "org.junit.jupiter:junit-jupiter-params:${dependencyManagement.importedProperties['junit-jupiter.version']}",
       'org.springframework.boot:spring-boot-starter-test',
       'io.fabric8:openshift-server-mock:3.1.8',
-      'io.mockk:mockk:1.7.10'
+      'io.mockk:mockk:1.7.10',
+      'com.willowtreeapps.assertk:assertk:0.9'
   ].each { testCompile(it) { exclude group: 'junit' } }
 
   testImplementation("org.junit.jupiter:junit-jupiter-api")

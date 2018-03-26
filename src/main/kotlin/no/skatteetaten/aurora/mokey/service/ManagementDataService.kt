@@ -10,7 +10,7 @@ import no.skatteetaten.aurora.utils.Right
 import org.springframework.stereotype.Service
 
 typealias ManagementResult = Either<ManagementEndpointError, ManagementData>
-typealias ManagementEdnpointResult = Either<ManagementEndpointError, JsonNode>
+typealias ManagementEndpointResult = Either<ManagementEndpointError, JsonNode>
 
 @Service
 class ManagementDataService(val managementEndpointFactory: ManagementEndpointFactory) {
@@ -53,7 +53,7 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         }
 
         //TODO: Marshal this as a Info class
-        val info: ManagementEdnpointResult = try {
+        val info: ManagementEndpointResult = try {
             Right(managementEndpoint.getInfoEndpointResponse())
         } catch (e: ManagementEndpointException) {
             Left(ManagementEndpointError("Error when contacting info endpoint",
@@ -61,7 +61,7 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         }
 
         //TODO: Marshal this as a Health class not as jsonNode
-        val health: ManagementEdnpointResult = try {
+        val health: ManagementEndpointResult = try {
             Right(managementEndpoint.getHealthEndpointResponse())
         } catch (e: ManagementEndpointException) {
             Left(ManagementEndpointError("Error when contacting health endpoint",
@@ -69,7 +69,7 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         }
 
         //TODO: Marshal this as a Env class not as jsonNode
-        val env: ManagementEdnpointResult = try {
+        val env: ManagementEndpointResult = try {
             Right(managementEndpoint.getEnvEndpointResponse())
         } catch (e: ManagementEndpointException) {
             Left(ManagementEndpointError("Error when contacting env endpoint",
