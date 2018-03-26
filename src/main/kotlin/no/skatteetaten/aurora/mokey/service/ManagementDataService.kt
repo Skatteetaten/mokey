@@ -52,15 +52,13 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
             return Left(error)
         }
 
-        //TODO: Marshal this as a Info class
-        val info: ManagementEndpointResult = try {
+        val info = try {
             Right(managementEndpoint.getInfoEndpointResponse())
         } catch (e: ManagementEndpointException) {
             Left(ManagementEndpointError("Error when contacting info endpoint",
                     e.endpoint, e.errorCode, e.cause?.message))
         }
 
-        //TODO: Marshal this as a Health class not as jsonNode
         val health = try {
             Right(managementEndpoint.getHealthEndpointResponse())
         } catch (e: ManagementEndpointException) {

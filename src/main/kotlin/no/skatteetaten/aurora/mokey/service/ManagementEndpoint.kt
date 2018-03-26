@@ -66,6 +66,9 @@ data class HealthPart(val status: HealthStatus, val details: MutableMap<String, 
     }
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class InfoResponse(val buildTime: String?)
+
 class ManagementEndpoint internal constructor(
         private val restTemplate: RestTemplate,
         val links: ManagementLinks
@@ -75,14 +78,13 @@ class ManagementEndpoint internal constructor(
     fun getHealthEndpointResponse(): HealthResponse = findJsonResource(HEALTH, HealthResponse::class)
 
     @Throws(ManagementEndpointException::class)
-    fun getInfoEndpointResponse(): JsonNode = findJsonResource(INFO, JsonNode::class)
+    fun getInfoEndpointResponse(): InfoResponse = findJsonResource(INFO, InfoResponse::class)
 
     @Throws(ManagementEndpointException::class)
     fun getEnvEndpointResponse(): JsonNode = findJsonResource(ENV, JsonNode::class)
 
-    private fun <T : Any> findJsonResource(endpoint: Endpoint, type: KClass<T>): T {
-        return findJsonResource(restTemplate, endpoint, links.linkFor(endpoint), type)
-    }
+    private fun <T : Any> findJsonResource(endpoint: Endpoint, type: KClass<T>) =
+            findJsonResource(restTemplate, endpoint, links.linkFor(endpoint), type)
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(ManagementEndpoint::class.java)
