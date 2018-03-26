@@ -9,6 +9,7 @@ The component is named after the Mokey Fraggle (http://muppet.wikia.com/wiki/Mok
 ## How to run locally
  - Log into your OpenShift cluster with `oc`
  - Start the Main class
+ - If you want to turn off caching set the mokey.cache property to false
  
 ## Test locally
 Create a file  src/main/http/rest-client.env.json 

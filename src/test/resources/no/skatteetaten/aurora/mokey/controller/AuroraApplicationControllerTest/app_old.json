@@ -8,6 +8,7 @@
   "availableReplicas": 1,
   "managementPath": ":8081/actuator",
   "deploymentPhase": "Complete",
+  "routeUrl": "http://reference-aurora.utv.paas.skead.no",
   "pods": [
     {
       "openShiftPodExcerpt" : {
@@ -18,6 +19,37 @@
         "startTime": "2018-01-30T05:27:55Z",
         "deployment": "reference-2"
       },
+      "info": {
+        "serviceLinks": {
+          "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}"
+        },
+        "podLinks": {
+          "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}&var-instance={podName}"
+        },
+        "git": {
+          "commit": {
+            "time": "2018-01-22T11:49:31Z",
+            "id": "56047ca"
+          },
+          "branch": "HEAD"
+        },
+        "build": {
+          "version": "1.0.0",
+          "artifact": "reference",
+          "name": "reference",
+          "group": "no.skatteetaten.aurora",
+          "time": "2018-01-22T12:38:44Z"
+        }
+      },
+      "health": {
+        "status": "UP",
+        "diskSpace": {
+          "status": "UP",
+          "total": 10718543872,
+          "free": 10526310400,
+          "threshold": 10485760
+        }
+      },
       "links": {
         "trace": "http://10.254.23.39:8081/trace",
         "loggers": "http://10.254.23.39:8081/loggers",
@@ -26,7 +58,8 @@
         "prometheus": "http://10.254.23.39:8081/prometheus",
         "env": "http://10.254.23.39:8081/env",
         "info": "http://10.254.23.39:8081/info"
-      }
+      },
+      "ready": true
     }
   ],
   "imageStream": {

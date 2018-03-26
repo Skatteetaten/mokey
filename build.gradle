@@ -45,20 +45,22 @@ dependencies {
       'com.fasterxml.jackson.module:jackson-module-kotlin',
       "no.skatteetaten.aurora.springboot:aurora-spring-boot2-starter:1.0.0",
       'io.fabric8:openshift-client:3.1.8',
-      'io.fabric8:kubernetes-model:2.0.4',
+      'com.fkorotkov:kubernetes-dsl:1.0',
       "org.springframework.retry:spring-retry",
       'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21.2',
       'org.springframework.boot:spring-boot-starter-security'
   )
 
-  testCompile(
+  [
       'org.springframework.restdocs:spring-restdocs-mockmvc',
       'org.springframework.security:spring-security-test',
       'org.junit.jupiter:junit-jupiter-api',
-      'io.fabric8:openshift-server-mock:3.1.8',
+      "org.junit.jupiter:junit-jupiter-params:${dependencyManagement.importedProperties['junit-jupiter.version']}",
       'org.springframework.boot:spring-boot-starter-test',
-      'io.mockk:mockk:1.7.10'
-  )
+      'io.fabric8:openshift-server-mock:3.1.8',
+      'io.mockk:mockk:1.7.10',
+      'com.willowtreeapps.assertk:assertk:0.9'
+  ].each { testCompile(it) { exclude group: 'junit' } }
 
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
@@ -69,6 +71,13 @@ springBoot {
 }
 
 compileKotlin {
+  kotlinOptions {
+    suppressWarnings = true
+    jvmTarget = 1.8
+  }
+}
+
+compileTestKotlin {
   kotlinOptions {
     suppressWarnings = true
     jvmTarget = 1.8

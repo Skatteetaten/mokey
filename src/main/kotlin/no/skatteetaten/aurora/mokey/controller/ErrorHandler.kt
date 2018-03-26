@@ -1,7 +1,6 @@
-package no.skatteetaten.aurora.mokey.controller.internal;
+package no.skatteetaten.aurora.mokey.controller;
 
 import no.skatteetaten.aurora.mokey.service.NoAccessException
-import no.skatteetaten.aurora.mokey.service.NoSuchResourceException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType

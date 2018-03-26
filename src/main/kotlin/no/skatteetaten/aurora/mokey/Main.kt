@@ -1,56 +1,32 @@
 package no.skatteetaten.aurora.mokey
 
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.fabric8.openshift.client.DefaultOpenShiftClient
-import io.fabric8.openshift.client.OpenShiftClient
-import okhttp3.OkHttpClient
+import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
+import org.springframework.beans.factory.InitializingBean
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.web.client.RestTemplateBuilder
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Primary
-import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
-import org.springframework.scheduling.annotation.EnableScheduling
-import org.springframework.web.client.RestTemplate
-import java.security.KeyManagementException
-import java.security.NoSuchAlgorithmException
-import java.util.concurrent.TimeUnit
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.stereotype.Component
 
 @SpringBootApplication
-@EnableScheduling
-class Main {
-    @Bean
-    @Primary
-    fun mapper(): ObjectMapper {
-        return jacksonObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL)
-    }
-
-    @Bean
-    fun client(): OpenShiftClient {
-        return DefaultOpenShiftClient()
-    }
-
-
-    @Bean
-    fun restTemplate(builder: RestTemplateBuilder): RestTemplate {
-        return builder.requestFactory({ createRequestFactory(2, 2) }).build()
-    }
-
-    @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)
-    private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
-
-        val okHttpClientBuilder = OkHttpClient().newBuilder()
-                .readTimeout(readTimeout, TimeUnit.SECONDS)
-                .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
-
-
-        return OkHttp3ClientHttpRequestFactory(okHttpClientBuilder.build())
-    }
-}
-
+class Main
 
 fun main(args: Array<String>) {
     SpringApplication.run(Main::class.java, *args)
+}
+
+@Component
+@ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
+class CacheWarmup(
+        val applicationDataService: ApplicationDataServiceCacheDecorator,
+        @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
+) : InitializingBean {
+
+    val affiliations: List<String>?
+        get() = if (affiliationsConfig.isBlank()) null
+        else affiliationsConfig.split(",").map { it.trim() }
+
+    override fun afterPropertiesSet() {
+        applicationDataService.refreshCache(affiliations)
+    }
 }

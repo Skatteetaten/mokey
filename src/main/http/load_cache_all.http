@@ -1,4 +1,0 @@
-GET {{apiUrl}}/load/all
-Authorization:Bearer {{token}}
-
-###
