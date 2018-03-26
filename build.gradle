@@ -16,8 +16,8 @@ buildscript {
 }
 
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.30"
-  id "org.jetbrains.kotlin.plugin.spring" version "1.2.30"
+  id "org.jetbrains.kotlin.jvm" version "1.2.31"
+  id "org.jetbrains.kotlin.plugin.spring" version "1.2.31"
   id 'org.springframework.boot' version '2.0.0.RELEASE'
 }
 
@@ -40,7 +40,7 @@ group = 'no.skatteetaten.aurora'
 dependencies {
 
   compile(
-      "org.jetbrains.kotlin:kotlin-reflect:1.2.30",
+      "org.jetbrains.kotlin:kotlin-reflect:1.2.31",
       'org.jetbrains.kotlin:kotlin-stdlib-jdk8',
       'com.fasterxml.jackson.module:jackson-module-kotlin',
       "no.skatteetaten.aurora.springboot:aurora-spring-boot2-starter:1.0.0",
