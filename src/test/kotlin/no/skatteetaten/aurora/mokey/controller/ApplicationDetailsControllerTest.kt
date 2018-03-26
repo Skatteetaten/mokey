@@ -1,10 +1,11 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.databind.node.MissingNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.model.*
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.mokey.service.HealthResponse
+import no.skatteetaten.aurora.mokey.service.HealthStatus
 import no.skatteetaten.aurora.mokey.service.ManagementLinks
 import no.skatteetaten.aurora.utils.Right
 import org.junit.jupiter.api.Test
@@ -42,7 +43,7 @@ class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
                                 Right(ManagementData(
                                         ManagementLinks(emptyMap()),
                                         Right(MissingNode.getInstance()),
-                                        Right(MissingNode.getInstance()),
+                                        Right(HealthResponse(HealthStatus.UP)),
                                         Right(MissingNode.getInstance())
                                 ))
                         ))

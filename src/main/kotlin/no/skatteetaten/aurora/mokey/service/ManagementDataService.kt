@@ -61,7 +61,7 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         }
 
         //TODO: Marshal this as a Health class not as jsonNode
-        val health: ManagementEndpointResult = try {
+        val health = try {
             Right(managementEndpoint.getHealthEndpointResponse())
         } catch (e: ManagementEndpointException) {
             Left(ManagementEndpointError("Error when contacting health endpoint",

@@ -1,8 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fasterxml.jackson.annotation.JsonAnySetter
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.MissingNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.service.Endpoint.*
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
+import kotlin.reflect.KClass
 
 @Service
 class ManagementEndpointFactory(val restTemplate: RestTemplate) {
@@ -45,28 +47,41 @@ data class ManagementLinks(private val links: Map<String, String>) {
     }
 }
 
-class ManagementEndpoint private constructor(
+enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
+
+data class HealthResponse(
+        val status: HealthStatus,
+        val parts: MutableMap<String, HealthPart> = mutableMapOf()
+) {
+    @JsonAnySetter(enabled = true)
+    fun setAny(name: String, value: HealthPart) {
+        parts[name] = value
+    }
+}
+
+data class HealthPart(val status: HealthStatus, val details: MutableMap<String, JsonNode> = mutableMapOf()) {
+    @JsonAnySetter(enabled = true)
+    fun setAny(name: String, value: JsonNode) {
+        details[name] = value
+    }
+}
+
+class ManagementEndpoint internal constructor(
         private val restTemplate: RestTemplate,
         val links: ManagementLinks
 ) {
 
     @Throws(ManagementEndpointException::class)
-    fun getHealthEndpointResponse(): JsonNode {
-        return findJsonResource(HEALTH)
-    }
+    fun getHealthEndpointResponse(): HealthResponse = findJsonResource(HEALTH, HealthResponse::class)
 
     @Throws(ManagementEndpointException::class)
-    fun getInfoEndpointResponse(): JsonNode {
-        return findJsonResource(INFO)
-    }
+    fun getInfoEndpointResponse(): JsonNode = findJsonResource(INFO, JsonNode::class)
 
     @Throws(ManagementEndpointException::class)
-    fun getEnvEndpointResponse(): JsonNode {
-        return findJsonResource(ENV)
-    }
+    fun getEnvEndpointResponse(): JsonNode = findJsonResource(ENV, JsonNode::class)
 
-    private fun findJsonResource(endpoint: Endpoint): JsonNode {
-        return findJsonResource(restTemplate, endpoint, links.linkFor(endpoint))
+    private fun <T : Any> findJsonResource(endpoint: Endpoint, type: KClass<T>): T {
+        return findJsonResource(restTemplate, endpoint, links.linkFor(endpoint), type)
     }
 
     companion object {
@@ -75,22 +90,22 @@ class ManagementEndpoint private constructor(
         @Throws(ManagementEndpointException::class)
         fun create(restTemplate: RestTemplate, managementUrl: String): ManagementEndpoint {
 
-            val response = findJsonResource(restTemplate, Endpoint.MANAGEMENT, managementUrl)
+            val response = findJsonResource(restTemplate, Endpoint.MANAGEMENT, managementUrl, JsonNode::class)
             val links = ManagementLinks.parseManagementResponse(response)
             return ManagementEndpoint(restTemplate, links)
         }
 
-        private fun findJsonResource(restTemplate: RestTemplate, endpoint: Endpoint, url: String): JsonNode {
+        private fun <T : Any> findJsonResource(restTemplate: RestTemplate, endpoint: Endpoint, url: String, type: KClass<T>): T {
 
             logger.debug("Getting resource with url={}", url)
             try {
-                val responseText: String? = try {
+                val responseText: String = try {
                     restTemplate.getForObject(url, String::class.java)
                 } catch (e: HttpStatusCodeException) {
                     if (!e.statusCode.is5xxServerError) throw e
                     String(e.responseBodyAsByteArray)
                 } ?: ""
-                return jacksonObjectMapper().readTree(responseText) ?: MissingNode.getInstance()
+                return jacksonObjectMapper().readValue(responseText, type.java)
             } catch (e: Exception) {
                 val errorCode = when (e) {
                     is HttpStatusCodeException -> "ERROR_${e.statusCode}"

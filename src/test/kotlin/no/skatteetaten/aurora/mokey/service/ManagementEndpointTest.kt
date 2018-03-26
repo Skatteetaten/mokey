@@ -1,10 +1,16 @@
 package no.skatteetaten.aurora.mokey.service
 
+import assertk.assert
+import assertk.assertions.isEqualTo
+import com.fasterxml.jackson.databind.node.IntNode
+import com.fasterxml.jackson.databind.node.LongNode
+import com.fasterxml.jackson.databind.node.TextNode
 import com.jayway.jsonpath.JsonPath
 import no.skatteetaten.aurora.mokey.AbstractTest
 import no.skatteetaten.aurora.mokey.ApplicationConfig
 import no.skatteetaten.aurora.mokey.service.Endpoint.MANAGEMENT
 import org.assertj.core.api.Assertions.assertThat
+import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -39,6 +45,52 @@ class ManagementEndpointTest : AbstractTest() {
     }
 
     @Test
+    fun `should deserialize health endpoint response`() {
+
+        @Language("JSON")
+        val json = """{
+  "status": "UP",
+  "atsServiceHelse": {
+    "status": "UP"
+  },
+  "diskSpace": {
+    "status": "UP",
+    "total": 10718543872,
+    "free": 10508611584,
+    "threshold": 10485760
+  },
+  "db": {
+    "status": "UP",
+    "database": "Oracle",
+    "hello": "Hello"
+  }
+}"""
+        val healthLink = "http://localhost:8081/health"
+        server.apply {
+            expect(requestTo(healthLink)).andRespond(withJsonString(json))
+        }
+
+        val managementEndpoint = ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.HEALTH.key to healthLink)))
+        val response = managementEndpoint.getHealthEndpointResponse()
+
+        assert(response).isEqualTo(HealthResponse(
+                HealthStatus.UP,
+                mutableMapOf(
+                        "atsServiceHelse" to HealthPart(HealthStatus.UP, mutableMapOf()),
+                        "diskSpace" to HealthPart(HealthStatus.UP, mutableMapOf(
+                                "total" to LongNode.valueOf(10718543872),
+                                "threshold" to IntNode.valueOf(10485760),
+                                "free" to LongNode.valueOf(10508611584)
+                        )),
+                        "db" to HealthPart(HealthStatus.UP, mutableMapOf(
+                                "hello" to TextNode.valueOf("Hello"),
+                                "database" to TextNode.valueOf("Oracle")
+                        ))
+                )
+        ))
+    }
+
+    @Test
     fun `should use links from management response for health and info endpoints`() {
 
         val resource = loadResource("management.json")
@@ -48,8 +100,8 @@ class ManagementEndpointTest : AbstractTest() {
 
         server.apply {
             expect(requestTo(managementUrl)).andRespond(withSuccess(resource, APPLICATION_JSON))
-            expect(requestTo(healthLink)).andRespond(withJsonResponse("health.json"))
-            expect(requestTo(infoLink)).andRespond(withJsonResponse("info.json"))
+            expect(requestTo(healthLink)).andRespond(withJsonFromFile("health.json"))
+            expect(requestTo(infoLink)).andRespond(withJsonFromFile("info.json"))
         }
 
         val managementEndpoint = ManagementEndpoint.create(restTemplate, managementUrl)
@@ -112,5 +164,6 @@ class ManagementEndpointTest : AbstractTest() {
         )
     }
 
-    private fun withJsonResponse(resourceName: String) = withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
+    private fun withJsonFromFile(resourceName: String) = withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
+    private fun withJsonString(json: String) = withSuccess(json, MediaType.APPLICATION_JSON)
 }

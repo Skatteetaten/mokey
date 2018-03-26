@@ -2,8 +2,10 @@ package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.service.Endpoint
+import no.skatteetaten.aurora.mokey.service.HealthResponse
 import no.skatteetaten.aurora.mokey.service.ManagementLinks
 import no.skatteetaten.aurora.utils.Either
+import no.skatteetaten.aurora.utils.Right
 
 data class ApplicationData(
         val id: String,
@@ -36,7 +38,7 @@ data class ManagementEndpointError(
 data class ManagementData(
         val links: ManagementLinks? = null,
         val info: Either<ManagementEndpointError, JsonNode>,
-        val health: Either<ManagementEndpointError, JsonNode>,
+        val health: Either<ManagementEndpointError, HealthResponse>,
         val env: Either<ManagementEndpointError, JsonNode>
 )
 
