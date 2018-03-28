@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.databind.JsonNode
-import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.model.Endpoint
 import java.time.Instant
 
 data class ApplicationResource(
@@ -19,15 +19,15 @@ data class AuroraStatusResource(val code: String, val comment: String? = null)
 
 data class ApplicationDetailsResource(
         val application: ApplicationResource,
-        val imageDetails: ImageDetailsResource,
+        val imageDetails: ImageDetailsResource?,
         val infoResponse: ValueOrManagementError<InfoResponseResource>?,
         val podResources: List<PodResource>
 )
 
 data class ImageDetailsResource(
         val dockerImageReference: String?,
-        val imageBuildTime: String?,
-        val environmentVariables: Map<String, String>?
+        val imageBuildTime: String,
+        val environmentVariables: Map<String, String>
 )
 
 data class ValueOrManagementError<V>(val value: V? = null, val error: ManagementEndpointErrorResource? = null)

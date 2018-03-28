@@ -50,13 +50,21 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                     { ValueOrManagementError(valueMapper.invoke(it)) }
             )
 
+    fun toImageDetailsResource(imageDetails: ImageDetails): ImageDetailsResource {
+        return ImageDetailsResource(
+                imageDetails.dockerImageReference,
+                imageDetails.imageBuildTime,
+                imageDetails.environmentVariables
+        )
+    }
+
     fun toHealthEndpointResponse(it: Either<ManagementEndpointError, HealthResponse>): ValueOrManagementError<Map<String, Any>> {
         return mappedValueOrError(it) {
             mutableMapOf<String, Any>("status" to it.status).also { response: MutableMap<String, Any> ->
                 it.parts.forEach { checkName: String, healthPart: HealthPart ->
                     val details = mutableMapOf<String, Any>("status" to healthPart.status)
                             .apply { this.putAll(healthPart.details) }
-                    response.put(checkName, details)
+                    response[checkName] = details
                 }
             }
         }
@@ -87,20 +95,14 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                     mappedValueOrError(it.managementData) {
                         mappedValueOrError(it.info) { InfoResponseResource(it.buildTime, it.commitId, it.commitTime, it.dependencies, it.podLinks, it.serviceLinks) }
                     }
-                }?.let { ValueOrManagementError(it.value?.value, it.error ?: it.value?.error) }
+                }?.let { ValueOrManagementError(it.value?.value, it.error ?: it.value?.error) } // At this point we want to present either error at the same level.
     }
 
     return ApplicationDetailsResource(
             toApplicationResource(it),
 
-            ImageDetailsResource(
-                    it.imageDetails?.dockerImageReference,
-                    it.imageDetails?.imageBuildTime,
-                    it.imageDetails?.environmentVariables
-            ),
+            it.imageDetails?.let { toImageDetailsResource(it) },
             toInfoResponseResource(it),
             it.pods.map { PodResource(toManagementDataResource(it.managementData)) }
     )
 }
-
-
