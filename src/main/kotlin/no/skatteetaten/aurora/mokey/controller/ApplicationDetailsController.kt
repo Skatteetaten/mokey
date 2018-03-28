@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.*
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
@@ -34,53 +35,61 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
 
 fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
 
-    fun toHealthEndpointResponse(it: HealthResponse): Map<String, Any> {
-        return mutableMapOf<String, Any>("status" to it.status).also { response: MutableMap<String, Any> ->
-            it.parts.forEach { checkName: String, healthPart: HealthPart ->
-                val details = mutableMapOf<String, Any>("status" to healthPart.status)
-                        .apply { this.putAll(healthPart.details) }
-                response.put(checkName, details)
+    fun <F, T> mappedValueOrError(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
+            either.fold(
+                    { it: ManagementEndpointError ->
+                        ValueOrManagementError(error = ({ e: ManagementEndpointError ->
+                            ManagementEndpointErrorResource(
+                                    message = e.message,
+                                    code = e.code,
+                                    endpoint = e.endpoint,
+                                    rootCause = e.rootCause
+                            )
+                        })(it))
+                    },
+                    { ValueOrManagementError(valueMapper.invoke(it)) }
+            )
+
+    fun toHealthEndpointResponse(it: Either<ManagementEndpointError, HealthResponse>): ValueOrManagementError<Map<String, Any>> {
+        return mappedValueOrError(it) {
+            mutableMapOf<String, Any>("status" to it.status).also { response: MutableMap<String, Any> ->
+                it.parts.forEach { checkName: String, healthPart: HealthPart ->
+                    val details = mutableMapOf<String, Any>("status" to healthPart.status)
+                            .apply { this.putAll(healthPart.details) }
+                    response.put(checkName, details)
+                }
             }
         }
     }
 
-    val errorMapper: (ManagementEndpointError) -> ManagementEndpointErrorResource = { e ->
-        ManagementEndpointErrorResource(
-                message = e.message,
-                code = e.code,
-                endpoint = e.endpoint,
-                rootCause = e.rootCause
-        )
+    fun toEnvEndpointResponse(env: Either<ManagementEndpointError, JsonNode>): ValueOrManagementError<JsonNode> {
+        return mappedValueOrError(env) { it }
     }
 
-    fun <F, T> eitherToOr(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
-            either.fold(
-                    { it: ManagementEndpointError -> ValueOrManagementError(error = errorMapper(it)) },
-                    { ValueOrManagementError(valueMapper.invoke(it)) }
-            )
+    fun toManagementDataResource(managementData: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
 
-    fun toManagementDataResource(dataResult: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
-
-        return eitherToOr(dataResult, {
+        return mappedValueOrError(managementData, {
             ManagementDataResource(
-                    eitherToOr(it.health) { toHealthEndpointResponse(it) },
-                    eitherToOr(it.env) { it }
+                    toHealthEndpointResponse(it.health),
+                    toEnvEndpointResponse(it.env)
             )
         })
     }
 
-    // This is slightly nightmareish. We want the Info endpoint response to be an application level property and not
-    // a instance/pod level property because all the instances will return the same information from this endpoint.
-    // However, creating a proper response object through the nested Either objects was extremely clunky. I think this
-    // information actually could be combined with the ImageDetailsResource to provide a combined details resource.
-    val infoResponse = it.pods.firstOrNull()
-            ?.let {
-                eitherToOr(it.managementData) {
-                    eitherToOr(it.info) { InfoResponseResource(it.buildTime, it.commitId, it.commitTime, it.dependencies, it.podLinks, it.serviceLinks) }
-                }
-            }?.let {
-                ValueOrManagementError(it.value?.value, it.error ?: it.value?.error)
-            }
+    fun toInfoResponseResource(it: ApplicationData): ValueOrManagementError<InfoResponseResource>? {
+
+        // This is slightly nightmareish. We want the Info endpoint response to be an application level property and not
+        // a instance/pod level property because all the instances will return the same information from this endpoint.
+        // However, creating a proper response object through the nested Either objects was extremely clunky. I think this
+        // information actually could be combined with the ImageDetailsResource to provide a combined details resource.
+        return it.pods.firstOrNull()
+                ?.let {
+                    mappedValueOrError(it.managementData) {
+                        mappedValueOrError(it.info) { InfoResponseResource(it.buildTime, it.commitId, it.commitTime, it.dependencies, it.podLinks, it.serviceLinks) }
+                    }
+                }?.let { ValueOrManagementError(it.value?.value, it.error ?: it.value?.error) }
+    }
+
     return ApplicationDetailsResource(
             toApplicationResource(it),
 
@@ -89,8 +98,9 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                     it.imageDetails?.imageBuildTime,
                     it.imageDetails?.environmentVariables
             ),
-            infoResponse,
+            toInfoResponseResource(it),
             it.pods.map { PodResource(toManagementDataResource(it.managementData)) }
     )
 }
+
 
