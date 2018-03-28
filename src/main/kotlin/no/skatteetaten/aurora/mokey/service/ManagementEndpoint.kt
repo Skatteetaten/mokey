@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -77,22 +78,22 @@ data class InfoResponse(
         val serviceLinks: Map<String, String> = mapOf(),
         val dependencies: Map<String, String> = mapOf(),
         var commitId: String? = null,
-        var commitTime: LocalDateTime? = null,
-        var buildTime: LocalDateTime? = null
+        var commitTime: Instant? = null,
+        var buildTime: Instant? = null
 ) {
 
     @JsonAnySetter(enabled = true)
     private fun setAny(name: String, value: JsonNode) {
         if (name == "git") {
             commitId = value.extract("/commit.id.abbrev", "/commit/id")?.textValue()
-            commitTime = extractLocalDateTime(value, "/commit.time", "/commit/time")
+            commitTime = extractInstant(value, "/commit.time", "/commit/time")
         }
         if (name == "build") {
-            buildTime = extractLocalDateTime(value, "/time")
+            buildTime = extractInstant(value, "/time")
         }
     }
 
-    private fun extractLocalDateTime(value: JsonNode, vararg pathAlternatives: String): LocalDateTime? {
+    private fun extractInstant(value: JsonNode, vararg pathAlternatives: String): Instant? {
         val timeString: String? = value.extract(*pathAlternatives)?.textValue()
         return timeString?.let { DateParser.parseString(it) }
     }
@@ -104,10 +105,10 @@ object DateParser {
             DateTimeFormatter.ISO_DATE_TIME // Ex: 2018-03-23T10:53:31Z
     )
 
-    fun parseString(dateString: String): LocalDateTime? {
+    fun parseString(dateString: String): Instant? {
         formatters.forEach {
             try {
-                return LocalDateTime.parse(dateString, it)
+                return it.parse(dateString, Instant::from)
             } catch (e: DateTimeParseException) {
             }
         }
