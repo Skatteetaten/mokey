@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mokey.extensions.asMap
+import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.service.Endpoint.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -13,6 +15,9 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import kotlin.reflect.KClass
 
 @Service
@@ -54,20 +59,61 @@ data class HealthResponse(
         val parts: MutableMap<String, HealthPart> = mutableMapOf()
 ) {
     @JsonAnySetter(enabled = true)
-    fun setAny(name: String, value: HealthPart) {
+    private fun setAny(name: String, value: HealthPart) {
         parts[name] = value
     }
 }
 
 data class HealthPart(val status: HealthStatus, val details: MutableMap<String, JsonNode> = mutableMapOf()) {
     @JsonAnySetter(enabled = true)
-    fun setAny(name: String, value: JsonNode) {
+    private fun setAny(name: String, value: JsonNode) {
         details[name] = value
     }
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class InfoResponse(val buildTime: String?)
+data class InfoResponse(
+        val podLinks: Map<String, String> = mapOf(),
+        val serviceLinks: Map<String, String> = mapOf(),
+        val dependencies: Map<String, String> = mapOf(),
+        var commitId: String? = null,
+        var commitTime: LocalDateTime? = null,
+        var buildTime: LocalDateTime? = null
+) {
+
+    @JsonAnySetter(enabled = true)
+    private fun setAny(name: String, value: JsonNode) {
+        if (name == "git") {
+            commitId = value.extract("/commit.id.abbrev", "/commit/id")?.textValue()
+            commitTime = extractLocalDateTime(value, "/commit.time", "/commit/time")
+        }
+        if (name == "build") {
+            buildTime = extractLocalDateTime(value, "/time")
+        }
+    }
+
+    private fun extractLocalDateTime(value: JsonNode, vararg pathAlternatives: String): LocalDateTime? {
+        val timeString: String? = value.extract(*pathAlternatives)?.textValue()
+        return timeString?.let { DateParser.parseString(it) }
+    }
+}
+
+object DateParser {
+    val formatters = listOf(
+            DateTimeFormatter.ofPattern("dd.MM.yyyy '@' HH:mm:ss z"), // Ex: 26.03.2018 @ 13:31:39 CEST
+            DateTimeFormatter.ISO_DATE_TIME // Ex: 2018-03-23T10:53:31Z
+    )
+
+    fun parseString(dateString: String): LocalDateTime? {
+        formatters.forEach {
+            try {
+                return LocalDateTime.parse(dateString, it)
+            } catch (e: DateTimeParseException) {
+            }
+        }
+        return null
+    }
+}
 
 class ManagementEndpoint internal constructor(
         private val restTemplate: RestTemplate,
@@ -113,6 +159,7 @@ class ManagementEndpoint internal constructor(
                     is HttpStatusCodeException -> "ERROR_${e.statusCode}"
                     is RestClientException -> "ERROR_HTTP"
                     is JsonParseException -> "INVALID_JSON"
+                    is MismatchedInputException -> "INVALID_JSON"
                     else -> "ERROR_UNKNOWN"
                 }
                 throw ManagementEndpointException(endpoint, errorCode, e)

@@ -84,7 +84,7 @@ data class PodDataBuilder(
 }
 
 data class ManagementDataBuilder(
-        val info: InfoResponse = InfoResponse(""),
+        val info: InfoResponse = InfoResponse(),
         val health: HealthResponse = HealthResponse(HealthStatus.UP),
         val env: JsonNode = MissingNode.getInstance()
 ) {

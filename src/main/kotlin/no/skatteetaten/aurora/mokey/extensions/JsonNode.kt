@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.extensions
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.MissingNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 
 
@@ -15,5 +16,16 @@ fun JsonNode?.asMap(): Map<String, JsonNode> {
         return fields
     }
     return emptyMap()
+}
+
+fun JsonNode.extract(vararg pathAlternatives: String): JsonNode? {
+    var valueNode: JsonNode = MissingNode.getInstance()
+    for (alt in pathAlternatives) {
+        valueNode = this.at(alt)
+        if (valueNode !is MissingNode) {
+            break
+        }
+    }
+    return if (valueNode !is MissingNode) valueNode else null
 }
 
