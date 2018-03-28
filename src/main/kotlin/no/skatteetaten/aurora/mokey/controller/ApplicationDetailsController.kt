@@ -1,9 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
-import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ManagementData
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
+import no.skatteetaten.aurora.mokey.model.*
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.utils.Either
 import no.skatteetaten.aurora.utils.fold
@@ -36,7 +34,17 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
 
 fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
 
-    fun toResource(dataResult: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
+    fun toHealthEndpointResponse(it: HealthResponse): Map<String, Any> {
+        return mutableMapOf<String, Any>("status" to it.status).also { response: MutableMap<String, Any> ->
+            it.parts.forEach { checkName: String, healthPart: HealthPart ->
+                val details = mutableMapOf<String, Any>("status" to healthPart.status)
+                        .apply { this.putAll(healthPart.details) }
+                response.put(checkName, details)
+            }
+        }
+    }
+
+    fun toManagementDataResource(dataResult: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
 
         val errorMapper: (ManagementEndpointError) -> ManagementEndpointErrorResource = { e ->
             ManagementEndpointErrorResource(
@@ -47,15 +55,18 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
             )
         }
 
-        fun <T> eitherToOr(either: Either<ManagementEndpointError, T>): ValueOrManagementError<T> =
-                either.fold({ ValueOrManagementError(error = errorMapper(it)) }, { ValueOrManagementError(it) })
+        fun <F, T> eitherToOr(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
+                either.fold(
+                        { it: ManagementEndpointError -> ValueOrManagementError(error = errorMapper(it)) },
+                        { ValueOrManagementError(valueMapper.invoke(it)) }
+                )
 
         return dataResult.fold(
                 right = {
                     ValueOrManagementError(ManagementDataResource(
-                            eitherToOr(it.info),
-                            eitherToOr(it.health),
-                            eitherToOr(it.env)
+                            eitherToOr(it.info) { InfoResponseResource(it.buildTime, it.commitId, it.commitTime, it.dependencies, it.podLinks, it.serviceLinks) },
+                            eitherToOr(it.health) { toHealthEndpointResponse(it) },
+                            eitherToOr(it.env) { it }
                     ))
                 },
                 left = { ValueOrManagementError(error = errorMapper(it)) }
@@ -63,14 +74,14 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
     }
 
     return ApplicationDetailsResource(
-            toApplication(it),
+            toApplicationResource(it),
 
             ImageDetailsResource(
                     it.imageDetails?.dockerImageReference,
                     it.imageDetails?.imageBuildTime,
                     it.imageDetails?.environmentVariables
             ),
-            it.pods.map { PodResource(toResource(it.managementData)) }
+            it.pods.map { PodResource(toManagementDataResource(it.managementData)) }
     )
 }
 

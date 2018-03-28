@@ -1,9 +1,8 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.databind.JsonNode
-import no.skatteetaten.aurora.mokey.model.Endpoint
-import no.skatteetaten.aurora.mokey.model.HealthResponse
-import no.skatteetaten.aurora.mokey.model.InfoResponse
+import no.skatteetaten.aurora.mokey.model.*
+import java.time.Instant
 
 open class ValueOrError<V, E>(val value: V?, val error: E?)
 
@@ -37,9 +36,23 @@ class ValueOrManagementError<V>(value: V? = null, error: ManagementEndpointError
 data class PodResource(val managementData: ValueOrManagementError<ManagementDataResource>)
 
 data class ManagementDataResource(
-        val info: ValueOrManagementError<InfoResponse>,
-        val health: ValueOrManagementError<HealthResponse>,
+        val info: ValueOrManagementError<InfoResponseResource>,
+        val health: ValueOrManagementError<Map<String, Any>>,
         val env: ValueOrManagementError<JsonNode>
+)
+
+data class InfoResponseResource(
+        val buildTime: Instant? = null,
+        val commitId: String? = null,
+        val commitTime: Instant? = null,
+        val dependencies: Map<String, String> = mapOf(),
+        val podLinks: Map<String, String> = mapOf(),
+        val serviceLinks: Map<String, String> = mapOf()
+)
+
+data class HealthResponsePartResource(
+        val status: HealthStatus,
+        val parts: Map<String, JsonNode>
 )
 
 data class ManagementEndpointErrorResource(

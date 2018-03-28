@@ -18,11 +18,11 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
 
     @GetMapping("/application")
     fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<ApplicationResource> {
-        return applicationDataService.findAllApplicationData(affiliation).map(::toApplication)
+        return applicationDataService.findAllApplicationData(affiliation).map(::toApplicationResource)
     }
 }
 
-fun toApplication(data: ApplicationData): ApplicationResource {
+fun toApplicationResource(data: ApplicationData): ApplicationResource {
     val environment = Environment.fromNamespace(data.namespace)
     return ApplicationResource(
             data.id,
