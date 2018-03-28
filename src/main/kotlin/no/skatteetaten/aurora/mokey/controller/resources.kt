@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.model.*
 import java.time.Instant
 
-open class ValueOrError<V, E>(val value: V?, val error: E?)
-
 data class ApplicationResource(
         val id: String,
         val affiliation: String?,
@@ -22,6 +20,7 @@ data class AuroraStatusResource(val code: String, val comment: String? = null)
 data class ApplicationDetailsResource(
         val application: ApplicationResource,
         val imageDetails: ImageDetailsResource,
+        val infoResponse: ValueOrManagementError<InfoResponseResource>?,
         val podResources: List<PodResource>
 )
 
@@ -31,12 +30,11 @@ data class ImageDetailsResource(
         val environmentVariables: Map<String, String>?
 )
 
-class ValueOrManagementError<V>(value: V? = null, error: ManagementEndpointErrorResource? = null) : ValueOrError<V, ManagementEndpointErrorResource>(value, error)
+data class ValueOrManagementError<V>(val value: V? = null, val error: ManagementEndpointErrorResource? = null)
 
 data class PodResource(val managementData: ValueOrManagementError<ManagementDataResource>)
 
 data class ManagementDataResource(
-        val info: ValueOrManagementError<InfoResponseResource>,
         val health: ValueOrManagementError<Map<String, Any>>,
         val env: ValueOrManagementError<JsonNode>
 )
@@ -48,11 +46,6 @@ data class InfoResponseResource(
         val dependencies: Map<String, String> = mapOf(),
         val podLinks: Map<String, String> = mapOf(),
         val serviceLinks: Map<String, String> = mapOf()
-)
-
-data class HealthResponsePartResource(
-        val status: HealthStatus,
-        val parts: Map<String, JsonNode>
 )
 
 data class ManagementEndpointErrorResource(

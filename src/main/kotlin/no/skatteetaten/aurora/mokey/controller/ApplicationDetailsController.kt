@@ -44,35 +44,43 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
         }
     }
 
-    fun toManagementDataResource(dataResult: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
-
-        val errorMapper: (ManagementEndpointError) -> ManagementEndpointErrorResource = { e ->
-            ManagementEndpointErrorResource(
-                    message = e.message,
-                    code = e.code,
-                    endpoint = e.endpoint,
-                    rootCause = e.rootCause
-            )
-        }
-
-        fun <F, T> eitherToOr(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
-                either.fold(
-                        { it: ManagementEndpointError -> ValueOrManagementError(error = errorMapper(it)) },
-                        { ValueOrManagementError(valueMapper.invoke(it)) }
-                )
-
-        return dataResult.fold(
-                right = {
-                    ValueOrManagementError(ManagementDataResource(
-                            eitherToOr(it.info) { InfoResponseResource(it.buildTime, it.commitId, it.commitTime, it.dependencies, it.podLinks, it.serviceLinks) },
-                            eitherToOr(it.health) { toHealthEndpointResponse(it) },
-                            eitherToOr(it.env) { it }
-                    ))
-                },
-                left = { ValueOrManagementError(error = errorMapper(it)) }
+    val errorMapper: (ManagementEndpointError) -> ManagementEndpointErrorResource = { e ->
+        ManagementEndpointErrorResource(
+                message = e.message,
+                code = e.code,
+                endpoint = e.endpoint,
+                rootCause = e.rootCause
         )
     }
 
+    fun <F, T> eitherToOr(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
+            either.fold(
+                    { it: ManagementEndpointError -> ValueOrManagementError(error = errorMapper(it)) },
+                    { ValueOrManagementError(valueMapper.invoke(it)) }
+            )
+
+    fun toManagementDataResource(dataResult: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
+
+        return eitherToOr(dataResult, {
+            ManagementDataResource(
+                    eitherToOr(it.health) { toHealthEndpointResponse(it) },
+                    eitherToOr(it.env) { it }
+            )
+        })
+    }
+
+    // This is slightly nightmareish. We want the Info endpoint response to be an application level property and not
+    // a instance/pod level property because all the instances will return the same information from this endpoint.
+    // However, creating a proper response object through the nested Either objects was extremely clunky. I think this
+    // information actually could be combined with the ImageDetailsResource to provide a combined details resource.
+    val infoResponse = it.pods.firstOrNull()
+            ?.let {
+                eitherToOr(it.managementData) {
+                    eitherToOr(it.info) { InfoResponseResource(it.buildTime, it.commitId, it.commitTime, it.dependencies, it.podLinks, it.serviceLinks) }
+                }
+            }?.let {
+                ValueOrManagementError(it.value?.value, it.error ?: it.value?.error)
+            }
     return ApplicationDetailsResource(
             toApplicationResource(it),
 
@@ -81,6 +89,7 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
                     it.imageDetails?.imageBuildTime,
                     it.imageDetails?.environmentVariables
             ),
+            infoResponse,
             it.pods.map { PodResource(toManagementDataResource(it.managementData)) }
     )
 }
