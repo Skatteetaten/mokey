@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.utils.Either
+import java.time.Instant
 
 data class ApplicationData(
         val id: String,
@@ -51,13 +52,11 @@ data class OpenShiftPodExcerpt(
 
 data class ImageDetails(
         val dockerImageReference: String?,
+        val imageBuildTime: Instant?,
         val environmentVariables: Map<String, String>
 ) {
     val auroraVersion: String
         get() = environmentVariables["AURORA_VERSION"] ?: ""
-
-    val imageBuildTime: String
-        get() = environmentVariables["IMAGE_BUILD_TIME"] ?: ""
 }
 
 data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)

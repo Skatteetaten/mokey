@@ -5,10 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.extensions.extract
+import no.skatteetaten.aurora.mokey.service.DateParser
 import no.skatteetaten.aurora.mokey.service.ManagementEndpointException
 import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 
 enum class Endpoint(val key: String) {
     HEALTH("health"),
@@ -81,22 +80,5 @@ data class InfoResponse(
     private fun extractInstant(value: JsonNode, vararg pathAlternatives: String): Instant? {
         val timeString: String? = value.extract(*pathAlternatives)?.textValue()
         return timeString?.let { DateParser.parseString(it) }
-    }
-}
-
-private object DateParser {
-    val formatters = listOf(
-            DateTimeFormatter.ofPattern("dd.MM.yyyy '@' HH:mm:ss z"), // Ex: 26.03.2018 @ 13:31:39 CEST
-            DateTimeFormatter.ISO_DATE_TIME // Ex: 2018-03-23T10:53:31Z
-    )
-
-    fun parseString(dateString: String): Instant? {
-        formatters.forEach {
-            try {
-                return it.parse(dateString, Instant::from)
-            } catch (e: DateTimeParseException) {
-            }
-        }
-        return null
     }
 }

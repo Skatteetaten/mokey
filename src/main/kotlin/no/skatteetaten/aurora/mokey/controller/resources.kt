@@ -26,7 +26,7 @@ data class ApplicationDetailsResource(
 
 data class ImageDetailsResource(
         val dockerImageReference: String?,
-        val imageBuildTime: String,
+        val imageBuildTime: Instant?,
         val environmentVariables: Map<String, String>
 )
 
