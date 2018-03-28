@@ -19,9 +19,11 @@ import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
 
+
 @Configuration
 @EnableScheduling
 class ApplicationConfig {
+
     @Bean
     @Primary
     fun mapper(): ObjectMapper {
