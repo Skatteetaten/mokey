@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.ImageStream
 import io.fabric8.openshift.api.model.Project
-import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import no.skatteetaten.aurora.mokey.controller.security.User

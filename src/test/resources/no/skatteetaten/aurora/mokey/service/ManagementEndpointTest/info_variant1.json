@@ -1,0 +1,34 @@
+{
+  "application": {
+    "version": "0.0.144"
+  },
+  "serviceLinks": {
+    "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}",
+    "api-doc": "mss-backend-sirius-norveig-sh-240.utv.paas.skead.no/docs/index.html"
+  },
+  "podLinks": {
+    "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}&var-instance={podName}"
+  },
+  "dependencies": {
+    "innbetaltskatt": "http://innbetaltskatt",
+    "partsregister": "http://part-identitet-part-fk1-utv.utv.paas.skead.no",
+    "skattemeldingcore": "http://skattemelding-core",
+    "sts": "http://int-utv.skead.no:11100/felles/sikkerhet/stsSikkerhet/v2"
+  },
+  "imageBuildTime": "2018-03-23T10:57:38Z",
+  "auroraVersion": "0.0.144-b1.8.0-flange-8.152.18",
+  "git": {
+    "commit": {
+      "time": "2018-03-23T10:53:31Z",
+      "id": "5df5258"
+    },
+    "branch": "5df5258db4c5e6077b26e41d2daeed532f08841a"
+  },
+  "build": {
+    "version": "0.0.144",
+    "artifact": "minskatteside-skattemelding-backend",
+    "name": "minskatteside-skattemelding-backend",
+    "group": "ske.fastsetting.formueinntekt.skattemelding.kjerne",
+    "time": "2018-03-23T10:55:40Z"
+  }
+}

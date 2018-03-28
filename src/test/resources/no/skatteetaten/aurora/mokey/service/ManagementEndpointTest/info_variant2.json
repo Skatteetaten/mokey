@@ -1,0 +1,33 @@
+{
+  "serviceLinks": {
+    "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}"
+  },
+  "podLinks": {
+    "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}&var-instance={podName}"
+  },
+  "dependencies": {},
+  "build": {
+    "name": "skattemelding-core",
+    "artifactid": "skattemelding-core",
+    "time": "${'$'}{timestamp}",
+    "version": "bugfix_feed_sikkerhet-SNAPSHOT",
+    "group": "ske.fastsetting.formueinntekt.skattemelding"
+  },
+  "git": {
+    "commit.message.short": "SH-49: registrerer lagreresource.",
+    "commit.user.name": "Naimdjon Takhirov",
+    "commit.id.describe-short": "v1.0.362-1",
+    "branch": "37473fd288228a09687d97f2650da5a7fde70d0a",
+    "commit.id.abbrev": "37473fd",
+    "build.time": "26.03.2018 @ 13:36:21 CEST",
+    "commit.time": "26.03.2018 @ 13:31:39 CEST",
+    "commit.id": "37473fd288228a09687d97f2650da5a7fde70d0a",
+    "tags": "",
+    "commit.message.full": "SH-49: registrerer lagreresource.\n",
+    "commit.id.describe": "v1.0.362-1-g37473fd",
+    "build.user.name": "Jenkins",
+    "remote.origin.url": "https://git.aurora.skead.no/scm/SIR/skattemelding-core.git",
+    "commit.user.email": "naimdjon.takhirov@skatteetaten.no",
+    "build.user.email": "nobody@skatteetaten.no"
+  }
+}

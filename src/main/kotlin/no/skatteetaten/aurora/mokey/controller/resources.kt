@@ -1,9 +1,9 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.databind.JsonNode
-import no.skatteetaten.aurora.mokey.service.Endpoint
-import no.skatteetaten.aurora.mokey.service.HealthResponse
-import no.skatteetaten.aurora.mokey.service.InfoResponse
+import no.skatteetaten.aurora.mokey.model.Endpoint
+import no.skatteetaten.aurora.mokey.model.HealthResponse
+import no.skatteetaten.aurora.mokey.model.InfoResponse
 
 open class ValueOrError<V, E>(val value: V?, val error: E?)
 

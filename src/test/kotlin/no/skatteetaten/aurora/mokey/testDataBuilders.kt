@@ -8,10 +8,7 @@ import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.Project
-import no.skatteetaten.aurora.mokey.model.ImageDetails
-import no.skatteetaten.aurora.mokey.model.ManagementData
-import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
-import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.model.*
 import no.skatteetaten.aurora.mokey.service.*
 import no.skatteetaten.aurora.utils.Right
 

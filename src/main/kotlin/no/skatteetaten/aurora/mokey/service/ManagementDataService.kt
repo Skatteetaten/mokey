@@ -1,9 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.databind.JsonNode
+import no.skatteetaten.aurora.mokey.model.Endpoint
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
-import no.skatteetaten.aurora.mokey.service.Endpoint.MANAGEMENT
 import no.skatteetaten.aurora.utils.Either
 import no.skatteetaten.aurora.utils.Left
 import no.skatteetaten.aurora.utils.Right
@@ -21,7 +21,7 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         if (hostAddress.isNullOrBlank()) return Left(
                 ManagementEndpointError(
                         message = "Host address is missing",
-                        endpoint = MANAGEMENT,
+                        endpoint = Endpoint.MANAGEMENT,
                         code = "CONFIGURATION"))
 
         if (endpointPath.isNullOrBlank()) return Left(

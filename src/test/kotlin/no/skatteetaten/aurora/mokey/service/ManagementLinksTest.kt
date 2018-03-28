@@ -2,6 +2,8 @@ package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import no.skatteetaten.aurora.mokey.model.Endpoint
+import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test

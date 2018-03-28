@@ -8,7 +8,9 @@ import com.fasterxml.jackson.databind.node.TextNode
 import com.jayway.jsonpath.JsonPath
 import no.skatteetaten.aurora.mokey.AbstractTest
 import no.skatteetaten.aurora.mokey.ApplicationConfig
-import no.skatteetaten.aurora.mokey.service.Endpoint.MANAGEMENT
+import no.skatteetaten.aurora.mokey.model.*
+//import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.model.Endpoint.MANAGEMENT
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -30,6 +32,7 @@ import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
+import java.time.Instant
 import java.util.stream.Stream
 
 class ManagementEndpointTest : AbstractTest() {
@@ -93,96 +96,24 @@ class ManagementEndpointTest : AbstractTest() {
     @Test
     fun `should deserialize info endpoint response`() {
 
-        @Language("JSON")
-        val json = """{
-  "serviceLinks": {
-    "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}"
-  },
-  "podLinks": {
-    "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}&var-instance={podName}"
-  },
-  "dependencies": {},
-  "build": {
-    "name": "skattemelding-core",
-    "artifactid": "skattemelding-core",
-    "time": "${'$'}{timestamp}",
-    "version": "bugfix_feed_sikkerhet-SNAPSHOT",
-    "group": "ske.fastsetting.formueinntekt.skattemelding"
-  },
-  "git": {
-    "commit.message.short": "SH-49: registrerer lagreresource.",
-    "commit.user.name": "Naimdjon Takhirov",
-    "commit.id.describe-short": "v1.0.362-1",
-    "branch": "37473fd288228a09687d97f2650da5a7fde70d0a",
-    "commit.id.abbrev": "37473fd",
-    "build.time": "26.03.2018 @ 13:36:21 CEST",
-    "commit.time": "26.03.2018 @ 13:31:39 CEST",
-    "commit.id": "37473fd288228a09687d97f2650da5a7fde70d0a",
-    "tags": "",
-    "commit.message.full": "SH-49: registrerer lagreresource.\n",
-    "commit.id.describe": "v1.0.362-1-g37473fd",
-    "build.user.name": "Jenkins",
-    "remote.origin.url": "https://git.aurora.skead.no/scm/SIR/skattemelding-core.git",
-    "commit.user.email": "naimdjon.takhirov@skatteetaten.no",
-    "build.user.email": "nobody@skatteetaten.no"
-  }
-}"""
-        @Language("JSON")
-        val json2 = """{
-  "application": {
-    "version": "0.0.144"
-  },
-  "serviceLinks": {
-    "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}",
-    "api-doc": "mss-backend-sirius-norveig-sh-240.utv.paas.skead.no/docs/index.html"
-  },
-  "podLinks": {
-    "metrics": "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}&var-instance={podName}"
-  },
-  "dependencies": {
-    "innbetaltskatt": "http://innbetaltskatt",
-    "partsregister": "http://part-identitet-part-fk1-utv.utv.paas.skead.no",
-    "skattemeldingcore": "http://skattemelding-core",
-    "sts": "http://int-utv.skead.no:11100/felles/sikkerhet/stsSikkerhet/v2"
-  },
-  "imageBuildTime": "2018-03-23T10:57:38Z",
-  "auroraVersion": "0.0.144-b1.8.0-flange-8.152.18",
-  "git": {
-    "commit": {
-      "time": "2018-03-23T10:53:31Z",
-      "id": "5df5258"
-    },
-    "branch": "5df5258db4c5e6077b26e41d2daeed532f08841a"
-  },
-  "build": {
-    "version": "0.0.144",
-    "artifact": "minskatteside-skattemelding-backend",
-    "name": "minskatteside-skattemelding-backend",
-    "group": "ske.fastsetting.formueinntekt.skattemelding.kjerne",
-    "time": "2018-03-23T10:55:40Z"
-  }
-}"""
         val infoLink = "http://localhost:8081/info"
         server.apply {
-            expect(requestTo(infoLink)).andRespond(withJsonString(json))
-            expect(requestTo(infoLink)).andRespond(withJsonString(json2))
+            expect(requestTo(infoLink)).andRespond(withJsonFromFile("info_variant1.json"))
+            expect(requestTo(infoLink)).andRespond(withJsonFromFile("info_variant2.json"))
         }
 
         val managementEndpoint = ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.INFO.key to infoLink)))
-        val response = managementEndpoint.getInfoEndpointResponse()
 
-        println(response)
-        println(response.commitId)
-        println(response.commitTime)
-        println(response.buildTime)
-
-        val response2 = managementEndpoint.getInfoEndpointResponse()
-
-        println(response2)
-        println(response2.commitId)
-        println(response2.commitTime)
-        println(response2.buildTime)
-//        assert(response).isEqualTo(InfoResponse(buildTime = null))
+        managementEndpoint.getInfoEndpointResponse().let {
+            assert(it.commitId).isEqualTo("5df5258")
+            assert(it.commitTime).isEqualTo(Instant.parse("2018-03-23T10:53:31Z"))
+            assert(it.buildTime).isEqualTo(Instant.parse("2018-03-23T10:55:40Z"))
+        }
+        managementEndpoint.getInfoEndpointResponse().let {
+            assert(it.commitId).isEqualTo("37473fd")
+            assert(it.commitTime).isEqualTo(Instant.parse("2018-03-26T11:31:39Z"))
+            assert(it.buildTime).isEqualTo(Instant.parse("2018-03-26T11:36:21Z"))
+        }
     }
 
     @Test
