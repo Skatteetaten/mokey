@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
+import no.skatteetaten.aurora.mokey.extensions.imageStreamTag
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import org.springframework.stereotype.Service
 

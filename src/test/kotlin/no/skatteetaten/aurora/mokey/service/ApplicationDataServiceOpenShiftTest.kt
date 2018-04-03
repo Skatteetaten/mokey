@@ -14,8 +14,11 @@ import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.net.URI
+import java.time.Instant
 
 class ApplicationDataServiceOpenShiftTest {
 
@@ -23,16 +26,18 @@ class ApplicationDataServiceOpenShiftTest {
     private val auroraStatusCalculator = mockk<AuroraStatusCalculator>()
     private val podService = mockk<PodService>()
     private val imageService = mockk<ImageService>()
+    private val addressService = mockk<AddressService>()
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
             openShiftService,
             auroraStatusCalculator,
             podService,
+            addressService,
             imageService
     )
 
     @BeforeEach
     fun setUp() {
-        clearMocks(openShiftService, auroraStatusCalculator, podService, imageService)
+        clearMocks(openShiftService, auroraStatusCalculator, podService, imageService, addressService)
     }
 
     @Test
@@ -60,6 +65,9 @@ class ApplicationDataServiceOpenShiftTest {
 
         val imageDetails = ImageDetailsDataBuilder().build()
         every { imageService.getImageDetails(dc) } returns imageDetails
+
+        val addresses = listOf(ServiceAddress(URI.create("http://app-name"), Instant.EPOCH))
+        every { addressService.getAddresses(dcBuilder.dcNamespace, mapOf("app" to "app-name")) } returns addresses
 
         every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(AuroraStatusLevel.HEALTHY, "")
 

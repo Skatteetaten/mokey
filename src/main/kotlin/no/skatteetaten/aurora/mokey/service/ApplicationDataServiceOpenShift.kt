@@ -4,6 +4,12 @@ import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
+import no.skatteetaten.aurora.mokey.extensions.affiliation
+import no.skatteetaten.aurora.mokey.extensions.booberDeployId
+import no.skatteetaten.aurora.mokey.extensions.deployTag
+import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
+import no.skatteetaten.aurora.mokey.extensions.managementPath
+import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
 import no.skatteetaten.aurora.mokey.model.DeployDetails
@@ -18,6 +24,7 @@ import org.springframework.stereotype.Service
 class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
                                       val auroraStatusCalculator: AuroraStatusCalculator,
                                       val podService: PodService,
+                                      val addressService: AddressService,
                                       val imageService: ImageService) : ApplicationDataService {
 
     val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
@@ -86,6 +93,8 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         val name = dc.metadata.name
         val latestVersion = dc.status.latestVersion ?: null
 
+
+        val services = addressService.getAddresses(namespace, mapOf("app" to name))
         val pods = podService.getPodDetails(dc)
         val imageDetails = imageService.getImageDetails(dc)
 
