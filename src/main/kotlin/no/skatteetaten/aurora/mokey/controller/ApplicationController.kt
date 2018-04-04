@@ -5,12 +5,15 @@ import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.hateoas.ExposesResourceFor
+import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
+@ExposesResourceFor(ApplicationResource::class)
 @RequestMapping("/api")
 class ApplicationController(val applicationDataService: ApplicationDataService) {
 
@@ -31,7 +34,10 @@ fun toApplicationResource(data: ApplicationData): ApplicationResource {
             data.name,
             data.auroraStatus.let { AuroraStatusResource(it.level.toString()) },
             Version(data.deployTag, data.imageDetails?.auroraVersion)
-    )
+    ).apply {
+        add(linkTo(ApplicationController::class.java).slash(data.id).withSelfRel())
+        add(linkTo(ApplicationDetailsController::class.java).slash(data.id).withRel("details"))
+    }
 }
 
 

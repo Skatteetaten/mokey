@@ -1,19 +1,20 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
-import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ImageDetails
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
-import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.model.*
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.utils.Either
 import no.skatteetaten.aurora.utils.fold
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.hateoas.ExposesResourceFor
+import org.springframework.hateoas.Link
+import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @RestController
+@ExposesResourceFor(ApplicationDetailsResource::class)
 @RequestMapping("/api/applicationdetails")
 class ApplicationDetailsController(val applicationDataService: ApplicationDataService) {
 
@@ -35,7 +36,7 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
     }
 }
 
-fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
+fun toApplicationDetails(applicationData: ApplicationData): ApplicationDetailsResource {
 
     fun <F, T> mappedValueOrError(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
             either.fold(
@@ -53,58 +54,22 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
             )
 
     fun toImageDetailsResource(imageDetails: ImageDetails): ImageDetailsResource {
-        return ImageDetailsResource(
-                imageDetails.dockerImageReference/*,
-                imageDetails.environmentVariables*/
-        )
+        return ImageDetailsResource(imageDetails.dockerImageReference)
     }
-
-/*
-    fun toHealthEndpointResponse(it: Either<ManagementEndpointError, HealthResponse>): ValueOrManagementError<Map<String, Any>> {
-        return mappedValueOrError(it) {
-            mutableMapOf<String, Any>("status" to it.status).also { response: MutableMap<String, Any> ->
-                it.parts.forEach { checkName: String, healthPart: HealthPart ->
-                    val details = mutableMapOf<String, Any>("status" to healthPart.status)
-                            .apply { this.putAll(healthPart.details) }
-                    response[checkName] = details
-                }
-            }
-        }
-    }
-*/
-/*
-
-    fun toEnvEndpointResponse(env: Either<ManagementEndpointError, JsonNode>): ValueOrManagementError<JsonNode> {
-        return mappedValueOrError(env) { it }
-    }
-*/
 
     fun toPodResource(podDetails: PodDetails): PodResource? {
 
         return mappedValueOrError(podDetails.managementData, {
-            PodResource(
-/*
-                    toHealthEndpointResponse(it.health),
-                    toEnvEndpointResponse(it.env),
-*/
-                    mappedValueOrError(it.info) { it.podLinks }.value
-            )
+            val podLinks = mappedValueOrError(it.info) { it.podLinks }.value
+            PodResource(podDetails.openShiftPodExcerpt.name).apply { podLinks?.map { Link(it.value, it.key) }?.forEach(this::add) }
         }).value
     }
 
-    fun toBuildInfoResource(aPod: PodDetails?, imageDetails: ImageDetails?): BuildInfoResource? {
-
-        return aPod?.let {
-            mappedValueOrError(it.managementData) {
-                mappedValueOrError(it.info) { BuildInfoResource(imageDetails?.imageBuildTime, it.buildTime, it.commitId, it.commitTime) }
-            }
-        }?.let {
-            //            ValueOrManagementError(it.value?.value, it.error ?: it.value?.error)
-            it.value?.value
-        }
+    fun toBuildInfoResource(aPod: InfoResponse?, imageDetails: ImageDetails?): BuildInfoResource? {
+        return BuildInfoResource(imageDetails?.imageBuildTime, aPod?.buildTime, aPod?.commitId, aPod?.commitTime)
     }
 
-    val aPod = it.pods.firstOrNull()
+    val aPod = applicationData.pods.firstOrNull()
     val anInfoResponse = aPod?.let {
         mappedValueOrError(it.managementData) {
             mappedValueOrError(it.info) { it }
@@ -112,11 +77,13 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
     }?.let { it.value?.value }
 
     return ApplicationDetailsResource(
-            toApplicationResource(it),
-            toBuildInfoResource(aPod, it.imageDetails),
-            it.imageDetails?.let { toImageDetailsResource(it) },
-            it.pods.mapNotNull { toPodResource(it) },
-            anInfoResponse?.dependencies ?: emptyMap(),
-            anInfoResponse?.serviceLinks ?: emptyMap()
-    )
+            toApplicationResource(applicationData),
+            toBuildInfoResource(anInfoResponse, applicationData.imageDetails),
+            applicationData.imageDetails?.let { toImageDetailsResource(it) },
+            applicationData.pods.mapNotNull { toPodResource(it) },
+            anInfoResponse?.dependencies ?: emptyMap()
+    ).apply {
+        anInfoResponse?.serviceLinks?.map { Link(it.value, it.key) }?.forEach(this::add)
+        add(linkTo(ApplicationDetailsController::class.java).slash(applicationData.id).withSelfRel())
+    }
 }
