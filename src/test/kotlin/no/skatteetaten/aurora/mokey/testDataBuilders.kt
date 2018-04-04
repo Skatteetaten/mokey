@@ -11,6 +11,7 @@ import io.fabric8.openshift.api.model.Project
 import no.skatteetaten.aurora.mokey.model.*
 import no.skatteetaten.aurora.mokey.service.*
 import no.skatteetaten.aurora.utils.Right
+import java.time.Instant
 
 data class DeploymentConfigDataBuilder(
         val dcName: String = "app-name",
@@ -106,7 +107,7 @@ data class ImageDetailsDataBuilder(val dockerImageReference: String = "dockerIma
                                    val environmentVariables: Map<String, String> = emptyMap()) {
 
     fun build(): ImageDetails {
-        return ImageDetails(dockerImageReference, environmentVariables)
+        return ImageDetails(dockerImageReference, Instant.now(), environmentVariables)
     }
 }
 
