@@ -19,32 +19,33 @@ data class AuroraStatusResource(val code: String, val comment: String? = null)
 
 data class ApplicationDetailsResource(
         val application: ApplicationResource,
+        val buildInfo: BuildInfoResource?,
         val imageDetails: ImageDetailsResource?,
-        val infoResponse: ValueOrManagementError<InfoResponseResource>?,
         val podResources: List<PodResource>
 )
 
 data class ImageDetailsResource(
         val dockerImageReference: String?,
-        val imageBuildTime: Instant?,
         val environmentVariables: Map<String, String>
+)
+
+data class BuildInfoResource(
+        val imageBuildTime: Instant?,
+        val buildTime: Instant? = null,
+        val commitId: String? = null,
+        val commitTime: Instant? = null
 )
 
 data class ValueOrManagementError<V>(val value: V? = null, val error: ManagementEndpointErrorResource? = null)
 
-data class PodResource(val managementData: ValueOrManagementError<ManagementDataResource>)
-
-data class ManagementDataResource(
+data class PodResource(
         val health: ValueOrManagementError<Map<String, Any>>,
-        val env: ValueOrManagementError<JsonNode>
+        val env: ValueOrManagementError<JsonNode>,
+        val podLinks: ValueOrManagementError<Map<String, String>>
 )
 
 data class InfoResponseResource(
-        val buildTime: Instant? = null,
-        val commitId: String? = null,
-        val commitTime: Instant? = null,
         val dependencies: Map<String, String> = mapOf(),
-        val podLinks: Map<String, String> = mapOf(),
         val serviceLinks: Map<String, String> = mapOf()
 )
 

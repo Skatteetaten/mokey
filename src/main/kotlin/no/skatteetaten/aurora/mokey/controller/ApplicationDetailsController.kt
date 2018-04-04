@@ -53,7 +53,6 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
     fun toImageDetailsResource(imageDetails: ImageDetails): ImageDetailsResource {
         return ImageDetailsResource(
                 imageDetails.dockerImageReference,
-                imageDetails.imageBuildTime,
                 imageDetails.environmentVariables
         )
     }
@@ -74,35 +73,48 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
         return mappedValueOrError(env) { it }
     }
 
-    fun toManagementDataResource(managementData: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
+    fun toPodResource(podDetails: PodDetails): PodResource? {
 
-        return mappedValueOrError(managementData, {
-            ManagementDataResource(
+        return mappedValueOrError(podDetails.managementData, {
+            PodResource(
                     toHealthEndpointResponse(it.health),
-                    toEnvEndpointResponse(it.env)
+                    toEnvEndpointResponse(it.env),
+                    mappedValueOrError(it.info) { it.podLinks }
             )
-        })
+        }).value
     }
 
-    fun toInfoResponseResource(it: ApplicationData): ValueOrManagementError<InfoResponseResource>? {
+    fun toApplicationInfoResource(it: ApplicationData): ValueOrManagementError<InfoResponseResource>? {
 
-        // This is slightly nightmareish. We want the Info endpoint response to be an application level property and not
-        // a instance/pod level property because all the instances will return the same information from this endpoint.
-        // However, creating a proper response object through the nested Either objects was extremely clunky. I think this
-        // information actually could be combined with the ImageDetailsResource to provide a combined details resource.
-        return it.pods.firstOrNull()
-                ?.let {
-                    mappedValueOrError(it.managementData) {
-                        mappedValueOrError(it.info) { InfoResponseResource(it.buildTime, it.commitId, it.commitTime, it.dependencies, it.podLinks, it.serviceLinks) }
-                    }
-                }?.let { ValueOrManagementError(it.value?.value, it.error ?: it.value?.error) } // At this point we want to present either error at the same level.
+        val aPod = it.pods.firstOrNull()
+        val let = aPod?.let {
+            mappedValueOrError(it.managementData) {
+                mappedValueOrError(it.info) { InfoResponseResource(it.dependencies, it.serviceLinks) }
+            }
+        }?.let {
+            ValueOrManagementError(it.value?.value, it.error ?: it.value?.error)
+        }
+        return let // At this point we want to present either error at the same level.
+    }
+
+    fun toBuildInfoResource(applicationData: ApplicationData): BuildInfoResource? {
+
+        val aPod = applicationData.pods.firstOrNull()
+        val imageDetails = applicationData.imageDetails
+        return aPod?.let {
+            mappedValueOrError(it.managementData) {
+                mappedValueOrError(it.info) { BuildInfoResource(imageDetails?.imageBuildTime, it.buildTime, it.commitId, it.commitTime) }
+            }
+        }?.let {
+//            ValueOrManagementError(it.value?.value, it.error ?: it.value?.error)
+            it.value?.value
+        }
     }
 
     return ApplicationDetailsResource(
             toApplicationResource(it),
-
+            toBuildInfoResource(it),
             it.imageDetails?.let { toImageDetailsResource(it) },
-            toInfoResponseResource(it),
-            it.pods.map { PodResource(toManagementDataResource(it.managementData)) }
+            it.pods.mapNotNull { toPodResource(it) }
     )
 }
