@@ -1,8 +1,10 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.controller.security.User
-import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ImageDetails
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
+import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.utils.Either
 import no.skatteetaten.aurora.utils.fold
@@ -52,11 +54,12 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
 
     fun toImageDetailsResource(imageDetails: ImageDetails): ImageDetailsResource {
         return ImageDetailsResource(
-                imageDetails.dockerImageReference,
-                imageDetails.environmentVariables
+                imageDetails.dockerImageReference/*,
+                imageDetails.environmentVariables*/
         )
     }
 
+/*
     fun toHealthEndpointResponse(it: Either<ManagementEndpointError, HealthResponse>): ValueOrManagementError<Map<String, Any>> {
         return mappedValueOrError(it) {
             mutableMapOf<String, Any>("status" to it.status).also { response: MutableMap<String, Any> ->
@@ -68,53 +71,52 @@ fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
             }
         }
     }
+*/
+/*
 
     fun toEnvEndpointResponse(env: Either<ManagementEndpointError, JsonNode>): ValueOrManagementError<JsonNode> {
         return mappedValueOrError(env) { it }
     }
+*/
 
     fun toPodResource(podDetails: PodDetails): PodResource? {
 
         return mappedValueOrError(podDetails.managementData, {
             PodResource(
+/*
                     toHealthEndpointResponse(it.health),
                     toEnvEndpointResponse(it.env),
-                    mappedValueOrError(it.info) { it.podLinks }
+*/
+                    mappedValueOrError(it.info) { it.podLinks }.value
             )
         }).value
     }
 
-    fun toApplicationInfoResource(it: ApplicationData): ValueOrManagementError<InfoResponseResource>? {
+    fun toBuildInfoResource(aPod: PodDetails?, imageDetails: ImageDetails?): BuildInfoResource? {
 
-        val aPod = it.pods.firstOrNull()
-        val let = aPod?.let {
-            mappedValueOrError(it.managementData) {
-                mappedValueOrError(it.info) { InfoResponseResource(it.dependencies, it.serviceLinks) }
-            }
-        }?.let {
-            ValueOrManagementError(it.value?.value, it.error ?: it.value?.error)
-        }
-        return let // At this point we want to present either error at the same level.
-    }
-
-    fun toBuildInfoResource(applicationData: ApplicationData): BuildInfoResource? {
-
-        val aPod = applicationData.pods.firstOrNull()
-        val imageDetails = applicationData.imageDetails
         return aPod?.let {
             mappedValueOrError(it.managementData) {
                 mappedValueOrError(it.info) { BuildInfoResource(imageDetails?.imageBuildTime, it.buildTime, it.commitId, it.commitTime) }
             }
         }?.let {
-//            ValueOrManagementError(it.value?.value, it.error ?: it.value?.error)
+            //            ValueOrManagementError(it.value?.value, it.error ?: it.value?.error)
             it.value?.value
         }
     }
 
+    val aPod = it.pods.firstOrNull()
+    val anInfoResponse = aPod?.let {
+        mappedValueOrError(it.managementData) {
+            mappedValueOrError(it.info) { it }
+        }
+    }?.let { it.value?.value }
+
     return ApplicationDetailsResource(
             toApplicationResource(it),
-            toBuildInfoResource(it),
+            toBuildInfoResource(aPod, it.imageDetails),
             it.imageDetails?.let { toImageDetailsResource(it) },
-            it.pods.mapNotNull { toPodResource(it) }
+            it.pods.mapNotNull { toPodResource(it) },
+            anInfoResponse?.dependencies ?: emptyMap(),
+            anInfoResponse?.serviceLinks ?: emptyMap()
     )
 }

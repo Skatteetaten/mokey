@@ -21,12 +21,14 @@ data class ApplicationDetailsResource(
         val application: ApplicationResource,
         val buildInfo: BuildInfoResource?,
         val imageDetails: ImageDetailsResource?,
-        val podResources: List<PodResource>
+        val podResources: List<PodResource>,
+        val dependencies: Map<String, String> = mapOf(),
+        val serviceLinks: Map<String, String> = mapOf()
 )
 
 data class ImageDetailsResource(
-        val dockerImageReference: String?,
-        val environmentVariables: Map<String, String>
+        val dockerImageReference: String?/*,
+        val environmentVariables: Map<String, String>*/
 )
 
 data class BuildInfoResource(
@@ -39,14 +41,10 @@ data class BuildInfoResource(
 data class ValueOrManagementError<V>(val value: V? = null, val error: ManagementEndpointErrorResource? = null)
 
 data class PodResource(
-        val health: ValueOrManagementError<Map<String, Any>>,
-        val env: ValueOrManagementError<JsonNode>,
-        val podLinks: ValueOrManagementError<Map<String, String>>
-)
-
-data class InfoResponseResource(
-        val dependencies: Map<String, String> = mapOf(),
-        val serviceLinks: Map<String, String> = mapOf()
+//        val health: ValueOrManagementError<Map<String, Any>>,
+//        val env: ValueOrManagementError<JsonNode>,
+//        val podLinks: ValueOrManagementError<Map<String, String>>
+        val podLinks: Map<String, String>?
 )
 
 data class ManagementEndpointErrorResource(
