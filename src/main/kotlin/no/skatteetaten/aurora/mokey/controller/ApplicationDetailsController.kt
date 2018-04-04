@@ -37,7 +37,7 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
     }
 }
 
-class ApplicationDetailsResourceAssembler : ResourceAssemblerSupport<ApplicationData, ApplicationDetailsResource>(ApplicationDetailsResource::class.java, ApplicationDetailsResource::class.java) {
+class ApplicationDetailsResourceAssembler : ResourceAssemblerSupport<ApplicationData, ApplicationDetailsResource>(ApplicationDetailsController::class.java, ApplicationDetailsResource::class.java) {
 
     private val applicationAssembler = ApplicationResourceAssembler()
 

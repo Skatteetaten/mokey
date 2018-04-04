@@ -15,14 +15,14 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @ExposesResourceFor(ApplicationResource::class)
-@RequestMapping("/api")
+@RequestMapping("/api/application")
 class ApplicationController(val applicationDataService: ApplicationDataService) {
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationController::class.java)
 
     val assembler = ApplicationResourceAssembler()
 
-    @GetMapping("/application")
+    @GetMapping("")
     fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<ApplicationResource> {
         return assembler.toResources(applicationDataService.findAllApplicationData(affiliation))
     }
@@ -40,6 +40,7 @@ class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, A
                 Version(data.deployTag, data.imageDetails?.auroraVersion)
         ).apply {
             add(linkTo(ApplicationController::class.java).slash(data.id).withSelfRel())
+            add(linkTo(ApplicationDetailsController::class.java).slash(data.id).withRel("details"))
         }
     }
 }
