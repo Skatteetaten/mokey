@@ -8,6 +8,9 @@ import okhttp3.OkHttpClient
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.hateoas.config.EnableHypermediaSupport
+import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType
+import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType.HAL
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
@@ -21,6 +24,7 @@ import java.util.concurrent.TimeUnit
 
 @Configuration
 @EnableScheduling
+@EnableHypermediaSupport(type = [HAL])
 class ApplicationConfig {
 
     @Bean
