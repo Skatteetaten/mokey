@@ -24,6 +24,7 @@ data class PodDetails(
         val managementData: Either<ManagementEndpointError, ManagementData>
 )
 
+
 data class ManagementEndpointError(
         val message: String,
         val endpoint: Endpoint,
@@ -60,3 +61,4 @@ data class ImageDetails(
 }
 
 data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)
+

@@ -28,8 +28,18 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return openShiftClient.deploymentConfigs().inNamespace(namespace).list().items
     }
 
-    fun imageStream(namespace: String, name: String): ImageStream? {
-        return openShiftClient.imageStreams().inNamespace(namespace).withName(name).getOrNull()
+    fun route(namespace: String, name: String): Route? {
+        return openShiftClient.routes().inNamespace(namespace).withName(name).getOrNull()
+    }
+
+    fun routes(namespace: String, labelMap: Map<String, String>): List<Route> {
+        return openShiftClient.routes().inNamespace(namespace).withLabels(labelMap).list().items
+
+    }
+
+    fun services(namespace: String, labelMap: Map<String, String>): List<io.fabric8.kubernetes.api.model.Service> {
+        return openShiftClient.services().inNamespace(namespace).withLabels(labelMap).list().items
+
     }
 
     fun pods(namespace: String, labelMap: Map<String, String>): List<Pod> {
@@ -48,6 +58,7 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return openShiftClient.projects().list().items
     }
 
+    //TODO; Denne nå vi ikke glemme å få på plass igjen i mokey eller i gobo
     fun currentUserHasAccess(namespace: String): Boolean {
         val user = SecurityContextHolder.getContext().authentication.principal as User
         val userClient = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
