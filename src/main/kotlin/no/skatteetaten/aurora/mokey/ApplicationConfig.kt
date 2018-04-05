@@ -33,6 +33,7 @@ class ApplicationConfig : BeanPostProcessor {
     override fun postProcessAfterInitialization(bean: Any?, beanName: String?): Any {
         if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
             bean.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            bean.configure(SerializationFeature.INDENT_OUTPUT, true)
             bean.registerModules(JavaTimeModule())
         }
 
