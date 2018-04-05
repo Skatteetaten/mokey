@@ -23,7 +23,7 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
     val assembler = ApplicationResourceAssembler()
 
     @GetMapping("")
-    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<ApplicationResource> {
+    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> {
         return assembler.toResources(applicationDataService.findAllApplicationData(affiliation))
     }
 }
@@ -32,7 +32,6 @@ class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, A
     override fun toResource(data: ApplicationData): ApplicationResource {
         val environment = Environment.fromNamespace(data.namespace)
         return ApplicationResource(
-                data.id,
                 data.affiliation,
                 environment.name,
                 data.name,

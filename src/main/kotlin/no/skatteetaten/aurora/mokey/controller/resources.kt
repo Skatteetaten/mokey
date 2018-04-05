@@ -3,27 +3,45 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.model.Endpoint
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonInclude
+import java.util.HashMap
+
+
+abstract class HalResource : ResourceSupport() {
+
+    private val embedded = HashMap<String, ResourceSupport>()
+
+    val embeddedResources: Map<String, ResourceSupport>
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        @JsonProperty("_embedded")
+        get() = embedded
+
+    fun embedResource(relationship: String, resource: ResourceSupport) {
+
+        embedded[relationship] = resource
+    }
+}
+
 
 class ApplicationResource(
-        val id: String,
         val affiliation: String?,
         val environment: String,
         val name: String,
         val status: AuroraStatusResource,
         val version: Version
-) : ResourceSupport()
+) : HalResource()
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
 
 data class AuroraStatusResource(val code: String, val comment: String? = null)
 
 class ApplicationDetailsResource(
-        val application: ApplicationResource,
         val buildInfo: BuildInfoResource?,
         val imageDetails: ImageDetailsResource?,
         val podResources: List<PodResource>,
         val dependencies: Map<String, String> = mapOf()
-) : ResourceSupport()
+) : HalResource()
 
 data class ImageDetailsResource(
         val dockerImageReference: String?

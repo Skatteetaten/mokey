@@ -9,6 +9,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.Link
+import org.springframework.hateoas.mvc.ControllerLinkBuilder
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -51,12 +52,14 @@ class ApplicationDetailsResourceAssembler : ResourceAssemblerSupport<Application
         }?.let { it.value?.value }
 
         return ApplicationDetailsResource(
-                applicationAssembler.toResource(applicationData),
                 toBuildInfoResource(anInfoResponse, applicationData.imageDetails),
                 applicationData.imageDetails?.let { toImageDetailsResource(it) },
                 applicationData.pods.mapNotNull { toPodResource(it) },
                 anInfoResponse?.dependencies ?: emptyMap()
         ).apply {
+            add(ControllerLinkBuilder.linkTo(ApplicationDetailsController::class.java).slash(applicationData.id).withSelfRel())
+            embedResource("application", applicationAssembler.toResource(applicationData))
+
             anInfoResponse?.serviceLinks
                     ?.map { Link(it.value, it.key) }
                     ?.forEach(this::add)
