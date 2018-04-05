@@ -1,44 +1,64 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import com.fasterxml.jackson.databind.JsonNode
-import no.skatteetaten.aurora.mokey.service.Endpoint
+import no.skatteetaten.aurora.mokey.model.Endpoint
+import org.springframework.hateoas.ResourceSupport
+import java.time.Instant
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonInclude
+import java.util.HashMap
 
-open class ValueOrError<V, E>(val value: V?, val error: E?)
 
-data class ApplicationResource(
-        val id: String,
+abstract class HalResource : ResourceSupport() {
+
+    private val embedded = HashMap<String, ResourceSupport>()
+
+    val embeddedResources: Map<String, ResourceSupport>
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        @JsonProperty("_embedded")
+        get() = embedded
+
+    fun embedResource(relationship: String, resource: ResourceSupport) {
+
+        embedded[relationship] = resource
+    }
+}
+
+
+class ApplicationResource(
         val affiliation: String?,
         val environment: String,
         val name: String,
         val status: AuroraStatusResource,
         val version: Version
-)
+) : HalResource()
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
 
 data class AuroraStatusResource(val code: String, val comment: String? = null)
 
-data class ApplicationDetailsResource(
-        val application: ApplicationResource,
-        val imageDetails: ImageDetailsResource,
-        val podResources: List<PodResource>
-)
+class ApplicationDetailsResource(
+        val buildInfo: BuildInfoResource?,
+        val imageDetails: ImageDetailsResource?,
+        val podResources: List<PodResource>,
+        val dependencies: Map<String, String> = mapOf()
+) : HalResource()
 
 data class ImageDetailsResource(
-        val dockerImageReference: String?,
-        val imageBuildTime: String?,
-        val environmentVariables: Map<String, String>?
+        val dockerImageReference: String?
 )
 
-class ValueOrManagementError<V>(value: V? = null, error: ManagementEndpointErrorResource? = null) : ValueOrError<V, ManagementEndpointErrorResource>(value, error)
-
-data class PodResource(val managementData: ValueOrManagementError<ManagementDataResource>)
-
-data class ManagementDataResource(
-        val info: ValueOrManagementError<JsonNode>,
-        val health: ValueOrManagementError<JsonNode>,
-        val env: ValueOrManagementError<JsonNode>
+data class BuildInfoResource(
+        val imageBuildTime: Instant?,
+        val buildTime: Instant? = null,
+        val commitId: String? = null,
+        val commitTime: Instant? = null
 )
+
+data class ValueOrManagementError<V>(val value: V? = null, val error: ManagementEndpointErrorResource? = null)
+
+class PodResource(
+        val name: String
+) : ResourceSupport()
 
 data class ManagementEndpointErrorResource(
         val message: String,

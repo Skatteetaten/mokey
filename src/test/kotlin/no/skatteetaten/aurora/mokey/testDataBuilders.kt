@@ -2,23 +2,8 @@ package no.skatteetaten.aurora.mokey
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
-import com.fkorotkov.kubernetes.metadata
-import com.fkorotkov.kubernetes.newContainerStatus
-import com.fkorotkov.kubernetes.newPod
-import com.fkorotkov.kubernetes.newReplicationController
-import com.fkorotkov.kubernetes.newService
-import com.fkorotkov.kubernetes.status
-import com.fkorotkov.openshift.from
-import com.fkorotkov.openshift.imageChangeParams
-import com.fkorotkov.openshift.metadata
-import com.fkorotkov.openshift.newDeploymentConfig
-import com.fkorotkov.openshift.newDeploymentTriggerPolicy
-import com.fkorotkov.openshift.newProject
-import com.fkorotkov.openshift.newRoute
-import com.fkorotkov.openshift.newRouteIngress
-import com.fkorotkov.openshift.newRouteIngressCondition
-import com.fkorotkov.openshift.spec
-import com.fkorotkov.openshift.status
+import com.fkorotkov.kubernetes.*
+import com.fkorotkov.openshift.*
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.api.model.Service
@@ -29,16 +14,8 @@ import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.managementPath
-import no.skatteetaten.aurora.mokey.model.ImageDetails
-import no.skatteetaten.aurora.mokey.model.ManagementData
-import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
-import no.skatteetaten.aurora.mokey.model.PodDetails
-import no.skatteetaten.aurora.mokey.service.ContainerConfig
-import no.skatteetaten.aurora.mokey.service.Image
-import no.skatteetaten.aurora.mokey.service.ImageStreamTag
-import no.skatteetaten.aurora.mokey.service.ManagementLinks
-import no.skatteetaten.aurora.mokey.service.ManagementResult
-import no.skatteetaten.aurora.mokey.service.Metadata
+import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.service.*
 import no.skatteetaten.aurora.utils.Right
 import java.time.Instant
 
@@ -173,8 +150,8 @@ data class PodDataBuilder(
 }
 
 data class ManagementDataBuilder(
-        val info: JsonNode = MissingNode.getInstance(),
-        val health: JsonNode = MissingNode.getInstance(),
+        val info: InfoResponse = InfoResponse(),
+        val health: HealthResponse = HealthResponse(HealthStatus.UP),
         val env: JsonNode = MissingNode.getInstance()
 ) {
 
@@ -198,7 +175,7 @@ data class ImageDetailsDataBuilder(val dockerImageReference: String = "dockerIma
                                    val environmentVariables: Map<String, String> = emptyMap()) {
 
     fun build(): ImageDetails {
-        return ImageDetails(dockerImageReference, environmentVariables)
+        return ImageDetails(dockerImageReference, Instant.now(), environmentVariables)
     }
 }
 

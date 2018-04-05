@@ -6,7 +6,7 @@ import org.springframework.boot.actuate.metrics.web.client.RestTemplateExchangeT
 import org.springframework.http.HttpRequest
 import org.springframework.http.client.ClientHttpResponse
 import org.springframework.stereotype.Component
-import java.util.Arrays
+import java.util.*
 
 @Component
 class AuroraRestTemplateTagsProvider : RestTemplateExchangeTagsProvider {

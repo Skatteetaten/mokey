@@ -1,76 +1,99 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
-import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ManagementData
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
+import no.skatteetaten.aurora.mokey.model.*
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.utils.Either
 import no.skatteetaten.aurora.utils.fold
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.hateoas.ExposesResourceFor
+import org.springframework.hateoas.Link
+import org.springframework.hateoas.mvc.ControllerLinkBuilder
+import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @RestController
+@ExposesResourceFor(ApplicationDetailsResource::class)
 @RequestMapping("/api/applicationdetails")
 class ApplicationDetailsController(val applicationDataService: ApplicationDataService) {
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDetailsController::class.java)
 
+    val assembler = ApplicationDetailsResourceAssembler()
+
     @GetMapping("/{id}")
     fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDetailsResource? {
 
         return applicationDataService.findApplicationDataById(id)
-                ?.let(::toApplicationDetails)
+                ?.let(assembler::toResource)
                 ?: throw NoSuchResourceException("Does not exist")
     }
 
     @GetMapping("")
     fun getAll(@RequestParam affiliation: String, @AuthenticationPrincipal user: User): List<ApplicationDetailsResource> {
 
-        return applicationDataService.findAllApplicationData(listOf(affiliation))
-                .map(::toApplicationDetails)
+        return assembler.toResources(applicationDataService.findAllApplicationData(listOf(affiliation)))
     }
 }
 
-fun toApplicationDetails(it: ApplicationData): ApplicationDetailsResource {
+class ApplicationDetailsResourceAssembler : ResourceAssemblerSupport<ApplicationData, ApplicationDetailsResource>(ApplicationDetailsController::class.java, ApplicationDetailsResource::class.java) {
 
-    fun toResource(dataResult: Either<ManagementEndpointError, ManagementData>): ValueOrManagementError<ManagementDataResource> {
+    private val applicationAssembler = ApplicationResourceAssembler()
 
-        val errorMapper: (ManagementEndpointError) -> ManagementEndpointErrorResource = { e ->
-            ManagementEndpointErrorResource(
-                    message = e.message,
-                    code = e.code,
-                    endpoint = e.endpoint,
-                    rootCause = e.rootCause
-            )
+    override fun toResource(applicationData: ApplicationData): ApplicationDetailsResource {
+
+        val aPod = applicationData.pods.firstOrNull()
+        val anInfoResponse = aPod?.let {
+            mappedValueOrError(it.managementData) {
+                mappedValueOrError(it.info) { it }
+            }
+        }?.let { it.value?.value }
+
+        return ApplicationDetailsResource(
+                toBuildInfoResource(anInfoResponse, applicationData.imageDetails),
+                applicationData.imageDetails?.let { toImageDetailsResource(it) },
+                applicationData.pods.mapNotNull { toPodResource(it) },
+                anInfoResponse?.dependencies ?: emptyMap()
+        ).apply {
+            add(ControllerLinkBuilder.linkTo(ApplicationDetailsController::class.java).slash(applicationData.id).withSelfRel())
+            embedResource("application", applicationAssembler.toResource(applicationData))
+
+            anInfoResponse?.serviceLinks
+                    ?.map { Link(it.value, it.key) }
+                    ?.forEach(this::add)
         }
-
-        fun <T> eitherToOr(either: Either<ManagementEndpointError, T>): ValueOrManagementError<T> =
-                either.fold({ ValueOrManagementError(error = errorMapper(it)) }, { ValueOrManagementError(it) })
-
-        return dataResult.fold(
-                right = {
-                    ValueOrManagementError(ManagementDataResource(
-                            eitherToOr(it.info),
-                            eitherToOr(it.health),
-                            eitherToOr(it.env)
-                    ))
-                },
-                left = { ValueOrManagementError(error = errorMapper(it)) }
-        )
     }
 
-    return ApplicationDetailsResource(
-            toApplication(it),
+    private fun toImageDetailsResource(imageDetails: ImageDetails): ImageDetailsResource {
+        return ImageDetailsResource(imageDetails.dockerImageReference)
+    }
 
-            ImageDetailsResource(
-                    it.imageDetails?.dockerImageReference,
-                    it.imageDetails?.imageBuildTime,
-                    it.imageDetails?.environmentVariables
-            ),
-            it.pods.map { PodResource(toResource(it.managementData)) }
-    )
+    private fun toPodResource(podDetails: PodDetails): PodResource? {
+
+        return mappedValueOrError(podDetails.managementData, {
+            val podLinks = mappedValueOrError(it.info) { it.podLinks }.value
+            PodResource(podDetails.openShiftPodExcerpt.name).apply { podLinks?.map { Link(it.value, it.key) }?.forEach(this::add) }
+        }).value
+    }
+
+    private fun toBuildInfoResource(aPod: InfoResponse?, imageDetails: ImageDetails?): BuildInfoResource? {
+        return BuildInfoResource(imageDetails?.imageBuildTime, aPod?.buildTime, aPod?.commitId, aPod?.commitTime)
+    }
+
+    private fun <F, T> mappedValueOrError(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
+            either.fold(
+                    { it: ManagementEndpointError ->
+                        ValueOrManagementError(error = ({ e: ManagementEndpointError ->
+                            ManagementEndpointErrorResource(
+                                    message = e.message,
+                                    code = e.code,
+                                    endpoint = e.endpoint,
+                                    rootCause = e.rootCause
+                            )
+                        })(it))
+                    },
+                    { ValueOrManagementError(valueMapper.invoke(it)) }
+            )
 }
-

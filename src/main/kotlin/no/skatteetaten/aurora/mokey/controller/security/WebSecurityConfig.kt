@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
+import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter
@@ -24,6 +25,7 @@ class WebSecurityConfig(
     override fun configure(http: HttpSecurity) {
 
         http.csrf().disable()
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 
         http.authenticationProvider(preAuthenticationProvider())
                 .addFilter(requestHeaderAuthenticationFilter())
@@ -34,6 +36,7 @@ class WebSecurityConfig(
                 .antMatchers("/api/**").permitAll()
                 .anyRequest().authenticated()
     }
+
 
     private fun forPort(port: Int) = RequestMatcher { request: HttpServletRequest -> port == request.localPort }
 

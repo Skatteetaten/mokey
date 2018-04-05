@@ -1,10 +1,18 @@
 package no.skatteetaten.aurora.mokey.service
 
+import assertk.assert
+import assertk.assertions.isEqualTo
+import com.fasterxml.jackson.databind.node.IntNode
+import com.fasterxml.jackson.databind.node.LongNode
+import com.fasterxml.jackson.databind.node.TextNode
 import com.jayway.jsonpath.JsonPath
 import no.skatteetaten.aurora.mokey.AbstractTest
 import no.skatteetaten.aurora.mokey.ApplicationConfig
-import no.skatteetaten.aurora.mokey.service.Endpoint.MANAGEMENT
+import no.skatteetaten.aurora.mokey.model.*
+//import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.model.Endpoint.MANAGEMENT
 import org.assertj.core.api.Assertions.assertThat
+import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -24,6 +32,7 @@ import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
+import java.time.Instant
 import java.util.stream.Stream
 
 class ManagementEndpointTest : AbstractTest() {
@@ -39,6 +48,75 @@ class ManagementEndpointTest : AbstractTest() {
     }
 
     @Test
+    fun `should deserialize health endpoint response`() {
+
+        @Language("JSON")
+        val json = """{
+  "status": "UP",
+  "atsServiceHelse": {
+    "status": "UP"
+  },
+  "diskSpace": {
+    "status": "UP",
+    "total": 10718543872,
+    "free": 10508611584,
+    "threshold": 10485760
+  },
+  "db": {
+    "status": "UP",
+    "database": "Oracle",
+    "hello": "Hello"
+  }
+}"""
+        val healthLink = "http://localhost:8081/health"
+        server.apply {
+            expect(requestTo(healthLink)).andRespond(withJsonString(json))
+        }
+
+        val managementEndpoint = ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.HEALTH.key to healthLink)))
+        val response = managementEndpoint.getHealthEndpointResponse()
+
+        assert(response).isEqualTo(HealthResponse(
+                HealthStatus.UP,
+                mutableMapOf(
+                        "atsServiceHelse" to HealthPart(HealthStatus.UP, mutableMapOf()),
+                        "diskSpace" to HealthPart(HealthStatus.UP, mutableMapOf(
+                                "total" to LongNode.valueOf(10718543872),
+                                "threshold" to IntNode.valueOf(10485760),
+                                "free" to LongNode.valueOf(10508611584)
+                        )),
+                        "db" to HealthPart(HealthStatus.UP, mutableMapOf(
+                                "hello" to TextNode.valueOf("Hello"),
+                                "database" to TextNode.valueOf("Oracle")
+                        ))
+                )
+        ))
+    }
+
+    @Test
+    fun `should deserialize info endpoint response`() {
+
+        val infoLink = "http://localhost:8081/info"
+        server.apply {
+            expect(requestTo(infoLink)).andRespond(withJsonFromFile("info_variant1.json"))
+            expect(requestTo(infoLink)).andRespond(withJsonFromFile("info_variant2.json"))
+        }
+
+        val managementEndpoint = ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.INFO.key to infoLink)))
+
+        managementEndpoint.getInfoEndpointResponse().let {
+            assert(it.commitId).isEqualTo("5df5258")
+            assert(it.commitTime).isEqualTo(Instant.parse("2018-03-23T10:53:31Z"))
+            assert(it.buildTime).isEqualTo(Instant.parse("2018-03-23T10:55:40Z"))
+        }
+        managementEndpoint.getInfoEndpointResponse().let {
+            assert(it.commitId).isEqualTo("37473fd")
+            assert(it.commitTime).isEqualTo(Instant.parse("2018-03-26T11:31:39Z"))
+            assert(it.buildTime).isEqualTo(Instant.parse("2018-03-26T11:36:21Z"))
+        }
+    }
+
+    @Test
     fun `should use links from management response for health and info endpoints`() {
 
         val resource = loadResource("management.json")
@@ -48,8 +126,8 @@ class ManagementEndpointTest : AbstractTest() {
 
         server.apply {
             expect(requestTo(managementUrl)).andRespond(withSuccess(resource, APPLICATION_JSON))
-            expect(requestTo(healthLink)).andRespond(withJsonResponse("health.json"))
-            expect(requestTo(infoLink)).andRespond(withJsonResponse("info.json"))
+            expect(requestTo(healthLink)).andRespond(withJsonFromFile("health.json"))
+            expect(requestTo(infoLink)).andRespond(withJsonFromFile("info.json"))
         }
 
         val managementEndpoint = ManagementEndpoint.create(restTemplate, managementUrl)
@@ -93,7 +171,6 @@ class ManagementEndpointTest : AbstractTest() {
         override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
                 args("{}", APPLICATION_JSON),
                 args("{ \"_links\": {}}", APPLICATION_JSON),
-                args("", APPLICATION_JSON),
                 args("{}", APPLICATION_JSON, INTERNAL_SERVER_ERROR)
         )
     }
@@ -103,6 +180,7 @@ class ManagementEndpointTest : AbstractTest() {
                 Arguments.of(response, mediaType, errorCode, responseCode)
 
         override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
+                args("", APPLICATION_JSON, "INVALID_JSON"),
                 args("{ \"_links\": { \"health\": null}}", APPLICATION_JSON, "INVALID_FORMAT"),
                 args("{ _links: {}}", APPLICATION_JSON, "INVALID_JSON"),
                 args("", APPLICATION_JSON, "ERROR_404", NOT_FOUND),
@@ -112,5 +190,6 @@ class ManagementEndpointTest : AbstractTest() {
         )
     }
 
-    private fun withJsonResponse(resourceName: String) = withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
+    private fun withJsonFromFile(resourceName: String) = withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
+    private fun withJsonString(json: String) = withSuccess(json, MediaType.APPLICATION_JSON)
 }

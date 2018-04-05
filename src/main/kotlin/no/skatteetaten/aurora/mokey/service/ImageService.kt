@@ -14,7 +14,8 @@ class ImageService(val openshiftService: OpenShiftService) {
         val tag = openshiftService.imageStreamTag(dc.metadata.namespace, dc.metadata.name, imageStreamTag)
         val env = tag?.image?.dockerImageMetadata?.containerConfig?.env ?: emptyList()
         val environmentVariables = assignmentStringsToMap(env)
-        return ImageDetails(tag?.image?.dockerImageReference, environmentVariables)
+        val imageBuildTime = environmentVariables["IMAGE_BUILD_TIME"]?.let { DateParser.parseString(it) }
+        return ImageDetails(tag?.image?.dockerImageReference, imageBuildTime, environmentVariables)
     }
 
     companion object {
