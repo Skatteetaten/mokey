@@ -1,15 +1,18 @@
 package no.skatteetaten.aurora.mokey
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import okhttp3.OkHttpClient
+import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.springframework.hateoas.config.EnableHypermediaSupport
-import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType
 import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType.HAL
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
@@ -25,12 +28,22 @@ import java.util.concurrent.TimeUnit
 @Configuration
 @EnableScheduling
 @EnableHypermediaSupport(type = [HAL])
-class ApplicationConfig {
+class ApplicationConfig : BeanPostProcessor {
+
+    override fun postProcessAfterInitialization(bean: Any?, beanName: String?): Any {
+        if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
+            bean.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            bean.registerModules(JavaTimeModule())
+        }
+
+        return super.postProcessAfterInitialization(bean, beanName)
+    }
 
     @Bean
     fun mapperBuilder(): Jackson2ObjectMapperBuilder = Jackson2ObjectMapperBuilder().apply {
         serializationInclusion(JsonInclude.Include.NON_NULL)
         featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        featuresToEnable(SerializationFeature.INDENT_OUTPUT)
     }
 
     @Bean
