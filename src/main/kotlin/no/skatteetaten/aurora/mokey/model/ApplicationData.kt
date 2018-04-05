@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.model
 
-import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.utils.Either
 import java.time.Instant
 
@@ -15,7 +14,7 @@ data class ApplicationData(
         val managementPath: String? = null,
         val pods: List<PodDetails> = emptyList(),
         val imageDetails: ImageDetails? = null,
-        val deployDetails: DeployDetails,
+        val deployDetails: DeployDetails?,
         val addresses: List<Address>,
         val sprocketDone: String? = null
 )
@@ -61,5 +60,13 @@ data class ImageDetails(
         get() = environmentVariables["AURORA_VERSION"] ?: ""
 }
 
-data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)
+data class ContainerDetails(val name: String, val imageReference: String)
+
+data class DeployDetails(
+    val name: String,
+    val deploymentPhase: String?,
+    val availableReplicas: Int?,
+    val targetReplicas: Int?,
+    val containers: List<ContainerDetails>
+)
 
