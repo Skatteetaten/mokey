@@ -8,8 +8,8 @@ import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.DeploymentConfig
-import io.fabric8.openshift.api.model.ImageStream
 import io.fabric8.openshift.api.model.Project
+import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import no.skatteetaten.aurora.mokey.controller.security.User
@@ -74,7 +74,7 @@ fun DefaultOpenShiftClient.customImageStreamTag(namespace: String, name: String,
         jacksonObjectMapper().readValue(response.body()?.bytes(), ImageStreamTag::class.java)
     } catch (e: Exception) {
         throw KubernetesClientException("error occurred while fetching imageStreamTag" +
-            " namespace=$namespace name=$name tag=$tag", e)
+                " namespace=$namespace name=$name tag=$tag", e)
     }
 }
 
