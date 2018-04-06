@@ -156,7 +156,7 @@ data class ManagementDataBuilder(
 ) {
 
     fun build(): ManagementResult {
-        return Right(ManagementData(ManagementLinks(emptyMap()), Right(info), Right(health), Right(env)))
+        return Right(ManagementData(ManagementLinks(emptyMap()), Right(info), Right(health)/*, Right(env)*/))
     }
 }
 

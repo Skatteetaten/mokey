@@ -37,8 +37,8 @@ data class ManagementEndpointError(
 data class ManagementData(
         val links: ManagementLinks? = null,
         val info: Either<ManagementEndpointError, InfoResponse>,
-        val health: Either<ManagementEndpointError, HealthResponse>,
-        val env: Either<ManagementEndpointError, JsonNode>
+        val health: Either<ManagementEndpointError, HealthResponse>/*,
+        val env: Either<ManagementEndpointError, JsonNode>*/
 )
 
 

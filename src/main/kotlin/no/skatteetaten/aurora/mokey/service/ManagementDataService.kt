@@ -67,13 +67,15 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
         }
 
         //TODO: Marshal this as a Env class not as jsonNode
+/*
         val env: ManagementEndpointResult = try {
             Right(managementEndpoint.getEnvEndpointResponse())
         } catch (e: ManagementEndpointException) {
             Left(ManagementEndpointError("Error when contacting env endpoint",
                     e.endpoint, e.errorCode, e.cause?.message))
         }
+*/
 
-        return Right(ManagementData(managementEndpoint.links, info, health, env))
+        return Right(ManagementData(managementEndpoint.links, info, health/*, env*/))
     }
 }
