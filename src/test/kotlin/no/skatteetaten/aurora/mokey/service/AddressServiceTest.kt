@@ -37,9 +37,9 @@ class AddressServiceTest {
     @Test
     fun `should collect service address`() {
         val serviceBuilder = ServiceBuilder()
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf()
-        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName))
+        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
+        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf()
+        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)["app"] ?: "")
         assert(addresses).hasSize(1)
         assert(addresses[0].url).isEqualTo(URI.create("http://${serviceBuilder.serviceName}"))
         assert(addresses[0].time).isEqualTo(Instant.EPOCH)
@@ -51,9 +51,9 @@ class AddressServiceTest {
     fun `should collect service and route address`() {
         val serviceBuilder = ServiceBuilder()
         val routeBuilder = RouteBuilder()
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf(routeBuilder.build())
-        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName))
+        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
+        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(routeBuilder.build())
+        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assert(addresses).hasSize(2)
         assert(addresses[1].url).isEqualTo(URI.create("http://${routeBuilder.routeHost}"))
         assert(addresses[1].time).isEqualTo(Instant.EPOCH)
@@ -66,9 +66,9 @@ class AddressServiceTest {
     fun `should collect service and path based route address`() {
         val serviceBuilder = ServiceBuilder()
         val routeBuilder = RouteBuilder(routePath = "foo")
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf(routeBuilder.build())
-        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName))
+        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
+        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(routeBuilder.build())
+        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assert(addresses).hasSize(2)
         assert(addresses[1].url).isEqualTo(URI.create("http://${routeBuilder.routeHost}/foo"))
         assert(addresses[1].time).isEqualTo(Instant.EPOCH)
@@ -85,9 +85,9 @@ class AddressServiceTest {
                 ANNOTATION_WEMBLEY_EXTERNAL_HOST to "skatt-utv3.sits.no",
                 ANNOTATION_WEMBLEY_PATHS to "/web/foo/,/api/foo/"
         ))
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf(routeBuilder.build())
-        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName))
+        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
+        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(routeBuilder.build())
+        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assert(addresses).hasSize(3)
         assert(addresses[2].url).isEqualTo(URI.create("https://skatt-utv3.sits.no/app-name"))
         assert(addresses[2].time).isEqualTo(Instant.EPOCH)
@@ -107,10 +107,10 @@ class AddressServiceTest {
                 ANNOTATION_MARJORY_DONE to time,
                 ANNOTATION_MARJORY_OPEN to "true"
         ))
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
+        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
         every { openShiftService.route(dcBuilder.dcNamespace, "${dcBuilder.dcName}-webseal") } returns routeBuilder.build()
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf()
-        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName))
+        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf()
+        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assert(addresses).hasSize(2)
         assert(addresses[1].url).isEqualTo(URI.create("https://app-name.amutv.skead.no"))
         assert(addresses[1].time).isEqualTo(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(time, Instant::from))

@@ -19,7 +19,8 @@ class ApplicationDataServiceCacheDecoratorTest {
             "testapp",
             "aurora",
             "aurora",
-            deployDetails = DeployDetails("Complete", 1, 1)
+            deployDetails = DeployDetails("Complete", 1, 1),
+            addresses = emptyList()
     )
     val app1v2 = app1v1.copy(deployTag = "prod")
 

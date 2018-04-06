@@ -1,10 +1,10 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
 import no.skatteetaten.aurora.mokey.model.Endpoint
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonInclude
 import java.util.HashMap
 
 

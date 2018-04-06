@@ -94,7 +94,7 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         val latestVersion = dc.status.latestVersion ?: null
 
 
-        val services = addressService.getAddresses(namespace, mapOf("app" to name))
+        val applicationAddresses = addressService.getAddresses(namespace, name)
         val pods = podService.getPodDetails(dc)
         val imageDetails = imageService.getImageDetails(dc)
 
@@ -115,6 +115,7 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
                 pods = pods,
                 imageDetails = imageDetails,
                 deployDetails = deployDetails,
+                addresses = applicationAddresses,
                 sprocketDone = dc.sprocketDone
         )
     }
