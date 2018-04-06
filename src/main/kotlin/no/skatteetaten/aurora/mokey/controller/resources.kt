@@ -7,7 +7,6 @@ import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
 
-
 abstract class HalResource : ResourceSupport() {
 
     private val embedded = HashMap<String, ResourceSupport>()
@@ -23,13 +22,12 @@ abstract class HalResource : ResourceSupport() {
     }
 }
 
-
 class ApplicationResource(
-        val affiliation: String?,
-        val environment: String,
-        val name: String,
-        val status: AuroraStatusResource,
-        val version: Version
+    val affiliation: String?,
+    val environment: String,
+    val name: String,
+    val status: AuroraStatusResource,
+    val version: Version
 ) : HalResource()
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
@@ -37,32 +35,37 @@ data class Version(val deployTag: String?, val auroraVersion: String?)
 data class AuroraStatusResource(val code: String, val comment: String? = null)
 
 class ApplicationDetailsResource(
-        val buildInfo: BuildInfoResource?,
-        val imageDetails: ImageDetailsResource?,
-        val podResources: List<PodResource>,
-        val dependencies: Map<String, String> = mapOf()
+    val buildInfo: BuildInfoResource?,
+    val imageDetails: ImageDetailsResource?,
+    val podResources: List<PodResource>,
+    val dependencies: Map<String, String> = mapOf(),
+    val containers: List<ContainerResource>?
 ) : HalResource()
 
+data class ContainerResource(
+    val name: String
+)
+
 data class ImageDetailsResource(
-        val dockerImageReference: String?
+    val dockerImageReference: String?
 )
 
 data class BuildInfoResource(
-        val imageBuildTime: Instant?,
-        val buildTime: Instant? = null,
-        val commitId: String? = null,
-        val commitTime: Instant? = null
+    val imageBuildTime: Instant?,
+    val buildTime: Instant? = null,
+    val commitId: String? = null,
+    val commitTime: Instant? = null
 )
 
 data class ValueOrManagementError<V>(val value: V? = null, val error: ManagementEndpointErrorResource? = null)
 
 class PodResource(
-        val name: String
+    val name: String
 ) : ResourceSupport()
 
 data class ManagementEndpointErrorResource(
-        val message: String,
-        val endpoint: Endpoint,
-        val code: String,
-        val rootCause: String? = null
+    val message: String,
+    val endpoint: Endpoint,
+    val code: String,
+    val rootCause: String? = null
 )

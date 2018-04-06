@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.service
 
-import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.experimental.async
@@ -105,7 +104,7 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
             openshiftService.rc(namespace, "$name-$it")
         }
 
-        val deployDetails = createReplicationControllerDetails(dc, rc)
+        val deployDetails = createDeployDetails(dc, rc)
 
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
@@ -127,8 +126,8 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         )
     }
 
-    private fun createReplicationControllerDetails(dc: DeploymentConfig, rc: ReplicationController?): DeployDetails {
-        val containers = dc.spec.template.spec.containers.map(this::createContainerDetails)
+    private fun createDeployDetails(dc: DeploymentConfig, rc: ReplicationController?): DeployDetails {
+        val containers = dc.spec.template.spec.containers.map { ContainerDetails(it.name) }
         return DeployDetails(
             dc.metadata.name,
             rc?.deploymentPhase,
@@ -136,11 +135,5 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
             rc?.status?.replicas,
             containers
         )
-    }
-
-    private fun createContainerDetails(container: Container): ContainerDetails {
-        return container.let {
-            ContainerDetails(it.name, it.image)
-        }
     }
 }

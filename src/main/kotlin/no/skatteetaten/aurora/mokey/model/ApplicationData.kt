@@ -60,8 +60,6 @@ data class ImageDetails(
         get() = environmentVariables["AURORA_VERSION"] ?: ""
 }
 
-data class ContainerDetails(val name: String, val imageReference: String)
-
 data class DeployDetails(
     val name: String,
     val deploymentPhase: String?,
@@ -69,4 +67,6 @@ data class DeployDetails(
     val targetReplicas: Int?,
     val containers: List<ContainerDetails>
 )
+
+data class ContainerDetails(val name: String)
 
