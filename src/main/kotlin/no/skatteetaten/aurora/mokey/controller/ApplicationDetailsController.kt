@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
-import no.skatteetaten.aurora.mokey.model.Address
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
@@ -17,6 +16,7 @@ import org.springframework.hateoas.Link
 import org.springframework.hateoas.mvc.ControllerLinkBuilder
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -26,11 +26,12 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @ExposesResourceFor(ApplicationDetailsResource::class)
 @RequestMapping("/api/applicationdetails")
-class ApplicationDetailsController(val applicationDataService: ApplicationDataService) {
+class ApplicationDetailsController(
+        val applicationDataService: ApplicationDataService,
+        val assembler: ApplicationDetailsResourceAssembler) {
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDetailsController::class.java)
 
-    val assembler = ApplicationDetailsResourceAssembler()
 
     @GetMapping("/{id}")
     fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDetailsResource? {
@@ -47,7 +48,9 @@ class ApplicationDetailsController(val applicationDataService: ApplicationDataSe
     }
 }
 
-class ApplicationDetailsResourceAssembler : ResourceAssemblerSupport<ApplicationData, ApplicationDetailsResource>(ApplicationDetailsController::class.java, ApplicationDetailsResource::class.java) {
+@Component
+class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
+    : ResourceAssemblerSupport<ApplicationData, ApplicationDetailsResource>(ApplicationDetailsController::class.java, ApplicationDetailsResource::class.java) {
 
     private val applicationAssembler = ApplicationResourceAssembler()
 
@@ -67,10 +70,14 @@ class ApplicationDetailsResourceAssembler : ResourceAssemblerSupport<Application
                 anInfoResponse?.dependencies ?: emptyMap()
         ).apply {
             embedResource("Application", applicationAssembler.toResource(applicationData))
+
             val selfLink = ControllerLinkBuilder.linkTo(ApplicationDetailsController::class.java).slash(applicationData.id).withSelfRel()
             val serviceLinks = (anInfoResponse?.serviceLinks ?: emptyMap()).map { Link(it.value, it.key) }
             val addressLinks = applicationData.addresses.map { Link(it.url.toString(), it::class.simpleName!!) }
-            (serviceLinks + addressLinks + selfLink).forEach(this::add)
+            // TODO: We should use AuroraConfig name instead of affiliation here.
+            val applyResultLink = linkBuilder.applyResult(applicationData.affiliation, applicationData.booberDeployId)
+
+            (serviceLinks + addressLinks + applyResultLink + selfLink).filterNotNull().forEach(this::add)
         }
     }
 
