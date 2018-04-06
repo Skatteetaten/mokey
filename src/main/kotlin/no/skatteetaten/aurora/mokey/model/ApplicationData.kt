@@ -16,6 +16,7 @@ data class ApplicationData(
         val pods: List<PodDetails> = emptyList(),
         val imageDetails: ImageDetails? = null,
         val deployDetails: DeployDetails,
+        val addresses: List<Address>,
         val sprocketDone: String? = null
 )
 

@@ -20,8 +20,9 @@ import java.net.URI
 class AddressService(val openShiftService: OpenShiftService) {
 
 
-    fun getAddresses(namespace: String, labels: Map<String, String>): List<Address> {
+    fun getAddresses(namespace: String, name: String): List<Address> {
 
+        val labels = mapOf("app" to name)
         val services = openShiftService.services(namespace, labels)
         val routes = openShiftService.routes(namespace, labels)
 

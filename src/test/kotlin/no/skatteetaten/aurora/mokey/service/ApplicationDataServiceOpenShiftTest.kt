@@ -67,7 +67,7 @@ class ApplicationDataServiceOpenShiftTest {
         every { imageService.getImageDetails(dc) } returns imageDetails
 
         val addresses = listOf(ServiceAddress(URI.create("http://app-name"), Instant.EPOCH))
-        every { addressService.getAddresses(dcBuilder.dcNamespace, mapOf("app" to "app-name")) } returns addresses
+        every { addressService.getAddresses(dcBuilder.dcNamespace, "app-name") } returns addresses
 
         every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(AuroraStatusLevel.HEALTHY, "")
 

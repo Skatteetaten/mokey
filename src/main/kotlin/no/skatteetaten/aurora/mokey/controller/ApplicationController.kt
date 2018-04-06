@@ -39,7 +39,7 @@ class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, A
                 Version(data.deployTag, data.imageDetails?.auroraVersion)
         ).apply {
             add(linkTo(ApplicationController::class.java).slash(data.id).withSelfRel())
-            add(linkTo(ApplicationDetailsController::class.java).slash(data.id).withRel("details"))
+            add(linkTo(ApplicationDetailsController::class.java).slash(data.id).withRel("ApplicationDetails"))
         }
     }
 }
