@@ -93,7 +93,6 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         val name = dc.metadata.name
         val latestVersion = dc.status.latestVersion ?: null
 
-
         val applicationAddresses = addressService.getAddresses(namespace, name)
         val pods = podService.getPodDetails(dc)
         val imageDetails = imageService.getImageDetails(dc)
