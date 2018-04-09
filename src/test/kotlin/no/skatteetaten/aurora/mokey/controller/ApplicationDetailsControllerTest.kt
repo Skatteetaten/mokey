@@ -39,8 +39,8 @@ class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
                 "namespace",
                 "affiliation",
                 pods = listOf(PodDetailsDataBuilder().build()),
-                addresses = emptyList()
-                deployDetails = DeployDetails("Complete", 1, 1, listOf(ContainerDetails("name-java"))),
+                addresses = emptyList(),
+                deployDetails = DeployDetails("Complete", 1, 1, listOf(ContainerDetails("name-java")))
         )
 
         given(applicationDataService.findApplicationDataById(ID)).willReturn(applicationData)
