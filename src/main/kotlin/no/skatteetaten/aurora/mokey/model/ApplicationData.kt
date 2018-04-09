@@ -61,10 +61,9 @@ data class ImageDetails(
 }
 
 data class DeployDetails(
-    val name: String,
     val deploymentPhase: String?,
-    val availableReplicas: Int?,
-    val targetReplicas: Int?,
+    val availableReplicas: Int,
+    val targetReplicas: Int,
     val containers: List<ContainerDetails>
 )
 

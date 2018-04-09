@@ -100,11 +100,9 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         val pods = podService.getPodDetails(dc)
         val imageDetails = imageService.getImageDetails(dc)
 
-        val rc = latestVersion?.let {
-            openshiftService.rc(namespace, "$name-$it")
+        val deployDetails = latestVersion?.let {
+            openshiftService.rc(namespace, "$name-$it")?.let(this::createDeployDetails)
         }
-
-        val deployDetails = createDeployDetails(dc, rc)
 
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
@@ -126,13 +124,12 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         )
     }
 
-    private fun createDeployDetails(dc: DeploymentConfig, rc: ReplicationController?): DeployDetails {
-        val containers = dc.spec.template.spec.containers.map { ContainerDetails(it.name) }
+    private fun createDeployDetails(rc: ReplicationController): DeployDetails {
+        val containers = rc.spec.template.spec.containers.map { ContainerDetails(it.name) }
         return DeployDetails(
-            dc.metadata.name,
-            rc?.deploymentPhase,
-            rc?.status?.availableReplicas,
-            rc?.status?.replicas,
+            rc.deploymentPhase,
+            rc.status?.availableReplicas ?: 0,
+            rc.status?.replicas ?: 0,
             containers
         )
     }

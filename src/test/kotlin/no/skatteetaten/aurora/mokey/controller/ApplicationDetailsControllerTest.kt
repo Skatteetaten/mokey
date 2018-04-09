@@ -2,7 +2,13 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
-import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.ContainerDetails
+import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -33,8 +39,8 @@ class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
                 "namespace",
                 "affiliation",
                 pods = listOf(PodDetailsDataBuilder().build()),
-                deployDetails = DeployDetails("Complete", 1, 1),
                 addresses = emptyList()
+                deployDetails = DeployDetails("Complete", 1, 1, listOf(ContainerDetails("name-java"))),
         )
 
         given(applicationDataService.findApplicationDataById(ID)).willReturn(applicationData)

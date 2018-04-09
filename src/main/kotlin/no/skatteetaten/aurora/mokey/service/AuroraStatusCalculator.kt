@@ -20,11 +20,15 @@ class AuroraStatusCalculator {
     val AVERAGE_RESTART_ERROR_THRESHOLD = 100
     val DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD = 2
 
-    fun calculateStatus(app: DeployDetails, pods: List<PodDetails>): AuroraStatus {
+    fun calculateStatus(deployDetails: DeployDetails?, pods: List<PodDetails>): AuroraStatus {
 
-        val lastDeployment = app.deploymentPhase
-        val availableReplicas = app.availableReplicas ?: 0
-        val targetReplicas = app.targetReplicas ?: 0
+        if (deployDetails == null) {
+            return AuroraStatus(OFF, "NO_DEPLOYMENT")
+        }
+
+        val lastDeployment = deployDetails.deploymentPhase
+        val availableReplicas = deployDetails.availableReplicas
+        val targetReplicas = deployDetails.targetReplicas
 
         if ("Failed".equals(lastDeployment, ignoreCase = true) && availableReplicas <= 0) {
             return AuroraStatus(DOWN, "DEPLOY_FAILED_NO_PODS")
