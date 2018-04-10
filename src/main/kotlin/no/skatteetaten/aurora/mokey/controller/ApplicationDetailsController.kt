@@ -63,20 +63,24 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
             }
         }?.let { it.value?.value }
 
+        val selfLink = ControllerLinkBuilder.linkTo(ApplicationDetailsController::class.java).slash(applicationData.id).withSelfRel()
+        val addressLinks = applicationData.addresses.map { Link(it.url.toString(), it::class.simpleName!!) }
+        val applicationExpandParams = addressLinks.map { it.rel to it.href }.toMap() + mapOf("namespace" to applicationData.namespace, "name" to applicationData.name)
+
+        val serviceLinks = (anInfoResponse?.serviceLinks ?: emptyMap())
+                .map { linkBuilder.createLink(it.value, it.key, applicationExpandParams) }
+
+        // TODO: We should use AuroraConfig name instead of affiliation here.
+        val applyResultLink = if (applicationData.affiliation != null && applicationData.booberDeployId != null)
+            linkBuilder.applyResult(applicationData.affiliation, applicationData.booberDeployId) else null
+
         return ApplicationDetailsResource(
                 toBuildInfoResource(anInfoResponse, applicationData.imageDetails),
                 applicationData.imageDetails?.let { toImageDetailsResource(it) },
-                applicationData.pods.mapNotNull { toPodResource(it) },
+                applicationData.pods.mapNotNull { toPodResource(it, applicationExpandParams) },
                 anInfoResponse?.dependencies ?: emptyMap()
         ).apply {
             embedResource("Application", applicationAssembler.toResource(applicationData))
-
-            val selfLink = ControllerLinkBuilder.linkTo(ApplicationDetailsController::class.java).slash(applicationData.id).withSelfRel()
-            val serviceLinks = (anInfoResponse?.serviceLinks ?: emptyMap()).map { Link(it.value, it.key) }
-            val addressLinks = applicationData.addresses.map { Link(it.url.toString(), it::class.simpleName!!) }
-            // TODO: We should use AuroraConfig name instead of affiliation here.
-            val applyResultLink = linkBuilder.applyResult(applicationData.affiliation, applicationData.booberDeployId)
-
             (serviceLinks + addressLinks + applyResultLink + selfLink).filterNotNull().forEach(this::add)
         }
     }
@@ -84,10 +88,15 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
     private fun toImageDetailsResource(imageDetails: ImageDetails) =
             ImageDetailsResource(imageDetails.dockerImageReference)
 
-    private fun toPodResource(podDetails: PodDetails) =
+    private fun toPodResource(podDetails: PodDetails, applicationExpandParams: Map<String, String>) =
             mappedValueOrError(podDetails.managementData, {
+                val podName = podDetails.openShiftPodExcerpt.name
+                val podExpandParams = mapOf("podName" to podName)
                 val podLinks = mappedValueOrError(it.info) { it.podLinks }.value
-                PodResource(podDetails.openShiftPodExcerpt.name).apply { podLinks?.map { Link(it.value, it.key) }?.forEach(this::add) }
+                val map = podLinks?.map { linkBuilder.createLink(it.value, it.key, applicationExpandParams + podExpandParams) }
+                PodResource(podName).apply {
+                    map?.forEach(this::add)
+                }
             }).value
 
     private fun toBuildInfoResource(aPod: InfoResponse?, imageDetails: ImageDetails?) =

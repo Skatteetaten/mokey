@@ -24,6 +24,7 @@ logging:
         velocity: WARN
 
 boober-api-url: "http://boober/api"
+metrics-hostname: "http://metrics.skead.no"
 
 ---
 spring:
@@ -39,6 +40,7 @@ logging:
       console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
 
+openshift-cluster: utv
 
 ---
 spring:
