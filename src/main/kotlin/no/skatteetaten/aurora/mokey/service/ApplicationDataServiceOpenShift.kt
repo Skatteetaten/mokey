@@ -82,7 +82,7 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         } catch (e: Exception) {
             val namespace = dc.metadata.namespace
             val name = dc.metadata.name
-            logger.error("Failed getting application name={}, namepsace={} message={}", name, namespace, e.message, e)
+            logger.error("Failed getting application name={}, namespace={} message={}", name, namespace, e.message, e)
             throw e
         }
     }
