@@ -1,7 +1,9 @@
 package no.skatteetaten.aurora.mokey.model
 
-import com.fasterxml.jackson.databind.JsonNode
+import no.skatteetaten.aurora.mokey.controller.ManagementEndpointErrorResource
+import no.skatteetaten.aurora.mokey.controller.ValueOrManagementError
 import no.skatteetaten.aurora.utils.Either
+import no.skatteetaten.aurora.utils.fold
 import java.time.Instant
 
 data class ApplicationData(
@@ -63,3 +65,17 @@ data class ImageDetails(
 
 data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)
 
+fun <F, T> mappedValueOrError(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
+        either.fold(
+                { it: ManagementEndpointError ->
+                    ValueOrManagementError(error = ({ e: ManagementEndpointError ->
+                        ManagementEndpointErrorResource(
+                                message = e.message,
+                                code = e.code,
+                                endpoint = e.endpoint,
+                                rootCause = e.rootCause
+                        )
+                    })(it))
+                },
+                { ValueOrManagementError(valueMapper.invoke(it)) }
+        )

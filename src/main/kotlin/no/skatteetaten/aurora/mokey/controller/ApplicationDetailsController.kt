@@ -6,6 +6,7 @@ import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.model.mappedValueOrError
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.utils.Either
 import no.skatteetaten.aurora.utils.fold
@@ -56,64 +57,66 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
 
     override fun toResource(applicationData: ApplicationData): ApplicationDetailsResource {
 
-        val aPod = applicationData.pods.firstOrNull()
-        val anInfoResponse = aPod?.let {
-            mappedValueOrError(it.managementData) {
-                mappedValueOrError(it.info) { it }
-            }
-        }?.let { it.value?.value }
-
-        val selfLink = ControllerLinkBuilder.linkTo(ApplicationDetailsController::class.java).slash(applicationData.id).withSelfRel()
-        val addressLinks = applicationData.addresses.map { Link(it.url.toString(), it::class.simpleName!!) }
-        val applicationExpandParams = addressLinks.map { it.rel to it.href }.toMap() + mapOf("namespace" to applicationData.namespace, "name" to applicationData.name)
-
-        val serviceLinks = (anInfoResponse?.serviceLinks ?: emptyMap())
-                .map { linkBuilder.createLink(it.value, it.key, applicationExpandParams) }
-
-        // TODO: We should use AuroraConfig name instead of affiliation here.
-        val applyResultLink = if (applicationData.affiliation != null && applicationData.booberDeployId != null)
-            linkBuilder.applyResult(applicationData.affiliation, applicationData.booberDeployId) else null
-
+        val infoResponse = applicationData.firstInfoResponse
         return ApplicationDetailsResource(
-                toBuildInfoResource(anInfoResponse, applicationData.imageDetails),
+                toBuildInfoResource(infoResponse, applicationData.imageDetails),
                 applicationData.imageDetails?.let { toImageDetailsResource(it) },
-                applicationData.pods.mapNotNull { toPodResource(it, applicationExpandParams) },
-                anInfoResponse?.dependencies ?: emptyMap()
+                applicationData.pods.mapNotNull { toPodResource(applicationData, it) },
+                infoResponse?.dependencies ?: emptyMap()
         ).apply {
             embedResource("Application", applicationAssembler.toResource(applicationData))
-            (serviceLinks + addressLinks + applyResultLink + selfLink).filterNotNull().forEach(this::add)
+            this.add(createApplicationLinks(applicationData))
         }
     }
 
     private fun toImageDetailsResource(imageDetails: ImageDetails) =
             ImageDetailsResource(imageDetails.dockerImageReference)
 
-    private fun toPodResource(podDetails: PodDetails, applicationExpandParams: Map<String, String>) =
+    private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails) =
             mappedValueOrError(podDetails.managementData, {
                 val podName = podDetails.openShiftPodExcerpt.name
-                val podExpandParams = mapOf("podName" to podName)
                 val podLinks = mappedValueOrError(it.info) { it.podLinks }.value
-                val map = podLinks?.map { linkBuilder.createLink(it.value, it.key, applicationExpandParams + podExpandParams) }
+                val map = podLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
                 PodResource(podName).apply {
-                    map?.forEach(this::add)
+                    this.add(map)
                 }
             }).value
 
     private fun toBuildInfoResource(aPod: InfoResponse?, imageDetails: ImageDetails?) =
             BuildInfoResource(imageDetails?.imageBuildTime, aPod?.buildTime, aPod?.commitId, aPod?.commitTime)
 
-    private fun <F, T> mappedValueOrError(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
-            either.fold(
-                    { it: ManagementEndpointError ->
-                        ValueOrManagementError(error = ({ e: ManagementEndpointError ->
-                            ManagementEndpointErrorResource(
-                                    message = e.message,
-                                    code = e.code,
-                                    endpoint = e.endpoint,
-                                    rootCause = e.rootCause
-                            )
-                        })(it))
-                    },
-                    { ValueOrManagementError(valueMapper.invoke(it)) }
-            )
+    private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
+
+        val selfLink = ControllerLinkBuilder.linkTo(ApplicationDetailsController::class.java).slash(applicationData.id).withSelfRel()
+        val addressLinks = applicationData.addresses.map { linkBuilder.createLink(it.url.toString(), it::class.simpleName!!) }
+        val serviceLinks = applicationData.firstInfoResponse?.serviceLinks
+                ?.map { createServiceLink(applicationData, it.value, it.key) }
+                ?: emptyList()
+
+        // TODO: We should use AuroraConfig name instead of affiliation here.
+        val applyResultLink = if (applicationData.affiliation != null && applicationData.booberDeployId != null)
+            linkBuilder.applyResult(applicationData.affiliation, applicationData.booberDeployId) else null
+
+        return (serviceLinks + addressLinks + applyResultLink + selfLink).filterNotNull()
+    }
+
+    private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =
+            linkBuilder.createLink(link, rel, applicationData.expandParams)
+
+    private fun createPodLink(applicationData: ApplicationData, podDetails: PodDetails, link: String, rel: String): Link {
+        val podExpandParams = podDetails.expandParams
+        val applicationExpandParams = applicationData.expandParams
+        return linkBuilder.createLink(link, rel, applicationExpandParams + podExpandParams)
+    }
 }
+
+
+private val ApplicationData.firstInfoResponse: InfoResponse?
+    get() {
+        val pod = this.pods.firstOrNull()
+        return pod?.let {
+            mappedValueOrError(it.managementData) {
+                mappedValueOrError(it.info) { it }
+            }
+        }?.let { it.value?.value }
+    }

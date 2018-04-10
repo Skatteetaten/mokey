@@ -13,15 +13,8 @@ class LinkBuilderFactory(
         @Value("\${openshift-cluster}") val cluster: String
 ) {
     @Bean
-    fun linkBuilder(): LinkBuilder {
-        val globalExpandParams = mapOf(
-                "metricsHostname" to metricsHostname,
-                "cluster" to cluster
-        )
-        return LinkBuilder(booberApiUrl, globalExpandParams)
-    }
+    fun linkBuilder(): LinkBuilder = LinkBuilder(booberApiUrl, expandParams)
 }
-
 
 class LinkBuilder(private val booberApiUrl: String, private val globalExpandParams: Map<String, String>) {
 
