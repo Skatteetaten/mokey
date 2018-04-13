@@ -7,6 +7,7 @@ import no.skatteetaten.aurora.mokey.extensions.ensureStartWith
 import no.skatteetaten.aurora.mokey.extensions.marjoryDone
 import no.skatteetaten.aurora.mokey.extensions.marjoryOpen
 import no.skatteetaten.aurora.mokey.extensions.marjoryRoles
+import no.skatteetaten.aurora.mokey.extensions.success
 import no.skatteetaten.aurora.mokey.extensions.wembleyHost
 import no.skatteetaten.aurora.mokey.extensions.wembleyService
 import no.skatteetaten.aurora.mokey.model.Address
@@ -62,7 +63,7 @@ class AddressService(val openShiftService: OpenShiftService) {
         return services.filter { it.marjoryDone != null }.map {
             openShiftService.route(namespace, "${it.metadata.name}-webseal")?.let {
                 val status = it.status.ingress.first().conditions.first()
-                val success = status.type == "Admitted" && status.status == "True" && it.marjoryOpen
+                val success = status.success() && it.marjoryOpen
 
                 WebSealAddress(URI.create("https://${it.spec.host}"),
                         it.marjoryDone,
