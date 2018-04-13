@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import assertk.Assert
 import assertk.assert
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
@@ -17,6 +18,7 @@ import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_WEMBLEY_DONE
 import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_WEMBLEY_EXTERNAL_HOST
 import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_WEMBLEY_PATHS
 import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_WEMBLEY_SERVICE
+import no.skatteetaten.aurora.mokey.model.Address
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.URI
@@ -39,12 +41,13 @@ class AddressServiceTest {
         val serviceBuilder = ServiceBuilder()
         every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(serviceBuilder.build())
         every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf()
-        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)["app"] ?: "")
+        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)["app"]
+                ?: "")
         assert(addresses).hasSize(1)
-        assert(addresses[0].url).isEqualTo(URI.create("http://${serviceBuilder.serviceName}"))
-        assert(addresses[0].time).isEqualTo(Instant.EPOCH)
-        assert(addresses[0].available).isTrue()
-
+        assert(addresses[0]).isEqualTo(
+                url = "http://${serviceBuilder.serviceName}",
+                time = Instant.EPOCH
+        )
     }
 
     @Test
@@ -55,10 +58,10 @@ class AddressServiceTest {
         every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(routeBuilder.build())
         val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assert(addresses).hasSize(2)
-        assert(addresses[1].url).isEqualTo(URI.create("http://${routeBuilder.routeHost}"))
-        assert(addresses[1].time).isEqualTo(Instant.EPOCH)
-        assert(addresses[1].available).isTrue()
-
+        assert(addresses[1]).isEqualTo(
+                url = "http://${routeBuilder.routeHost}",
+                time = Instant.EPOCH
+        )
     }
 
 
@@ -70,10 +73,10 @@ class AddressServiceTest {
         every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(routeBuilder.build())
         val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assert(addresses).hasSize(2)
-        assert(addresses[1].url).isEqualTo(URI.create("http://${routeBuilder.routeHost}/foo"))
-        assert(addresses[1].time).isEqualTo(Instant.EPOCH)
-        assert(addresses[1].available).isTrue()
-
+        assert(addresses[1]).isEqualTo(
+                url = "http://${routeBuilder.routeHost}/foo",
+                time = Instant.EPOCH
+        )
     }
 
     @Test
@@ -89,10 +92,10 @@ class AddressServiceTest {
         every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(routeBuilder.build())
         val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assert(addresses).hasSize(3)
-        assert(addresses[2].url).isEqualTo(URI.create("https://skatt-utv3.sits.no/app-name"))
-        assert(addresses[2].time).isEqualTo(Instant.EPOCH)
-        assert(addresses[2].available).isTrue()
-
+        assert(addresses[2]).isEqualTo(
+                url = "https://skatt-utv3.sits.no/app-name",
+                time = Instant.EPOCH
+        )
     }
 
     @Test
@@ -112,9 +115,15 @@ class AddressServiceTest {
         every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf()
         val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assert(addresses).hasSize(2)
-        assert(addresses[1].url).isEqualTo(URI.create("https://app-name.amutv.skead.no"))
-        assert(addresses[1].time).isEqualTo(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(time, Instant::from))
-        assert(addresses[1].available).isTrue()
-
+        assert(addresses[1]).isEqualTo(
+                url = "https://app-name.amutv.skead.no",
+                time = DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(time, Instant::from)
+        )
     }
+}
+
+fun Assert<Address>.isEqualTo(url: String, time: Instant) {
+    assert(actual.available).isTrue()
+    assert(actual.url).isEqualTo(URI.create(url))
+    assert(actual.time).isEqualTo(time)
 }

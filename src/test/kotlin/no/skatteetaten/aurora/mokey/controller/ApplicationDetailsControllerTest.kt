@@ -10,10 +10,14 @@ import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebCl
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.security.test.context.support.WithUserDetails
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@WebMvcTest(ApplicationDetailsController::class)
+@WebMvcTest(ApplicationDetailsController::class,
+        ApplicationDetailsResourceAssembler::class,
+        LinkBuilder::class)
+@TestPropertySource(properties = ["boober-api-url=http://localhost"])
 @AutoConfigureWebClient
 class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
 
