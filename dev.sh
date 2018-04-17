@@ -7,7 +7,7 @@ error_exit() {
 name=mokey
 oc get bc "$name" &> /dev/null || error_exit  "Build Config $1 does not exist"
 
-./gradlew clean build -x test
+./gradlew build -x test
 
 leveransepakke=$(find build/distributions -type f -name "*-Leveransepakke.zip")
 
