@@ -8,8 +8,6 @@ import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.mappedValueOrError
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import no.skatteetaten.aurora.utils.Either
-import no.skatteetaten.aurora.utils.fold
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
@@ -57,12 +55,14 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
 
     override fun toResource(applicationData: ApplicationData): ApplicationDetailsResource {
 
+        val errorResources = applicationData.errors.map(this::toErrorResource)
         val infoResponse = applicationData.firstInfoResponse
         return ApplicationDetailsResource(
                 toBuildInfoResource(infoResponse, applicationData.imageDetails),
                 applicationData.imageDetails?.let { toImageDetailsResource(it) },
                 applicationData.pods.mapNotNull { toPodResource(applicationData, it) },
-                infoResponse?.dependencies ?: emptyMap()
+                infoResponse?.dependencies ?: emptyMap(),
+                errorResources
         ).apply {
             embedResource("Application", applicationAssembler.toResource(applicationData))
             this.add(createApplicationLinks(applicationData))
@@ -84,6 +84,10 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
 
     private fun toBuildInfoResource(aPod: InfoResponse?, imageDetails: ImageDetails?) =
             BuildInfoResource(imageDetails?.imageBuildTime, aPod?.buildTime, aPod?.commitId, aPod?.commitTime)
+
+    private fun toErrorResource(error: ManagementEndpointError): ManagementEndpointErrorResource {
+        return ManagementEndpointErrorResource(error.message, error.endpoint, error.code, error.rootCause)
+    }
 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 

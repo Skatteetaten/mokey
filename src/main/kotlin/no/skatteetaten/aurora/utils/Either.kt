@@ -17,3 +17,6 @@ inline fun <L, R, T> Either<L, R>.flatMap(f: (R) -> Either<L, T>): Either<L, T> 
 
 inline fun <L, R, T> Either<L, R>.map(f: (R) -> T): Either<L, T> =
         flatMap { Right(f(it)) }
+
+val <L, R> Either<L, R>.error get() = fold({ it }, { null })
+val <L, R> Either<L, R>.value get() = fold({ null }, { it })

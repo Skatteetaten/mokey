@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.controller
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import no.skatteetaten.aurora.mokey.model.Endpoint
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
@@ -40,7 +41,9 @@ class ApplicationDetailsResource(
         val buildInfo: BuildInfoResource?,
         val imageDetails: ImageDetailsResource?,
         val podResources: List<PodResource>,
-        val dependencies: Map<String, String> = mapOf()
+        val dependencies: Map<String, String> = emptyMap(),
+
+        val errors: List<ManagementEndpointErrorResource> = emptyList()
 ) : HalResource()
 
 data class ImageDetailsResource(
@@ -64,5 +67,6 @@ data class ManagementEndpointErrorResource(
         val message: String,
         val endpoint: Endpoint,
         val code: String,
-        val rootCause: String? = null
+        val rootCause: String? = null,
+        val type: String = ManagementEndpointError::class.simpleName!!
 )

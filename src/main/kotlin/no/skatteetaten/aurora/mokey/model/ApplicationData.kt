@@ -3,7 +3,9 @@ package no.skatteetaten.aurora.mokey.model
 import no.skatteetaten.aurora.mokey.controller.ManagementEndpointErrorResource
 import no.skatteetaten.aurora.mokey.controller.ValueOrManagementError
 import no.skatteetaten.aurora.utils.Either
+import no.skatteetaten.aurora.utils.error
 import no.skatteetaten.aurora.utils.fold
+import no.skatteetaten.aurora.utils.value
 import java.time.Instant
 
 data class ApplicationData(
@@ -20,7 +22,13 @@ data class ApplicationData(
         val deployDetails: DeployDetails,
         val addresses: List<Address>,
         val sprocketDone: String? = null
-)
+) {
+    val errors
+        get(): List<ManagementEndpointError> = this.pods
+                .map { it.managementData }
+                .flatMap { listOf(it, it.value?.info, it.value?.health).map { it?.error } }
+                .filterNotNull()
+}
 
 data class PodDetails(
         val openShiftPodExcerpt: OpenShiftPodExcerpt,
