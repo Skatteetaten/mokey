@@ -41,7 +41,7 @@ class ApplicationDetailsController(
                 ?: throw NoSuchResourceException("Does not exist")
     }
 
-    @GetMapping("")
+    @GetMapping
     fun getAll(@RequestParam affiliation: String, @AuthenticationPrincipal user: User): List<ApplicationDetailsResource> {
 
         return assembler.toResources(applicationDataService.findAllApplicationData(listOf(affiliation)))

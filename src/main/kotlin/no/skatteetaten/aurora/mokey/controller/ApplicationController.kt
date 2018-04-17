@@ -22,7 +22,7 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
 
     val assembler = ApplicationResourceAssembler()
 
-    @GetMapping("")
+    @GetMapping
     fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> {
         return assembler.toResources(applicationDataService.findAllApplicationData(affiliation))
     }

@@ -1,0 +1,22 @@
+[
+  {
+    "affiliation": "paas",
+    "name": "name",
+    "status": {
+      "code": "HEALTHY"
+    },
+    "version": {
+      "deployTag": ""
+    },
+    "links": [
+      {
+        "rel": "self",
+        "href": "http://localhost/api/application"
+      },
+      {
+        "rel": "ApplicationDetails",
+        "href": "http://localhost/api/applicationdetails"
+      }
+    ]
+  }
+]
