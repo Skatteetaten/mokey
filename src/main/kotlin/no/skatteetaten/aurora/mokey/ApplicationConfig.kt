@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import okhttp3.OkHttpClient
@@ -11,7 +10,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Primary
 import org.springframework.hateoas.config.EnableHypermediaSupport
 import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType.HAL
 import org.springframework.http.MediaType
@@ -32,9 +30,7 @@ class ApplicationConfig : BeanPostProcessor {
 
     override fun postProcessAfterInitialization(bean: Any?, beanName: String?): Any {
         if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
-            bean.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-            bean.configure(SerializationFeature.INDENT_OUTPUT, true)
-            bean.registerModules(JavaTimeModule())
+            configureObjectMapper(bean)
         }
 
         return super.postProcessAfterInitialization(bean, beanName)

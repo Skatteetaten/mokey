@@ -9,16 +9,13 @@ import org.springframework.web.context.request.NativeWebRequest
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.method.support.ModelAndViewContainer
 
-import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
 
 import groovy.io.FileType
 import io.restassured.module.mockmvc.RestAssuredMockMvc
+import no.skatteetaten.aurora.mokey.ObjectMapperConfigurer
 import no.skatteetaten.aurora.mokey.controller.security.User
 import spock.lang.Specification
 
@@ -35,7 +32,7 @@ abstract class AbstractContractBase extends Specification {
     def folderName = "/contracts/${baseName}/responses"
     def resource = getClass().getResource(folderName)
     if (resource == null) {
-      return []
+      throw new IllegalArgumentException("No json response files found for ${baseName}")
     }
 
     def files = []
@@ -58,11 +55,7 @@ abstract class AbstractContractBase extends Specification {
   }
 
   def setupMockMvc(Object controller) {
-    def objectMapper = new ObjectMapper()
-    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    objectMapper.registerModule(new KotlinModule())
-    objectMapper.registerModule(new JavaTimeModule())
+    def objectMapper = ObjectMapperConfigurer.configureObjectMapper(new ObjectMapper())
 
     def converter = new MappingJackson2HttpMessageConverter()
     converter.setObjectMapper(objectMapper)
