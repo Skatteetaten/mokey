@@ -1,0 +1,37 @@
+[
+  {
+    "links": [
+      {
+        "rel": "ApplyResult",
+        "href": "http://localhost/v1/apply-result/paas/"
+      },
+      {
+        "rel": "self",
+        "href": "http://localhost/api/applicationdetails"
+      }
+    ],
+    "_embedded": {
+      "Application": {
+        "affiliation": "paas",
+        "environment": "",
+        "name": "name",
+        "status": {
+          "code": "HEALTHY"
+        },
+        "version": {
+          "deployTag": "latest"
+        },
+        "links": [
+          {
+            "rel": "self",
+            "href": "http://localhost/api/application"
+          },
+          {
+            "rel": "ApplicationDetails",
+            "href": "http://localhost/api/applicationdetails"
+          }
+        ]
+      }
+    }
+  }
+]

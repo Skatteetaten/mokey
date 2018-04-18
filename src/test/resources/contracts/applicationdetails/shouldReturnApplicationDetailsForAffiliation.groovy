@@ -1,4 +1,4 @@
-package application
+package applicationdetails
 
 import org.springframework.cloud.contract.spec.Contract
 
@@ -6,8 +6,8 @@ Contract.make {
   request {
     method 'GET'
     url $(
-        consumer(~/\/api\/application\?affiliation=.*/),
-        producer('/api/application?affiliation=paas')
+        consumer(~/\/api\/applicationdetails\?affiliation=.*/),
+        producer('/api/applicationdetails?affiliation=paas')
     )
     headers {
       contentType(applicationJson())
@@ -18,6 +18,6 @@ Contract.make {
     headers {
       contentType(applicationJson())
     }
-    body(file('responses/applications.json'))
+    body(file('responses/applicationdetailsarray.json'))
   }
 }
