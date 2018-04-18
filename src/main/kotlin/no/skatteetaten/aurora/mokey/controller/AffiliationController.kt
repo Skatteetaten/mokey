@@ -13,7 +13,7 @@ class AffiliationController(val applicationDataService: ApplicationDataService) 
 
     val logger: Logger = LoggerFactory.getLogger(AffiliationController::class.java)
 
-    @GetMapping()
+    @GetMapping
     fun getAffiliations(): List<String> {
         return applicationDataService.findAllAffiliations()
     }
