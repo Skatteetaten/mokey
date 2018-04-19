@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import no.skatteetaten.aurora.mokey.model.Endpoint
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
+import no.skatteetaten.aurora.utils.Either
+import no.skatteetaten.aurora.utils.fold
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
@@ -57,16 +59,17 @@ data class BuildInfoResource(
         val commitTime: Instant? = null
 )
 
-data class ValueOrManagementError<V>(val value: V? = null, val error: ManagementEndpointErrorResource? = null)
-
 class PodResource(
         val name: String
 ) : ResourceSupport()
 
 data class ManagementEndpointErrorResource(
+        val podName: String,
         val message: String,
         val endpoint: Endpoint,
+        val url: String?,
         val code: String,
-        val rootCause: String? = null,
-        val type: String = ManagementEndpointError::class.simpleName!!
-)
+        val rootCause: String? = null
+) {
+    val type: String = ManagementEndpointError::class.simpleName!!
+}

@@ -1,10 +1,7 @@
 package no.skatteetaten.aurora.mokey.model
 
-import no.skatteetaten.aurora.mokey.controller.ManagementEndpointErrorResource
-import no.skatteetaten.aurora.mokey.controller.ValueOrManagementError
 import no.skatteetaten.aurora.utils.Either
 import no.skatteetaten.aurora.utils.error
-import no.skatteetaten.aurora.utils.fold
 import no.skatteetaten.aurora.utils.value
 import java.time.Instant
 
@@ -24,9 +21,11 @@ data class ApplicationData(
         val sprocketDone: String? = null
 ) {
     val errors
-        get(): List<ManagementEndpointError> = this.pods
-                .map { it.managementData }
-                .flatMap { listOf(it, it.value?.info, it.value?.health).map { it?.error } }
+        get(): List<PodError> = this.pods
+                .flatMap { podDetails: PodDetails ->
+                    val data = podDetails.managementData
+                    listOf(data, data.value?.info, data.value?.health).map { it?.error?.let { PodError(podDetails, it) } }
+                }
                 .filterNotNull()
 }
 
@@ -35,12 +34,17 @@ data class PodDetails(
         val managementData: Either<ManagementEndpointError, ManagementData>
 )
 
+data class PodError(
+        val podDetails: PodDetails,
+        val error: ManagementEndpointError
+)
 
 data class ManagementEndpointError(
         val message: String,
-        val endpoint: Endpoint,
+        val endpointType: Endpoint,
         val code: String,
-        val rootCause: String? = null
+        val rootCause: String? = null,
+        val url: String? = null
 )
 
 
@@ -72,18 +76,3 @@ data class ImageDetails(
 }
 
 data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)
-
-fun <F, T> mappedValueOrError(either: Either<ManagementEndpointError, F>, valueMapper: (from: F) -> T): ValueOrManagementError<T> =
-        either.fold(
-                { it: ManagementEndpointError ->
-                    ValueOrManagementError(error = ({ e: ManagementEndpointError ->
-                        ManagementEndpointErrorResource(
-                                message = e.message,
-                                code = e.code,
-                                endpoint = e.endpoint,
-                                rootCause = e.rootCause
-                        )
-                    })(it))
-                },
-                { ValueOrManagementError(valueMapper.invoke(it)) }
-        )

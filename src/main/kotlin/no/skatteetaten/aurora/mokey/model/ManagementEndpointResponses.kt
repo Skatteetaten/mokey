@@ -24,14 +24,10 @@ data class ManagementLinks(private val links: Map<String, String>) {
 
     companion object {
         fun parseManagementResponse(response: JsonNode): ManagementLinks {
-            return try {
-                val asMap = response[Endpoint.MANAGEMENT.key].asMap()
-                val links = asMap
-                        .mapValues { it.value["href"].asText()!! }
-                ManagementLinks(links)
-            } catch (e: Exception) {
-                throw ManagementEndpointException(Endpoint.MANAGEMENT, "INVALID_FORMAT", e)
-            }
+            val asMap = response[Endpoint.MANAGEMENT.key].asMap()
+            val links = asMap
+                    .mapValues { it.value["href"].asText()!! }
+            return ManagementLinks(links)
         }
     }
 }

@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mokey.model.Endpoint
-import no.skatteetaten.aurora.mokey.model.Endpoint.*
+import no.skatteetaten.aurora.mokey.model.Endpoint.ENV
+import no.skatteetaten.aurora.mokey.model.Endpoint.HEALTH
+import no.skatteetaten.aurora.mokey.model.Endpoint.INFO
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
@@ -25,7 +27,7 @@ class ManagementEndpointFactory(val restTemplate: RestTemplate) {
     }
 }
 
-class ManagementEndpointException(val endpoint: Endpoint, val errorCode: String, cause: Exception? = null)
+class ManagementEndpointException(val endpoint: Endpoint, val errorCode: String, url: String? = null, cause: Exception? = null)
     : RuntimeException("${endpoint}_$errorCode", cause)
 
 class ManagementEndpoint internal constructor(
@@ -52,7 +54,12 @@ class ManagementEndpoint internal constructor(
         fun create(restTemplate: RestTemplate, managementUrl: String): ManagementEndpoint {
 
             val response = findJsonResource(restTemplate, Endpoint.MANAGEMENT, managementUrl, JsonNode::class)
-            val links = ManagementLinks.parseManagementResponse(response)
+            val links = try {
+                ManagementLinks.parseManagementResponse(response)
+            } catch (e: Exception) {
+                throw ManagementEndpointException(Endpoint.MANAGEMENT, "INVALID_FORMAT", managementUrl, e)
+            }
+
             return ManagementEndpoint(restTemplate, links)
         }
 
@@ -75,7 +82,7 @@ class ManagementEndpoint internal constructor(
                     is MismatchedInputException -> "INVALID_JSON"
                     else -> "ERROR_UNKNOWN"
                 }
-                throw ManagementEndpointException(endpoint, errorCode, e)
+                throw ManagementEndpointException(endpoint, errorCode, url, e)
             }
         }
     }

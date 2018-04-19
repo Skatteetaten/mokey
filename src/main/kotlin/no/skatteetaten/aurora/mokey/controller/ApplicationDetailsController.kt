@@ -4,10 +4,10 @@ import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import no.skatteetaten.aurora.mokey.model.PodDetails
-import no.skatteetaten.aurora.mokey.model.mappedValueOrError
+import no.skatteetaten.aurora.mokey.model.PodError
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.utils.value
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
@@ -73,20 +73,22 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
             ImageDetailsResource(imageDetails.dockerImageReference)
 
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails) =
-            mappedValueOrError(podDetails.managementData, {
+            podDetails.managementData.value?.let {
                 val podName = podDetails.openShiftPodExcerpt.name
-                val podLinks = mappedValueOrError(it.info) { it.podLinks }.value
-                val map = podLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
+                val podLinkIndex = it.info.value?.podLinks
+                val podLinks = podLinkIndex?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
                 PodResource(podName).apply {
-                    this.add(map)
+                    this.add(podLinks)
                 }
-            }).value
+            }
 
     private fun toBuildInfoResource(aPod: InfoResponse?, imageDetails: ImageDetails?) =
             BuildInfoResource(imageDetails?.imageBuildTime, aPod?.buildTime, aPod?.commitId, aPod?.commitTime)
 
-    private fun toErrorResource(error: ManagementEndpointError): ManagementEndpointErrorResource {
-        return ManagementEndpointErrorResource(error.message, error.endpoint, error.code, error.rootCause)
+    private fun toErrorResource(podError: PodError): ManagementEndpointErrorResource {
+        val podName = podError.podDetails.openShiftPodExcerpt.name
+        return podError.error
+                .let { ManagementEndpointErrorResource(podName, it.message, it.endpointType, it.url, it.code, it.rootCause) }
     }
 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
@@ -118,9 +120,5 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
 private val ApplicationData.firstInfoResponse: InfoResponse?
     get() {
         val pod = this.pods.firstOrNull()
-        return pod?.let {
-            mappedValueOrError(it.managementData) {
-                mappedValueOrError(it.info) { it }
-            }
-        }?.let { it.value?.value }
+        return pod?.managementData?.value?.info?.value
     }
