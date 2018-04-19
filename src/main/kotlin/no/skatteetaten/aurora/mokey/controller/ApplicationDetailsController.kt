@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ContainerDetails
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
@@ -37,8 +38,8 @@ class ApplicationDetailsController(
     fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDetailsResource? {
 
         return applicationDataService.findApplicationDataById(id)
-                ?.let(assembler::toResource)
-                ?: throw NoSuchResourceException("Does not exist")
+            ?.let(assembler::toResource)
+            ?: throw NoSuchResourceException("Does not exist")
     }
 
     @GetMapping
@@ -64,10 +65,11 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
         }?.let { it.value?.value }
 
         return ApplicationDetailsResource(
-                toBuildInfoResource(anInfoResponse, applicationData.imageDetails),
-                applicationData.imageDetails?.let { toImageDetailsResource(it) },
-                applicationData.pods.mapNotNull { toPodResource(it) },
-                anInfoResponse?.dependencies ?: emptyMap()
+            toBuildInfoResource(anInfoResponse, applicationData.imageDetails),
+            applicationData.imageDetails?.let { toImageDetailsResource(it) },
+            applicationData.pods.mapNotNull { toPodResource(it) },
+            anInfoResponse?.dependencies ?: emptyMap(),
+            applicationData.deployDetails?.containers?.map(this::toContainerResource)
         ).apply {
             embedResource("Application", applicationAssembler.toResource(applicationData))
 
@@ -81,8 +83,13 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
         }
     }
 
-    private fun toImageDetailsResource(imageDetails: ImageDetails) =
-            ImageDetailsResource(imageDetails.dockerImageReference)
+    private fun toContainerResource(containerDetails: ContainerDetails): ContainerResource {
+        return ContainerResource(containerDetails.name)
+    }
+
+    private fun toImageDetailsResource(imageDetails: ImageDetails): ImageDetailsResource {
+        return ImageDetailsResource(imageDetails.dockerImageReference)
+    }
 
     private fun toPodResource(podDetails: PodDetails) =
             mappedValueOrError(podDetails.managementData, {

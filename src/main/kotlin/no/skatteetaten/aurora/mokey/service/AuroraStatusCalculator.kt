@@ -2,7 +2,11 @@ package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.*
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.DOWN
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OBSERVE
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.UNKNOWN
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service
@@ -16,11 +20,16 @@ class AuroraStatusCalculator {
     val AVERAGE_RESTART_ERROR_THRESHOLD = 100
     val DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD = 2
 
-    fun calculateStatus(app: DeployDetails, pods: List<PodDetails>): AuroraStatus {
+    fun calculateStatus(deployDetails: DeployDetails?, pods: List<PodDetails>): AuroraStatus {
 
-        val lastDeployment = app.deploymentPhase
-        val availableReplicas = app.availableReplicas
-        val targetReplicas = app.targetReplicas
+        if (deployDetails == null) {
+            return AuroraStatus(OFF, "NO_DEPLOYMENT")
+        }
+
+        val lastDeployment = deployDetails.deploymentPhase
+        val availableReplicas = deployDetails.availableReplicas
+        val targetReplicas = deployDetails.targetReplicas
+
         if ("Failed".equals(lastDeployment, ignoreCase = true) && availableReplicas <= 0) {
             return AuroraStatus(DOWN, "DEPLOY_FAILED_NO_PODS")
         }

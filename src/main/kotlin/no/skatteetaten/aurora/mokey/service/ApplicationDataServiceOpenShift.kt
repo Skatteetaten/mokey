@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
@@ -12,6 +13,7 @@ import no.skatteetaten.aurora.mokey.extensions.managementPath
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.ContainerDetails
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -55,12 +57,12 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
     private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
         return runBlocking(mtContext) {
             environments
-                    .flatMap { environment ->
-                        logger.debug("Find all applications in namespace={}", environment)
-                        val deploymentConfigs = openshiftService.deploymentConfigs(environment.namespace)
-                        deploymentConfigs.map { dc -> async(mtContext) { createApplicationData(dc) } }
-                    }
-                    .map { it.await() }
+                .flatMap { environment ->
+                    logger.debug("Find all applications in namespace={}", environment)
+                    val deploymentConfigs = openshiftService.deploymentConfigs(environment.namespace)
+                    deploymentConfigs.map { dc -> async(mtContext) { createApplicationData(dc) } }
+                }
+                .map { it.await() }
         }
     }
 
@@ -98,8 +100,10 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
         val pods = podService.getPodDetails(dc)
         val imageDetails = imageService.getImageDetails(dc)
 
-        val phase = latestVersion?.let { openshiftService.rc(namespace, "$name-$it")?.deploymentPhase }
-        val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
+        val deployDetails = latestVersion?.let {
+            openshiftService.rc(namespace, "$name-$it")?.let(this::createDeployDetails)
+        }
+
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
         val id = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)).toString()
@@ -117,6 +121,16 @@ class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
                 deployDetails = deployDetails,
                 addresses = applicationAddresses,
                 sprocketDone = dc.sprocketDone
+        )
+    }
+
+    private fun createDeployDetails(rc: ReplicationController): DeployDetails {
+        val containers = rc.spec.template.spec.containers.map { ContainerDetails(it.name) }
+        return DeployDetails(
+            rc.deploymentPhase,
+            rc.status?.availableReplicas ?: 0,
+            rc.status?.replicas ?: 0,
+            containers
         )
     }
 }

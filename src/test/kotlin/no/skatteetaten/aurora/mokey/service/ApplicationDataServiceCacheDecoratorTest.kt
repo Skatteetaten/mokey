@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.service
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.ContainerDetails
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -19,7 +20,7 @@ class ApplicationDataServiceCacheDecoratorTest {
             "testapp",
             "aurora",
             "aurora",
-            deployDetails = DeployDetails("Complete", 1, 1),
+            deployDetails = DeployDetails("Complete", 1, 1, listOf(ContainerDetails("testapp-java"))),
             addresses = emptyList()
     )
     val app1v2 = app1v1.copy(deployTag = "prod")
