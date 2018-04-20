@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.service
 
-import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.model.Endpoint
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
@@ -10,7 +9,6 @@ import no.skatteetaten.aurora.utils.Right
 import org.springframework.stereotype.Service
 
 typealias ManagementResult = Either<ManagementEndpointError, ManagementData>
-typealias ManagementEndpointResult = Either<ManagementEndpointError, JsonNode>
 
 @Service
 class ManagementDataService(val managementEndpointFactory: ManagementEndpointFactory) {
