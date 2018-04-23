@@ -17,7 +17,7 @@ class ApplicationdetailsBase extends AbstractContractBase {
       findAllApplicationData(_ as List) >> [createApplicationData()]
       findApplicationDataById(_ as String) >> createApplicationData()
     }
-    def assembler = new ApplicationDetailsResourceAssembler(new LinkBuilder('http://localhost'))
+    def assembler = new ApplicationDetailsResourceAssembler(new LinkBuilder('http://localhost', [:]))
     def controller = new ApplicationDetailsController(applicationDataService, assembler)
     setupMockMvc(controller)
   }
