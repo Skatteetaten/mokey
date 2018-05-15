@@ -6,8 +6,8 @@ Contract.make {
   request {
     method 'GET'
     url $(
-        consumer(~/\/api\/applicationdetails\/\w+/),
-        producer('/api/applicationdetails/123')
+        stub(~/\/api\/applicationdetails\/\w+/),
+        test('/api/applicationdetails/123')
     )
     headers {
       contentType(applicationJson())
