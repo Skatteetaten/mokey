@@ -5,5 +5,4 @@ fun String.ensureStartWith(startWith: String, seperator: String = ""): String {
         return this
     }
     return "$startWith$seperator$this"
-
 }

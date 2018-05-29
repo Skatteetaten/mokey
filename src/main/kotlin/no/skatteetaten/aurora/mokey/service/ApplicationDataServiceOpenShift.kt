@@ -21,11 +21,13 @@ import org.springframework.stereotype.Service
 
 @Service
 @ApplicationDataSource(CLUSTER)
-class ApplicationDataServiceOpenShift(val openshiftService: OpenShiftService,
-                                      val auroraStatusCalculator: AuroraStatusCalculator,
-                                      val podService: PodService,
-                                      val addressService: AddressService,
-                                      val imageService: ImageService) : ApplicationDataService {
+class ApplicationDataServiceOpenShift(
+    val openshiftService: OpenShiftService,
+    val auroraStatusCalculator: AuroraStatusCalculator,
+    val podService: PodService,
+    val addressService: AddressService,
+    val imageService: ImageService
+) : ApplicationDataService {
 
     val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
 

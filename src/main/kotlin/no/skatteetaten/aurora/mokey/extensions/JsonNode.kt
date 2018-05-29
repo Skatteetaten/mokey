@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 
-
 fun JsonNode?.asMap(): Map<String, JsonNode> {
     if (this == null) {
         return emptyMap()
@@ -28,4 +27,3 @@ fun JsonNode.extract(vararg pathAlternatives: String): JsonNode? {
     }
     return if (valueNode !is MissingNode) valueNode else null
 }
-

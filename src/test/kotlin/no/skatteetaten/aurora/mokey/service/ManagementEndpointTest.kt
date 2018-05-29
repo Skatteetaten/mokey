@@ -8,9 +8,12 @@ import com.fasterxml.jackson.databind.node.TextNode
 import com.jayway.jsonpath.JsonPath
 import no.skatteetaten.aurora.mokey.AbstractTest
 import no.skatteetaten.aurora.mokey.ApplicationConfig
-import no.skatteetaten.aurora.mokey.model.*
-//import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.model.Endpoint
 import no.skatteetaten.aurora.mokey.model.Endpoint.MANAGEMENT
+import no.skatteetaten.aurora.mokey.model.HealthPart
+import no.skatteetaten.aurora.mokey.model.HealthResponse
+import no.skatteetaten.aurora.mokey.model.HealthStatus
+import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -23,7 +26,9 @@ import org.junit.jupiter.params.provider.ArgumentsProvider
 import org.junit.jupiter.params.provider.ArgumentsSource
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatus.*
+import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
+import org.springframework.http.HttpStatus.NOT_FOUND
+import org.springframework.http.HttpStatus.OK
 import org.springframework.http.MediaType
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.MediaType.TEXT_HTML
@@ -73,24 +78,31 @@ class ManagementEndpointTest : AbstractTest() {
             expect(requestTo(healthLink)).andRespond(withJsonString(json))
         }
 
-        val managementEndpoint = ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.HEALTH.key to healthLink)))
+        val managementEndpoint =
+            ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.HEALTH.key to healthLink)))
         val response = managementEndpoint.getHealthEndpointResponse()
 
-        assert(response).isEqualTo(HealthResponse(
+        assert(response).isEqualTo(
+            HealthResponse(
                 HealthStatus.UP,
                 mutableMapOf(
-                        "atsServiceHelse" to HealthPart(HealthStatus.UP, mutableMapOf()),
-                        "diskSpace" to HealthPart(HealthStatus.UP, mutableMapOf(
-                                "total" to LongNode.valueOf(10718543872),
-                                "threshold" to IntNode.valueOf(10485760),
-                                "free" to LongNode.valueOf(10508611584)
-                        )),
-                        "db" to HealthPart(HealthStatus.UP, mutableMapOf(
-                                "hello" to TextNode.valueOf("Hello"),
-                                "database" to TextNode.valueOf("Oracle")
-                        ))
+                    "atsServiceHelse" to HealthPart(HealthStatus.UP, mutableMapOf()),
+                    "diskSpace" to HealthPart(
+                        HealthStatus.UP, mutableMapOf(
+                            "total" to LongNode.valueOf(10718543872),
+                            "threshold" to IntNode.valueOf(10485760),
+                            "free" to LongNode.valueOf(10508611584)
+                        )
+                    ),
+                    "db" to HealthPart(
+                        HealthStatus.UP, mutableMapOf(
+                            "hello" to TextNode.valueOf("Hello"),
+                            "database" to TextNode.valueOf("Oracle")
+                        )
+                    )
                 )
-        ))
+            )
+        )
     }
 
     @Test
@@ -137,9 +149,15 @@ class ManagementEndpointTest : AbstractTest() {
 
     @ParameterizedTest(name = "{0} as {1} yields {2} for management endpoint")
     @ArgumentsSource(ErrorCases::class)
-    fun `should fail on management error responses`(response: String, mediaType: MediaType, errorCode: String?, responseCode: HttpStatus) {
+    fun `should fail on management error responses`(
+        response: String,
+        mediaType: MediaType,
+        errorCode: String?,
+        responseCode: HttpStatus
+    ) {
 
-        server.expect(once(), requestTo(managementUrl)).andRespond(withStatus(responseCode).body(response).contentType(mediaType))
+        server.expect(once(), requestTo(managementUrl))
+            .andRespond(withStatus(responseCode).body(response).contentType(mediaType))
 
         val e = assertThrows(ManagementEndpointException::class.java) {
             ManagementEndpoint.create(restTemplate, managementUrl)
@@ -150,14 +168,19 @@ class ManagementEndpointTest : AbstractTest() {
 
     @ParameterizedTest(name = "{0} as {1} is handled without error")
     @ArgumentsSource(SuccessCases::class)
-    fun `should handle management link responses with missing data`(response: String, mediaType: MediaType, responseCode: HttpStatus) {
+    fun `should handle management link responses with missing data`(
+        response: String,
+        mediaType: MediaType,
+        responseCode: HttpStatus
+    ) {
 
-        server.expect(once(), requestTo(managementUrl)).andRespond(withStatus(responseCode).body(response).contentType(mediaType))
+        server.expect(once(), requestTo(managementUrl))
+            .andRespond(withStatus(responseCode).body(response).contentType(mediaType))
 
         val managementEndpoint = ManagementEndpoint.create(restTemplate, managementUrl)
         listOf(
-                { managementEndpoint.getHealthEndpointResponse() },
-                { managementEndpoint.getInfoEndpointResponse() }
+            { managementEndpoint.getHealthEndpointResponse() },
+            { managementEndpoint.getInfoEndpointResponse() }
         ).forEach {
             val e = assertThrows(ManagementEndpointException::class.java, { it.invoke() })
             assertThat(e.errorCode).isEqualTo("LINK_MISSING")
@@ -166,30 +189,32 @@ class ManagementEndpointTest : AbstractTest() {
 
     class SuccessCases : ArgumentsProvider {
         fun args(response: String, mediaType: MediaType, responseCode: HttpStatus = OK) =
-                Arguments.of(response, mediaType, responseCode)
+            Arguments.of(response, mediaType, responseCode)
 
         override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
-                args("{}", APPLICATION_JSON),
-                args("{ \"_links\": {}}", APPLICATION_JSON),
-                args("{}", APPLICATION_JSON, INTERNAL_SERVER_ERROR)
+            args("{}", APPLICATION_JSON),
+            args("{ \"_links\": {}}", APPLICATION_JSON),
+            args("{}", APPLICATION_JSON, INTERNAL_SERVER_ERROR)
         )
     }
 
     class ErrorCases : ArgumentsProvider {
         fun args(response: String, mediaType: MediaType, errorCode: String, responseCode: HttpStatus = OK) =
-                Arguments.of(response, mediaType, errorCode, responseCode)
+            Arguments.of(response, mediaType, errorCode, responseCode)
 
         override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
-                args("", APPLICATION_JSON, "INVALID_JSON"),
-                args("{ \"_links\": { \"health\": null}}", APPLICATION_JSON, "INVALID_FORMAT"),
-                args("{ _links: {}}", APPLICATION_JSON, "INVALID_JSON"),
-                args("", APPLICATION_JSON, "ERROR_404", NOT_FOUND),
-                args("<html><body><h1>hello</h1></body></html>", TEXT_HTML, "INVALID_JSON"),
-                args("<html><body><h1>hello</h1></body></html>", TEXT_HTML, "INVALID_JSON", INTERNAL_SERVER_ERROR),
-                args("<html><body><h1>hello</h1></body></html>", APPLICATION_JSON, "INVALID_JSON", INTERNAL_SERVER_ERROR)
+            args("", APPLICATION_JSON, "INVALID_JSON"),
+            args("{ \"_links\": { \"health\": null}}", APPLICATION_JSON, "INVALID_FORMAT"),
+            args("{ _links: {}}", APPLICATION_JSON, "INVALID_JSON"),
+            args("", APPLICATION_JSON, "ERROR_404", NOT_FOUND),
+            args("<html><body><h1>hello</h1></body></html>", TEXT_HTML, "INVALID_JSON"),
+            args("<html><body><h1>hello</h1></body></html>", TEXT_HTML, "INVALID_JSON", INTERNAL_SERVER_ERROR),
+            args("<html><body><h1>hello</h1></body></html>", APPLICATION_JSON, "INVALID_JSON", INTERNAL_SERVER_ERROR)
         )
     }
 
-    private fun withJsonFromFile(resourceName: String) = withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
+    private fun withJsonFromFile(resourceName: String) =
+        withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
+
     private fun withJsonString(json: String) = withSuccess(json, MediaType.APPLICATION_JSON)
 }

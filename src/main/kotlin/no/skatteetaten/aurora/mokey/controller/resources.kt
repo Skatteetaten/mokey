@@ -4,12 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import no.skatteetaten.aurora.mokey.model.Endpoint
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
-import no.skatteetaten.aurora.utils.Either
-import no.skatteetaten.aurora.utils.fold
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
-
 
 abstract class HalResource : ResourceSupport() {
 
@@ -26,13 +23,12 @@ abstract class HalResource : ResourceSupport() {
     }
 }
 
-
 class ApplicationResource(
-        val affiliation: String?,
-        val environment: String,
-        val name: String,
-        val status: AuroraStatusResource,
-        val version: Version
+    val affiliation: String?,
+    val environment: String,
+    val name: String,
+    val status: AuroraStatusResource,
+    val version: Version
 ) : HalResource()
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
@@ -40,36 +36,36 @@ data class Version(val deployTag: String?, val auroraVersion: String?)
 data class AuroraStatusResource(val code: String, val comment: String? = null)
 
 class ApplicationDetailsResource(
-        val buildInfo: BuildInfoResource?,
-        val imageDetails: ImageDetailsResource?,
-        val podResources: List<PodResource>,
-        val dependencies: Map<String, String> = emptyMap(),
+    val buildInfo: BuildInfoResource?,
+    val imageDetails: ImageDetailsResource?,
+    val podResources: List<PodResource>,
+    val dependencies: Map<String, String> = emptyMap(),
 
-        val errors: List<ManagementEndpointErrorResource> = emptyList()
+    val errors: List<ManagementEndpointErrorResource> = emptyList()
 ) : HalResource()
 
 data class ImageDetailsResource(
-        val dockerImageReference: String?
+    val dockerImageReference: String?
 )
 
 data class BuildInfoResource(
-        val imageBuildTime: Instant?,
-        val buildTime: Instant? = null,
-        val commitId: String? = null,
-        val commitTime: Instant? = null
+    val imageBuildTime: Instant?,
+    val buildTime: Instant? = null,
+    val commitId: String? = null,
+    val commitTime: Instant? = null
 )
 
 class PodResource(
-        val name: String
+    val name: String
 ) : ResourceSupport()
 
 data class ManagementEndpointErrorResource(
-        val podName: String,
-        val message: String,
-        val endpoint: Endpoint,
-        val url: String?,
-        val code: String,
-        val rootCause: String? = null
+    val podName: String,
+    val message: String,
+    val endpoint: Endpoint,
+    val url: String?,
+    val code: String,
+    val rootCause: String? = null
 ) {
     val type: String = ManagementEndpointError::class.simpleName!!
 }

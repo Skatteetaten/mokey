@@ -2,7 +2,11 @@ package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.*
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.DOWN
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OBSERVE
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.UNKNOWN
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service
@@ -61,7 +65,6 @@ class AuroraStatusCalculator {
             return AuroraStatus(OBSERVE, "TOO_MANY_PODS")
         }
 
-
         if (targetReplicas == 0 && availableReplicas == 0) {
             return AuroraStatus(OFF, "OFF")
         }
@@ -70,7 +73,7 @@ class AuroraStatusCalculator {
             return AuroraStatus(OBSERVE, "TOO_FEW_PODS")
         }
 
-        //TODO: Hva gjør hvis hvis denne er Unknown, vi ikke får svar?
+        // TODO: Hva gjør hvis hvis denne er Unknown, vi ikke får svar?
         val podStatus = findPodStatus(pods)
 
         if (podStatus != HEALTHY) {

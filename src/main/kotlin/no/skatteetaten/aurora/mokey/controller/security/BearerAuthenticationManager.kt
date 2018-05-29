@@ -1,4 +1,4 @@
-package no.skatteetaten.aurora.mokey.controller.security;
+package no.skatteetaten.aurora.mokey.controller.security
 
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.openshift.client.DefaultOpenShiftClient
@@ -36,5 +36,4 @@ class BearerAuthenticationManager : AuthenticationManager {
         val openShiftUser = client.currentUser()
         return PreAuthenticatedAuthenticationToken(openShiftUser, token)
     }
-
 }
