@@ -30,6 +30,7 @@ abstract class HalResource : ResourceSupport() {
 class ApplicationResource(
         val affiliation: String?,
         val environment: String,
+        val namespace: String,
         val name: String,
         val status: AuroraStatusResource,
         val version: Version

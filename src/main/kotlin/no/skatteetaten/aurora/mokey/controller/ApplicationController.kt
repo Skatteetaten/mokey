@@ -34,6 +34,7 @@ class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, A
         return ApplicationResource(
                 data.affiliation,
                 environment.name,
+                environment.namespace,
                 data.name,
                 data.auroraStatus.let { AuroraStatusResource(it.level.toString()) },
                 Version(data.deployTag, data.imageDetails?.auroraVersion)
