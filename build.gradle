@@ -21,9 +21,10 @@ buildscript {
 }
 
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.31"
-  id "org.jetbrains.kotlin.plugin.spring" version "1.2.31"
+  id "org.jetbrains.kotlin.jvm" version "1.2.41"
+  id "org.jetbrains.kotlin.plugin.spring" version "1.2.41"
   id 'org.springframework.boot' version '2.0.0.RELEASE'
+  id 'org.jlleitschuh.gradle.ktlint' version '4.0.0'
 }
 
 ext.aurora = [
@@ -34,6 +35,7 @@ ext.aurora = [
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'no.skatteetaten.plugins.aurora'
 apply plugin: 'spring-cloud-contract'
+apply plugin: 'org.jlleitschuh.gradle.ktlint'
 
 repositories repos
 
@@ -53,7 +55,7 @@ def junitJupiterVersion = dependencyManagement.importedProperties['junit-jupiter
 dependencies {
 
   compile(
-      "org.jetbrains.kotlin:kotlin-reflect:1.2.31",
+      "org.jetbrains.kotlin:kotlin-reflect:1.2.41",
       'org.jetbrains.kotlin:kotlin-stdlib-jdk8',
       'com.fasterxml.jackson.module:jackson-module-kotlin',
       'com.fasterxml.jackson.datatype:jackson-datatype-jsr310',
@@ -123,4 +125,8 @@ task wrapper(type: Wrapper) {
 contracts {
   packageWithBaseClasses = 'no.skatteetaten.aurora.mokey.contracts'
   targetFramework = 'Spock'
+}
+
+ktlint {
+  version = "0.23.1"
 }

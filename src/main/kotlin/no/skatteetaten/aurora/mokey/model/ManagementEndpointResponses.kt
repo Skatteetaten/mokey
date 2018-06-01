@@ -35,8 +35,8 @@ data class ManagementLinks(private val links: Map<String, String>) {
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
 data class HealthResponse(
-        val status: HealthStatus,
-        val parts: MutableMap<String, HealthPart> = mutableMapOf()
+    val status: HealthStatus,
+    val parts: MutableMap<String, HealthPart> = mutableMapOf()
 ) {
     @JsonAnySetter(enabled = true)
     private fun setAny(name: String, value: HealthPart) {
@@ -53,12 +53,12 @@ data class HealthPart(val status: HealthStatus, val details: MutableMap<String, 
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class InfoResponse(
-        val podLinks: Map<String, String> = mapOf(),
-        val serviceLinks: Map<String, String> = mapOf(),
-        val dependencies: Map<String, String> = mapOf(),
-        var commitId: String? = null,
-        var commitTime: Instant? = null,
-        var buildTime: Instant? = null
+    val podLinks: Map<String, String> = mapOf(),
+    val serviceLinks: Map<String, String> = mapOf(),
+    val dependencies: Map<String, String> = mapOf(),
+    var commitId: String? = null,
+    var commitTime: Instant? = null,
+    var buildTime: Instant? = null
 ) {
 
     @JsonAnySetter(enabled = true)

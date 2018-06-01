@@ -18,8 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 @ApplicationDataSource(CACHE)
 class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val applicationDataService: ApplicationDataService) : ApplicationDataService {
 
-
-    //TODO: replace with Redis
+    // TODO: replace with Redis
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceCacheDecorator::class.java)
@@ -40,7 +39,7 @@ class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val a
                 .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
     }
 
-    //TODO: property
+    // TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
     fun cache() {
         refreshCache()

@@ -22,18 +22,15 @@ const val ANNOTATION_MARJORY_DONE = "marjory.sits.no-routes-config.done"
 const val ANNOTATION_MARJORY_OPEN = "marjory.sits.no/isOpen"
 const val ANNOTATION_MARJORY_ROLES = "marjory.sits.no/route.roles"
 
-
 const val ANNOTATION_WEMBLEY_SERVICE = "wembley.sits.no/serviceName"
 const val ANNOTATION_WEMBLEY_DONE = "wembley.sits.no/done"
 const val ANNOTATION_WEMBLEY_PATHS = "wembley.sits.no/apiPaths"
 const val ANNOTATION_WEMBLEY_EXTERNAL_HOST = "wembley.sits.no/externalHost"
 const val ANNOTATION_WEMBLEY_ASM = "wembley.sits.no/asmPolicy"
 
-
 val DeploymentConfig.imageStreamTag: String?
     get() = spec.triggers.find { it.type == "ImageChange" }
             ?.imageChangeParams?.from?.name?.split(":")?.lastOrNull()
-
 
 var DeploymentConfig.managementPath: String?
     get() = safeMetadataAnnotations()[ANNOTATION_MANAGEMENT_PATH]
@@ -41,7 +38,6 @@ var DeploymentConfig.managementPath: String?
 
 val DeploymentConfig.sprocketDone: String?
     get() = safeMetadataAnnotations()[ANNOTATION_SPROCKET_DONE]
-
 
 val Route.marjoryDone: Instant?
     get() = safeMetadataAnnotations()[ANNOTATION_MARJORY_DONE]

@@ -8,9 +8,9 @@ import org.springframework.web.util.UriComponentsBuilder
 
 @Configuration
 class LinkBuilderFactory(
-        @Value("\${boober-api-url}") val booberApiUrl: String,
-        @Value("\${metrics-hostname}") val metricsHostname: String,
-        @Value("\${openshift-cluster}") val cluster: String
+    @Value("\${boober-api-url}") val booberApiUrl: String,
+    @Value("\${metrics-hostname}") val metricsHostname: String,
+    @Value("\${openshift-cluster}") val cluster: String
 ) {
     @Bean
     fun linkBuilder(): LinkBuilder = LinkBuilder(booberApiUrl, expandParams)
@@ -21,7 +21,7 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
     fun applyResult(auroraConfigName: String, deployId: String): Link {
         return createLink(UriComponentsBuilder
                 .fromHttpUrl(booberApiUrl)
-                .path("/v1/apply-result/${auroraConfigName}/${deployId}")
+                .path("/v1/apply-result/$auroraConfigName/$deployId")
                 .build().toUriString(), "ApplyResult")
     }
 

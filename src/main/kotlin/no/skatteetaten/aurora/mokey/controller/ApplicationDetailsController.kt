@@ -26,11 +26,11 @@ import org.springframework.web.bind.annotation.RestController
 @ExposesResourceFor(ApplicationDetailsResource::class)
 @RequestMapping("/api/applicationdetails")
 class ApplicationDetailsController(
-        val applicationDataService: ApplicationDataService,
-        val assembler: ApplicationDetailsResourceAssembler) {
+    val applicationDataService: ApplicationDataService,
+    val assembler: ApplicationDetailsResourceAssembler
+) {
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDetailsController::class.java)
-
 
     @GetMapping("/{id}")
     fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDetailsResource? {
@@ -115,7 +115,6 @@ class ApplicationDetailsResourceAssembler(val linkBuilder: LinkBuilder)
         return linkBuilder.createLink(link, rel, applicationExpandParams + podExpandParams)
     }
 }
-
 
 private val ApplicationData.firstInfoResponse: InfoResponse?
     get() {

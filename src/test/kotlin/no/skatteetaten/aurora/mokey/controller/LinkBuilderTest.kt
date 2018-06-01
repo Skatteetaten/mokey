@@ -17,5 +17,4 @@ class LinkBuilderTest {
         )
         assert(link.href).isEqualTo("http://metrics.skead.no/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-utv-ose&var-namespace=aurora&var-app=mokey&var-instance=mokey-1-acbea")
     }
-
 }

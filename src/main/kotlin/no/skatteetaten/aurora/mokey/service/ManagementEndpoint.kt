@@ -19,7 +19,6 @@ import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 import kotlin.reflect.KClass
 
-
 @Service
 class ManagementEndpointFactory(val restTemplate: RestTemplate) {
     fun create(managementUrl: String): ManagementEndpoint {
@@ -31,8 +30,8 @@ class ManagementEndpointException(val endpoint: Endpoint, val errorCode: String,
     : RuntimeException("${endpoint}_$errorCode", cause)
 
 class ManagementEndpoint internal constructor(
-        private val restTemplate: RestTemplate,
-        val links: ManagementLinks
+    private val restTemplate: RestTemplate,
+    val links: ManagementLinks
 ) {
 
     @Throws(ManagementEndpointException::class)

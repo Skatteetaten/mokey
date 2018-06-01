@@ -77,6 +77,4 @@ class ApplicationDataServiceOpenShiftTest {
         assert(applicationData?.name).isEqualTo(dcBuilder.dcName)
         assert(applicationData?.auroraStatus?.level).isEqualTo(AuroraStatusLevel.HEALTHY)
     }
-
-
 }

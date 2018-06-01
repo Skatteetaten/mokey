@@ -16,8 +16,8 @@ import javax.servlet.http.HttpServletRequest
 
 @EnableWebSecurity
 class WebSecurityConfig(
-        val authenticationManager: BearerAuthenticationManager,
-        @Value("\${management.server.port}") val managementPort: Int
+    val authenticationManager: BearerAuthenticationManager,
+    @Value("\${management.server.port}") val managementPort: Int
 ) : WebSecurityConfigurerAdapter() {
 
     private val logger = LoggerFactory.getLogger(WebSecurityConfig::class.java)
@@ -36,7 +36,6 @@ class WebSecurityConfig(
                 .antMatchers("/api/**").permitAll()
                 .anyRequest().authenticated()
     }
-
 
     private fun forPort(port: Int) = RequestMatcher { request: HttpServletRequest -> port == request.localPort }
 

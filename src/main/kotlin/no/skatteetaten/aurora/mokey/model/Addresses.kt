@@ -11,26 +11,25 @@ interface Address {
 }
 
 data class ServiceAddress(
-        override val url: URI,
-        override val time: Instant?,
-        override val available: Boolean = true,
-        override val status: String? = null
+    override val url: URI,
+    override val time: Instant?,
+    override val available: Boolean = true,
+    override val status: String? = null
 ) : Address
 
-
 data class RouteAddress(
-        override val url: URI,
-        override val time: Instant?,
-        override val available: Boolean = false,
-        override val status: String?
+    override val url: URI,
+    override val time: Instant?,
+    override val available: Boolean = false,
+    override val status: String?
 ) : Address
 
 data class WebSealAddress(
-        override val url: URI,
-        override val time: Instant?,
-        override val available: Boolean = false,
-        override val status: String?,
-        val roles: List<String>
+    override val url: URI,
+    override val time: Instant?,
+    override val available: Boolean = false,
+    override val status: String?,
+    val roles: List<String>
 ) : Address
 
 /*
@@ -43,8 +42,8 @@ wembley.sits.no/externalHost	F.eks. skatt-utv1.sits.no. Det er begrensninger på
 wembley.sits.no/asmPolicy
  */
 data class BigIPAddress(
-        override val url: URI,
-        override val time: Instant?,
-        override val available: Boolean = false,
-        override val status: String?
+    override val url: URI,
+    override val time: Instant?,
+    override val available: Boolean = false,
+    override val status: String?
 ) : Address

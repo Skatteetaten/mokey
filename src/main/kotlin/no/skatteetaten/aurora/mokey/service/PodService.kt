@@ -8,8 +8,10 @@ import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service
 
 @Service
-class PodService(val openShiftService: OpenShiftService,
-                 val managementDataService: ManagementDataService) {
+class PodService(
+    val openShiftService: OpenShiftService,
+    val managementDataService: ManagementDataService
+) {
 
     fun getPodDetails(dc: DeploymentConfig): List<PodDetails> {
 

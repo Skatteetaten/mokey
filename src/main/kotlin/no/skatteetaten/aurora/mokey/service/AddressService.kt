@@ -20,7 +20,6 @@ import java.net.URI
 @org.springframework.stereotype.Service
 class AddressService(val openShiftService: OpenShiftService) {
 
-
     fun getAddresses(namespace: String, name: String): List<Address> {
 
         val labels = mapOf("app" to name)
@@ -37,18 +36,17 @@ class AddressService(val openShiftService: OpenShiftService) {
             val status = it.status.ingress.first().conditions.first()
             val success = status.type == "Admitted" && status.status == "True"
 
-            val route = RouteAddress(URI.create("http://${it.spec.host}${path}"), it.created, success, status.reason)
+            val route = RouteAddress(URI.create("http://${it.spec.host}$path"), it.created, success, status.reason)
 
             val bigIpRoute = it.wembleyHost?.let { host ->
                 val service = it.wembleyService
 
                 val wembleyDoneTime = it.created
-                //TODO: SITS-120
+                // TODO: SITS-120
                 // val wembleyDoneTime=it.wembleyDone
 
                 val done = success && wembleyDoneTime != null
                 BigIPAddress(URI.create("https://$host/$service"), wembleyDoneTime, done, "")
-
             }
             listOf(route).addIfNotNull(bigIpRoute)
         }
@@ -56,7 +54,6 @@ class AddressService(val openShiftService: OpenShiftService) {
         val websealAddresses = findWebsealAddresses(services, namespace)
 
         return serviceAddresses.addIfNotNull(routeAddresses).addIfNotNull(websealAddresses)
-
     }
 
     private fun findWebsealAddresses(services: List<Service>, namespace: String): List<WebSealAddress> {
@@ -73,5 +70,4 @@ class AddressService(val openShiftService: OpenShiftService) {
             }
         }.filterNotNull()
     }
-
 }
