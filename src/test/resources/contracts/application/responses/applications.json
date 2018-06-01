@@ -2,6 +2,8 @@
   {
     "affiliation": "paas",
     "name": "name",
+    "environment": "paas",
+    "namespace": "paas",
     "status": {
       "code": "HEALTHY"
     },
