@@ -64,7 +64,6 @@ class AddressServiceTest {
         )
     }
 
-
     @Test
     fun `should collect service and path based route address`() {
         val serviceBuilder = ServiceBuilder()
@@ -84,7 +83,7 @@ class AddressServiceTest {
         val serviceBuilder = ServiceBuilder()
         val routeBuilder = RouteBuilder(routeAnnotations = mapOf(
                 ANNOTATION_WEMBLEY_SERVICE to dcBuilder.dcName,
-                ANNOTATION_WEMBLEY_DONE to "2018-01-25 10:40:49.322904761 +0100 CET", //I do not want to spend more time trying to parse this stupid format.
+                ANNOTATION_WEMBLEY_DONE to "2018-01-25 10:40:49.322904761 +0100 CET", // I do not want to spend more time trying to parse this stupid format.
                 ANNOTATION_WEMBLEY_EXTERNAL_HOST to "skatt-utv3.sits.no",
                 ANNOTATION_WEMBLEY_PATHS to "/web/foo/,/api/foo/"
         ))

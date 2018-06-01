@@ -18,8 +18,8 @@ fun main(args: Array<String>) {
 @Component
 @ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 class CacheWarmup(
-        val applicationDataService: ApplicationDataServiceCacheDecorator,
-        @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
+    val applicationDataService: ApplicationDataServiceCacheDecorator,
+    @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
 ) : InitializingBean {
 
     val affiliations: List<String>?

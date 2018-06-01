@@ -24,7 +24,6 @@ val LinkBuilderFactory.expandParams
             "cluster" to cluster
     )
 
-
 /**
  * Application scoped parameters. These parameters are available for expansion for all urls.
  *
@@ -46,7 +45,6 @@ val ApplicationData.expandParams
         val metadataParams = mapOf("namespace" to namespace, "name" to name)
         return addressParams + metadataParams
     }
-
 
 /**
  * Pod scoped parameters. These parameters are available for expansion for Pod unique urls.

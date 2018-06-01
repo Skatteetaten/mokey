@@ -2,7 +2,12 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
-import no.skatteetaten.aurora.mokey.model.*
+import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -14,9 +19,11 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@WebMvcTest(ApplicationDetailsController::class,
-        ApplicationDetailsResourceAssembler::class,
-        LinkBuilderFactory::class)
+@WebMvcTest(
+    ApplicationDetailsController::class,
+    ApplicationDetailsResourceAssembler::class,
+    LinkBuilderFactory::class
+)
 @TestPropertySource(properties = ["boober-api-url=http://localhost"])
 @AutoConfigureWebClient
 class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
@@ -30,20 +37,20 @@ class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
     @WithUserDetails
     fun `should get applicationdetails given user with access`() {
         val applicationData = ApplicationData(
-                ApplicationId("name", Environment("env", "affiliation")).toString(),
-                AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
-                "deployTag",
-                "name",
-                "namespace",
-                "affiliation",
-                pods = listOf(PodDetailsDataBuilder().build()),
-                deployDetails = DeployDetails("Complete", 1, 1),
-                addresses = emptyList()
+            ApplicationId("name", Environment("env", "affiliation")).toString(),
+            AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
+            "deployTag",
+            "name",
+            "namespace",
+            "affiliation",
+            pods = listOf(PodDetailsDataBuilder().build()),
+            deployDetails = DeployDetails("Complete", 1, 1),
+            addresses = emptyList()
         )
 
         given(applicationDataService.findApplicationDataById(ID)).willReturn(applicationData)
 
         mockMvc.perform(get("/api/applicationdetails/{id}", "123"))
-                .andExpect(status().isOk)
+            .andExpect(status().isOk)
     }
 }

@@ -13,7 +13,6 @@ typealias ManagementResult = Either<ManagementEndpointError, ManagementData>
 @Service
 class ManagementDataService(val managementEndpointFactory: ManagementEndpointFactory) {
 
-
     fun load(hostAddress: String?, endpointPath: String?): ManagementResult {
 
         if (hostAddress.isNullOrBlank()) return Left(

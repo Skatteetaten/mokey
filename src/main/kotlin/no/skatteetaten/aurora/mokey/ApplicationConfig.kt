@@ -22,7 +22,6 @@ import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
 
-
 @Configuration
 @EnableScheduling
 @EnableHypermediaSupport(type = [HAL])
@@ -63,7 +62,6 @@ class ApplicationConfig : BeanPostProcessor {
         val okHttpClientBuilder = OkHttpClient().newBuilder()
                 .readTimeout(readTimeout, TimeUnit.SECONDS)
                 .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
-
 
         return OkHttp3ClientHttpRequestFactory(okHttpClientBuilder.build())
     }

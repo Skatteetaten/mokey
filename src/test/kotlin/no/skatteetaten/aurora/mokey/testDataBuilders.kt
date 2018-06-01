@@ -2,8 +2,23 @@ package no.skatteetaten.aurora.mokey
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
-import com.fkorotkov.kubernetes.*
-import com.fkorotkov.openshift.*
+import com.fkorotkov.kubernetes.metadata
+import com.fkorotkov.kubernetes.newContainerStatus
+import com.fkorotkov.kubernetes.newPod
+import com.fkorotkov.kubernetes.newReplicationController
+import com.fkorotkov.kubernetes.newService
+import com.fkorotkov.kubernetes.status
+import com.fkorotkov.openshift.from
+import com.fkorotkov.openshift.imageChangeParams
+import com.fkorotkov.openshift.metadata
+import com.fkorotkov.openshift.newDeploymentConfig
+import com.fkorotkov.openshift.newDeploymentTriggerPolicy
+import com.fkorotkov.openshift.newProject
+import com.fkorotkov.openshift.newRoute
+import com.fkorotkov.openshift.newRouteIngress
+import com.fkorotkov.openshift.newRouteIngressCondition
+import com.fkorotkov.openshift.spec
+import com.fkorotkov.openshift.status
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.api.model.Service
@@ -14,18 +29,30 @@ import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.managementPath
-import no.skatteetaten.aurora.mokey.model.*
-import no.skatteetaten.aurora.mokey.service.*
+import no.skatteetaten.aurora.mokey.model.HealthResponse
+import no.skatteetaten.aurora.mokey.model.HealthStatus
+import no.skatteetaten.aurora.mokey.model.ImageDetails
+import no.skatteetaten.aurora.mokey.model.InfoResponse
+import no.skatteetaten.aurora.mokey.model.ManagementData
+import no.skatteetaten.aurora.mokey.model.ManagementLinks
+import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
+import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.service.ContainerConfig
+import no.skatteetaten.aurora.mokey.service.Image
+import no.skatteetaten.aurora.mokey.service.ImageStreamTag
+import no.skatteetaten.aurora.mokey.service.ManagementResult
+import no.skatteetaten.aurora.mokey.service.Metadata
 import no.skatteetaten.aurora.utils.Right
 import java.time.Instant
 
 data class DeploymentConfigDataBuilder(
-        val dcName: String = "app-name",
-        val dcNamespace: String = "namespace",
-        val dcAffiliation: String = "affiliation",
-        val dcManagementPath: String = ":8081/actuator",
-        val dcDeployTag: String = "name:tag",
-        val dcSelector: Map<String, String> = mapOf("name" to dcName)) {
+    val dcName: String = "app-name",
+    val dcNamespace: String = "namespace",
+    val dcAffiliation: String = "affiliation",
+    val dcManagementPath: String = ":8081/actuator",
+    val dcDeployTag: String = "name:tag",
+    val dcSelector: Map<String, String> = mapOf("name" to dcName)
+) {
 
     fun build(): DeploymentConfig {
         return newDeploymentConfig {
@@ -43,14 +70,14 @@ data class DeploymentConfigDataBuilder(
                 replicas = 1
                 selector = dcSelector
                 triggers = listOf(
-                        newDeploymentTriggerPolicy {
-                            type = "ImageChange"
-                            imageChangeParams {
-                                from {
-                                    name = dcDeployTag
-                                }
+                    newDeploymentTriggerPolicy {
+                        type = "ImageChange"
+                        imageChangeParams {
+                            from {
+                                name = dcDeployTag
                             }
                         }
+                    }
                 )
             }
         }
@@ -58,15 +85,15 @@ data class DeploymentConfigDataBuilder(
 }
 
 data class RouteBuilder(
-        val routeName: String = "app-name",
-        val routeHost: String = "affiliation-namespace-app-name",
-        val routePath: String? = null,
-        val statusDone: String = "True",
-        val statusType: String = "Admitted",
-        val statusReason: String? = null,
-        val created: Instant = Instant.EPOCH,
-        val routeAnnotations: Map<String, String> = mapOf()) {
-
+    val routeName: String = "app-name",
+    val routeHost: String = "affiliation-namespace-app-name",
+    val routePath: String? = null,
+    val statusDone: String = "True",
+    val statusType: String = "Admitted",
+    val statusReason: String? = null,
+    val created: Instant = Instant.EPOCH,
+    val routeAnnotations: Map<String, String> = mapOf()
+) {
 
     fun build(): Route {
         return newRoute {
@@ -84,29 +111,28 @@ data class RouteBuilder(
             status {
 
                 ingress = listOf(
-                        newRouteIngress {
-                            conditions = listOf(
-                                    newRouteIngressCondition {
-                                        type = statusType
-                                        status = statusDone
-                                        statusReason?.let {
-                                            reason = it
-                                        }
-                                    }
-                            )
-                        }
+                    newRouteIngress {
+                        conditions = listOf(
+                            newRouteIngressCondition {
+                                type = statusType
+                                status = statusDone
+                                statusReason?.let {
+                                    reason = it
+                                }
+                            }
+                        )
+                    }
                 )
             }
         }
     }
 }
 
-
 data class ServiceBuilder(
-        val serviceName: String = "app-name",
-        val created: Instant = Instant.EPOCH,
-        val serviceAnnotations: Map<String, String> = mapOf()) {
-
+    val serviceName: String = "app-name",
+    val created: Instant = Instant.EPOCH,
+    val serviceAnnotations: Map<String, String> = mapOf()
+) {
 
     fun build(): Service {
         return newService {
@@ -125,8 +151,9 @@ data class ReplicationControllerDataBuilder(val phase: String = "deploymentPhase
 }
 
 data class PodDataBuilder(
-        val podName: String = "name",
-        val ip: String = "127.0.0.1") {
+    val podName: String = "name",
+    val ip: String = "127.0.0.1"
+) {
 
     fun build(): Pod {
         return newPod {
@@ -139,10 +166,10 @@ data class PodDataBuilder(
                 startTime = ""
                 phase = "phase"
                 containerStatuses = listOf(
-                        newContainerStatus {
-                            restartCount = 1
-                            ready = true
-                        }
+                    newContainerStatus {
+                        restartCount = 1
+                        ready = true
+                    }
                 )
             }
         }
@@ -150,9 +177,9 @@ data class PodDataBuilder(
 }
 
 data class ManagementDataBuilder(
-        val info: InfoResponse = InfoResponse(),
-        val health: HealthResponse = HealthResponse(HealthStatus.UP),
-        val env: JsonNode = MissingNode.getInstance()
+    val info: InfoResponse = InfoResponse(),
+    val health: HealthResponse = HealthResponse(HealthStatus.UP),
+    val env: JsonNode = MissingNode.getInstance()
 ) {
 
     fun build(): ManagementResult {
@@ -161,18 +188,28 @@ data class ManagementDataBuilder(
 }
 
 data class PodDetailsDataBuilder(
-        val name: String = "name",
-        val status: String = "status") {
+    val name: String = "name",
+    val status: String = "status"
+) {
 
     fun build(): PodDetails {
         return PodDetails(
-                OpenShiftPodExcerpt(name = name, status = status, deployment = "deployment", podIP = "127.0.0.1", startTime = ""),
-                ManagementDataBuilder().build())
+            OpenShiftPodExcerpt(
+                name = name,
+                status = status,
+                deployment = "deployment",
+                podIP = "127.0.0.1",
+                startTime = ""
+            ),
+            ManagementDataBuilder().build()
+        )
     }
 }
 
-data class ImageDetailsDataBuilder(val dockerImageReference: String = "dockerImageReference",
-                                   val environmentVariables: Map<String, String> = emptyMap()) {
+data class ImageDetailsDataBuilder(
+    val dockerImageReference: String = "dockerImageReference",
+    val environmentVariables: Map<String, String> = emptyMap()
+) {
 
     fun build(): ImageDetails {
         return ImageDetails(dockerImageReference, Instant.now(), environmentVariables)
@@ -194,7 +231,10 @@ data class ImageStreamTagDataBuilder(val dockerImageReference: String = "dockerI
 
     fun build(): ImageStreamTag {
         return ImageStreamTag(
-                image = Image(dockerImageMetadata = Metadata(containerConfig = ContainerConfig(emptyList())),
-                        dockerImageReference = dockerImageReference))
+            image = Image(
+                dockerImageMetadata = Metadata(containerConfig = ContainerConfig(emptyList())),
+                dockerImageReference = dockerImageReference
+            )
+        )
     }
 }

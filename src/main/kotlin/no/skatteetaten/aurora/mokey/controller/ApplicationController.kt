@@ -44,4 +44,3 @@ class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, A
         }
     }
 }
-

@@ -1,4 +1,4 @@
-package no.skatteetaten.aurora.mokey.controller;
+package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.service.NoAccessException
 import org.springframework.http.HttpHeaders
@@ -36,5 +36,4 @@ class ErrorHandler : ResponseEntityExceptionHandler() {
         logger.debug("Handle excption", e)
         return handleExceptionInternal(e, response, headers, httpStatus, request)
     }
-
 }
