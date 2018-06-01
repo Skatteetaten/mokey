@@ -24,11 +24,12 @@ abstract class HalResource : ResourceSupport() {
 }
 
 class ApplicationResource(
-        val affiliation: String?,
-        val environment: String,
-        val name: String,
-        val status: AuroraStatusResource,
-        val version: Version
+    val affiliation: String?,
+    val environment: String,
+    val namespace: String,
+    val name: String,
+    val status: AuroraStatusResource,
+    val version: Version
 ) : HalResource()
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
