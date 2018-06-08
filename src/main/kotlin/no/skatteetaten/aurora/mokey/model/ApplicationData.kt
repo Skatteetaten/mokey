@@ -60,7 +60,7 @@ data class OpenShiftPodExcerpt(
     val restartCount: Int = 0,
     val ready: Boolean = false,
     val podIP: String?,
-    val startTime: String,
+    val startTime: String?,
     val deployment: String?
 )
 
