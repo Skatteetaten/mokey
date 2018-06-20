@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(
     ApplicationDetailsController::class,
-    ApplicationDetailsResourceAssembler::class,
+    ApplicationInstanceDetailsResourceAssembler::class,
     LinkBuilderFactory::class
 )
 @TestPropertySource(properties = ["boober-api-url=http://localhost"])

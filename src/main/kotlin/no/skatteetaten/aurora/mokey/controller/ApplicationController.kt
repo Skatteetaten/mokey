@@ -28,16 +28,25 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
     }
 }
 
-class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, ApplicationResource>(ApplicationController::class.java, ApplicationResource::class.java) {
+class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, ApplicationResource>(
+    ApplicationController::class.java,
+    ApplicationResource::class.java
+) {
     override fun toResource(data: ApplicationData): ApplicationResource {
         val environment = Environment.fromNamespace(data.namespace)
+
+        val applicationInstance = ApplicationInstanceResource(
+            data.affiliation,
+            environment.name,
+            environment.namespace,
+            data.auroraStatus.let { AuroraStatusResource(it.level.toString(), it.comment) },
+            Version(data.deployTag, data.imageDetails?.auroraVersion)
+        )
+
         return ApplicationResource(
-                data.affiliation,
-                environment.name,
-                environment.namespace,
-                data.name,
-                data.auroraStatus.let { AuroraStatusResource(it.level.toString()) },
-                Version(data.deployTag, data.imageDetails?.auroraVersion)
+            data.name,
+            emptyList(),
+            listOf(applicationInstance)
         ).apply {
             add(linkTo(ApplicationController::class.java).slash(data.id).withSelfRel())
             add(linkTo(ApplicationDetailsController::class.java).slash(data.id).withRel("ApplicationDetails"))

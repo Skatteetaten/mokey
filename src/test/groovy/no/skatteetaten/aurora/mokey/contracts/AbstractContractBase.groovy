@@ -1,6 +1,9 @@
 package no.skatteetaten.aurora.mokey.contracts
 
 import org.springframework.core.MethodParameter
+import org.springframework.hateoas.core.AnnotationRelProvider
+import org.springframework.hateoas.hal.HalConfiguration
+import org.springframework.hateoas.hal.Jackson2HalModule
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.springframework.lang.Nullable
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
@@ -56,6 +59,10 @@ abstract class AbstractContractBase extends Specification {
 
   def setupMockMvc(Object controller) {
     def objectMapper = ObjectMapperConfigurer.configureObjectMapper(new ObjectMapper())
+    objectMapper.registerModule(new Jackson2HalModule())
+    objectMapper.setHandlerInstantiator(
+        new Jackson2HalModule.HalHandlerInstantiator(new AnnotationRelProvider(), null, null, new HalConfiguration()))
+
 
     def converter = new MappingJackson2HttpMessageConverter()
     converter.setObjectMapper(objectMapper)

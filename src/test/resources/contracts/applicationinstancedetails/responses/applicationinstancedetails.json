@@ -1,0 +1,50 @@
+{
+  "buildTime": null,
+  "gitInfo": {
+    "commitId": null,
+    "commitTime": null
+  },
+  "imageDetails": {
+    "imageBuildTime": "2018-04-05T07:52:14Z",
+    "dockerImageReference": "docker/image/test@sha256:12339544fa78d3ee134d181330c986b7434b802719c9bcb7e5905a116248251"
+  },
+  "podResources": [],
+  "errors": [],
+  "_links": {
+    "ApplyResult": {
+      "href": "http://localhost/v1/apply-result/paas/"
+    },
+    "self": {
+      "href": "http://localhost/api/applicationinstancedetails"
+    }
+  },
+  "_embedded": {
+    "Application": {
+      "name": "test",
+      "tags": [],
+      "applicationInstances": [
+        {
+          "affiliation": "paas",
+          "environment": "utv",
+          "namespace": "paas-utv",
+          "status": {
+            "code": "HEALTHY",
+            "comment": ""
+          },
+          "version": {
+            "deployTag": "master-SNAPSHOT",
+            "auroraVersion": ""
+          }
+        }
+      ],
+      "_links": {
+        "self": {
+          "href": "http://localhost/api/application"
+        },
+        "ApplicationDetails": {
+          "href": "http://localhost/api/applicationinstancedetails"
+        }
+      }
+    }
+  }
+}

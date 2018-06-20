@@ -24,20 +24,26 @@ abstract class HalResource : ResourceSupport() {
 }
 
 class ApplicationResource(
+    val name: String,
+    val tags: List<String>,
+    val applicationInstances: List<ApplicationInstanceResource>
+) : HalResource()
+
+data class ApplicationInstanceResource(
     val affiliation: String?,
     val environment: String,
     val namespace: String,
-    val name: String,
     val status: AuroraStatusResource,
     val version: Version
-) : HalResource()
+)
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
 
 data class AuroraStatusResource(val code: String, val comment: String? = null)
 
-class ApplicationDetailsResource(
-    val buildInfo: BuildInfoResource?,
+class ApplicationInstanceDetailsResource(
+    val buildTime: Instant? = null,
+    val gitInfo: GitInfoResource?,
     val imageDetails: ImageDetailsResource?,
     val podResources: List<PodResource>,
     val dependencies: Map<String, String> = emptyMap(),
@@ -46,12 +52,11 @@ class ApplicationDetailsResource(
 ) : HalResource()
 
 data class ImageDetailsResource(
+    val imageBuildTime: Instant?,
     val dockerImageReference: String?
 )
 
-data class BuildInfoResource(
-    val imageBuildTime: Instant?,
-    val buildTime: Instant? = null,
+data class GitInfoResource(
     val commitId: String? = null,
     val commitTime: Instant? = null
 )
