@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -9,6 +9,7 @@ import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -22,33 +23,46 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
 
     val assembler = ApplicationResourceAssembler()
 
+    @GetMapping("/{name}")
+    fun getApplication(@PathVariable name: String): ApplicationResource {
+        val allApplicationData = applicationDataService.findAllApplicationData()
+            .filter { it.name == name }
+        return assembler.toResource(GroupedApplicationData(allApplicationData))
+    }
+
     @GetMapping
-    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> =
-        assembler.toResources(applicationDataService.findAllApplicationData(affiliation))
+    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> {
+        val allApplicationData = applicationDataService.findAllApplicationData(affiliation)
+        return assembler.toResources(GroupedApplicationData.create(allApplicationData))
+    }
 }
 
-class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, ApplicationResource>(
-    ApplicationController::class.java,
-    ApplicationResource::class.java
-) {
-    override fun toResource(data: ApplicationData): ApplicationResource {
-        val environment = Environment.fromNamespace(data.namespace)
-
-        val applicationInstance = ApplicationInstanceResource(
-            data.affiliation,
-            environment.name,
-            environment.namespace,
-            data.auroraStatus.let { AuroraStatusResource(it.level.toString(), it.comment) },
-            Version(data.deployTag, data.imageDetails?.auroraVersion)
-        )
+class ApplicationResourceAssembler :
+    ResourceAssemblerSupport<GroupedApplicationData, ApplicationResource>(
+        ApplicationController::class.java,
+        ApplicationResource::class.java
+    ) {
+    override fun toResource(data: GroupedApplicationData): ApplicationResource {
+        val applicationInstances = data.applications.map {
+            val environment = Environment.fromNamespace(it.namespace, it.affiliation)
+            ApplicationInstanceResource(
+                it.affiliation,
+                environment.name,
+                it.namespace,
+                it.auroraStatus.let { status -> AuroraStatusResource(status.level.toString(), status.comment) },
+                Version(it.deployTag, it.imageDetails?.auroraVersion)
+            ).apply {
+                add(linkTo(ApplicationInstanceController::class.java).slash(it.id).withRel("ApplicationInstance"))
+                add(linkTo(ApplicationInstanceDetailsController::class.java).slash(it.id).withRel("ApplicationInstanceDetails"))
+            }
+        }
 
         return ApplicationResource(
             data.name,
             emptyList(),
-            listOf(applicationInstance)
+            applicationInstances
         ).apply {
-            add(linkTo(ApplicationController::class.java).slash(data.id).withSelfRel())
-            add(linkTo(ApplicationInstanceDetailsController::class.java).slash(data.id).withRel("ApplicationDetails"))
+            add(linkTo(ApplicationController::class.java).slash(name).withSelfRel())
         }
     }
 }

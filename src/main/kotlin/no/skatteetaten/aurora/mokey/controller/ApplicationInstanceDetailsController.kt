@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.PodDetails
@@ -62,7 +63,7 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
             infoResponse?.dependencies ?: emptyMap(),
             errorResources
         ).apply {
-            embedResource("Application", applicationAssembler.toResource(applicationData))
+            embedResource("Application", applicationAssembler.toResource(GroupedApplicationData(applicationData)))
             this.add(createApplicationLinks(applicationData))
         }
     }

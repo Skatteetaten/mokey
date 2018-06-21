@@ -13,15 +13,20 @@
         },
         "version": {
           "deployTag": ""
+        },
+        "_links" : {
+          "ApplicationInstance" : {
+            "href" : "http://localhost/api/applicationinstance"
+          },
+          "ApplicationInstanceDetails" : {
+            "href" : "http://localhost/api/applicationinstancedetails"
+          }
         }
       }
     ],
     "_links": {
       "self": {
-        "href": "http://localhost/api/application"
-      },
-      "ApplicationDetails": {
-        "href": "http://localhost/api/applicationinstancedetails"
+        "href": "http://localhost/api/application/name"
       }
     }
   }

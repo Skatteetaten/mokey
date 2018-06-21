@@ -35,7 +35,7 @@ data class ApplicationInstanceResource(
     val namespace: String,
     val status: AuroraStatusResource,
     val version: Version
-)
+) : HalResource()
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
 
