@@ -23,9 +23,8 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
     val assembler = ApplicationResourceAssembler()
 
     @GetMapping
-    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> {
-        return assembler.toResources(applicationDataService.findAllApplicationData(affiliation))
-    }
+    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> =
+        assembler.toResources(applicationDataService.findAllApplicationData(affiliation))
 }
 
 class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, ApplicationResource>(
@@ -49,7 +48,7 @@ class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, A
             listOf(applicationInstance)
         ).apply {
             add(linkTo(ApplicationController::class.java).slash(data.id).withSelfRel())
-            add(linkTo(ApplicationDetailsController::class.java).slash(data.id).withRel("ApplicationDetails"))
+            add(linkTo(ApplicationInstanceDetailsController::class.java).slash(data.id).withRel("ApplicationDetails"))
         }
     }
 }

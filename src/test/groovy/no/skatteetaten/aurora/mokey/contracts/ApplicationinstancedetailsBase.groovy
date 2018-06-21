@@ -2,7 +2,7 @@ package no.skatteetaten.aurora.mokey.contracts
 
 import java.time.Instant
 
-import no.skatteetaten.aurora.mokey.controller.ApplicationDetailsController
+import no.skatteetaten.aurora.mokey.controller.ApplicationInstanceDetailsController
 import no.skatteetaten.aurora.mokey.controller.ApplicationInstanceDetailsResourceAssembler
 import no.skatteetaten.aurora.mokey.controller.LinkBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
@@ -21,7 +21,7 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
       findApplicationDataById(_ as String) >> createApplicationData()
     }
     def assembler = new ApplicationInstanceDetailsResourceAssembler(new LinkBuilder('http://localhost', [:]))
-    def controller = new ApplicationDetailsController(applicationDataService, assembler)
+    def controller = new ApplicationInstanceDetailsController(applicationDataService, assembler)
     setupMockMvc(controller)
   }
 

@@ -20,13 +20,13 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(
-    ApplicationDetailsController::class,
+    ApplicationInstanceDetailsController::class,
     ApplicationInstanceDetailsResourceAssembler::class,
     LinkBuilderFactory::class
 )
 @TestPropertySource(properties = ["boober-api-url=http://localhost"])
 @AutoConfigureWebClient
-class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
+class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest() {
 
     private val ID = "123"
 

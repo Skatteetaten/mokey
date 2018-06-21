@@ -23,32 +23,28 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @ExposesResourceFor(ApplicationInstanceDetailsResource::class)
 @RequestMapping("/api/applicationinstancedetails")
-class ApplicationDetailsController(
+class ApplicationInstanceDetailsController(
     val applicationDataService: ApplicationDataService,
     val assembler: ApplicationInstanceDetailsResourceAssembler
 ) {
 
-    val logger: Logger = LoggerFactory.getLogger(ApplicationDetailsController::class.java)
+    val logger: Logger = LoggerFactory.getLogger(ApplicationInstanceDetailsController::class.java)
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: String): ApplicationInstanceDetailsResource? {
-
-        return applicationDataService.findApplicationDataById(id)
+    fun get(@PathVariable id: String): ApplicationInstanceDetailsResource? =
+        applicationDataService.findApplicationDataById(id)
             ?.let(assembler::toResource)
             ?: throw NoSuchResourceException("Does not exist")
-    }
 
     @GetMapping
-    fun getAll(@RequestParam affiliation: String): List<ApplicationInstanceDetailsResource> {
-
-        return assembler.toResources(applicationDataService.findAllApplicationData(listOf(affiliation)))
-    }
+    fun getAll(@RequestParam affiliation: String): List<ApplicationInstanceDetailsResource> =
+        assembler.toResources(applicationDataService.findAllApplicationData(listOf(affiliation)))
 }
 
 @Component
 class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) :
     ResourceAssemblerSupport<ApplicationData, ApplicationInstanceDetailsResource>(
-        ApplicationDetailsController::class.java,
+        ApplicationInstanceDetailsController::class.java,
         ApplicationInstanceDetailsResource::class.java
     ) {
 
@@ -104,7 +100,7 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 
-        val selfLink = ControllerLinkBuilder.linkTo(ApplicationDetailsController::class.java).slash(applicationData.id)
+        val selfLink = ControllerLinkBuilder.linkTo(ApplicationInstanceDetailsController::class.java).slash(applicationData.id)
             .withSelfRel()
         val addressLinks =
             applicationData.addresses.map { linkBuilder.createLink(it.url.toString(), it::class.simpleName!!) }
