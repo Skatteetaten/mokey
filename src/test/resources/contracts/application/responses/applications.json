@@ -1,24 +1,28 @@
 [
   {
-    "affiliation": "paas",
     "name": "name",
-    "environment": "paas",
-    "namespace": "paas",
-    "status": {
-      "code": "HEALTHY"
-    },
-    "version": {
-      "deployTag": ""
-    },
-    "links": [
+    "tags": [],
+    "applicationInstances": [
       {
-        "rel": "self",
+        "affiliation": "paas",
+        "environment": "paas",
+        "namespace": "paas",
+        "status": {
+          "code": "HEALTHY",
+          "comment": ""
+        },
+        "version": {
+          "deployTag": ""
+        }
+      }
+    ],
+    "_links": {
+      "self": {
         "href": "http://localhost/api/application"
       },
-      {
-        "rel": "ApplicationDetails",
-        "href": "http://localhost/api/applicationdetails"
+      "ApplicationDetails": {
+        "href": "http://localhost/api/applicationinstancedetails"
       }
-    ]
+    }
   }
 ]

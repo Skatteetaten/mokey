@@ -50,7 +50,7 @@ class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
 
         given(applicationDataService.findApplicationDataById(ID)).willReturn(applicationData)
 
-        mockMvc.perform(get("/api/applicationdetails/{id}", "123"))
+        mockMvc.perform(get("/api/applicationinstancedetails/{id}", "123"))
             .andExpect(status().isOk)
     }
 }
