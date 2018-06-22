@@ -25,8 +25,7 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
 
     @GetMapping("/{name}")
     fun getApplication(@PathVariable name: String): ApplicationResource {
-        val allApplicationData = applicationDataService.findAllApplicationData()
-            .filter { it.name == name }
+        val allApplicationData = applicationDataService.findApplicationDataByName(name)
         return assembler.toResource(GroupedApplicationData(allApplicationData))
     }
 

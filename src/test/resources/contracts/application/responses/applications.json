@@ -5,8 +5,8 @@
     "applicationInstances": [
       {
         "affiliation": "paas",
-        "environment": "paas",
-        "namespace": "paas",
+        "environment": "utv",
+        "namespace": "paas-utv",
         "status": {
           "code": "HEALTHY",
           "comment": ""
