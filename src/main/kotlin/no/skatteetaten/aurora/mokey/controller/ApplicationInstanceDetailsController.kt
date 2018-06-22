@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.model.ImageDetails
@@ -14,6 +15,7 @@ import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.Link
 import org.springframework.hateoas.mvc.ControllerLinkBuilder
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -32,13 +34,13 @@ class ApplicationInstanceDetailsController(
     val logger: Logger = LoggerFactory.getLogger(ApplicationInstanceDetailsController::class.java)
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: String): ApplicationInstanceDetailsResource? =
+    fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationInstanceDetailsResource? =
         applicationDataService.findApplicationDataById(id)
             ?.let(assembler::toResource)
             ?: throw NoSuchResourceException("Does not exist")
 
     @GetMapping
-    fun getAll(@RequestParam affiliation: String): List<ApplicationInstanceDetailsResource> =
+    fun getAll(@RequestParam affiliation: String, @AuthenticationPrincipal user: User): List<ApplicationInstanceDetailsResource> =
         assembler.toResources(applicationDataService.findAllApplicationData(listOf(affiliation)))
 }
 

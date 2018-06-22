@@ -37,7 +37,7 @@
               "auroraVersion": ""
             },
             "_links": {
-              "ApplicationInstance": {
+              "self": {
                 "href": "http://localhost/api/applicationinstance"
               },
               "ApplicationInstanceDetails": {

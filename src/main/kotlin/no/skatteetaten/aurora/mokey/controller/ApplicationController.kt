@@ -51,7 +51,7 @@ class ApplicationResourceAssembler :
                 it.auroraStatus.let { status -> AuroraStatusResource(status.level.toString(), status.comment) },
                 Version(it.deployTag, it.imageDetails?.auroraVersion)
             ).apply {
-                add(linkTo(ApplicationInstanceController::class.java).slash(it.id).withRel("ApplicationInstance"))
+                add(linkTo(ApplicationInstanceController::class.java).slash(it.id).withSelfRel())
                 add(linkTo(ApplicationInstanceDetailsController::class.java).slash(it.id).withRel("ApplicationInstanceDetails"))
             }
         }
