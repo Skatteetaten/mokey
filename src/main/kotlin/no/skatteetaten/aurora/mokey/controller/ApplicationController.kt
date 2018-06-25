@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -24,23 +24,35 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
 
     @GetMapping
     fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> {
-        return assembler.toResources(applicationDataService.findAllApplicationData(affiliation))
+        val allApplicationData = applicationDataService.findAllApplicationData(affiliation)
+        return assembler.toResources(GroupedApplicationData.create(allApplicationData))
     }
 }
 
-class ApplicationResourceAssembler : ResourceAssemblerSupport<ApplicationData, ApplicationResource>(ApplicationController::class.java, ApplicationResource::class.java) {
-    override fun toResource(data: ApplicationData): ApplicationResource {
-        val environment = Environment.fromNamespace(data.namespace)
-        return ApplicationResource(
-                data.affiliation,
+class ApplicationResourceAssembler :
+    ResourceAssemblerSupport<GroupedApplicationData, ApplicationResource>(
+        ApplicationController::class.java,
+        ApplicationResource::class.java
+    ) {
+    override fun toResource(data: GroupedApplicationData): ApplicationResource {
+        val applicationInstances = data.applications.map {
+            val environment = Environment.fromNamespace(it.namespace, it.affiliation)
+            ApplicationInstanceResource(
+                it.affiliation,
                 environment.name,
-                environment.namespace,
-                data.name,
-                data.auroraStatus.let { AuroraStatusResource(it.level.toString()) },
-                Version(data.deployTag, data.imageDetails?.auroraVersion)
-        ).apply {
-            add(linkTo(ApplicationController::class.java).slash(data.id).withSelfRel())
-            add(linkTo(ApplicationDetailsController::class.java).slash(data.id).withRel("ApplicationDetails"))
+                it.namespace,
+                it.auroraStatus.let { status -> AuroraStatusResource(status.level.toString(), status.comment) },
+                Version(it.deployTag, it.imageDetails?.auroraVersion)
+            ).apply {
+                add(linkTo(ApplicationInstanceController::class.java).slash(it.id).withSelfRel())
+                add(linkTo(ApplicationInstanceDetailsController::class.java).slash(it.id).withRel("ApplicationInstanceDetails"))
+            }
         }
+
+        return ApplicationResource(
+            data.name,
+            emptyList(),
+            applicationInstances
+        )
     }
 }

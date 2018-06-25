@@ -5,6 +5,16 @@ import no.skatteetaten.aurora.utils.error
 import no.skatteetaten.aurora.utils.value
 import java.time.Instant
 
+data class GroupedApplicationData(val name: String, val applications: List<ApplicationData>) {
+    constructor(application: ApplicationData) : this(application.name, listOf(application))
+    constructor(applications: List<ApplicationData>) : this(applications.first().name, applications)
+
+    companion object {
+        fun create(applications: List<ApplicationData>): List<GroupedApplicationData> =
+            applications.groupBy { it.name }.map { GroupedApplicationData(it.key, it.value) }
+    }
+}
+
 data class ApplicationData(
     val id: String,
     val auroraStatus: AuroraStatus,
@@ -22,11 +32,11 @@ data class ApplicationData(
 ) {
     val errors
         get(): List<PodError> = this.pods
-                .flatMap { podDetails: PodDetails ->
-                    val data = podDetails.managementData
-                    listOf(data, data.value?.info, data.value?.health).map { it?.error?.let { PodError(podDetails, it) } }
-                }
-                .filterNotNull()
+            .flatMap { podDetails: PodDetails ->
+                val data = podDetails.managementData
+                listOf(data, data.value?.info, data.value?.health).map { it?.error?.let { PodError(podDetails, it) } }
+            }
+            .filterNotNull()
 }
 
 data class PodDetails(

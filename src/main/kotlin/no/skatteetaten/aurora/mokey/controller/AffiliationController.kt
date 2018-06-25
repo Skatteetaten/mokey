@@ -14,7 +14,6 @@ class AffiliationController(val applicationDataService: ApplicationDataService) 
     val logger: Logger = LoggerFactory.getLogger(AffiliationController::class.java)
 
     @GetMapping
-    fun getAffiliations(): List<String> {
-        return applicationDataService.findAllAffiliations()
-    }
+    fun getAffiliations(): List<String> =
+        applicationDataService.findAllAffiliations()
 }

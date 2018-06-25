@@ -50,18 +50,18 @@ class ApplicationConfig : BeanPostProcessor {
     @Bean
     fun restTemplate(builder: RestTemplateBuilder): RestTemplate {
         return builder.requestFactory({ createRequestFactory(2, 2) })
-                .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
-                    request.headers.accept = mutableListOf(MediaType.APPLICATION_JSON)
-                    execution.execute(request, body)
-                }).build()
+            .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
+                request.headers.accept = mutableListOf(MediaType.APPLICATION_JSON)
+                execution.execute(request, body)
+            }).build()
     }
 
     @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)
     private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
 
         val okHttpClientBuilder = OkHttpClient().newBuilder()
-                .readTimeout(readTimeout, TimeUnit.SECONDS)
-                .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
+            .readTimeout(readTimeout, TimeUnit.SECONDS)
+            .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
 
         return OkHttp3ClientHttpRequestFactory(okHttpClientBuilder.build())
     }

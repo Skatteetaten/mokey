@@ -20,13 +20,13 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(
-    ApplicationDetailsController::class,
-    ApplicationDetailsResourceAssembler::class,
+    ApplicationInstanceDetailsController::class,
+    ApplicationInstanceDetailsResourceAssembler::class,
     LinkBuilderFactory::class
 )
 @TestPropertySource(properties = ["boober-api-url=http://localhost"])
 @AutoConfigureWebClient
-class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
+class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest() {
 
     private val ID = "123"
 
@@ -50,7 +50,7 @@ class ApplicationDetailsControllerTest : AbstractSecurityControllerTest() {
 
         given(applicationDataService.findApplicationDataById(ID)).willReturn(applicationData)
 
-        mockMvc.perform(get("/api/applicationdetails/{id}", "123"))
+        mockMvc.perform(get("/api/applicationinstancedetails/{id}", "123"))
             .andExpect(status().isOk)
     }
 }

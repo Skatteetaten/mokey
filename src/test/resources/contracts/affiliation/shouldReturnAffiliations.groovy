@@ -6,9 +6,6 @@ Contract.make {
   request {
     method 'GET'
     url '/api/affiliation'
-    headers {
-      contentType(applicationJson())
-    }
   }
   response {
     status 200
