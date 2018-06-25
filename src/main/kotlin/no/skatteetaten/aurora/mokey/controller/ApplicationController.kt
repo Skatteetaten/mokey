@@ -9,7 +9,6 @@ import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -22,12 +21,6 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
     val logger: Logger = LoggerFactory.getLogger(ApplicationController::class.java)
 
     val assembler = ApplicationResourceAssembler()
-
-    @GetMapping("/{name}")
-    fun getApplication(@PathVariable name: String): ApplicationResource {
-        val allApplicationData = applicationDataService.findApplicationDataByName(name)
-        return assembler.toResource(GroupedApplicationData(allApplicationData))
-    }
 
     @GetMapping
     fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> {
@@ -60,8 +53,6 @@ class ApplicationResourceAssembler :
             data.name,
             emptyList(),
             applicationInstances
-        ).apply {
-            add(linkTo(ApplicationController::class.java).slash(name).withSelfRel())
-        }
+        )
     }
 }

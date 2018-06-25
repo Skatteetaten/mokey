@@ -45,12 +45,7 @@
               }
             }
           }
-        ],
-        "_links": {
-          "self": {
-            "href": "http://localhost/api/application/test"
-          }
-        }
+        ]
       }
     }
   }

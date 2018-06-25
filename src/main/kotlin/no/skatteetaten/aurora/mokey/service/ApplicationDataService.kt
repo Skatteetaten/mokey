@@ -7,8 +7,5 @@ interface ApplicationDataService {
 
     fun findApplicationDataById(id: String): ApplicationData?
 
-    fun findApplicationDataByName(name: String): List<ApplicationData> =
-        findAllApplicationData().filter { it.name == name }
-
     fun findAllApplicationData(affiliations: List<String>? = null): List<ApplicationData>
 }
