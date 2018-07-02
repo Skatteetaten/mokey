@@ -10,7 +10,12 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ImageDetails
+import no.skatteetaten.aurora.mokey.model.InfoResponse
+import no.skatteetaten.aurora.mokey.model.ManagementData
+import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
+import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.utils.Right
 
 class ApplicationinstancedetailsBase extends AbstractContractBase {
 
@@ -26,17 +31,34 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
   }
 
   ApplicationData createApplicationData() {
-    def imageBuildTime = response('applicationinstancedetails', '$.imageDetails.imageBuildTime', String)
-    def dockerImageReference = response('applicationinstancedetails', '$.imageDetails.dockerImageReference', String)
+    def imageBuildTime = response('$.imageDetails.imageBuildTime')
+    def dockerImageReference = response('$.imageDetails.dockerImageReference')
+    def commitTime = response('$.gitInfo.commitTime')
+    def buildTime = response('$.buildTime')
 
-    def applicationName = response('applicationinstancedetails', '$._embedded.Application.name', String)
-    def applicationInstance =
-        response('applicationinstancedetails', '$._embedded.Application.applicationInstances[0]n ', Map)
+    def applicationName = response('$._embedded.Application.name')
+    def applicationInstance = response('$._embedded.Application.applicationInstances[0]', Map)
 
-    new ApplicationData('', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
-        applicationInstance.version.deployTag, applicationName, applicationInstance.namespace,
-        applicationInstance.affiliation, '', '',
-        [], new ImageDetails(dockerImageReference, Instant.parse(imageBuildTime), [:]), new DeployDetails('', 1, 1), [],
+    def details = response('$.podResources[0]', Map)
+    def podDetails = new PodDetails(
+        new OpenShiftPodExcerpt(details.name, details.status, details.restartCount, details.ready,
+            '', details.startTime, ''),
+        new Right(new ManagementData(null,
+            new Right(new InfoResponse(['metrics': details._links.metrics.href], [:], [:], '',
+                Instant.parse(commitTime),Instant.parse(buildTime))), new Right())))
+
+
+    new ApplicationData('',
+        new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
+        applicationInstance.version.deployTag,
+        applicationName,
+        applicationInstance.namespace,
+        applicationInstance.affiliation,
+        '',
+        '',
+        [podDetails],
+        new ImageDetails(dockerImageReference, Instant.parse(imageBuildTime), [:]),
+        new DeployDetails('', 1, 1), [],
         '')
   }
 }
