@@ -24,9 +24,11 @@ import spock.lang.Specification
 
 abstract class AbstractContractBase extends Specification {
   protected Map<String, DocumentContext> jsonResponses = [:]
+  private defaultResponseName = ''
 
   void loadJsonResponses(def baseObject) {
     def baseName = baseObject.getClass().getSimpleName().toLowerCase().replaceFirst('spec$', '')
+    defaultResponseName = baseName
     def files = loadFiles(baseName)
     populateResponses(files)
   }
@@ -53,8 +55,24 @@ abstract class AbstractContractBase extends Specification {
     }
   }
 
-  def <T> T response(String responseName = jsonResponses.keySet().first(), String jsonPath, Class<T> type) {
-    jsonResponses[responseName].read(jsonPath, type)
+  String response(String responseName = defaultResponseName, String jsonPath) {
+    response(responseName, jsonPath, String)
+  }
+
+  /**
+   * Read response value from json.
+   * If no responseName is specified it will start by using the base folder name, for instance 'application'.
+   * If no response is found with the specified name, it will try to load the first file.
+   * This is useful if there is only one file in the responses folder.
+   *
+   * @param responseName
+   * @param jsonPath
+   * @param type
+   * @return
+   */
+  def <T> T response(String responseName = defaultResponseName, String jsonPath, Class<T> type) {
+    def responseValue = jsonResponses[responseName] ?: jsonResponses[jsonResponses.keySet().first()]
+    responseValue.read(jsonPath, type)
   }
 
   def setupMockMvc(Object controller) {

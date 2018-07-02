@@ -75,10 +75,16 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
 
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails) =
         podDetails.managementData.value?.let {
-            val podName = podDetails.openShiftPodExcerpt.name
+            val pod = podDetails.openShiftPodExcerpt
             val podLinkIndex = it.info.value?.podLinks
             val podLinks = podLinkIndex?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
-            PodResource(podName).apply {
+            PodResource(
+                pod.name,
+                pod.status,
+                pod.restartCount,
+                pod.ready,
+                pod.startTime
+            ).apply {
                 this.add(podLinks)
             }
         }
@@ -103,8 +109,9 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 
-        val selfLink = ControllerLinkBuilder.linkTo(ApplicationInstanceDetailsController::class.java).slash(applicationData.id)
-            .withSelfRel()
+        val selfLink =
+            ControllerLinkBuilder.linkTo(ApplicationInstanceDetailsController::class.java).slash(applicationData.id)
+                .withSelfRel()
         val addressLinks =
             applicationData.addresses.map { linkBuilder.createLink(it.url.toString(), it::class.simpleName!!) }
         val serviceLinks = applicationData.firstInfoResponse?.serviceLinks

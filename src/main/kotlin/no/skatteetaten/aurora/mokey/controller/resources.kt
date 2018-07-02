@@ -62,7 +62,11 @@ data class GitInfoResource(
 )
 
 class PodResource(
-    val name: String
+    val name: String,
+    val status: String,
+    val restartCount: Int,
+    val ready: Boolean,
+    val startTime: String?
 ) : ResourceSupport()
 
 data class ManagementEndpointErrorResource(
