@@ -15,7 +15,7 @@ class ApplicationinstanceBase extends AbstractContractBase {
   void setup() {
     loadJsonResponses(this)
     def applicationDataService = Mock(ApplicationDataService) {
-      findApplicationDataById(_) >> createApplicationData()
+      findApplicationDataByInstanceId(_) >> createApplicationData()
     }
     def controller = new ApplicationInstanceController(applicationDataService)
     setupMockMvc(controller)
@@ -23,7 +23,7 @@ class ApplicationinstanceBase extends AbstractContractBase {
 
   ApplicationData createApplicationData() {
     def applicationInstance = response('$', Map)
-    new ApplicationData('', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
+    new ApplicationData('', '', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
         applicationInstance.version.deployTag, applicationInstance.namespace, applicationInstance.namespace,
         applicationInstance.affiliation, '', '', [],
         new ImageDetails('', Instant.now(), [:]), new DeployDetails('', 0, 0), [], '')

@@ -1,5 +1,6 @@
 [
   {
+    "appId": "abc123",
     "name": "name",
     "tags": [],
     "applicationInstances": [
@@ -23,6 +24,11 @@
           }
         }
       }
-    ]
+    ],
+    "_links": {
+      "self": {
+        "href": "http://localhost/api/application/abc123"
+      }
+    }
   }
 ]

@@ -35,7 +35,7 @@ class ApplicationInstanceDetailsController(
 
     @GetMapping("/{id}")
     fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationInstanceDetailsResource? =
-        applicationDataService.findApplicationDataById(id)
+        applicationDataService.findApplicationDataByInstanceId(id)
             ?.let(assembler::toResource)
             ?: throw NoSuchResourceException("Does not exist")
 
@@ -110,7 +110,7 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 
         val selfLink =
-            ControllerLinkBuilder.linkTo(ApplicationInstanceDetailsController::class.java).slash(applicationData.id)
+            ControllerLinkBuilder.linkTo(ApplicationInstanceDetailsController::class.java).slash(applicationData.applicationInstanceId)
                 .withSelfRel()
         val addressLinks =
             applicationData.addresses.map { linkBuilder.createLink(it.url.toString(), it::class.simpleName!!) }

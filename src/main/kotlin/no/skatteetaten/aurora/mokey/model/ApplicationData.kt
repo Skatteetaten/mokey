@@ -5,18 +5,23 @@ import no.skatteetaten.aurora.utils.error
 import no.skatteetaten.aurora.utils.value
 import java.time.Instant
 
-data class GroupedApplicationData(val name: String, val applications: List<ApplicationData>) {
-    constructor(application: ApplicationData) : this(application.name, listOf(application))
-    constructor(applications: List<ApplicationData>) : this(applications.first().name, applications)
+data class GroupedApplicationData(
+    val applicationId: String?,
+    val name: String,
+    val applications: List<ApplicationData>
+) {
+    constructor(application: ApplicationData) : this(application.applicationId, application.name, listOf(application))
 
     companion object {
         fun create(applications: List<ApplicationData>): List<GroupedApplicationData> =
-            applications.groupBy { it.name }.map { GroupedApplicationData(it.key, it.value) }
+            applications.groupBy { it.applicationId ?: it.name }
+                .map { GroupedApplicationData(it.value.first().applicationId, it.value.first().name, it.value) }
     }
 }
 
 data class ApplicationData(
-    val id: String,
+    val applicationId: String?,
+    val applicationInstanceId: String,
     val auroraStatus: AuroraStatus,
     val deployTag: String,
     val name: String,

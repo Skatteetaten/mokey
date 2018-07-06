@@ -37,6 +37,7 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
     @WithUserDetails
     fun `should get applicationdetails given user with access`() {
         val applicationData = ApplicationData(
+            "abc123",
             ApplicationId("name", Environment("env", "affiliation")).toString(),
             AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
             "deployTag",
@@ -48,7 +49,7 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
             addresses = emptyList()
         )
 
-        given(applicationDataService.findApplicationDataById(ID)).willReturn(applicationData)
+        given(applicationDataService.findApplicationDataByInstanceId(ID)).willReturn(applicationData)
 
         mockMvc.perform(get("/api/applicationinstancedetails/{id}", "123"))
             .andExpect(status().isOk)

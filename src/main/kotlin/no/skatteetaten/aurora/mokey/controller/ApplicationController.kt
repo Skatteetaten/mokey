@@ -9,6 +9,7 @@ import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -21,6 +22,11 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
     val logger: Logger = LoggerFactory.getLogger(ApplicationController::class.java)
 
     val assembler = ApplicationResourceAssembler()
+
+    @GetMapping("/{applicationId}")
+    fun getApplication(@PathVariable applicationId: String): ApplicationResource? =
+        applicationDataService.findApplicationDataByApplicationId(applicationId)
+            ?.let { assembler.toResource(GroupedApplicationData(it)) }
 
     @GetMapping
     fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> {
@@ -44,15 +50,20 @@ class ApplicationResourceAssembler :
                 it.auroraStatus.let { status -> AuroraStatusResource(status.level.toString(), status.comment) },
                 Version(it.deployTag, it.imageDetails?.auroraVersion)
             ).apply {
-                add(linkTo(ApplicationInstanceController::class.java).slash(it.id).withSelfRel())
-                add(linkTo(ApplicationInstanceDetailsController::class.java).slash(it.id).withRel("ApplicationInstanceDetails"))
+                add(linkTo(ApplicationInstanceController::class.java).slash(it.applicationInstanceId).withSelfRel())
+                add(linkTo(ApplicationInstanceDetailsController::class.java).slash(it.applicationInstanceId).withRel("ApplicationInstanceDetails"))
             }
         }
 
         return ApplicationResource(
+            data.applicationId,
             data.name,
             emptyList(),
             applicationInstances
-        )
+        ).apply {
+            data.applicationId?.let {
+                add(linkTo(ApplicationController::class.java).slash(it).withSelfRel())
+            }
+        }
     }
 }

@@ -13,16 +13,18 @@ class ApplicationBase extends AbstractContractBase {
     loadJsonResponses(this)
     def applicationDataService = Mock(ApplicationDataService) {
       findAllApplicationData(_ as List) >> [createApplicationData()]
+      findApplicationDataByApplicationId(_ as String) >> createApplicationData()
     }
     def controller = new ApplicationController(applicationDataService)
     setupMockMvc(controller)
   }
 
   ApplicationData createApplicationData() {
-    def affiliation = response('$[0].applicationInstances[0].affiliation')
-    def name = response('$[0].name')
-    def namespace = response('$[0].applicationInstances[0].namespace')
-    new ApplicationData('', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
+    def applicationId = response('$.appId')
+    def name = response('$.name')
+    def affiliation = response('$.applicationInstances[0].affiliation')
+    def namespace = response('$.applicationInstances[0].namespace')
+    new ApplicationData(applicationId, '', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
         '', name, namespace, affiliation, '', '',
         [], null, new DeployDetails('', 1, 1), [], '')
   }

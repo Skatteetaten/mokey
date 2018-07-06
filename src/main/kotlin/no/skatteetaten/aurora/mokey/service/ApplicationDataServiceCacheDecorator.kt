@@ -29,7 +29,7 @@ class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val a
                 .distinct()
     }
 
-    override fun findApplicationDataById(id: String): ApplicationData? {
+    override fun findApplicationDataByInstanceId(id: String): ApplicationData? {
         return cache[id]
     }
 
@@ -53,8 +53,8 @@ class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val a
         val time = withStopWatch {
             val applications = applicationDataService.findAllApplicationData(affiliations)
             applications.forEach {
-                cache[it.id] = it
-                newKeys.add(it.id)
+                cache[it.applicationInstanceId] = it
+                newKeys.add(it.applicationInstanceId)
             }
         }
 

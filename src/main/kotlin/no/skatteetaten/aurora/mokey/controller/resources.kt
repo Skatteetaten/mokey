@@ -24,6 +24,7 @@ abstract class HalResource : ResourceSupport() {
 }
 
 class ApplicationResource(
+    val appId: String?,
     val name: String,
     val tags: List<String>,
     val applicationInstances: List<ApplicationInstanceResource>

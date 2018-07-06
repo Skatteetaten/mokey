@@ -23,7 +23,7 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
     loadJsonResponses(this)
     def applicationDataService = Mock(ApplicationDataService) {
       findAllApplicationData(_ as List) >> [createApplicationData()]
-      findApplicationDataById(_ as String) >> createApplicationData()
+      findApplicationDataByInstanceId(_ as String) >> createApplicationData()
     }
     def assembler = new ApplicationInstanceDetailsResourceAssembler(new LinkBuilder('http://localhost', [:]))
     def controller = new ApplicationInstanceDetailsController(applicationDataService, assembler)
@@ -48,7 +48,7 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
                 Instant.parse(commitTime),Instant.parse(buildTime))), new Right())))
 
 
-    new ApplicationData('',
+    new ApplicationData('', '',
         new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
         applicationInstance.version.deployTag,
         applicationName,

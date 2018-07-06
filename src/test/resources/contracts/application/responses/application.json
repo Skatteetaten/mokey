@@ -1,0 +1,32 @@
+{
+  "appId": "abc123",
+  "name": "name",
+  "tags": [],
+  "applicationInstances": [
+    {
+      "affiliation": "paas",
+      "environment": "utv",
+      "namespace": "paas-utv",
+      "status": {
+        "code": "HEALTHY",
+        "comment": ""
+      },
+      "version": {
+        "deployTag": ""
+      },
+      "_links": {
+        "self": {
+          "href": "http://localhost/api/applicationinstance"
+        },
+        "ApplicationInstanceDetails": {
+          "href": "http://localhost/api/applicationinstancedetails"
+        }
+      }
+    }
+  ],
+  "_links": {
+    "self": {
+      "href": "http://localhost/api/application/abc123"
+    }
+  }
+}

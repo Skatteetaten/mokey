@@ -14,6 +14,7 @@ class ApplicationDataServiceCacheDecoratorTest {
     val app1Id = "some_id"
     val app1v1 = ApplicationData(
             app1Id,
+            app1Id,
             AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
             "default",
             "testapp",
@@ -35,12 +36,12 @@ class ApplicationDataServiceCacheDecoratorTest {
                 .willReturn(listOf(app1v1))
                 .willReturn(listOf(app1v2))
 
-        assertThat(applicationDataService.findApplicationDataById(app1Id)).isNull()
+        assertThat(applicationDataService.findApplicationDataByInstanceId(app1Id)).isNull()
 
         applicationDataService.refreshCache(affiliations)
-        assertThat(applicationDataService.findApplicationDataById(app1Id)).isEqualTo(app1v1)
+        assertThat(applicationDataService.findApplicationDataByInstanceId(app1Id)).isEqualTo(app1v1)
 
         applicationDataService.refreshCache(affiliations)
-        assertThat(applicationDataService.findApplicationDataById(app1Id)).isEqualTo(app1v2)
+        assertThat(applicationDataService.findApplicationDataByInstanceId(app1Id)).isEqualTo(app1v2)
     }
 }
