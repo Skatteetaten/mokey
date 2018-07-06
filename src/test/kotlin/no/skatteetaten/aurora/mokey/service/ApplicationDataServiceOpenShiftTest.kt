@@ -72,7 +72,7 @@ class ApplicationDataServiceOpenShiftTest {
         every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(AuroraStatusLevel.HEALTHY, "")
 
         val id = "affiliation::affiliation::app-name"
-        val applicationData = applicationDataServiceOpenShift.findApplicationDataById(id)
+        val applicationData = applicationDataServiceOpenShift.findApplicationDataByInstanceId(id)
 
         assert(applicationData?.name).isEqualTo(dcBuilder.dcName)
         assert(applicationData?.auroraStatus?.level).isEqualTo(AuroraStatusLevel.HEALTHY)

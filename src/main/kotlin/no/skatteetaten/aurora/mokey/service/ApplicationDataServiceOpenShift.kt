@@ -45,7 +45,7 @@ class ApplicationDataServiceOpenShift(
             findAllApplicationDataByEnvironments(findAllEnvironments().filter { affiliations.contains(it.affiliation) })
     }
 
-    override fun findApplicationDataById(id: String): ApplicationData? {
+    override fun findApplicationDataByInstanceId(id: String): ApplicationData? {
         val applicationId: ApplicationId = ApplicationId.fromString(id)
         return findAllApplicationDataByEnvironments(listOf(applicationId.environment)).find { it.name == applicationId.name }
     }
@@ -103,9 +103,10 @@ class ApplicationDataServiceOpenShift(
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
-        val id = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)).toString()
+        val applicationInstanceId = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)).toString()
         return ApplicationData(
-                id = id,
+                applicationId = dc.metadata.labels["appId"],
+                applicationInstanceId = applicationInstanceId,
                 auroraStatus = auroraStatus,
                 name = name,
                 namespace = namespace,

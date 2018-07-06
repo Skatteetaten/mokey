@@ -19,16 +19,16 @@ import com.fkorotkov.openshift.newRouteIngress
 import com.fkorotkov.openshift.newRouteIngressCondition
 import com.fkorotkov.openshift.spec
 import com.fkorotkov.openshift.status
-import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
-import io.fabric8.kubernetes.api.model.Service
 import io.fabric8.openshift.api.model.DeploymentConfig
-import io.fabric8.openshift.api.model.Project
-import io.fabric8.openshift.api.model.Route
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.managementPath
+import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.ImageDetails
@@ -40,7 +40,6 @@ import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ContainerConfig
 import no.skatteetaten.aurora.mokey.service.Image
 import no.skatteetaten.aurora.mokey.service.ImageStreamTag
-import no.skatteetaten.aurora.mokey.service.ManagementResult
 import no.skatteetaten.aurora.mokey.service.Metadata
 import no.skatteetaten.aurora.utils.Right
 import java.time.Instant
@@ -95,8 +94,8 @@ data class RouteBuilder(
     val routeAnnotations: Map<String, String> = mapOf()
 ) {
 
-    fun build(): Route {
-        return newRoute {
+    fun build() =
+        newRoute {
             metadata {
                 name = routeName
                 labels = mapOf(LABEL_CREATED to created.toString())
@@ -109,7 +108,6 @@ data class RouteBuilder(
                 }
             }
             status {
-
                 ingress = listOf(
                     newRouteIngress {
                         conditions = listOf(
@@ -125,7 +123,6 @@ data class RouteBuilder(
                 )
             }
         }
-    }
 }
 
 data class ServiceBuilder(
@@ -134,15 +131,14 @@ data class ServiceBuilder(
     val serviceAnnotations: Map<String, String> = mapOf()
 ) {
 
-    fun build(): Service {
-        return newService {
+    fun build() =
+        newService {
             metadata {
                 name = serviceName
                 labels = mapOf(LABEL_CREATED to created.toString())
                 annotations = serviceAnnotations
             }
         }
-    }
 }
 
 data class ReplicationControllerDataBuilder(val phase: String = "deploymentPhase") {
@@ -155,8 +151,8 @@ data class PodDataBuilder(
     val ip: String = "127.0.0.1"
 ) {
 
-    fun build(): Pod {
-        return newPod {
+    fun build() =
+        newPod {
             metadata {
                 name = podName
                 labels = mapOf("deployment" to "deployment")
@@ -173,7 +169,6 @@ data class PodDataBuilder(
                 )
             }
         }
-    }
 }
 
 data class ManagementDataBuilder(
@@ -182,9 +177,7 @@ data class ManagementDataBuilder(
     val env: JsonNode = MissingNode.getInstance()
 ) {
 
-    fun build(): ManagementResult {
-        return Right(ManagementData(ManagementLinks(emptyMap()), Right(info), Right(health)/*, Right(env)*/))
-    }
+    fun build() = Right(ManagementData(ManagementLinks(emptyMap()), Right(info), Right(health)/*, Right(env)*/))
 }
 
 data class PodDetailsDataBuilder(
@@ -192,8 +185,8 @@ data class PodDetailsDataBuilder(
     val status: String = "status"
 ) {
 
-    fun build(): PodDetails {
-        return PodDetails(
+    fun build() =
+        PodDetails(
             OpenShiftPodExcerpt(
                 name = name,
                 status = status,
@@ -203,7 +196,6 @@ data class PodDetailsDataBuilder(
             ),
             ManagementDataBuilder().build()
         )
-    }
 }
 
 data class ImageDetailsDataBuilder(
@@ -211,30 +203,48 @@ data class ImageDetailsDataBuilder(
     val environmentVariables: Map<String, String> = emptyMap()
 ) {
 
-    fun build(): ImageDetails {
-        return ImageDetails(dockerImageReference, Instant.now(), environmentVariables)
-    }
+    fun build() = ImageDetails(dockerImageReference, Instant.now(), environmentVariables)
 }
 
 data class ProjectDataBuilder(val pName: String = "affiliation-name") {
 
-    fun build(): Project {
-        return newProject {
+    fun build() =
+        newProject {
             metadata {
                 name = pName
             }
         }
-    }
 }
 
 data class ImageStreamTagDataBuilder(val dockerImageReference: String = "dockerImageReference") {
 
-    fun build(): ImageStreamTag {
-        return ImageStreamTag(
+    fun build() =
+        ImageStreamTag(
             image = Image(
                 dockerImageMetadata = Metadata(containerConfig = ContainerConfig(emptyList())),
                 dockerImageReference = dockerImageReference
             )
         )
-    }
+}
+
+data class ApplicationDataBuilder(
+    val applicationId: String = "abc123",
+    val applicationInstanceId: String = "cbd234",
+    val name: String = "name",
+    val namespace: String = "namespace",
+    val affiliation: String = "paas"
+) {
+
+    fun build(): ApplicationData =
+        ApplicationData(
+            applicationId,
+            applicationInstanceId,
+            AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
+            "",
+            name,
+            namespace,
+            affiliation,
+            addresses = emptyList(),
+            deployDetails = DeployDetails(null, 1, 1)
+        )
 }
