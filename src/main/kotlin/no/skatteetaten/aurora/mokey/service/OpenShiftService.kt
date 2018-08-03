@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.DeploymentConfig
+import io.fabric8.openshift.api.model.ImageStreamTag
 import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.DefaultOpenShiftClient
@@ -49,7 +50,7 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
     }
 
     fun imageStreamTag(namespace: String, name: String, tag: String): ImageStreamTag? {
-        return (openShiftClient as DefaultOpenShiftClient).customImageStreamTag(namespace, name, tag)
+        return openShiftClient.imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
     }
 
     fun projects(): List<Project> {
@@ -64,26 +65,3 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
     }
 }
 
-fun DefaultOpenShiftClient.customImageStreamTag(namespace: String, name: String, tag: String): ImageStreamTag? {
-    val url = this.openshiftUrl.toURI().resolve("namespaces/$namespace/imagestreamtags/$name:$tag")
-    return try {
-        val request = Request.Builder().url(url.toString()).build()
-        val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), ImageStreamTag::class.java)
-    } catch (e: Exception) {
-        throw KubernetesClientException("error occurred while fetching imageStreamTag" +
-                " namespace=$namespace name=$name tag=$tag", e)
-    }
-}
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class ImageStreamTag(val image: Image?)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class Image(val dockerImageMetadata: Metadata, val dockerImageReference: String)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class Metadata(@JsonProperty("ContainerConfig") val containerConfig: ContainerConfig)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class ContainerConfig(@JsonProperty("Env") val env: List<String>)

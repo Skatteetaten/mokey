@@ -23,16 +23,16 @@ class ImageServiceTest {
     @Test
     fun `get image details`() {
         val dcBuilder = DeploymentConfigDataBuilder()
-        val istBuilder = ImageStreamTagDataBuilder()
-        every { openShiftService.imageStreamTag(dcBuilder.dcNamespace, dcBuilder.dcName, "tag") } returns istBuilder.build()
+        val istBuilder = ImageStreamTagDataBuilder(env = mapOf("IMAGE_BUILD_TIME" to "2018-08-01T13:27:21Z"))
+        every {
+            openShiftService.imageStreamTag(
+                dcBuilder.dcNamespace,
+                dcBuilder.dcName,
+                "tag"
+            )
+        } returns istBuilder.build()
 
         val imageDetails = imageService.getImageDetails(dcBuilder.build())
-        assert(imageDetails?.dockerImageReference).isEqualTo(istBuilder.dockerImageReference)
-    }
-
-    @Test
-    fun `should split assignment strings on assignment operator to create a map`() {
-        val map = ImageService.assignmentStringsToMap(listOf("KEY=VALUE", "KEY2=VALUE2"))
-        assert(map).isEqualTo(mapOf("KEY" to "VALUE", "KEY2" to "VALUE2"))
+        assert(imageDetails?.dockerImageReference).isEqualTo(istBuilder.reference)
     }
 }

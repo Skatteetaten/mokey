@@ -6,15 +6,18 @@ import com.fkorotkov.kubernetes.metadata
 import com.fkorotkov.kubernetes.newContainer
 import com.fkorotkov.kubernetes.newContainerStatus
 import com.fkorotkov.kubernetes.newPod
+import com.fkorotkov.kubernetes.newRawExtension
 import com.fkorotkov.kubernetes.newReplicationController
 import com.fkorotkov.kubernetes.newService
 import com.fkorotkov.kubernetes.spec
 import com.fkorotkov.kubernetes.status
 import com.fkorotkov.openshift.from
+import com.fkorotkov.openshift.image
 import com.fkorotkov.openshift.imageChangeParams
 import com.fkorotkov.openshift.metadata
 import com.fkorotkov.openshift.newDeploymentConfig
 import com.fkorotkov.openshift.newDeploymentTriggerPolicy
+import com.fkorotkov.openshift.newImageStreamTag
 import com.fkorotkov.openshift.newProject
 import com.fkorotkov.openshift.newRoute
 import com.fkorotkov.openshift.newRouteIngress
@@ -41,10 +44,6 @@ import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
-import no.skatteetaten.aurora.mokey.service.ContainerConfig
-import no.skatteetaten.aurora.mokey.service.Image
-import no.skatteetaten.aurora.mokey.service.ImageStreamTag
-import no.skatteetaten.aurora.mokey.service.Metadata
 import no.skatteetaten.aurora.utils.Right
 import java.time.Instant
 
@@ -230,15 +229,24 @@ data class ProjectDataBuilder(val pName: String = "affiliation-name") {
         }
 }
 
-data class ImageStreamTagDataBuilder(val dockerImageReference: String = "dockerImageReference") {
+data class ImageStreamTagDataBuilder(
+    val reference: String = "dockerImageReference",
+    val env: Map<String, String> = mapOf()
+) {
 
     fun build() =
-        ImageStreamTag(
-            image = Image(
-                dockerImageMetadata = Metadata(containerConfig = ContainerConfig(emptyList())),
-                dockerImageReference = dockerImageReference
-            )
-        )
+
+        newImageStreamTag {
+            image {
+                dockerImageReference = reference
+                dockerImageMetadata = newRawExtension {
+
+                    val env = mapOf("Env" to env.map { "${it.key}=${it.value}" })
+                    setAdditionalProperty("ContainerConfig", env)
+
+                }
+            }
+        }
 }
 
 data class ApplicationDataBuilder(
