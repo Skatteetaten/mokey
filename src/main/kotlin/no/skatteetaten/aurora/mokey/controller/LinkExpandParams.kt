@@ -21,6 +21,7 @@ import no.skatteetaten.aurora.mokey.model.PodDetails
 val LinkBuilderFactory.expandParams
     get(): Map<String, String> = mapOf(
             "metricsHostname" to metricsHostname,
+            "splunkHostname" to splunkHostname,
             "cluster" to cluster
     )
 
@@ -43,7 +44,10 @@ val ApplicationData.expandParams
     get(): Map<String, String> {
         val addressParams = addresses.map { it.url.toString() to it::class.simpleName!! }.toMap()
         val metadataParams = mapOf("namespace" to namespace, "name" to name)
-        return addressParams + metadataParams
+        val splunkParams= splunkIndex?.let {
+            mapOf("splunkIndex" to it)
+        }  ?: mapOf()
+        return addressParams + metadataParams + splunkParams
     }
 
 /**

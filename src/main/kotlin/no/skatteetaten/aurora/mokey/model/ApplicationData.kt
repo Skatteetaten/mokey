@@ -33,7 +33,8 @@ data class ApplicationData(
     val imageDetails: ImageDetails? = null,
     val deployDetails: DeployDetails,
     val addresses: List<Address>,
-    val sprocketDone: String? = null
+    val sprocketDone: String? = null,
+    val splunkIndex: String? = null
 ) {
     val errors
         get(): List<PodError> = this.pods

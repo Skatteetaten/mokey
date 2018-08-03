@@ -13,15 +13,15 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     val app1Id = "some_id"
     val app1v1 = ApplicationData(
-            app1Id,
-            app1Id,
-            AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
-            "default",
-            "testapp",
-            "aurora",
-            "aurora",
-            deployDetails = DeployDetails("Complete", 1, 1),
-            addresses = emptyList()
+        app1Id,
+        app1Id,
+        AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
+        "default",
+        "testapp",
+        "aurora",
+        "aurora",
+        deployDetails = DeployDetails("Complete", 1, 1),
+        addresses = emptyList()
     )
     val app1v2 = app1v1.copy(deployTag = "prod")
 

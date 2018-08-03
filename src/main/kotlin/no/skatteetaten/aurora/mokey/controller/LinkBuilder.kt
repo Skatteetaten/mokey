@@ -10,6 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder
 class LinkBuilderFactory(
     @Value("\${boober-api-url}") val booberApiUrl: String,
     @Value("\${metrics-hostname}") val metricsHostname: String,
+    @Value("\${splunk-hostname}") val splunkHostname: String,
     @Value("\${openshift-cluster}") val cluster: String
 ) {
     @Bean

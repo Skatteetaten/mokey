@@ -45,7 +45,7 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
             '', details.startTime, ''),
         new Right(new ManagementData(null,
             new Right(new InfoResponse(['metrics': details._links.metrics.href], [:], [:], '',
-                Instant.parse(commitTime),Instant.parse(buildTime))), new Right())))
+                Instant.parse(commitTime), Instant.parse(buildTime))), new Right())))
 
 
     new ApplicationData('', '',
@@ -59,6 +59,7 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
         [podDetails],
         new ImageDetails(dockerImageReference, Instant.parse(imageBuildTime), [:]),
         new DeployDetails('', 1, 1), [],
-        '')
+        '',
+        null)
   }
 }
