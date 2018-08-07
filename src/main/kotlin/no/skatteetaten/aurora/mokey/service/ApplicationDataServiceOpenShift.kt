@@ -103,7 +103,7 @@ class ApplicationDataServiceOpenShift(
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
-        //TODO: Should we store splunk index in an annotation/label?
+        // TODO: Should we store splunk index in an annotation/label?
         val splunkIndex = dc.spec.template.spec.containers[0].env.find { it.name == "SPLUNK_INDEX" }?.let {
             it.value
         }
