@@ -60,4 +60,3 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return userClient.projects().withName(namespace).getOrNull()?.let { true } ?: false
     }
 }
-
