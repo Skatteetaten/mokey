@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.DeploymentConfig
+import io.fabric8.openshift.api.model.Image
 import io.fabric8.openshift.api.model.ImageStreamTag
 import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
@@ -12,6 +13,7 @@ import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
+import no.skatteetaten.aurora.mokey.extensions.imageStreamTag
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.security.core.context.SecurityContextHolder
@@ -47,6 +49,12 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
     fun imageStreamTag(namespace: String, name: String, tag: String): ImageStreamTag? {
         return openShiftClient.imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
+    }
+
+    fun firstImageFromImageChangeTriggers(dc: DeploymentConfig): Image? {
+        val tagName = dc.imageStreamTag ?: return null
+        val imageStreamTag = imageStreamTag(dc.metadata.namespace, dc.metadata.name, tagName)
+        return imageStreamTag?.image
     }
 
     fun projects(): List<Project> {
