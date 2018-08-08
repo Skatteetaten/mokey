@@ -26,7 +26,7 @@ class ApplicationinstanceBase extends AbstractContractBase {
     new ApplicationData('', '', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
         applicationInstance.version.deployTag, applicationInstance.namespace, applicationInstance.namespace,
         applicationInstance.affiliation, '', '', [],
-        new ImageDetails('', Instant.now(), [:]), new DeployDetails('', 0, 0), [], '')
+        new ImageDetails('', Instant.now(), [:]), new DeployDetails('', 0, 0), [], '', null)
 
   }
 }

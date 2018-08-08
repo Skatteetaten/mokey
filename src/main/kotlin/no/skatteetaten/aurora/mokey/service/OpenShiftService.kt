@@ -1,20 +1,19 @@
 package no.skatteetaten.aurora.mokey.service
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.DeploymentConfig
+import io.fabric8.openshift.api.model.Image
+import io.fabric8.openshift.api.model.ImageStreamTag
 import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
-import okhttp3.Request
+import no.skatteetaten.aurora.mokey.extensions.imageStreamTag
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.security.core.context.SecurityContextHolder
@@ -49,7 +48,13 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
     }
 
     fun imageStreamTag(namespace: String, name: String, tag: String): ImageStreamTag? {
-        return (openShiftClient as DefaultOpenShiftClient).customImageStreamTag(namespace, name, tag)
+        return openShiftClient.imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
+    }
+
+    fun firstImageFromImageChangeTriggers(dc: DeploymentConfig): Image? {
+        val tagName = dc.imageStreamTag ?: return null
+        val imageStreamTag = imageStreamTag(dc.metadata.namespace, dc.metadata.name, tagName)
+        return imageStreamTag?.image
     }
 
     fun projects(): List<Project> {
@@ -63,27 +68,3 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return userClient.projects().withName(namespace).getOrNull()?.let { true } ?: false
     }
 }
-
-fun DefaultOpenShiftClient.customImageStreamTag(namespace: String, name: String, tag: String): ImageStreamTag? {
-    val url = this.openshiftUrl.toURI().resolve("namespaces/$namespace/imagestreamtags/$name:$tag")
-    return try {
-        val request = Request.Builder().url(url.toString()).build()
-        val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), ImageStreamTag::class.java)
-    } catch (e: Exception) {
-        throw KubernetesClientException("error occurred while fetching imageStreamTag" +
-                " namespace=$namespace name=$name tag=$tag", e)
-    }
-}
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class ImageStreamTag(val image: Image?)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class Image(val dockerImageMetadata: Metadata, val dockerImageReference: String)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class Metadata(@JsonProperty("ContainerConfig") val containerConfig: ContainerConfig)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class ContainerConfig(@JsonProperty("Env") val env: List<String>)

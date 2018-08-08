@@ -57,12 +57,12 @@ class ApplicationDataServiceOpenShift(
     private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
         return runBlocking(mtContext) {
             environments
-                    .flatMap { environment ->
-                        logger.debug("Find all applications in namespace={}", environment)
-                        val deploymentConfigs = openshiftService.deploymentConfigs(environment.namespace)
-                        deploymentConfigs.map { dc -> async(mtContext) { createApplicationData(dc) } }
-                    }
-                    .map { it.await() }
+                .flatMap { environment ->
+                    logger.debug("Find all applications in namespace={}", environment)
+                    val deploymentConfigs = openshiftService.deploymentConfigs(environment.namespace)
+                    deploymentConfigs.map { dc -> async(mtContext) { createApplicationData(dc) } }
+                }
+                .map { it.await() }
         }
     }
 
@@ -103,22 +103,28 @@ class ApplicationDataServiceOpenShift(
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
+        // TODO: Should we store splunk index in an annotation/label?
+        val splunkIndex = dc.spec.template.spec.containers[0].env.find { it.name == "SPLUNK_INDEX" }?.let {
+            it.value
+        }
+
         val applicationInstanceId = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)).toString()
         return ApplicationData(
-                applicationId = dc.metadata.labels["appId"],
-                applicationInstanceId = applicationInstanceId,
-                auroraStatus = auroraStatus,
-                name = name,
-                namespace = namespace,
-                deployTag = dc.deployTag,
-                booberDeployId = dc.booberDeployId,
-                affiliation = affiliation,
-                managementPath = dc.managementPath,
-                pods = pods,
-                imageDetails = imageDetails,
-                deployDetails = deployDetails,
-                addresses = applicationAddresses,
-                sprocketDone = dc.sprocketDone
+            applicationId = dc.metadata.labels["appId"],
+            applicationInstanceId = applicationInstanceId,
+            auroraStatus = auroraStatus,
+            name = name,
+            namespace = namespace,
+            deployTag = dc.deployTag,
+            booberDeployId = dc.booberDeployId,
+            affiliation = affiliation,
+            managementPath = dc.managementPath,
+            pods = pods,
+            imageDetails = imageDetails,
+            deployDetails = deployDetails,
+            addresses = applicationAddresses,
+            sprocketDone = dc.sprocketDone,
+            splunkIndex = splunkIndex
         )
     }
 }

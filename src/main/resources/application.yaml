@@ -25,6 +25,7 @@ logging:
 
 boober-api-url: "http://boober/api"
 metrics-hostname: "http://metrics.skead.no"
+splunk-hostname: "https://splunk.skead.no"
 
 ---
 spring:
