@@ -3,14 +3,12 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
 import com.fkorotkov.kubernetes.metadata
-import com.fkorotkov.kubernetes.newContainer
 import com.fkorotkov.kubernetes.newContainerStatus
 import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
 import com.fkorotkov.kubernetes.newRawExtension
 import com.fkorotkov.kubernetes.newReplicationController
 import com.fkorotkov.kubernetes.newService
-import com.fkorotkov.kubernetes.spec
 import com.fkorotkov.kubernetes.status
 import com.fkorotkov.openshift.from
 import com.fkorotkov.openshift.image
@@ -25,14 +23,11 @@ import com.fkorotkov.openshift.newRouteIngress
 import com.fkorotkov.openshift.newRouteIngressCondition
 import com.fkorotkov.openshift.spec
 import com.fkorotkov.openshift.status
-import com.fkorotkov.openshift.template
-import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
-import no.skatteetaten.aurora.mokey.extensions.managementPath
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -63,7 +58,8 @@ data class AuroraApplicationInstanceDataBuilder(
     val releaseTo: String? = null,
     val exactGitRef: String = "abcd",
     val overrides: Map<String, String> = emptyMap(),
-    val auroraConfigRefBranch: String = "master"
+    val auroraConfigRefBranch: String = "master",
+    val links: Map<String, String> = emptyMap()
 ) {
 
     fun build(): AuroraApplicationInstance {
@@ -85,7 +81,8 @@ data class AuroraApplicationInstanceDataBuilder(
                 releaseTo = releaseTo,
                 exactGitRef = exactGitRef,
                 deployTag = deployTag,
-                selector = selector
+                selector = selector,
+                links = links
             )
         )
     }

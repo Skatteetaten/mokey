@@ -60,6 +60,7 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
         new ImageDetails(dockerImageReference, Instant.parse(imageBuildTime), [:]),
         new DeployDetails('', 1, 1), [],
         '',
-        null)
+        null,
+        [:])
   }
 }

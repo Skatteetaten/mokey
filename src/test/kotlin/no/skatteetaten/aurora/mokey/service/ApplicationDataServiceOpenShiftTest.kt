@@ -4,7 +4,6 @@ import assertk.assert
 import assertk.assertions.contains
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
-import com.fkorotkov.kubernetes.newObjectMeta
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -14,7 +13,6 @@ import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
-import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
@@ -31,11 +29,11 @@ class ApplicationDataServiceOpenShiftTest {
     private val imageService = mockk<ImageService>()
     private val addressService = mockk<AddressService>()
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
-            openShiftService,
-            auroraStatusCalculator,
-            podService,
-            addressService,
-            imageService
+        openShiftService,
+        auroraStatusCalculator,
+        podService,
+        addressService,
+        imageService
     )
 
     @BeforeEach
@@ -78,7 +76,10 @@ class ApplicationDataServiceOpenShiftTest {
         val addresses = listOf(ServiceAddress(URI.create("http://app-name"), Instant.EPOCH))
         every { addressService.getAddresses(dcBuilder.dcNamespace, "app-name") } returns addresses
 
-        every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(AuroraStatusLevel.HEALTHY, "")
+        every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(
+            AuroraStatusLevel.HEALTHY,
+            ""
+        )
 
         val id = "affiliation::affiliation::app-name"
         val applicationData = applicationDataServiceOpenShift.findApplicationDataByInstanceId(id)
