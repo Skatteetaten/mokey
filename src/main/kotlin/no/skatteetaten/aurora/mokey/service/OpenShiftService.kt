@@ -86,7 +86,7 @@ fun DefaultOpenShiftClient.auroraApplicationInstances(namespace: String): List<A
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AuroraApplicationInstanceList(
-    val items: List<AuroraApplicationInstance>
+    val items: List<AuroraApplicationInstance> = emptyList()
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
