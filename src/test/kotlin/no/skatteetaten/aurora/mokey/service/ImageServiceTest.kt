@@ -22,7 +22,6 @@ class ImageServiceTest {
     }
 
     @Test
-    @Ignore("Test fails before this branch started development")
     fun `get image details`() {
         val dcBuilder = DeploymentConfigDataBuilder()
         val istBuilder = ImageStreamTagDataBuilder(env = mapOf("IMAGE_BUILD_TIME" to "2018-08-01T13:27:21Z"))
