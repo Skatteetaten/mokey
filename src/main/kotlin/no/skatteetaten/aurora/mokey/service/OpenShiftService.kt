@@ -51,12 +51,6 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return openShiftClient.imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
     }
 
-    fun firstImageFromImageChangeTriggers(dc: DeploymentConfig): Image? {
-        val tagName = dc.imageStreamTag ?: return null
-        val imageStreamTag = imageStreamTag(dc.metadata.namespace, dc.metadata.name, tagName)
-        return imageStreamTag?.image
-    }
-
     fun projects(): List<Project> {
         return openShiftClient.projects().list().items
     }

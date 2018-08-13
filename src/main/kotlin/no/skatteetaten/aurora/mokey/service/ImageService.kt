@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.Image
+import no.skatteetaten.aurora.mokey.extensions.imageStreamTag
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import org.springframework.stereotype.Service
 
@@ -12,10 +13,11 @@ class ImageService(val openShiftService: OpenShiftService) {
      * Gets ImageDetails for the first Image that is found in the ImageChange triggers for the given DeploymentConfig.
      */
     fun getImageDetails(dc: DeploymentConfig): ImageDetails? {
-        val image = openShiftService.firstImageFromImageChangeTriggers(dc) ?: return null
-        val env = image.env
+        val tagName = dc.imageStreamTag ?: return null
+        val image = openShiftService.imageStreamTag(dc.metadata.namespace, dc.metadata.name, tagName)?.image
+        val env = image?.env ?: emptyMap()
         val imageBuildTime = env["IMAGE_BUILD_TIME"]?.let { DateParser.parseString(it) }
-        return ImageDetails(image.dockerImageReference, imageBuildTime, env)
+        return ImageDetails(image?.dockerImageReference, imageBuildTime, env)
     }
 }
 
