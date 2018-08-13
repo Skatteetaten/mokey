@@ -28,7 +28,6 @@ const val ANNOTATION_WEMBLEY_PATHS = "wembley.sits.no/apiPaths"
 const val ANNOTATION_WEMBLEY_EXTERNAL_HOST = "wembley.sits.no/externalHost"
 const val ANNOTATION_WEMBLEY_ASM = "wembley.sits.no/asmPolicy"
 
-//TODO: Put in boober
 val DeploymentConfig.imageStreamTag: String?
     get() = spec.triggers.find { it.type == "ImageChange" }
         ?.imageChangeParams?.from?.name?.split(":")?.lastOrNull()
@@ -42,7 +41,7 @@ val DeploymentConfig.sprocketDone: String?
 
 val Route.marjoryDone: Instant?
     get() = safeMetadataAnnotations()[ANNOTATION_MARJORY_DONE]
-            ?.let { DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(it, Instant::from) }
+        ?.let { DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(it, Instant::from) }
 
 val Route.marjoryOpen: Boolean
     get() = safeMetadataAnnotations()[ANNOTATION_MARJORY_OPEN]?.let { it == "true" } ?: false
@@ -55,7 +54,7 @@ val Route.marjoryProvision: String?
 
 val Route.wembleyDone: Instant?
     get() = safeMetadataAnnotations()[ANNOTATION_WEMBLEY_DONE]
-            ?.let { DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(it, Instant::from) }
+        ?.let { DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(it, Instant::from) }
 
 val Route.wembleyService: String?
     get() = safeMetadataAnnotations()[ANNOTATION_WEMBLEY_SERVICE]
@@ -92,6 +91,7 @@ private fun ObjectMeta.safeMetadataLabels(): MutableMap<String, String?> {
     if (this.labels == null) this.labels = mutableMapOf<String, String>()
     return this.labels
 }
+
 private fun HasMetadata.safeMetadataLabels(): MutableMap<String, String?> {
     if (safeMetadata().labels == null) metadata.labels = mutableMapOf<String, String>()
     return metadata.labels

@@ -58,7 +58,6 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return (openShiftClient as DefaultOpenShiftClient).auroraApplicationInstances(namespace)
     }
 
-
     fun projects(): List<Project> {
         return openShiftClient.projects().list().items
     }
@@ -111,7 +110,8 @@ data class ApplicationSpec(
     val releaseTo: String? = null,
     val exactGitRef: String? = null,
     val deployTag: String? = null,
-    val selector: Map<String, String>
+    val selector: Map<String, String>,
+    val links: Map<String, String>
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
