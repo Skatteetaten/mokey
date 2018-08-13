@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.MissingNode
 import com.fkorotkov.kubernetes.metadata
 import com.fkorotkov.kubernetes.newContainer
 import com.fkorotkov.kubernetes.newContainerStatus
+import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
 import com.fkorotkov.kubernetes.newRawExtension
 import com.fkorotkov.kubernetes.newReplicationController
@@ -28,8 +29,8 @@ import com.fkorotkov.openshift.template
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
+import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
-import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.managementPath
 import no.skatteetaten.aurora.mokey.model.ApplicationData
@@ -44,23 +45,62 @@ import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.service.ApplicationSpec
+import no.skatteetaten.aurora.mokey.service.AuroraApplicationInstance
+import no.skatteetaten.aurora.mokey.service.AuroraConfigRef
 import no.skatteetaten.aurora.utils.Right
+import org.apache.commons.codec.digest.DigestUtils
 import java.time.Instant
+
+data class AuroraApplicationInstanceDataBuilder(
+    val appName: String = "app-name",
+    val appNamespace: String = "namespace",
+    val affiliation: String = "affiliation",
+    val managementPath: String = ":8081/actuator",
+    val deployTag: String = "name:tag",
+    val selector: Map<String, String> = mapOf("name" to appName),
+    val splunkIndex: String = "openshift-test",
+    val releaseTo: String? = null,
+    val exactGitRef: String = "abcd",
+    val overrides: Map<String, String> = emptyMap(),
+    val auroraConfigRefBranch: String = "master"
+) {
+
+    fun build(): AuroraApplicationInstance {
+        return AuroraApplicationInstance(
+            metadata = newObjectMeta {
+                name = appName
+                namespace = appNamespace
+                labels = mapOf(
+                    LABEL_AFFILIATION to affiliation
+                )
+            },
+            spec = ApplicationSpec(
+                configRef = AuroraConfigRef(affiliation, auroraConfigRefBranch),
+                overrides = overrides,
+                applicationId = DigestUtils.sha1Hex(appName),
+                applicationInstanceId = DigestUtils.sha1Hex(appName + appNamespace),
+                splunkIndex = splunkIndex,
+                managementPath = managementPath,
+                releaseTo = releaseTo,
+                exactGitRef = exactGitRef,
+                deployTag = deployTag,
+                selector = selector
+            )
+        )
+    }
+}
 
 data class DeploymentConfigDataBuilder(
     val dcName: String = "app-name",
     val dcNamespace: String = "namespace",
     val dcAffiliation: String = "affiliation",
-    val dcManagementPath: String = ":8081/actuator",
     val dcDeployTag: String = "name:tag",
-    val dcSelector: Map<String, String> = mapOf("name" to dcName),
-    val dcEnv: List<EnvVar> = listOf(EnvVar("splunkIndex", "openshift-test", null))
+    val dcSelector: Map<String, String> = mapOf("name" to dcName)
 ) {
 
     fun build(): DeploymentConfig {
         return newDeploymentConfig {
-            managementPath = dcManagementPath
-            affiliation = dcAffiliation
 
             metadata {
                 name = dcName
@@ -82,15 +122,6 @@ data class DeploymentConfigDataBuilder(
                         }
                     }
                 )
-                template {
-                    spec {
-                        containers = listOf(
-                            newContainer {
-                                env = dcEnv
-                            }
-                        )
-                    }
-                }
             }
         }
     }

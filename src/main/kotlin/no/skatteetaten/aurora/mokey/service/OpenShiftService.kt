@@ -1,5 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.client.ConfigBuilder
@@ -12,6 +16,7 @@ import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
+import no.skatteetaten.aurora.mokey.extensions.imageStreamTag
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.security.core.context.SecurityContextHolder
@@ -21,8 +26,8 @@ import org.springframework.stereotype.Service
 @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
 class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
-    fun deploymentConfigs(namespace: String): List<DeploymentConfig> {
-        return openShiftClient.deploymentConfigs().inNamespace(namespace).list().items
+    fun dc(namespace: String, name: String): DeploymentConfig? {
+        return openShiftClient.deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun route(namespace: String, name: String): Route? {
@@ -49,6 +54,11 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return openShiftClient.imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
     }
 
+    fun auroraApplicationInstances(namespace: String): List<AuroraApplicationInstance> {
+        return (openShiftClient as DefaultOpenShiftClient).auroraApplicationInstances(namespace)
+    }
+
+
     fun projects(): List<Project> {
         return openShiftClient.projects().list().items
     }
@@ -60,3 +70,53 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return userClient.projects().withName(namespace).getOrNull()?.let { true } ?: false
     }
 }
+
+fun DefaultOpenShiftClient.auroraApplicationInstances(namespace: String): List<AuroraApplicationInstance> {
+    val url = this.openshiftUrl.toURI().resolve("namespaces/$namespace/auroraapplicationinstances")
+    return try {
+        val request = Request.Builder().url(url.toString()).build()
+        val response = this.httpClient.newCall(request).execute()
+        jacksonObjectMapper().readValue(response.body()?.bytes(), AuroraApplicationInstanceList::class.java)?.let {
+            it.items
+        } ?: throw KubernetesClientException("Error occurred while fetching list of applications namespace=$namespace")
+    } catch (e: Exception) {
+        throw KubernetesClientException("Error occurred while fetching list of applications namespace=$namespace", e)
+    }
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AuroraApplicationInstanceList(
+    val items: List<AuroraApplicationInstance>
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AuroraApplicationInstance(
+    val kind: String = "AuroraApplicationInstance",
+    val metadata: ObjectMeta,
+    val apiVersion: String = "skatteetaten.no/v1",
+    val spec: ApplicationSpec
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ApplicationSpec(
+    val configRef: AuroraConfigRef,
+    val overrides: Map<String, String>? = emptyMap(),
+    val applicationId: String,
+    val applicationInstanceId: String,
+    val splunkIndex: String? = null,
+    val managementPath: String? = null,
+    val releaseTo: String? = null,
+    val exactGitRef: String? = null,
+    val deployTag: String? = null,
+    val selector: Map<String, String>
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class AuroraConfigRef(
+    val name: String,
+    val refName: String
+)
+

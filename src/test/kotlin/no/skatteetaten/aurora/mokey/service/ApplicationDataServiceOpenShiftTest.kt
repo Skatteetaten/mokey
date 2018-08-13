@@ -4,14 +4,17 @@ import assertk.assert
 import assertk.assertions.contains
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
+import com.fkorotkov.kubernetes.newObjectMeta
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import no.skatteetaten.aurora.mokey.AuroraApplicationInstanceDataBuilder
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
+import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
@@ -54,14 +57,20 @@ class ApplicationDataServiceOpenShiftTest {
 
     @Test
     fun `find application data by id`() {
+        val appBuilder = AuroraApplicationInstanceDataBuilder()
+
         val dcBuilder = DeploymentConfigDataBuilder()
+
+        val appInstance = appBuilder.build()
+        every { openShiftService.auroraApplicationInstances(dcBuilder.dcAffiliation) } returns listOf(appInstance)
+
         val dc = dcBuilder.build()
-        every { openShiftService.deploymentConfigs(dcBuilder.dcAffiliation) } returns listOf(dc)
+        every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         val replicationController = ReplicationControllerDataBuilder().build()
         every { openShiftService.rc(dcBuilder.dcNamespace, "app-name-1") } returns replicationController
 
         val podDetails = PodDetailsDataBuilder().build()
-        every { podService.getPodDetails(dc) } returns listOf(podDetails)
+        every { podService.getPodDetails(appInstance) } returns listOf(podDetails)
 
         val imageDetails = ImageDetailsDataBuilder().build()
         every { imageService.getImageDetails(dc) } returns imageDetails

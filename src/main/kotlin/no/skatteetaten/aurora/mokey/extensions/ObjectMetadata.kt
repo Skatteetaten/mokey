@@ -28,9 +28,10 @@ const val ANNOTATION_WEMBLEY_PATHS = "wembley.sits.no/apiPaths"
 const val ANNOTATION_WEMBLEY_EXTERNAL_HOST = "wembley.sits.no/externalHost"
 const val ANNOTATION_WEMBLEY_ASM = "wembley.sits.no/asmPolicy"
 
+//TODO: Put in boober
 val DeploymentConfig.imageStreamTag: String?
     get() = spec.triggers.find { it.type == "ImageChange" }
-            ?.imageChangeParams?.from?.name?.split(":")?.lastOrNull()
+        ?.imageChangeParams?.from?.name?.split(":")?.lastOrNull()
 
 var DeploymentConfig.managementPath: String?
     get() = safeMetadataAnnotations()[ANNOTATION_MANAGEMENT_PATH]
@@ -68,14 +69,14 @@ val Service.marjoryDone: String?
 val HasMetadata.created: Instant?
     get() = safeMetadataLabels()[LABEL_CREATED]?.let(Instant::parse)
 
-var HasMetadata.affiliation: String?
+var ObjectMeta.affiliation: String?
     get() = safeMetadataLabels()[LABEL_AFFILIATION]
     set(value) = safeMetadataLabels().set(LABEL_AFFILIATION, value)
 
 val DeploymentConfig.deployTag: String
     get() = safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
 
-val DeploymentConfig.booberDeployId: String?
+val ObjectMeta.booberDeployId: String?
     get() = safeMetadataLabels()[LABEL_BOOBER_DEPLOY_ID]
 
 var ReplicationController.deploymentPhase: String?
@@ -87,6 +88,10 @@ private fun HasMetadata.safeMetadataAnnotations(): MutableMap<String, String?> {
     return metadata.annotations
 }
 
+private fun ObjectMeta.safeMetadataLabels(): MutableMap<String, String?> {
+    if (this.labels == null) this.labels = mutableMapOf<String, String>()
+    return this.labels
+}
 private fun HasMetadata.safeMetadataLabels(): MutableMap<String, String?> {
     if (safeMetadata().labels == null) metadata.labels = mutableMapOf<String, String>()
     return metadata.labels

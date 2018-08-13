@@ -7,6 +7,7 @@ import assertk.assertions.isEqualTo
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import no.skatteetaten.aurora.mokey.AuroraApplicationInstanceDataBuilder
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ManagementDataBuilder
 import no.skatteetaten.aurora.mokey.PodDataBuilder
@@ -26,21 +27,22 @@ class PodServiceTest {
 
     @Test
     fun `should collect pods only for current dc in current namespace`() {
-        val dcBuilder = DeploymentConfigDataBuilder()
-        every { openShiftService.pods(dcBuilder.dcNamespace, mapOf("name" to dcBuilder.dcName)) } returns listOf()
-        val podDetails = podService.getPodDetails(dcBuilder.build())
+        val builder = AuroraApplicationInstanceDataBuilder()
+        every { openShiftService.pods(builder.appNamespace, mapOf("name" to builder.appName)) } returns listOf()
+        val podDetails = podService.getPodDetails(builder.build())
         assert(podDetails).isEmpty()
     }
 
     @Test
     fun `should use podIp and management path to get management data and create a PodDetail for each pod`() {
         val dcBuilder = DeploymentConfigDataBuilder()
+        val appBuilder = AuroraApplicationInstanceDataBuilder()
         val podBuilder = PodDataBuilder()
         val managementResult = ManagementDataBuilder().build()
         every { openShiftService.pods(dcBuilder.dcNamespace, dcBuilder.dcSelector) } returns listOf(podBuilder.build())
-        every { managementDataService.load(podBuilder.ip, dcBuilder.dcManagementPath) } returns managementResult
+        every { managementDataService.load(podBuilder.ip, appBuilder.managementPath) } returns managementResult
 
-        val podDetails = podService.getPodDetails(dcBuilder.build())
+        val podDetails = podService.getPodDetails(appBuilder.build())
 
         assert(podDetails).hasSize(1)
         assert(podDetails[0].openShiftPodExcerpt.podIP).isEqualTo(podBuilder.ip)
