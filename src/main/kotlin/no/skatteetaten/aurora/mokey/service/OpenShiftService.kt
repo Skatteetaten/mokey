@@ -71,7 +71,10 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
 }
 
 fun DefaultOpenShiftClient.auroraApplicationInstances(namespace: String): List<AuroraApplicationInstance> {
-    val url = this.openshiftUrl.toURI().resolve("namespaces/$namespace/auroraapplicationinstances")
+    // TODO: fix url
+    // TODO: permissions to get AAI
+    val url =
+        this.openshiftUrl.toURI().resolve("/apis/skatteetaten.no/v1/namespaces/$namespace/auroraapplicationinstances")
     return try {
         val request = Request.Builder().url(url.toString()).build()
         val response = this.httpClient.newCall(request).execute()
