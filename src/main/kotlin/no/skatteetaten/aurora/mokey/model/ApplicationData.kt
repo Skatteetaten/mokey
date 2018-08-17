@@ -35,7 +35,7 @@ data class ApplicationData(
     val addresses: List<Address>,
     val sprocketDone: String? = null,
     val splunkIndex: String? = null,
-    val links: Map<String, String> = emptyMap()
+    val links: Map<String, String>
 ) {
     val errors
         get(): List<PodError> = this.pods

@@ -4,6 +4,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.hateoas.ExposesResourceFor
+import org.springframework.hateoas.Link
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.web.bind.annotation.GetMapping
@@ -23,7 +24,8 @@ class ApplicationInstanceController(
     @GetMapping("/{id}")
     fun get(@PathVariable id: String): ApplicationInstanceResource {
         val application =
-            applicationDataService.findApplicationDataByInstanceId(id) ?: throw NoSuchResourceException("Does not exist")
+            applicationDataService.findApplicationDataByInstanceId(id)
+                ?: throw NoSuchResourceException("Does not exist")
         return assembler.toResource(application)
     }
 }
@@ -44,6 +46,9 @@ class ApplicationInstanceResourceAssembler :
             Version(applicationData.deployTag, applicationData.imageDetails?.auroraVersion)
         ).apply {
             add(linkTo(ApplicationInstanceController::class.java).slash(applicationData.applicationInstanceId).withSelfRel())
+            add(applicationData.links.map {
+                Link(it.key, it.value)
+            })
         }
     }
 }

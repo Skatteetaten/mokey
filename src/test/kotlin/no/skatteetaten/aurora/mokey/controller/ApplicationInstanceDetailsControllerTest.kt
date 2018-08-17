@@ -46,7 +46,8 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
             "affiliation",
             pods = listOf(PodDetailsDataBuilder().build()),
             deployDetails = DeployDetails("Complete", 1, 1),
-            addresses = emptyList()
+            addresses = emptyList(),
+            links = mapOf("auroraDeploymentSpec" to "http://boober/deploymentspec")
         )
 
         given(applicationDataService.findApplicationDataByInstanceId(ID)).willReturn(applicationData)

@@ -28,10 +28,16 @@ import io.fabric8.openshift.api.model.DeploymentConfig
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
+import no.skatteetaten.aurora.mokey.model.ApplicationCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.ApplicationSpec
+import no.skatteetaten.aurora.mokey.model.AuroraApplicationInstance
+import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.ImageDetails
@@ -40,9 +46,6 @@ import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
-import no.skatteetaten.aurora.mokey.service.ApplicationSpec
-import no.skatteetaten.aurora.mokey.service.AuroraApplicationInstance
-import no.skatteetaten.aurora.mokey.service.AuroraConfigRef
 import no.skatteetaten.aurora.utils.Right
 import org.apache.commons.codec.digest.DigestUtils
 import java.time.Instant
@@ -58,8 +61,7 @@ data class AuroraApplicationInstanceDataBuilder(
     val releaseTo: String? = null,
     val exactGitRef: String = "abcd",
     val overrides: Map<String, String> = emptyMap(),
-    val auroraConfigRefBranch: String = "master",
-    val links: Map<String, String> = emptyMap()
+    val auroraConfigRefBranch: String = "master"
 ) {
 
     fun build(): AuroraApplicationInstance {
@@ -72,17 +74,18 @@ data class AuroraApplicationInstanceDataBuilder(
                 )
             },
             spec = ApplicationSpec(
-                configRef = AuroraConfigRef(affiliation, auroraConfigRefBranch),
-                overrides = overrides,
+                command = ApplicationCommand(
+                    overrideFiles = overrides,
+                    auroraConfig = AuroraConfigRef(affiliation, exactGitRef),
+                    applicationId = ApplicationId(appName, Environment(appNamespace, affiliation))
+                ),
                 applicationId = DigestUtils.sha1Hex(appName),
                 applicationInstanceId = DigestUtils.sha1Hex(appName + appNamespace),
                 splunkIndex = splunkIndex,
                 managementPath = managementPath,
                 releaseTo = releaseTo,
-                exactGitRef = exactGitRef,
                 deployTag = deployTag,
-                selector = selector,
-                links = links
+                selector = selector
             )
         )
     }
@@ -293,6 +296,7 @@ data class ApplicationDataBuilder(
             namespace,
             affiliation,
             deployDetails = DeployDetails(null, 1, 1),
-            addresses = emptyList()
+            addresses = emptyList(),
+            links = mapOf("auroraDeploymentSpec" to "http://boober/deploymentSpcec")
         )
 }

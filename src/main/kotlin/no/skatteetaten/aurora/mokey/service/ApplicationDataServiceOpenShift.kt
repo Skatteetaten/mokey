@@ -9,6 +9,7 @@ import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.AuroraApplicationInstance
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -119,7 +120,7 @@ class ApplicationDataServiceOpenShift(
             addresses = applicationAddresses,
             sprocketDone = dc.sprocketDone,
             splunkIndex = splunkIndex,
-            links = applicationInstance.spec.links
+            links = mapOf("auroraDeploymentSpec" to applicationInstance.spec.command.createDeploymentSepcLink("boober"))
         )
     }
 }

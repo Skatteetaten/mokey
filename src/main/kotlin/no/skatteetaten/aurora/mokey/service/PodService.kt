@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.Pod
+import no.skatteetaten.aurora.mokey.model.AuroraApplicationInstance
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service
