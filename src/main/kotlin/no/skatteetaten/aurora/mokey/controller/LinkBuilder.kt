@@ -37,7 +37,6 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
 
         val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
             .pathSegment(
-                "api",
                 "v1",
                 "auroradeployspec",
                 command.auroraConfig.name,
