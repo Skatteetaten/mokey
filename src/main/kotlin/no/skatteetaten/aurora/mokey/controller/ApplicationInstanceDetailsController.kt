@@ -120,11 +120,14 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
             ?.map { createServiceLink(applicationData, it.value, it.key) }
             ?: emptyList()
 
+        val otherLinks = applicationData.links.map {
+            Link(it.key, it.value)
+        }
         // TODO: We should use AuroraConfig name instead of affiliation here.
         val applyResultLink = if (applicationData.affiliation != null && applicationData.booberDeployId != null)
             linkBuilder.applyResult(applicationData.affiliation, applicationData.booberDeployId) else null
 
-        return (serviceLinks + addressLinks + applyResultLink + selfLink).filterNotNull()
+        return (serviceLinks + addressLinks + applyResultLink + otherLinks + selfLink).filterNotNull()
     }
 
     private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =

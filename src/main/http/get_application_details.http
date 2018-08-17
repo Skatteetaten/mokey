@@ -1,4 +1,4 @@
-GET {{apiUrl}}/api/applicationinstancedetails/cc815894dd4fea8a3e7f2459fcac432dc00c5fdc
+GET {{apiUrl}}/api/applicationinstancedetails/0373fa6e7259e7d28b317b1bf055947696998ada
 Authorization:Bearer {{token}}
 
 ###
