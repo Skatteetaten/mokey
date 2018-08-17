@@ -73,21 +73,23 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
     private fun toImageDetailsResource(imageDetails: ImageDetails) =
         ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference)
 
-    private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails) =
-        podDetails.managementData.value?.let {
-            val pod = podDetails.openShiftPodExcerpt
-            val podLinkIndex = it.info.value?.podLinks
-            val podLinks = podLinkIndex?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
-            PodResource(
-                pod.name,
-                pod.status,
-                pod.restartCount,
-                pod.ready,
-                pod.startTime
-            ).apply {
-                this.add(podLinks)
-            }
+    private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
+        val podLinks = podDetails.managementData.value?.let { managementData ->
+            val podManagementLinks = managementData.info.value?.podLinks
+            podManagementLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
+        } ?: listOf()
+
+        val pod = podDetails.openShiftPodExcerpt
+        return PodResource(
+            pod.name,
+            pod.status,
+            pod.restartCount,
+            pod.ready,
+            pod.startTime
+        ).apply {
+            this.add(podLinks)
         }
+    }
 
     private fun toGitInfoResource(aPod: InfoResponse?) =
         GitInfoResource(aPod?.commitId, aPod?.commitTime)
