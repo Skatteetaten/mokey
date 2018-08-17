@@ -32,7 +32,7 @@ data class ApplicationSpec(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ApplicationCommand(
     val overrideFiles: Map<String, String>,
-    val applicationId: ApplicationId,
+    val applicationId: ApplicationCommandId,
     val auroraConfig: AuroraConfigRef
 ) {
 
@@ -47,8 +47,8 @@ data class ApplicationCommand(
                 "v1",
                 "auroradeployspec",
                 auroraConfig.name,
-                applicationId.environment.namespace,
-                applicationId.name
+                applicationId.environment,
+                applicationId.application
             )
             .queryParam("reference", auroraConfig.refName)
 
@@ -69,3 +69,7 @@ data class AuroraConfigRef(
 data class AuroraApplicationInstanceList(
     val items: List<AuroraApplicationInstance> = emptyList()
 )
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ApplicationCommandId(val environment: String, val application: String)

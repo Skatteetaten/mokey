@@ -29,15 +29,14 @@ import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.model.ApplicationCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationId
 import no.skatteetaten.aurora.mokey.model.ApplicationSpec
 import no.skatteetaten.aurora.mokey.model.AuroraApplicationInstance
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.ImageDetails
@@ -77,7 +76,7 @@ data class AuroraApplicationInstanceDataBuilder(
                 command = ApplicationCommand(
                     overrideFiles = overrides,
                     auroraConfig = AuroraConfigRef(affiliation, exactGitRef),
-                    applicationId = ApplicationId(appName, Environment(appNamespace, affiliation))
+                    applicationId = ApplicationCommandId(application = appName, environment = appNamespace)
                 ),
                 applicationId = DigestUtils.sha1Hex(appName),
                 applicationInstanceId = DigestUtils.sha1Hex(appName + appNamespace),
