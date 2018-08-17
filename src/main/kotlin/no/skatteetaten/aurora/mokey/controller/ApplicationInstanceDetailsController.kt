@@ -112,7 +112,8 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 
         val selfLink =
-            ControllerLinkBuilder.linkTo(ApplicationInstanceDetailsController::class.java).slash(applicationData.applicationInstanceId)
+            ControllerLinkBuilder.linkTo(ApplicationInstanceDetailsController::class.java)
+                .slash(applicationData.applicationInstanceId)
                 .withSelfRel()
         val addressLinks =
             applicationData.addresses.map { linkBuilder.createLink(it.url.toString(), it::class.simpleName!!) }
@@ -120,14 +121,13 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
             ?.map { createServiceLink(applicationData, it.value, it.key) }
             ?: emptyList()
 
-        val otherLinks = applicationData.links.map {
-            Link(it.key, it.value)
-        }
-        // TODO: We should use AuroraConfig name instead of affiliation here.
-        val applyResultLink = if (applicationData.affiliation != null && applicationData.booberDeployId != null)
-            linkBuilder.applyResult(applicationData.affiliation, applicationData.booberDeployId) else null
+        val deploymentSpecLink = linkBuilder.deploymentSepc(applicationData.command)
 
-        return (serviceLinks + addressLinks + applyResultLink + otherLinks + selfLink).filterNotNull()
+        // TODO: We should use AuroraConfig name instead of affiliation here.
+        val applyResultLink = if (applicationData.booberDeployId != null)
+            linkBuilder.applyResult(applicationData.command.auroraConfig.name, applicationData.booberDeployId) else null
+
+        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLink + selfLink).filterNotNull()
     }
 
     private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =

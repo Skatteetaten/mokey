@@ -1,6 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
+import no.skatteetaten.aurora.mokey.model.ApplicationCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
@@ -22,7 +25,10 @@ class ApplicationDataServiceCacheDecoratorTest {
         "aurora",
         deployDetails = DeployDetails("Complete", 1, 1),
         addresses = emptyList(),
-        links = mapOf("auroraDeploymentSpec" to "http://boober/deploymentspec")
+        command = ApplicationCommand(
+            ApplicationCommandId("namespace", "name"),
+            AuroraConfigRef("affiliation", "master")
+        )
     )
     val app1v2 = app1v1.copy(deployTag = "prod")
 
@@ -34,8 +40,8 @@ class ApplicationDataServiceCacheDecoratorTest {
         val affiliations = listOf("aurora")
 
         given(sourceApplicationDataService.findAllApplicationData(affiliations))
-                .willReturn(listOf(app1v1))
-                .willReturn(listOf(app1v2))
+            .willReturn(listOf(app1v1))
+            .willReturn(listOf(app1v2))
 
         assertThat(applicationDataService.findApplicationDataByInstanceId(app1Id)).isNull()
 

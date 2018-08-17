@@ -120,7 +120,7 @@ class ApplicationDataServiceOpenShift(
             addresses = applicationAddresses,
             sprocketDone = dc.sprocketDone,
             splunkIndex = splunkIndex,
-            links = mapOf("auroraDeploymentSpec" to applicationInstance.spec.command.createDeploymentSepcLink("boober"))
+            command = applicationInstance.spec.command
         )
     }
 }

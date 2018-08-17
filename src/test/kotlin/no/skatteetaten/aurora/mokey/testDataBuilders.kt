@@ -296,6 +296,9 @@ data class ApplicationDataBuilder(
             affiliation,
             deployDetails = DeployDetails(null, 1, 1),
             addresses = emptyList(),
-            links = mapOf("auroraDeploymentSpec" to "http://boober/deploymentSpcec")
+            command = ApplicationCommand(
+                ApplicationCommandId("namespace", "name"),
+                AuroraConfigRef("affiliation", "master")
+            )
         )
 }

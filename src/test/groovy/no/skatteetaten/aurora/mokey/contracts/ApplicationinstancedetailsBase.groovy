@@ -5,7 +5,10 @@ import java.time.Instant
 import no.skatteetaten.aurora.mokey.controller.ApplicationInstanceDetailsController
 import no.skatteetaten.aurora.mokey.controller.ApplicationInstanceDetailsResourceAssembler
 import no.skatteetaten.aurora.mokey.controller.LinkBuilder
+import no.skatteetaten.aurora.mokey.model.ApplicationCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
@@ -61,6 +64,11 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
         new DeployDetails('', 1, 1), [],
         '',
         null,
-        [:])
+         new ApplicationCommand(
+            new ApplicationCommandId(applicationInstance.environment, applicationName),
+            new AuroraConfigRef(applicationInstance.affiliation, "master"),
+            [:]
+        )
+        )
   }
 }

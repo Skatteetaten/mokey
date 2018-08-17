@@ -2,8 +2,11 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
+import no.skatteetaten.aurora.mokey.model.ApplicationCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
@@ -47,7 +50,10 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
             pods = listOf(PodDetailsDataBuilder().build()),
             deployDetails = DeployDetails("Complete", 1, 1),
             addresses = emptyList(),
-            links = mapOf("auroraDeploymentSpec" to "http://boober/deploymentspec")
+            command = ApplicationCommand(
+                ApplicationCommandId("namespace", "name"),
+                AuroraConfigRef("affiliation", "master")
+            )
         )
 
         given(applicationDataService.findApplicationDataByInstanceId(ID)).willReturn(applicationData)

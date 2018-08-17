@@ -2,9 +2,7 @@ package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.kubernetes.api.model.ObjectMeta
-import org.springframework.web.util.UriComponentsBuilder
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -31,34 +29,10 @@ data class ApplicationSpec(
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ApplicationCommand(
-    val overrideFiles: Map<String, String>,
     val applicationId: ApplicationCommandId,
-    val auroraConfig: AuroraConfigRef
-) {
-
-    fun createDeploymentSepcLink(host: String): String {
-        val overridesQueryParam = overrideFiles.takeIf { it.isNotEmpty() }?.let {
-            jacksonObjectMapper().writeValueAsString(it)
-        }
-
-        val uriComponents = UriComponentsBuilder.newInstance()
-            .scheme("http").host(host)
-            .pathSegment(
-                "api",
-                "v1",
-                "auroradeployspec",
-                auroraConfig.name,
-                applicationId.environment,
-                applicationId.application
-            )
-            .queryParam("reference", auroraConfig.refName)
-
-        overridesQueryParam?.let {
-            uriComponents.queryParam("overrides", it)
-        }
-        return uriComponents.build().toUriString()
-    }
-}
+    val auroraConfig: AuroraConfigRef,
+    val overrideFiles: Map<String, String> = emptyMap()
+)
 
 data class AuroraConfigRef(
     val name: String,
