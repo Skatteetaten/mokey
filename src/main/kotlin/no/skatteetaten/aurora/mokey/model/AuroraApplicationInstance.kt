@@ -44,6 +44,7 @@ data class ApplicationCommand(
         val uriComponents = UriComponentsBuilder.newInstance()
             .scheme("http").host(host)
             .pathSegment(
+                "api",
                 "v1",
                 "auroradeployspec",
                 auroraConfig.name,
