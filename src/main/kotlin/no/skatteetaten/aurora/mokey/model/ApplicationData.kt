@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.model
 
+import no.skatteetaten.aurora.mokey.service.AuroraStatuses
 import no.skatteetaten.aurora.utils.Either
 import no.skatteetaten.aurora.utils.error
 import no.skatteetaten.aurora.utils.value
@@ -22,7 +23,7 @@ data class GroupedApplicationData(
 data class ApplicationData(
     val applicationId: String?,
     val applicationInstanceId: String,
-    val auroraStatus: AuroraStatus,
+    val auroraStatuses: AuroraStatuses,
     val deployTag: String,
     val name: String,
     val namespace: String,

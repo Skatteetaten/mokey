@@ -47,7 +47,12 @@ class ApplicationResourceAssembler :
                 it.affiliation,
                 environment.name,
                 it.namespace,
-                it.auroraStatus.let { status -> AuroraStatusResource(status.level.toString(), status.comment) },
+                it.auroraStatuses.currentStatus.let { status ->
+                    AuroraStatusResource(
+                        status.level.toString(),
+                        status.comment
+                    )
+                },
                 Version(it.deployTag, it.imageDetails?.auroraVersion)
             ).apply {
                 add(linkTo(ApplicationInstanceController::class.java).slash(it.applicationInstanceId).withSelfRel())

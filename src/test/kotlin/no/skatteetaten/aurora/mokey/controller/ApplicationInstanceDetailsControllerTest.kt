@@ -4,11 +4,10 @@ import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
-import no.skatteetaten.aurora.mokey.model.AuroraStatus
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.mokey.service.AuroraStatuses
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient
@@ -39,7 +38,7 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
         val applicationData = ApplicationData(
             "abc123",
             ApplicationId("name", Environment("env", "affiliation")).toString(),
-            AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
+            AuroraStatuses(listOf(), mapOf()),
             "deployTag",
             "name",
             "namespace",

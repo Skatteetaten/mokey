@@ -1,8 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.AuroraStatus
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -15,7 +13,7 @@ class ApplicationDataServiceCacheDecoratorTest {
     val app1v1 = ApplicationData(
         app1Id,
         app1Id,
-        AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
+        AuroraStatuses(listOf(), mapOf()),
         "default",
         "testapp",
         "aurora",
@@ -33,8 +31,8 @@ class ApplicationDataServiceCacheDecoratorTest {
         val affiliations = listOf("aurora")
 
         given(sourceApplicationDataService.findAllApplicationData(affiliations))
-                .willReturn(listOf(app1v1))
-                .willReturn(listOf(app1v2))
+            .willReturn(listOf(app1v1))
+            .willReturn(listOf(app1v2))
 
         assertThat(applicationDataService.findApplicationDataByInstanceId(app1Id)).isNull()
 

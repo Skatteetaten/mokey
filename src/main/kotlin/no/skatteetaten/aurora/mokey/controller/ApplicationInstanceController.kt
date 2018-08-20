@@ -23,7 +23,8 @@ class ApplicationInstanceController(
     @GetMapping("/{id}")
     fun get(@PathVariable id: String): ApplicationInstanceResource {
         val application =
-            applicationDataService.findApplicationDataByInstanceId(id) ?: throw NoSuchResourceException("Does not exist")
+            applicationDataService.findApplicationDataByInstanceId(id)
+                ?: throw NoSuchResourceException("Does not exist")
         return assembler.toResource(application)
     }
 }
@@ -40,7 +41,12 @@ class ApplicationInstanceResourceAssembler :
             applicationData.affiliation,
             environment.name,
             environment.namespace,
-            applicationData.auroraStatus.let { AuroraStatusResource(it.level.toString(), it.comment) },
+            applicationData.auroraStatuses.currentStatus.let { status ->
+                AuroraStatusResource(
+                    status.level.toString(),
+                    status.comment
+                )
+            },
             Version(applicationData.deployTag, applicationData.imageDetails?.auroraVersion)
         ).apply {
             add(linkTo(ApplicationInstanceController::class.java).slash(applicationData.applicationInstanceId).withSelfRel())

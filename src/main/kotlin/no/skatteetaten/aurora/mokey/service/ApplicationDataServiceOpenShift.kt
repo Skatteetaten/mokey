@@ -41,8 +41,7 @@ class ApplicationDataServiceOpenShift(
 
         return if (affiliations == null)
             findAllApplicationDataByEnvironments()
-        else
-            findAllApplicationDataByEnvironments(findAllEnvironments().filter { affiliations.contains(it.affiliation) })
+        else findAllApplicationDataByEnvironments(findAllEnvironments().filter { affiliations.contains(it.affiliation) })
     }
 
     override fun findApplicationDataByInstanceId(id: String): ApplicationData? {
@@ -101,7 +100,7 @@ class ApplicationDataServiceOpenShift(
 
         val phase = latestVersion?.let { openshiftService.rc(namespace, "$name-$it")?.deploymentPhase }
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
-        val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
+        val auroraStatuses = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
         // TODO: Should we store splunk index in an annotation/label?
         val splunkIndex = dc.spec.template.spec.containers[0].env.find { it.name == "SPLUNK_INDEX" }?.let {
@@ -112,7 +111,7 @@ class ApplicationDataServiceOpenShift(
         return ApplicationData(
             applicationId = dc.metadata.labels["appId"],
             applicationInstanceId = applicationInstanceId,
-            auroraStatus = auroraStatus,
+            auroraStatuses = auroraStatuses,
             name = name,
             namespace = namespace,
             deployTag = dc.deployTag,
