@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
 
+// TODO: Rename
 data class AuroraStatuses(
     val deploymentStatuses: List<AuroraStatus>,
     val podStatuses: Map<String, AuroraStatus>
@@ -22,14 +23,14 @@ data class AuroraStatuses(
 
     private fun findMostCriticalStatus(): AuroraStatus {
 
-        val getMostCriticalStatus = { auroraStatus: AuroraStatus, acc: AuroraStatus ->
-            if (acc.level.level > auroraStatus.level.level) acc else auroraStatus
+        val getMostCriticalStatus = { acc: AuroraStatus, auroraStatus: AuroraStatus ->
+            if (auroraStatus.level.level > acc.level.level) auroraStatus else acc
         }
 
         val nonHealthyPodStatuses = podStatuses.values.toList().filter { it.level != HEALTHY }
         val allStatuses = nonHealthyPodStatuses + deploymentStatuses
 
-        return if (allStatuses.isEmpty()) AuroraStatus(HEALTHY, "") else allStatuses.reduceRight(getMostCriticalStatus)
+        return if (allStatuses.isEmpty()) AuroraStatus(HEALTHY, "") else allStatuses.reduce(getMostCriticalStatus)
     }
 }
 
@@ -54,7 +55,7 @@ class AuroraStatusCalculator {
         }
 
         if (targetReplicas > availableReplicas && availableReplicas == 0) {
-            deploymentStatuses.add(AuroraStatus(DOWN, "")) // TODO: Reason, comment?
+            deploymentStatuses.add(AuroraStatus(DOWN, "NO_AVAILABLE_PODS"))
         }
 
         if ("Failed".equals(lastDeployment, ignoreCase = true) && availableReplicas <= 0) {
@@ -98,9 +99,8 @@ class AuroraStatusCalculator {
 
     fun findPodStatuses(pods: List<PodDetails>): Map<String, AuroraStatus> {
         return pods.mapNotNull { pod ->
-            val healthStatus = pod.managementData.value?.health?.value?.status?.name
-            healthStatus?.let {
-                val statusLevel = fromApplicationStatus(it)
+            pod.managementData.value?.health?.value?.let {
+                val statusLevel = fromApplicationStatus(it.status.name)
                 val podName = pod.openShiftPodExcerpt.name
                 podName to AuroraStatus(statusLevel, "POD_HEALTH_CHECK")
             }
