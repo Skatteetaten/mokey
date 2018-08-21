@@ -41,22 +41,36 @@ class ApplicationResourceAssembler :
         ApplicationResource::class.java
     ) {
     override fun toResource(data: GroupedApplicationData): ApplicationResource {
-        val applicationInstances = data.applications.map {
-            val environment = Environment.fromNamespace(it.namespace, it.affiliation)
+        val applicationInstances = data.applications.map { app ->
+            val environment = Environment.fromNamespace(app.namespace, app.affiliation)
             ApplicationInstanceResource(
-                it.affiliation,
+                app.affiliation,
                 environment.name,
-                it.namespace,
-                it.auroraStatuses.currentStatus.let { status ->
-                    AuroraStatusResource(
+                app.namespace,
+                app.auroraStatuses.currentStatus.let { status ->
+                    StatusResource(
                         status.level.toString(),
-                        status.comment
+                        status.comment,
+                        AuroraStatusDetailsResource(
+                            app.auroraStatuses.deploymentStatuses.map {
+                                AuroraStatusResource(
+                                    it.level.name,
+                                    it.comment
+                                )
+                            },
+                            app.auroraStatuses.podStatuses.map {
+                                it.key to AuroraStatusResource(
+                                    it.value.level.name,
+                                    it.value.comment
+                                )
+                            }.toMap()
+                        )
                     )
                 },
-                Version(it.deployTag, it.imageDetails?.auroraVersion)
+                Version(app.deployTag, app.imageDetails?.auroraVersion)
             ).apply {
-                add(linkTo(ApplicationInstanceController::class.java).slash(it.applicationInstanceId).withSelfRel())
-                add(linkTo(ApplicationInstanceDetailsController::class.java).slash(it.applicationInstanceId).withRel("ApplicationInstanceDetails"))
+                add(linkTo(ApplicationInstanceController::class.java).slash(app.applicationInstanceId).withSelfRel())
+                add(linkTo(ApplicationInstanceDetailsController::class.java).slash(app.applicationInstanceId).withRel("ApplicationInstanceDetails"))
             }
         }
 

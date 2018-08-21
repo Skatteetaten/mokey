@@ -42,9 +42,23 @@ class ApplicationInstanceResourceAssembler :
             environment.name,
             environment.namespace,
             applicationData.auroraStatuses.currentStatus.let { status ->
-                AuroraStatusResource(
-                    status.level.toString(),
-                    status.comment
+                StatusResource(
+                    status.level.name,
+                    status.comment,
+                    AuroraStatusDetailsResource(
+                        applicationData.auroraStatuses.deploymentStatuses.map {
+                            AuroraStatusResource(
+                                it.level.name,
+                                it.comment
+                            )
+                        },
+                        applicationData.auroraStatuses.podStatuses.mapValues {
+                            AuroraStatusResource(
+                                it.value.level.name,
+                                it.value.comment
+                            )
+                        }.toMap()
+                    )
                 )
             },
             Version(applicationData.deployTag, applicationData.imageDetails?.auroraVersion)
