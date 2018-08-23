@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.model
 
-// TODO: Should comment be renamed to reason?
-data class AuroraStatus(val level: AuroraStatusLevel, val comment: String)
+data class AuroraStatus(val level: AuroraStatusLevel, val comment: String, val statuses: List<HealthStatusDetail>)
 
 enum class AuroraStatusLevel(val level: Int) {
     DOWN(3),
@@ -9,3 +8,5 @@ enum class AuroraStatusLevel(val level: Int) {
     OFF(1),
     HEALTHY(0)
 }
+
+data class HealthStatusDetail(val level: AuroraStatusLevel, val comment: String, val ref: String? = null)

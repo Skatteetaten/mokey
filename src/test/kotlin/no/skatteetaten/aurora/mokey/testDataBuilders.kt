@@ -33,6 +33,8 @@ import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.managementPath
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
@@ -42,7 +44,6 @@ import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
-import no.skatteetaten.aurora.mokey.service.AuroraStatuses
 import no.skatteetaten.aurora.utils.Right
 import java.time.Instant
 
@@ -258,7 +259,7 @@ data class ApplicationDataBuilder(
         ApplicationData(
             applicationId,
             applicationInstanceId,
-            AuroraStatuses(listOf(), mapOf()),
+            AuroraStatus(HEALTHY, "", listOf()),
             "",
             name,
             namespace,

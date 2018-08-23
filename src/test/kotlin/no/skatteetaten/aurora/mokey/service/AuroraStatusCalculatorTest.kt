@@ -27,8 +27,7 @@ class AuroraStatusCalculatorTest {
         expectedComment: String
     ) {
         val deployDetails = DeployDetails(lastDeployment, availableReplicas, targetReplicas)
-        val auroraStatuses = AuroraStatusCalculator().calculateStatus(deployDetails, emptyList())
-        val auroraStatus = auroraStatuses.currentStatus
+        val auroraStatus = AuroraStatusCalculator().calculateStatus(deployDetails, emptyList())
         assert(auroraStatus.level).isEqualTo(AuroraStatusLevel.valueOf(expectedLevel))
         assert(auroraStatus.comment).isEqualTo(expectedComment)
     }

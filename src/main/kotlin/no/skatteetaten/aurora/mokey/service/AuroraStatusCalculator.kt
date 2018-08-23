@@ -7,32 +7,12 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OBSERVE
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.HealthStatusDetail
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.utils.value
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
-
-// TODO: Rename
-data class AuroraStatuses(
-    val deploymentStatuses: List<AuroraStatus>,
-    val podStatuses: Map<String, AuroraStatus>
-) {
-    val currentStatus: AuroraStatus
-        get() = findMostCriticalStatus()
-
-    private fun findMostCriticalStatus(): AuroraStatus {
-
-        val getMostCriticalStatus = { acc: AuroraStatus, auroraStatus: AuroraStatus ->
-            if (auroraStatus.level.level > acc.level.level) auroraStatus else acc
-        }
-
-        val nonHealthyPodStatuses = podStatuses.values.toList().filter { it.level != HEALTHY }
-        val allStatuses = nonHealthyPodStatuses + deploymentStatuses
-
-        return if (allStatuses.isEmpty()) AuroraStatus(HEALTHY, "") else allStatuses.reduce(getMostCriticalStatus)
-    }
-}
 
 @Service
 class AuroraStatusCalculator {
@@ -41,70 +21,80 @@ class AuroraStatusCalculator {
     val AVERAGE_RESTART_ERROR_THRESHOLD = 100
     val DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD = 2
 
-    fun calculateStatus(app: DeployDetails, pods: List<PodDetails>): AuroraStatuses {
+    fun calculateStatus(app: DeployDetails, pods: List<PodDetails>): AuroraStatus {
 
         val lastDeployment = app.deploymentPhase
         val availableReplicas = app.availableReplicas
         val targetReplicas = app.targetReplicas
 
-        val deploymentStatuses = mutableListOf<AuroraStatus>()
+        val healthStatuses = mutableListOf<HealthStatusDetail>()
 
         val threshold = Instant.now().minus(Duration.ofHours(DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD.toLong()))
         if (hasOldPodsWithDifferentDeployments(pods, threshold)) {
-            deploymentStatuses.add(AuroraStatus(DOWN, "DIFFERENT_DEPLOYMENTS"))
+            healthStatuses.add(HealthStatusDetail(DOWN, "DIFFERENT_DEPLOYMENTS"))
         }
 
         if (targetReplicas > availableReplicas && availableReplicas == 0) {
-            deploymentStatuses.add(AuroraStatus(DOWN, "NO_AVAILABLE_PODS"))
+            healthStatuses.add(HealthStatusDetail(DOWN, "NO_AVAILABLE_PODS"))
         }
 
         if ("Failed".equals(lastDeployment, ignoreCase = true) && availableReplicas <= 0) {
-            deploymentStatuses.add(AuroraStatus(DOWN, "DEPLOY_FAILED_NO_PODS"))
+            healthStatuses.add(HealthStatusDetail(DOWN, "DEPLOY_FAILED_NO_PODS"))
         }
 
         val averageRestarts = findAverageRestarts(pods)
 
         if (averageRestarts > AVERAGE_RESTART_ERROR_THRESHOLD) {
-            deploymentStatuses.add(AuroraStatus(DOWN, "AVERAGE_RESTART_ABOVE_THRESHOLD"))
+            healthStatuses.add(
+                HealthStatusDetail(
+                    DOWN,
+                    "AVERAGE_RESTART_ABOVE_THRESHOLD"
+                )
+            )
         }
 
         if (averageRestarts > AVERAGE_RESTART_OBSERVE_THRESHOLD) {
-            deploymentStatuses.add(AuroraStatus(OBSERVE, "AVERAGE_RESTART_ABOVE_THRESHOLD"))
+            healthStatuses.add(
+                HealthStatusDetail(
+                    OBSERVE,
+                    "AVERAGE_RESTART_ABOVE_THRESHOLD"
+                )
+            )
         }
 
         if ("Failed".equals(lastDeployment, ignoreCase = true)) {
-            deploymentStatuses.add(AuroraStatus(OBSERVE, "DEPLOY_FAILED"))
+            healthStatuses.add(HealthStatusDetail(OBSERVE, "DEPLOY_FAILED"))
         }
 
         if (targetReplicas < availableReplicas) {
-            deploymentStatuses.add(AuroraStatus(OBSERVE, "TOO_FEW_PODS"))
+            healthStatuses.add(HealthStatusDetail(OBSERVE, "TOO_FEW_PODS"))
         }
 
         if (targetReplicas > availableReplicas && availableReplicas != 0) {
-            deploymentStatuses.add(AuroraStatus(OBSERVE, "TOO_MANY_PODS"))
+            healthStatuses.add(HealthStatusDetail(OBSERVE, "TOO_MANY_PODS"))
         }
 
         if (targetReplicas == 0 && availableReplicas == 0) {
-            deploymentStatuses.add(AuroraStatus(OFF, "OFF"))
+            healthStatuses.add(HealthStatusDetail(OFF, "OFF"))
         }
 
         if (lastDeployment == null) {
-            deploymentStatuses.add(AuroraStatus(OFF, "NO_DEPLOYMENT"))
+            healthStatuses.add(HealthStatusDetail(OFF, "NO_DEPLOYMENT"))
         }
 
-        val podStatuses = findPodStatuses(pods)
+        healthStatuses.addAll(findPodStatuses(pods))
 
-        return AuroraStatuses(deploymentStatuses, podStatuses)
+        return findMostCriticalStatus(healthStatuses)
     }
 
-    fun findPodStatuses(pods: List<PodDetails>): Map<String, AuroraStatus> {
+    fun findPodStatuses(pods: List<PodDetails>): List<HealthStatusDetail> {
         return pods.mapNotNull { pod ->
             pod.managementData.value?.health?.value?.let {
                 val statusLevel = fromApplicationStatus(it.status.name)
                 val podName = pod.openShiftPodExcerpt.name
-                podName to AuroraStatus(statusLevel, "POD_HEALTH_CHECK")
+                HealthStatusDetail(statusLevel, "POD_HEALTH_CHECK", podName)
             }
-        }.toMap()
+        }
     }
 
     fun fromApplicationStatus(status: String): AuroraStatusLevel {
@@ -138,5 +128,21 @@ class AuroraStatusCalculator {
         }
 
         return ap.stream().anyMatch { p -> Instant.parse(p.openShiftPodExcerpt.startTime).isBefore(threshold) }
+    }
+
+    private fun findMostCriticalStatus(healthStatuses: List<HealthStatusDetail>): AuroraStatus {
+
+        val getMostCriticalStatus = { acc: HealthStatusDetail, auroraStatus: HealthStatusDetail ->
+            if (auroraStatus.level.level > acc.level.level) auroraStatus else acc
+        }
+
+        val nonHealthyStatuses = healthStatuses.filter { it.level !== HEALTHY }
+
+        return when {
+            nonHealthyStatuses.isEmpty() -> AuroraStatus(HEALTHY, "", healthStatuses)
+            else -> nonHealthyStatuses.reduce(getMostCriticalStatus).let {
+                AuroraStatus(it.level, it.comment, healthStatuses)
+            }
+        }
     }
 }

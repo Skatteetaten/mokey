@@ -6,6 +6,8 @@ import no.skatteetaten.aurora.mokey.controller.ApplicationInstanceDetailsControl
 import no.skatteetaten.aurora.mokey.controller.ApplicationInstanceDetailsResourceAssembler
 import no.skatteetaten.aurora.mokey.controller.LinkBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
@@ -13,7 +15,6 @@ import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import no.skatteetaten.aurora.mokey.service.AuroraStatuses
 import no.skatteetaten.aurora.utils.Right
 
 class ApplicationinstancedetailsBase extends AbstractContractBase {
@@ -48,7 +49,7 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
 
 
     new ApplicationData('', '',
-        new AuroraStatuses([], [:]),
+        new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
         applicationInstance.version.deployTag,
         applicationName,
         applicationInstance.namespace,

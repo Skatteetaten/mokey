@@ -111,7 +111,7 @@ class ApplicationDataServiceOpenShift(
         return ApplicationData(
             applicationId = dc.metadata.labels["appId"],
             applicationInstanceId = applicationInstanceId,
-            auroraStatuses = auroraStatuses,
+            auroraStatus = auroraStatuses,
             name = name,
             namespace = namespace,
             deployTag = dc.deployTag,

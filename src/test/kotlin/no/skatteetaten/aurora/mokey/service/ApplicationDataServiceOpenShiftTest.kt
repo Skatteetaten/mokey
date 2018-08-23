@@ -69,15 +69,16 @@ class ApplicationDataServiceOpenShiftTest {
         val addresses = listOf(ServiceAddress(URI.create("http://app-name"), Instant.EPOCH))
         every { addressService.getAddresses(dcBuilder.dcNamespace, "app-name") } returns addresses
 
-        every { auroraStatusCalculator.calculateStatus(any(), any()).currentStatus } returns AuroraStatus(
+        every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(
             AuroraStatusLevel.HEALTHY,
-            ""
+            "",
+            listOf()
         )
 
         val id = "affiliation::affiliation::app-name"
         val applicationData = applicationDataServiceOpenShift.findApplicationDataByInstanceId(id)
 
         assert(applicationData?.name).isEqualTo(dcBuilder.dcName)
-        assert(applicationData?.auroraStatuses?.currentStatus?.level).isEqualTo(AuroraStatusLevel.HEALTHY)
+        assert(applicationData?.auroraStatus?.level).isEqualTo(AuroraStatusLevel.HEALTHY)
     }
 }

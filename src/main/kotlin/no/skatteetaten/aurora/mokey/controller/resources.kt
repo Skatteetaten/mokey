@@ -34,24 +34,19 @@ data class ApplicationInstanceResource(
     val affiliation: String?,
     val environment: String,
     val namespace: String,
-    val status: StatusResource,
+    val status: AuroraStatusResource,
     val version: Version
 ) : HalResource()
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
 
-data class StatusResource(
+data class AuroraStatusResource(
     val code: String,
     val comment: String? = null,
-    val details: AuroraStatusDetailsResource? = null
+    val details: List<HealthStatusDetailResource>? = null
 )
 
-data class AuroraStatusResource(val code: String, val comment: String? = null)
-
-data class AuroraStatusDetailsResource(
-    val deploymentStatuses: List<AuroraStatusResource>,
-    val podStatuses: Map<String, AuroraStatusResource>
-)
+data class HealthStatusDetailResource(val code: String, val comment: String, val ref: String?)
 
 class ApplicationInstanceDetailsResource(
     val buildTime: Instant? = null,
