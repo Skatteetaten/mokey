@@ -13,9 +13,7 @@ class AuroraStatusCalculatorTest {
     @CsvSource(
         "Failed, 0, 0, DOWN, DEPLOY_FAILED_NO_PODS",
         "Failed, 2, 0, OBSERVE, DEPLOY_FAILED",
-//        "Progress, 0, 0, HEALTHY, DEPLOYMENT_IN_PROGRESS",
-//        "Progress, 1, 1, HEALTHY, DEPLOYMENT_IN_PROGRESS",
-        "Complete, 0, 1, DOWN, ''",
+        "Complete, 0, 1, DOWN, 'NO_AVAILABLE_PODS'",
         "Complete, 1, 2, OBSERVE, TOO_MANY_PODS",
         "Complete, 0, 0, OFF, OFF",
         "Complete, 2, 1, OBSERVE, TOO_FEW_PODS",
