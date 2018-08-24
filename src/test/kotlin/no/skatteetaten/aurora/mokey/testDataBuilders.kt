@@ -73,7 +73,7 @@ data class AuroraApplicationDeploymentDataBuilder(
                 )
             },
             spec = ApplicationDeploymentSpec(
-                deploymentCommand = ApplicationDeploymentCommand(
+                command = ApplicationDeploymentCommand(
                     overrideFiles = overrides,
                     auroraConfig = AuroraConfigRef(affiliation, exactGitRef),
                     applicationDeploymentRef = ApplicationDeploymentRef(

@@ -126,7 +126,7 @@ class ApplicationDataServiceOpenShift(
             addresses = applicationAddresses,
             sprocketDone = dc.sprocketDone,
             splunkIndex = splunkIndex,
-            deploymentCommand = applicationDeployment.spec.deploymentCommand
+            deploymentCommand = applicationDeployment.spec.command
         )
     }
 }
