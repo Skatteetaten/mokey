@@ -12,7 +12,6 @@ import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
-import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import org.junit.jupiter.api.BeforeEach
@@ -23,13 +22,12 @@ import java.time.Instant
 class ApplicationDataServiceOpenShiftTest {
 
     private val openShiftService = mockk<OpenShiftService>()
-    private val auroraStatusCalculator = mockk<AuroraStatusCalculator>()
+    // private val auroraStatusCalculator = mockk<AuroraStatusCalculator>()
     private val podService = mockk<PodService>()
     private val imageService = mockk<ImageService>()
     private val addressService = mockk<AddressService>()
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
         openShiftService,
-        auroraStatusCalculator,
         podService,
         addressService,
         imageService
@@ -37,7 +35,7 @@ class ApplicationDataServiceOpenShiftTest {
 
     @BeforeEach
     fun setUp() {
-        clearMocks(openShiftService, auroraStatusCalculator, podService, imageService, addressService)
+        clearMocks(openShiftService, podService, imageService, addressService)
     }
 
     @Test
@@ -68,12 +66,6 @@ class ApplicationDataServiceOpenShiftTest {
 
         val addresses = listOf(ServiceAddress(URI.create("http://app-name"), Instant.EPOCH))
         every { addressService.getAddresses(dcBuilder.dcNamespace, "app-name") } returns addresses
-
-        every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(
-            AuroraStatusLevel.HEALTHY,
-            "",
-            listOf()
-        )
 
         val id = "affiliation::affiliation::app-name"
         val applicationData = applicationDataServiceOpenShift.findApplicationDataByInstanceId(id)
