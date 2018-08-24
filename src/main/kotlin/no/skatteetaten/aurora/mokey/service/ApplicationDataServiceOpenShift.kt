@@ -14,6 +14,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationId
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -23,7 +24,7 @@ import org.springframework.stereotype.Service
 @ApplicationDataSource(CLUSTER)
 class ApplicationDataServiceOpenShift(
     val openshiftService: OpenShiftService,
-    val auroraStatusCalculator: AuroraStatusCalculator,
+    //val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
     val addressService: AddressService,
     val imageService: ImageService
@@ -100,7 +101,7 @@ class ApplicationDataServiceOpenShift(
 
         val phase = latestVersion?.let { openshiftService.rc(namespace, "$name-$it")?.deploymentPhase }
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
-        val auroraStatuses = auroraStatusCalculator.calculateStatus(deployDetails, pods)
+        val auroraStatuses = AuroraStatus(deployDetails, pods)
 
         // TODO: Should we store splunk index in an annotation/label?
         val splunkIndex = dc.spec.template.spec.containers[0].env.find { it.name == "SPLUNK_INDEX" }?.let {

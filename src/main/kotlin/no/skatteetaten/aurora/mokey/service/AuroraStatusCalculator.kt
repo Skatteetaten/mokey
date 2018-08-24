@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
 
-@Service
+/*@Service
 class AuroraStatusCalculator {
 
     val AVERAGE_RESTART_OBSERVE_THRESHOLD = 20
@@ -145,4 +145,4 @@ class AuroraStatusCalculator {
             }
         }
     }
-}
+}*/

@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import assertk.assert
 import assertk.assertions.isEqualTo
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import org.junit.jupiter.params.ParameterizedTest
@@ -27,7 +28,7 @@ class AuroraStatusCalculatorTest {
         expectedComment: String
     ) {
         val deployDetails = DeployDetails(lastDeployment, availableReplicas, targetReplicas)
-        val auroraStatus = AuroraStatusCalculator().calculateStatus(deployDetails, emptyList())
+        val auroraStatus = AuroraStatus(deployDetails, emptyList())
         assert(auroraStatus.level).isEqualTo(AuroraStatusLevel.valueOf(expectedLevel))
         assert(auroraStatus.comment).isEqualTo(expectedComment)
     }
