@@ -13,9 +13,9 @@ import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
-import no.skatteetaten.aurora.mokey.model.AuroraApplicationInstance
-import no.skatteetaten.aurora.mokey.model.AuroraApplicationInstanceList
-import no.skatteetaten.aurora.mokey.extensions.imageStreamTag
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentList
+import okhttp3.Request
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.security.core.context.SecurityContextHolder
@@ -53,7 +53,7 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return openShiftClient.imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
     }
 
-    fun auroraApplicationInstances(namespace: String): List<AuroraApplicationInstance> {
+    fun auroraApplicationInstances(namespace: String): List<ApplicationDeployment> {
         return (openShiftClient as DefaultOpenShiftClient).auroraApplicationInstances(namespace)
     }
 
@@ -69,14 +69,14 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
     }
 }
 
-fun DefaultOpenShiftClient.auroraApplicationInstances(namespace: String): List<AuroraApplicationInstance> {
+fun DefaultOpenShiftClient.auroraApplicationInstances(namespace: String): List<ApplicationDeployment> {
     // TODO: permissions to get AAI
     val url =
-        this.openshiftUrl.toURI().resolve("/apis/skatteetaten.no/v1/namespaces/$namespace/auroraapplicationinstances")
+        this.openshiftUrl.toURI().resolve("/apis/skatteetaten.no/v1/namespaces/$namespace/applicationdeployments")
     return try {
         val request = Request.Builder().url(url.toString()).build()
         val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), AuroraApplicationInstanceList::class.java)?.let {
+        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeploymentList::class.java)?.let {
             it.items
         } ?: throw KubernetesClientException("Error occurred while fetching list of applications namespace=$namespace")
     } catch (e: Exception) {

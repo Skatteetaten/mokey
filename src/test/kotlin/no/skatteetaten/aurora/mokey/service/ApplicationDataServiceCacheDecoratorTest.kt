@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
-import no.skatteetaten.aurora.mokey.model.ApplicationCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
@@ -25,7 +25,7 @@ class ApplicationDataServiceCacheDecoratorTest {
         "aurora",
         deployDetails = DeployDetails("Complete", 1, 1),
         addresses = emptyList(),
-        command = ApplicationCommand(
+        deploymentCommand = ApplicationDeploymentCommand(
             ApplicationCommandId("namespace", "name"),
             AuroraConfigRef("affiliation", "master")
         )

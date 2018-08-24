@@ -121,11 +121,11 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
             ?.map { createServiceLink(applicationData, it.value, it.key) }
             ?: emptyList()
 
-        val deploymentSpecLink = linkBuilder.deploymentSepc(applicationData.command)
+        val deploymentSpecLink = linkBuilder.deploymentSpec(applicationData.deploymentCommand)
 
         // TODO: We should use AuroraConfig name instead of affiliation here.
         val applyResultLink = if (applicationData.booberDeployId != null)
-            linkBuilder.applyResult(applicationData.command.auroraConfig.name, applicationData.booberDeployId) else null
+            linkBuilder.applyResult(applicationData.deploymentCommand.auroraConfig.name, applicationData.booberDeployId) else null
 
         return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLink + selfLink).filterNotNull()
     }

@@ -2,10 +2,10 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
-import no.skatteetaten.aurora.mokey.model.ApplicationCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -41,7 +41,7 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
     fun `should get applicationdetails given user with access`() {
         val applicationData = ApplicationData(
             "abc123",
-            ApplicationId("name", Environment("env", "affiliation")).toString(),
+            ApplicationDeploymentId("name", Environment("env", "affiliation")).toString(),
             AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
             "deployTag",
             "name",
@@ -50,7 +50,7 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
             pods = listOf(PodDetailsDataBuilder().build()),
             deployDetails = DeployDetails("Complete", 1, 1),
             addresses = emptyList(),
-            command = ApplicationCommand(
+            deploymentCommand = ApplicationDeploymentCommand(
                 ApplicationCommandId("namespace", "name"),
                 AuroraConfigRef("affiliation", "master")
             )

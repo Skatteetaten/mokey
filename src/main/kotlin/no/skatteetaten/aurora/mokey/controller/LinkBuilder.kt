@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import no.skatteetaten.aurora.mokey.model.ApplicationCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -30,8 +30,8 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
         )
     }
 
-    fun deploymentSepc(command: ApplicationCommand): Link {
-        val overridesQueryParam = command.overrideFiles.takeIf { it.isNotEmpty() }?.let {
+    fun deploymentSpec(deploymentCommand: ApplicationDeploymentCommand): Link {
+        val overridesQueryParam = deploymentCommand.overrideFiles.takeIf { it.isNotEmpty() }?.let {
             jacksonObjectMapper().writeValueAsString(it)
         }
 
@@ -39,11 +39,11 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
             .pathSegment(
                 "v1",
                 "auroradeployspec",
-                command.auroraConfig.name,
-                command.applicationId.environment,
-                command.applicationId.application
+                deploymentCommand.auroraConfig.name,
+                deploymentCommand.applicationId.environment,
+                deploymentCommand.applicationId.application
             )
-            .queryParam("reference", command.auroraConfig.refName)
+            .queryParam("reference", deploymentCommand.auroraConfig.refName)
 
         overridesQueryParam?.let {
             uriComponents.queryParam("overrides", it)

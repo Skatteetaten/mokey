@@ -8,8 +8,8 @@ import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationId
-import no.skatteetaten.aurora.mokey.model.AuroraApplicationInstance
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -44,8 +44,8 @@ class ApplicationDataServiceOpenShift(
     }
 
     override fun findApplicationDataByInstanceId(id: String): ApplicationData? {
-        val applicationId: ApplicationId = ApplicationId.fromString(id)
-        return findAllApplicationDataByEnvironments(listOf(applicationId.environment)).find { it.name == applicationId.name }
+        val applicationDeploymentId: ApplicationDeploymentId = ApplicationDeploymentId.fromString(id)
+        return findAllApplicationDataByEnvironments(listOf(applicationDeploymentId.environment)).find { it.name == applicationDeploymentId.name }
     }
 
     fun findAllEnvironments(): List<Environment> {
@@ -64,7 +64,7 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
-    private fun createApplicationData(app: AuroraApplicationInstance): ApplicationData {
+    private fun createApplicationData(app: ApplicationDeployment): ApplicationData {
 
         //            val status = AuroraStatusCalculator.calculateStatus(app)
         //            val commonTags = listOf(
@@ -86,11 +86,11 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
-    private fun tryCreateApplicationData(applicationInstance: AuroraApplicationInstance): ApplicationData {
-        val affiliation = applicationInstance.metadata.affiliation
-        val namespace = applicationInstance.metadata.namespace
-        val name = applicationInstance.metadata.name
-        val pods = podService.getPodDetails(applicationInstance)
+    private fun tryCreateApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
+        val affiliation = applicationDeployment.metadata.affiliation
+        val namespace = applicationDeployment.metadata.namespace
+        val name = applicationDeployment.metadata.name
+        val pods = podService.getPodDetails(applicationDeployment)
         val applicationAddresses = addressService.getAddresses(namespace, name)
 
         // TODO: Akkurat nå støtter vi kun DC.
@@ -102,25 +102,25 @@ class ApplicationDataServiceOpenShift(
 
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
-        val splunkIndex = applicationInstance.spec.splunkIndex
+        val splunkIndex = applicationDeployment.deploymentSpec.splunkIndex
 
         return ApplicationData(
-            applicationId = applicationInstance.spec.applicationId,
-            applicationInstanceId = applicationInstance.spec.applicationInstanceId,
+            applicationId = applicationDeployment.deploymentSpec.applicationId,
+            applicationInstanceId = applicationDeployment.deploymentSpec.applicationInstanceId,
             auroraStatus = auroraStatus,
             name = name,
             namespace = namespace,
-            deployTag = applicationInstance.spec.deployTag ?: "",
-            booberDeployId = applicationInstance.metadata.booberDeployId,
+            deployTag = applicationDeployment.deploymentSpec.deployTag ?: "",
+            booberDeployId = applicationDeployment.metadata.booberDeployId,
             affiliation = affiliation,
-            managementPath = applicationInstance.spec.managementPath,
+            managementPath = applicationDeployment.deploymentSpec.managementPath,
             pods = pods,
             imageDetails = imageDetails,
             deployDetails = deployDetails,
             addresses = applicationAddresses,
             sprocketDone = dc.sprocketDone,
             splunkIndex = splunkIndex,
-            command = applicationInstance.spec.command
+            deploymentCommand = applicationDeployment.deploymentSpec.deploymentCommand
         )
     }
 }

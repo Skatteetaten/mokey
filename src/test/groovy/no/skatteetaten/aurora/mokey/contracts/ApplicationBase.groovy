@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey.contracts
 
 import no.skatteetaten.aurora.mokey.controller.ApplicationController
-import no.skatteetaten.aurora.mokey.model.ApplicationCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
@@ -30,7 +30,7 @@ class ApplicationBase extends AbstractContractBase {
     new ApplicationData(applicationId, '', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
         '', name, namespace, affiliation, '', '',
         [], null, new DeployDetails('', 1, 1), [], '', null,
-        new ApplicationCommand(
+        new ApplicationDeploymentCommand(
             new ApplicationCommandId("", ""),
             new AuroraConfigRef("", ""),
             [:]

@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.Pod
-import no.skatteetaten.aurora.mokey.model.AuroraApplicationInstance
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service
@@ -12,11 +12,11 @@ class PodService(
     val managementDataService: ManagementDataService
 ) {
 
-    fun getPodDetails(applicationInstance: AuroraApplicationInstance): List<PodDetails> {
+    fun getPodDetails(applicationDeployment: ApplicationDeployment): List<PodDetails> {
 
-        val pods = openShiftService.pods(applicationInstance.metadata.namespace, applicationInstance.spec.selector)
+        val pods = openShiftService.pods(applicationDeployment.metadata.namespace, applicationDeployment.deploymentSpec.selector)
         return pods.map { pod: Pod ->
-            val managementResult = managementDataService.load(pod.status.podIP, applicationInstance.spec.managementPath)
+            val managementResult = managementDataService.load(pod.status.podIP, applicationDeployment.deploymentSpec.managementPath)
             createPodDetails(pod, managementResult)
         }
     }

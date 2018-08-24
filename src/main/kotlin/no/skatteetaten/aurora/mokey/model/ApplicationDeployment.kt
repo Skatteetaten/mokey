@@ -6,16 +6,16 @@ import io.fabric8.kubernetes.api.model.ObjectMeta
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class AuroraApplicationInstance(
-    val kind: String = "AuroraApplicationInstance",
+data class ApplicationDeployment(
+    val kind: String = "ApplicationDeployment",
     val metadata: ObjectMeta,
     val apiVersion: String = "skatteetaten.no/v1",
-    val spec: ApplicationSpec
+    val deploymentSpec: ApplicationDeploymentSpec
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class ApplicationSpec(
+data class ApplicationDeploymentSpec(
     val applicationId: String,
     val applicationInstanceId: String,
     val splunkIndex: String? = null,
@@ -23,12 +23,12 @@ data class ApplicationSpec(
     val releaseTo: String?,
     val deployTag: String?,
     val selector: Map<String, String>,
-    val command: ApplicationCommand
+    val deploymentCommand: ApplicationDeploymentCommand
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class ApplicationCommand(
+data class ApplicationDeploymentCommand(
     val applicationId: ApplicationCommandId,
     val auroraConfig: AuroraConfigRef,
     val overrideFiles: Map<String, String> = emptyMap()
@@ -41,8 +41,8 @@ data class AuroraConfigRef(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class AuroraApplicationInstanceList(
-    val items: List<AuroraApplicationInstance> = emptyList()
+data class ApplicationDeploymentList(
+    val items: List<ApplicationDeployment> = emptyList()
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

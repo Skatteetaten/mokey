@@ -28,11 +28,11 @@ import io.fabric8.openshift.api.model.DeploymentConfig
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
-import no.skatteetaten.aurora.mokey.model.ApplicationCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationSpec
-import no.skatteetaten.aurora.mokey.model.AuroraApplicationInstance
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentSpec
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -63,8 +63,8 @@ data class AuroraApplicationInstanceDataBuilder(
     val auroraConfigRefBranch: String = "master"
 ) {
 
-    fun build(): AuroraApplicationInstance {
-        return AuroraApplicationInstance(
+    fun build(): ApplicationDeployment {
+        return ApplicationDeployment(
             metadata = newObjectMeta {
                 name = appName
                 namespace = appNamespace
@@ -72,8 +72,8 @@ data class AuroraApplicationInstanceDataBuilder(
                     LABEL_AFFILIATION to affiliation
                 )
             },
-            spec = ApplicationSpec(
-                command = ApplicationCommand(
+            deploymentSpec = ApplicationDeploymentSpec(
+                deploymentCommand = ApplicationDeploymentCommand(
                     overrideFiles = overrides,
                     auroraConfig = AuroraConfigRef(affiliation, exactGitRef),
                     applicationId = ApplicationCommandId(application = appName, environment = appNamespace)
@@ -296,7 +296,7 @@ data class ApplicationDataBuilder(
             affiliation,
             deployDetails = DeployDetails(null, 1, 1),
             addresses = emptyList(),
-            command = ApplicationCommand(
+            deploymentCommand = ApplicationDeploymentCommand(
                 ApplicationCommandId("namespace", "name"),
                 AuroraConfigRef("affiliation", "master")
             )
