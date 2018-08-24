@@ -123,7 +123,6 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         val deploymentSpecLink = linkBuilder.deploymentSpec(applicationData.deploymentCommand)
 
-        // TODO: We should use AuroraConfig name instead of affiliation here.
         val applyResultLink = if (applicationData.booberDeployId != null)
             linkBuilder.applyResult(applicationData.deploymentCommand.auroraConfig.name, applicationData.booberDeployId) else null
 
