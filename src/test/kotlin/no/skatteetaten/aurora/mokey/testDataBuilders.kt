@@ -28,11 +28,11 @@ import io.fabric8.openshift.api.model.DeploymentConfig
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
+import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
-import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentSpec
-import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -72,11 +72,14 @@ data class AuroraApplicationDeploymentDataBuilder(
                     LABEL_AFFILIATION to affiliation
                 )
             },
-            deploymentSpec = ApplicationDeploymentSpec(
+            spec = ApplicationDeploymentSpec(
                 deploymentCommand = ApplicationDeploymentCommand(
                     overrideFiles = overrides,
                     auroraConfig = AuroraConfigRef(affiliation, exactGitRef),
-                    applicationId = ApplicationDeploymentRef(application = appName, environment = appNamespace)
+                    applicationDeploymentRef = ApplicationDeploymentRef(
+                        application = appName,
+                        environment = appNamespace
+                    )
                 ),
                 applicationId = DigestUtils.sha1Hex(appName),
                 applicationDeploymentId = DigestUtils.sha1Hex(appName + appNamespace),
@@ -297,8 +300,8 @@ data class ApplicationDataBuilder(
             deployDetails = DeployDetails(null, 1, 1),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(
-                ApplicationDeploymentRef("namespace", "name"),
-                AuroraConfigRef("affiliation", "master")
+                applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name"),
+                auroraConfig = AuroraConfigRef("affiliation", "master")
             )
         )
 }

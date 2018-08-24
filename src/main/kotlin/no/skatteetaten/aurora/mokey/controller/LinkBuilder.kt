@@ -41,8 +41,8 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
                 "v1",
                 "auroradeployspec",
                 deploymentCommand.auroraConfig.name,
-                deploymentCommand.applicationId.environment,
-                deploymentCommand.applicationId.application
+                deploymentCommand.applicationDeploymentRef.environment,
+                deploymentCommand.applicationDeploymentRef.application
             )
             .queryParam("reference", deploymentCommand.auroraConfig.refName)
 

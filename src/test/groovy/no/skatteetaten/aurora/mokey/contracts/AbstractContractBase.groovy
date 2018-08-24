@@ -27,7 +27,7 @@ abstract class AbstractContractBase extends Specification {
   private defaultResponseName = ''
 
   void loadJsonResponses(def baseObject) {
-    def baseName = baseObject.getClass().getSimpleName().toLowerCase().replaceFirst('spec$', '')
+    def baseName = baseObject.getClass().getSimpleName().toLowerCase().replaceFirst('deploymentSpec$', '')
     defaultResponseName = baseName
     def files = loadFiles(baseName)
     populateResponses(files)

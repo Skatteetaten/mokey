@@ -2,10 +2,10 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -51,8 +51,8 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
             deployDetails = DeployDetails("Complete", 1, 1),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(
-                ApplicationDeploymentRef("namespace", "name"),
-                AuroraConfigRef("affiliation", "master")
+                auroraConfig = AuroraConfigRef("affiliation", "master", "123"),
+                applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name")
             )
         )
 

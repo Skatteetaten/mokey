@@ -31,9 +31,9 @@ class ApplicationBase extends AbstractContractBase {
         '', name, namespace, affiliation, '', '',
         [], null, new DeployDetails('', 1, 1), [], '', null,
         new ApplicationDeploymentCommand(
+            [:],
             new ApplicationDeploymentRef("", ""),
             new AuroraConfigRef("", "", ""),
-            [:]
         )
     )
   }

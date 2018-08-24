@@ -26,8 +26,8 @@ class ApplicationDataServiceCacheDecoratorTest {
         deployDetails = DeployDetails("Complete", 1, 1),
         addresses = emptyList(),
         deploymentCommand = ApplicationDeploymentCommand(
-            ApplicationDeploymentRef("namespace", "name"),
-            AuroraConfigRef("affiliation", "master")
+            applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name"),
+            auroraConfig = AuroraConfigRef("affiliation", "master")
         )
     )
     val app1v2 = app1v1.copy(deployTag = "prod")

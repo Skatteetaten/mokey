@@ -108,25 +108,25 @@ class ApplicationDataServiceOpenShift(
 
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
-        val splunkIndex = applicationDeployment.deploymentSpec.splunkIndex
+        val splunkIndex = applicationDeployment.spec.splunkIndex
 
         return ApplicationData(
-            applicationId = applicationDeployment.deploymentSpec.applicationId,
-            applicationDeploymentId = applicationDeployment.deploymentSpec.applicationDeploymentId,
+            applicationId = applicationDeployment.spec.applicationId,
+            applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
             auroraStatus = auroraStatus,
             name = name,
             namespace = namespace,
-            deployTag = applicationDeployment.deploymentSpec.deployTag ?: "",
+            deployTag = applicationDeployment.spec.deployTag ?: "",
             booberDeployId = applicationDeployment.metadata.booberDeployId,
             affiliation = affiliation,
-            managementPath = applicationDeployment.deploymentSpec.managementPath,
+            managementPath = applicationDeployment.spec.managementPath,
             pods = pods,
             imageDetails = imageDetails,
             deployDetails = deployDetails,
             addresses = applicationAddresses,
             sprocketDone = dc.sprocketDone,
             splunkIndex = splunkIndex,
-            deploymentCommand = applicationDeployment.deploymentSpec.deploymentCommand
+            deploymentCommand = applicationDeployment.spec.deploymentCommand
         )
     }
 }

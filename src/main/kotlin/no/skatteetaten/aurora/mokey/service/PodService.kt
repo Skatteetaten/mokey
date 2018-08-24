@@ -14,9 +14,9 @@ class PodService(
 
     fun getPodDetails(applicationDeployment: ApplicationDeployment): List<PodDetails> {
 
-        val pods = openShiftService.pods(applicationDeployment.metadata.namespace, applicationDeployment.deploymentSpec.selector)
+        val pods = openShiftService.pods(applicationDeployment.metadata.namespace, applicationDeployment.spec.selector)
         return pods.map { pod: Pod ->
-            val managementResult = managementDataService.load(pod.status.podIP, applicationDeployment.deploymentSpec.managementPath)
+            val managementResult = managementDataService.load(pod.status.podIP, applicationDeployment.spec.managementPath)
             createPodDetails(pod, managementResult)
         }
     }

@@ -32,9 +32,9 @@ class ApplicationdeploymentBase extends AbstractContractBase {
         applicationDeployment.affiliation, '', '', [],
         new ImageDetails('', Instant.now(), [:]), new DeployDetails('', 0, 0), [], '', null,
            new ApplicationDeploymentCommand(
+           [:],
             new ApplicationDeploymentRef(applicationDeployment.environment, ""),
             new AuroraConfigRef(applicationDeployment.affiliation, "master", "123"),
-            [:]
         )
     )
 
