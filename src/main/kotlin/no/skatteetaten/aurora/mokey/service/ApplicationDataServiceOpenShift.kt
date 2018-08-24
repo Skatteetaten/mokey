@@ -8,8 +8,8 @@ import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -43,7 +43,7 @@ class ApplicationDataServiceOpenShift(
             findAllApplicationDataByEnvironments(findAllEnvironments().filter { affiliations.contains(it.affiliation) })
     }
 
-    override fun findApplicationDataByInstanceId(id: String): ApplicationData? {
+    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
         val applicationDeploymentId: ApplicationDeploymentId = ApplicationDeploymentId.fromString(id)
         return findAllApplicationDataByEnvironments(listOf(applicationDeploymentId.environment)).find { it.name == applicationDeploymentId.name }
     }
@@ -57,8 +57,14 @@ class ApplicationDataServiceOpenShift(
             environments
                 .flatMap { environment ->
                     logger.debug("Find all applications in namespace={}", environment)
-                    val applicationInstances = openshiftService.auroraApplicationInstances(environment.namespace)
-                    applicationInstances.map { instance -> async(mtContext) { createApplicationData(instance) } }
+                    val applicationDeployments = openshiftService.applicationDeployments(environment.namespace)
+                    applicationDeployments.map { applicationDeployment ->
+                        async(mtContext) {
+                            createApplicationData(
+                                applicationDeployment
+                            )
+                        }
+                    }
                 }
                 .map { it.await() }
         }
@@ -106,7 +112,7 @@ class ApplicationDataServiceOpenShift(
 
         return ApplicationData(
             applicationId = applicationDeployment.deploymentSpec.applicationId,
-            applicationInstanceId = applicationDeployment.deploymentSpec.applicationInstanceId,
+            applicationDeploymentId = applicationDeployment.deploymentSpec.applicationDeploymentId,
             auroraStatus = auroraStatus,
             name = name,
             namespace = namespace,

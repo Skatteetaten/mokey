@@ -7,7 +7,7 @@ import assertk.assertions.isEqualTo
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
-import no.skatteetaten.aurora.mokey.AuroraApplicationInstanceDataBuilder
+import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
@@ -55,12 +55,12 @@ class ApplicationDataServiceOpenShiftTest {
 
     @Test
     fun `find application data by id`() {
-        val appBuilder = AuroraApplicationInstanceDataBuilder()
+        val appBuilder = AuroraApplicationDeploymentDataBuilder()
 
         val dcBuilder = DeploymentConfigDataBuilder()
 
-        val appInstance = appBuilder.build()
-        every { openShiftService.auroraApplicationInstances(dcBuilder.dcAffiliation) } returns listOf(appInstance)
+        val appDeployment = appBuilder.build()
+        every { openShiftService.applicationDeployments(dcBuilder.dcAffiliation) } returns listOf(appDeployment)
 
         val dc = dcBuilder.build()
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
@@ -68,7 +68,7 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.rc(dcBuilder.dcNamespace, "app-name-1") } returns replicationController
 
         val podDetails = PodDetailsDataBuilder().build()
-        every { podService.getPodDetails(appInstance) } returns listOf(podDetails)
+        every { podService.getPodDetails(appDeployment) } returns listOf(podDetails)
 
         val imageDetails = ImageDetailsDataBuilder().build()
         every { imageService.getImageDetails(dc) } returns imageDetails
@@ -82,7 +82,7 @@ class ApplicationDataServiceOpenShiftTest {
         )
 
         val id = "affiliation::affiliation::app-name"
-        val applicationData = applicationDataServiceOpenShift.findApplicationDataByInstanceId(id)
+        val applicationData = applicationDataServiceOpenShift.findApplicationDataByApplicationDeploymentId(id)
 
         assert(applicationData?.name).isEqualTo(dcBuilder.dcName)
         assert(applicationData?.auroraStatus?.level).isEqualTo(AuroraStatusLevel.HEALTHY)

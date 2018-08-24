@@ -53,8 +53,8 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return openShiftClient.imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
     }
 
-    fun auroraApplicationInstances(namespace: String): List<ApplicationDeployment> {
-        return (openShiftClient as DefaultOpenShiftClient).auroraApplicationInstances(namespace)
+    fun applicationDeployments(namespace: String): List<ApplicationDeployment> {
+        return (openShiftClient as DefaultOpenShiftClient).applicationDeployments(namespace)
     }
 
     fun projects(): List<Project> {
@@ -69,7 +69,7 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
     }
 }
 
-fun DefaultOpenShiftClient.auroraApplicationInstances(namespace: String): List<ApplicationDeployment> {
+fun DefaultOpenShiftClient.applicationDeployments(namespace: String): List<ApplicationDeployment> {
     // TODO: permissions to get AAI
     val url =
         this.openshiftUrl.toURI().resolve("/apis/skatteetaten.no/v1/namespaces/$namespace/applicationdeployments")

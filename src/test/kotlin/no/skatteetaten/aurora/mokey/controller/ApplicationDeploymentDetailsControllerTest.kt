@@ -3,7 +3,7 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
-import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
@@ -23,13 +23,13 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(
-    ApplicationInstanceDetailsController::class,
-    ApplicationInstanceDetailsResourceAssembler::class,
+    ApplicationDeploymentDetailsController::class,
+    ApplicationDeploymentDetailsResourceAssembler::class,
     LinkBuilderFactory::class
 )
 @TestPropertySource(properties = ["boober-api-url=http://localhost"])
 @AutoConfigureWebClient
-class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest() {
+class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTest() {
 
     private val ID = "123"
 
@@ -51,14 +51,14 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
             deployDetails = DeployDetails("Complete", 1, 1),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(
-                ApplicationCommandId("namespace", "name"),
+                ApplicationDeploymentRef("namespace", "name"),
                 AuroraConfigRef("affiliation", "master")
             )
         )
 
-        given(applicationDataService.findApplicationDataByInstanceId(ID)).willReturn(applicationData)
+        given(applicationDataService.findApplicationDataByApplicationDeploymentId(ID)).willReturn(applicationData)
 
-        mockMvc.perform(get("/api/applicationinstancedetails/{id}", "123"))
+        mockMvc.perform(get("/api/applicationdeploymentdetails/{id}", "123"))
             .andExpect(status().isOk)
     }
 }

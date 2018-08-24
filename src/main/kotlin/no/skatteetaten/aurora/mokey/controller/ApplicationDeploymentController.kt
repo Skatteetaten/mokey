@@ -12,39 +12,39 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@ExposesResourceFor(ApplicationInstanceResource::class)
-@RequestMapping("/api/applicationinstance")
-class ApplicationInstanceController(
+@ExposesResourceFor(ApplicationDeploymentResource::class)
+@RequestMapping("/api/applicationdeployment")
+class ApplicationDeploymentController(
     val applicationDataService: ApplicationDataService
 ) {
 
-    val assembler = ApplicationInstanceResourceAssembler()
+    val assembler = ApplicationDeploymentResourceAssembler()
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: String): ApplicationInstanceResource {
+    fun get(@PathVariable id: String): ApplicationDeploymentResource {
         val application =
-            applicationDataService.findApplicationDataByInstanceId(id)
+            applicationDataService.findApplicationDataByApplicationDeploymentId(id)
                 ?: throw NoSuchResourceException("Does not exist")
         return assembler.toResource(application)
     }
 }
 
-class ApplicationInstanceResourceAssembler :
-    ResourceAssemblerSupport<ApplicationData, ApplicationInstanceResource>(
-        ApplicationInstanceController::class.java,
-        ApplicationInstanceResource::class.java
+class ApplicationDeploymentResourceAssembler :
+    ResourceAssemblerSupport<ApplicationData, ApplicationDeploymentResource>(
+        ApplicationDeploymentController::class.java,
+        ApplicationDeploymentResource::class.java
     ) {
 
-    override fun toResource(applicationData: ApplicationData): ApplicationInstanceResource {
+    override fun toResource(applicationData: ApplicationData): ApplicationDeploymentResource {
         val environment = Environment.fromNamespace(applicationData.namespace, applicationData.affiliation)
-        return ApplicationInstanceResource(
+        return ApplicationDeploymentResource(
             applicationData.affiliation,
             environment.name,
             environment.namespace,
             applicationData.auroraStatus.let { AuroraStatusResource(it.level.toString(), it.comment) },
             Version(applicationData.deployTag, applicationData.imageDetails?.auroraVersion)
         ).apply {
-            add(linkTo(ApplicationInstanceController::class.java).slash(applicationData.applicationInstanceId).withSelfRel())
+            add(linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId).withSelfRel())
         }
     }
 }

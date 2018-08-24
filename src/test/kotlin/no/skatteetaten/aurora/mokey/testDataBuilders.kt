@@ -29,7 +29,7 @@ import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
-import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentSpec
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
@@ -49,7 +49,7 @@ import no.skatteetaten.aurora.utils.Right
 import org.apache.commons.codec.digest.DigestUtils
 import java.time.Instant
 
-data class AuroraApplicationInstanceDataBuilder(
+data class AuroraApplicationDeploymentDataBuilder(
     val appName: String = "app-name",
     val appNamespace: String = "namespace",
     val affiliation: String = "affiliation",
@@ -76,10 +76,10 @@ data class AuroraApplicationInstanceDataBuilder(
                 deploymentCommand = ApplicationDeploymentCommand(
                     overrideFiles = overrides,
                     auroraConfig = AuroraConfigRef(affiliation, exactGitRef),
-                    applicationId = ApplicationCommandId(application = appName, environment = appNamespace)
+                    applicationId = ApplicationDeploymentRef(application = appName, environment = appNamespace)
                 ),
                 applicationId = DigestUtils.sha1Hex(appName),
-                applicationInstanceId = DigestUtils.sha1Hex(appName + appNamespace),
+                applicationDeploymentId = DigestUtils.sha1Hex(appName + appNamespace),
                 splunkIndex = splunkIndex,
                 managementPath = managementPath,
                 releaseTo = releaseTo,
@@ -279,7 +279,7 @@ data class ImageStreamTagDataBuilder(
 
 data class ApplicationDataBuilder(
     val applicationId: String = "abc123",
-    val applicationInstanceId: String = "cbd234",
+    val applicationDeploymentId: String = "cbd234",
     val name: String = "name",
     val namespace: String = "namespace",
     val affiliation: String = "paas"
@@ -288,7 +288,7 @@ data class ApplicationDataBuilder(
     fun build(): ApplicationData =
         ApplicationData(
             applicationId,
-            applicationInstanceId,
+            applicationDeploymentId,
             AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
             "",
             name,
@@ -297,7 +297,7 @@ data class ApplicationDataBuilder(
             deployDetails = DeployDetails(null, 1, 1),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(
-                ApplicationCommandId("namespace", "name"),
+                ApplicationDeploymentRef("namespace", "name"),
                 AuroraConfigRef("affiliation", "master")
             )
         )

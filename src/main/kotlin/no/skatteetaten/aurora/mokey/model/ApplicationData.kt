@@ -21,7 +21,7 @@ data class GroupedApplicationData(
 
 data class ApplicationData(
     val applicationId: String?,
-    val applicationInstanceId: String,
+    val applicationDeploymentId: String,
     val auroraStatus: AuroraStatus,
     val deployTag: String,
     val name: String,

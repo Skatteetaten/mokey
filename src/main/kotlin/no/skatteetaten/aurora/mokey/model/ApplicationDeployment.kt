@@ -17,7 +17,7 @@ data class ApplicationDeployment(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ApplicationDeploymentSpec(
     val applicationId: String,
-    val applicationInstanceId: String,
+    val applicationDeploymentId: String,
     val splunkIndex: String? = null,
     val managementPath: String?,
     val releaseTo: String?,
@@ -29,14 +29,15 @@ data class ApplicationDeploymentSpec(
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ApplicationDeploymentCommand(
-    val applicationId: ApplicationCommandId,
+    val applicationId: ApplicationDeploymentRef,
     val auroraConfig: AuroraConfigRef,
     val overrideFiles: Map<String, String> = emptyMap()
 )
 
 data class AuroraConfigRef(
     val name: String,
-    val refName: String
+    val refName: String,
+    val resolvedRef: String? = null
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -47,4 +48,4 @@ data class ApplicationDeploymentList(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class ApplicationCommandId(val environment: String, val application: String)
+data class ApplicationDeploymentRef(val environment: String, val application: String)

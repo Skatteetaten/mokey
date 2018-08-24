@@ -27,10 +27,10 @@ class ApplicationResource(
     val appId: String?,
     val name: String,
     val tags: List<String>,
-    val applicationInstances: List<ApplicationInstanceResource>
+    val applicationDeployments: List<ApplicationDeploymentResource>
 ) : HalResource()
 
-data class ApplicationInstanceResource(
+data class ApplicationDeploymentResource(
     val affiliation: String?,
     val environment: String,
     val namespace: String,
@@ -42,7 +42,7 @@ data class Version(val deployTag: String?, val auroraVersion: String?)
 
 data class AuroraStatusResource(val code: String, val comment: String? = null)
 
-class ApplicationInstanceDetailsResource(
+class ApplicationDeploymentDetailsResource(
     val buildTime: Instant? = null,
     val gitInfo: GitInfoResource?,
     val imageDetails: ImageDetailsResource?,

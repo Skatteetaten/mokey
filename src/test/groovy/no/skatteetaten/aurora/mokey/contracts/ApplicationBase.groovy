@@ -2,7 +2,7 @@ package no.skatteetaten.aurora.mokey.contracts
 
 import no.skatteetaten.aurora.mokey.controller.ApplicationController
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
-import no.skatteetaten.aurora.mokey.model.ApplicationCommandId
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
@@ -25,14 +25,14 @@ class ApplicationBase extends AbstractContractBase {
   ApplicationData createApplicationData() {
     def applicationId = response('$.appId')
     def name = response('$.name')
-    def affiliation = response('$.applicationInstances[0].affiliation')
-    def namespace = response('$.applicationInstances[0].namespace')
+    def affiliation = response('$.applicationDeployments[0].affiliation')
+    def namespace = response('$.applicationDeployments[0].namespace')
     new ApplicationData(applicationId, '', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
         '', name, namespace, affiliation, '', '',
         [], null, new DeployDetails('', 1, 1), [], '', null,
         new ApplicationDeploymentCommand(
-            new ApplicationCommandId("", ""),
-            new AuroraConfigRef("", ""),
+            new ApplicationDeploymentRef("", ""),
+            new AuroraConfigRef("", "", ""),
             [:]
         )
     )

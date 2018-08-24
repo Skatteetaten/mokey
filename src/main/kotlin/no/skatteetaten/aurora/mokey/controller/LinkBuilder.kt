@@ -30,6 +30,7 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
         )
     }
 
+    // TODO: Here we can create two links one for actual and one for current
     fun deploymentSpec(deploymentCommand: ApplicationDeploymentCommand): Link {
         val overridesQueryParam = deploymentCommand.overrideFiles.takeIf { it.isNotEmpty() }?.let {
             jacksonObjectMapper().writeValueAsString(it)
