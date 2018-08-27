@@ -30,8 +30,7 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
         )
     }
 
-    // TODO: Here we can create two links one for actual and one for current
-    fun deploymentSpec(deploymentCommand: ApplicationDeploymentCommand): Link {
+    fun deploymentSpec(deploymentCommand: ApplicationDeploymentCommand): List<Link> {
         val overridesQueryParam = deploymentCommand.overrideFiles.takeIf { it.isNotEmpty() }?.let {
             jacksonObjectMapper().writeValueAsString(it)
         }
@@ -44,12 +43,22 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
                 deploymentCommand.applicationDeploymentRef.environment,
                 deploymentCommand.applicationDeploymentRef.application
             )
-            .queryParam("reference", deploymentCommand.auroraConfig.refName)
 
         overridesQueryParam?.let {
             uriComponents.queryParam("overrides", it)
         }
-        return createLink(uriComponents.build().toUriString(), "DeploymentSpec")
+
+        val currentLink =
+            uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.refName).build()
+                .toUriString()
+        val deployedLink =
+            uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.resolvedRef).build()
+                .toUriString()
+
+        return listOf(
+            createLink(currentLink, "DeploymentSpecCurrent"),
+            createLink(deployedLink, "DeploymentSpecDeployed")
+        )
     }
 
     fun createLink(linkString: String, rel: String, expandParams: Map<String, String> = mapOf()): Link {
