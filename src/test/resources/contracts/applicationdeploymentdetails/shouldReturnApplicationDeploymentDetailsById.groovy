@@ -1,4 +1,4 @@
-package applicationinstancedetails
+package applicationdeploymentdetails
 
 import org.springframework.cloud.contract.spec.Contract
 
@@ -6,8 +6,8 @@ Contract.make {
   request {
     method 'GET'
     url $(
-        stub(~/\/api\/applicationinstancedetails\/\w+/),
-        test('/api/applicationinstancedetails/123')
+        stub(~/\/api\/applicationdeploymentdetails\/\w+/),
+        test('/api/applicationdeploymentdetails/123')
     )
   }
   response {
@@ -15,6 +15,6 @@ Contract.make {
     headers {
       contentType(applicationJson())
     }
-    body(file('responses/applicationinstancedetails.json'))
+    body(file('responses/applicationdeploymentdetails.json'))
   }
 }

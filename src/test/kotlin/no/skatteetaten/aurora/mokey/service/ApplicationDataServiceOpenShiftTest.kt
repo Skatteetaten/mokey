@@ -7,6 +7,7 @@ import assertk.assertions.isEqualTo
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
@@ -28,11 +29,11 @@ class ApplicationDataServiceOpenShiftTest {
     private val imageService = mockk<ImageService>()
     private val addressService = mockk<AddressService>()
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
-            openShiftService,
-            auroraStatusCalculator,
-            podService,
-            addressService,
-            imageService
+        openShiftService,
+        auroraStatusCalculator,
+        podService,
+        addressService,
+        imageService
     )
 
     @BeforeEach
@@ -54,14 +55,20 @@ class ApplicationDataServiceOpenShiftTest {
 
     @Test
     fun `find application data by id`() {
+        val appBuilder = AuroraApplicationDeploymentDataBuilder()
+
         val dcBuilder = DeploymentConfigDataBuilder()
+
+        val appDeployment = appBuilder.build()
+        every { openShiftService.applicationDeployments(dcBuilder.dcAffiliation) } returns listOf(appDeployment)
+
         val dc = dcBuilder.build()
-        every { openShiftService.deploymentConfigs(dcBuilder.dcAffiliation) } returns listOf(dc)
+        every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         val replicationController = ReplicationControllerDataBuilder().build()
         every { openShiftService.rc(dcBuilder.dcNamespace, "app-name-1") } returns replicationController
 
         val podDetails = PodDetailsDataBuilder().build()
-        every { podService.getPodDetails(dc) } returns listOf(podDetails)
+        every { podService.getPodDetails(appDeployment) } returns listOf(podDetails)
 
         val imageDetails = ImageDetailsDataBuilder().build()
         every { imageService.getImageDetails(dc) } returns imageDetails
@@ -69,10 +76,13 @@ class ApplicationDataServiceOpenShiftTest {
         val addresses = listOf(ServiceAddress(URI.create("http://app-name"), Instant.EPOCH))
         every { addressService.getAddresses(dcBuilder.dcNamespace, "app-name") } returns addresses
 
-        every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(AuroraStatusLevel.HEALTHY, "")
+        every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(
+            AuroraStatusLevel.HEALTHY,
+            ""
+        )
 
         val id = "affiliation::affiliation::app-name"
-        val applicationData = applicationDataServiceOpenShift.findApplicationDataByInstanceId(id)
+        val applicationData = applicationDataServiceOpenShift.findApplicationDataByApplicationDeploymentId(id)
 
         assert(applicationData?.name).isEqualTo(dcBuilder.dcName)
         assert(applicationData?.auroraStatus?.level).isEqualTo(AuroraStatusLevel.HEALTHY)

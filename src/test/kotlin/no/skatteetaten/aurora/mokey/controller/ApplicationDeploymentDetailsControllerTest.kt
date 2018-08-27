@@ -3,7 +3,10 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
+import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
@@ -20,13 +23,13 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(
-    ApplicationInstanceDetailsController::class,
-    ApplicationInstanceDetailsResourceAssembler::class,
+    ApplicationDeploymentDetailsController::class,
+    ApplicationDeploymentDetailsResourceAssembler::class,
     LinkBuilderFactory::class
 )
 @TestPropertySource(properties = ["boober-api-url=http://localhost"])
 @AutoConfigureWebClient
-class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest() {
+class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTest() {
 
     private val ID = "123"
 
@@ -38,7 +41,7 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
     fun `should get applicationdetails given user with access`() {
         val applicationData = ApplicationData(
             "abc123",
-            ApplicationId("name", Environment("env", "affiliation")).toString(),
+            ApplicationDeploymentId("name", Environment("env", "affiliation")).toString(),
             AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
             "deployTag",
             "name",
@@ -46,12 +49,16 @@ class ApplicationInstanceDetailsControllerTest : AbstractSecurityControllerTest(
             "affiliation",
             pods = listOf(PodDetailsDataBuilder().build()),
             deployDetails = DeployDetails("Complete", 1, 1),
-            addresses = emptyList()
+            addresses = emptyList(),
+            deploymentCommand = ApplicationDeploymentCommand(
+                auroraConfig = AuroraConfigRef("affiliation", "master", "123"),
+                applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name")
+            )
         )
 
-        given(applicationDataService.findApplicationDataByInstanceId(ID)).willReturn(applicationData)
+        given(applicationDataService.findApplicationDataByApplicationDeploymentId(ID)).willReturn(applicationData)
 
-        mockMvc.perform(get("/api/applicationinstancedetails/{id}", "123"))
+        mockMvc.perform(get("/api/applicationdeploymentdetails/{id}", "123"))
             .andExpect(status().isOk)
     }
 }

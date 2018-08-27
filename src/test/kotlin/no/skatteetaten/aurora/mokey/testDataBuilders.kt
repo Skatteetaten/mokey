@@ -3,13 +3,12 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
 import com.fkorotkov.kubernetes.metadata
-import com.fkorotkov.kubernetes.newContainer
 import com.fkorotkov.kubernetes.newContainerStatus
+import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
 import com.fkorotkov.kubernetes.newRawExtension
 import com.fkorotkov.kubernetes.newReplicationController
 import com.fkorotkov.kubernetes.newService
-import com.fkorotkov.kubernetes.spec
 import com.fkorotkov.kubernetes.status
 import com.fkorotkov.openshift.from
 import com.fkorotkov.openshift.image
@@ -24,15 +23,17 @@ import com.fkorotkov.openshift.newRouteIngress
 import com.fkorotkov.openshift.newRouteIngressCondition
 import com.fkorotkov.openshift.spec
 import com.fkorotkov.openshift.status
-import com.fkorotkov.openshift.template
-import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
+import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
-import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
-import no.skatteetaten.aurora.mokey.extensions.managementPath
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentSpec
+import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
@@ -45,22 +46,63 @@ import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.utils.Right
+import org.apache.commons.codec.digest.DigestUtils
 import java.time.Instant
+
+data class AuroraApplicationDeploymentDataBuilder(
+    val appName: String = "app-name",
+    val appNamespace: String = "namespace",
+    val affiliation: String = "affiliation",
+    val managementPath: String = ":8081/actuator",
+    val deployTag: String = "name:tag",
+    val selector: Map<String, String> = mapOf("name" to appName),
+    val splunkIndex: String = "openshift-test",
+    val releaseTo: String? = null,
+    val exactGitRef: String = "abcd",
+    val overrides: Map<String, String> = emptyMap(),
+    val auroraConfigRefBranch: String = "master"
+) {
+
+    fun build(): ApplicationDeployment {
+        return ApplicationDeployment(
+            metadata = newObjectMeta {
+                name = appName
+                namespace = appNamespace
+                labels = mapOf(
+                    LABEL_AFFILIATION to affiliation
+                )
+            },
+            spec = ApplicationDeploymentSpec(
+                command = ApplicationDeploymentCommand(
+                    overrideFiles = overrides,
+                    auroraConfig = AuroraConfigRef(affiliation, exactGitRef),
+                    applicationDeploymentRef = ApplicationDeploymentRef(
+                        application = appName,
+                        environment = appNamespace
+                    )
+                ),
+                applicationId = DigestUtils.sha1Hex(appName),
+                applicationDeploymentId = DigestUtils.sha1Hex(appName + appNamespace),
+                splunkIndex = splunkIndex,
+                managementPath = managementPath,
+                releaseTo = releaseTo,
+                deployTag = deployTag,
+                selector = selector
+            )
+        )
+    }
+}
 
 data class DeploymentConfigDataBuilder(
     val dcName: String = "app-name",
     val dcNamespace: String = "namespace",
     val dcAffiliation: String = "affiliation",
-    val dcManagementPath: String = ":8081/actuator",
     val dcDeployTag: String = "name:tag",
-    val dcSelector: Map<String, String> = mapOf("name" to dcName),
-    val dcEnv: List<EnvVar> = listOf(EnvVar("splunkIndex", "openshift-test", null))
+    val dcSelector: Map<String, String> = mapOf("name" to dcName)
 ) {
 
     fun build(): DeploymentConfig {
         return newDeploymentConfig {
-            managementPath = dcManagementPath
-            affiliation = dcAffiliation
 
             metadata {
                 name = dcName
@@ -82,15 +124,6 @@ data class DeploymentConfigDataBuilder(
                         }
                     }
                 )
-                template {
-                    spec {
-                        containers = listOf(
-                            newContainer {
-                                env = dcEnv
-                            }
-                        )
-                    }
-                }
             }
         }
     }
@@ -249,7 +282,7 @@ data class ImageStreamTagDataBuilder(
 
 data class ApplicationDataBuilder(
     val applicationId: String = "abc123",
-    val applicationInstanceId: String = "cbd234",
+    val applicationDeploymentId: String = "cbd234",
     val name: String = "name",
     val namespace: String = "namespace",
     val affiliation: String = "paas"
@@ -258,13 +291,17 @@ data class ApplicationDataBuilder(
     fun build(): ApplicationData =
         ApplicationData(
             applicationId,
-            applicationInstanceId,
+            applicationDeploymentId,
             AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
             "",
             name,
             namespace,
             affiliation,
             deployDetails = DeployDetails(null, 1, 1),
-            addresses = emptyList()
+            addresses = emptyList(),
+            deploymentCommand = ApplicationDeploymentCommand(
+                applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name"),
+                auroraConfig = AuroraConfigRef("affiliation", "master")
+            )
         )
 }

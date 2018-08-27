@@ -41,17 +41,17 @@ class ApplicationResourceAssembler :
         ApplicationResource::class.java
     ) {
     override fun toResource(data: GroupedApplicationData): ApplicationResource {
-        val applicationInstances = data.applications.map {
+        val applicationDeployements = data.applications.map {
             val environment = Environment.fromNamespace(it.namespace, it.affiliation)
-            ApplicationInstanceResource(
+            ApplicationDeploymentResource(
                 it.affiliation,
                 environment.name,
                 it.namespace,
                 it.auroraStatus.let { status -> AuroraStatusResource(status.level.toString(), status.comment) },
                 Version(it.deployTag, it.imageDetails?.auroraVersion)
             ).apply {
-                add(linkTo(ApplicationInstanceController::class.java).slash(it.applicationInstanceId).withSelfRel())
-                add(linkTo(ApplicationInstanceDetailsController::class.java).slash(it.applicationInstanceId).withRel("ApplicationInstanceDetails"))
+                add(linkTo(ApplicationDeploymentController::class.java).slash(it.applicationDeploymentId).withSelfRel())
+                add(linkTo(ApplicationDeploymentDetailsController::class.java).slash(it.applicationDeploymentId).withRel("ApplicationDeploymentDetails"))
             }
         }
 
@@ -59,7 +59,7 @@ class ApplicationResourceAssembler :
             data.applicationId,
             data.name,
             emptyList(),
-            applicationInstances
+            applicationDeployements
         ).apply {
             data.applicationId?.let {
                 add(linkTo(ApplicationController::class.java).slash(it).withSelfRel())

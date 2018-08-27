@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.model
 
-data class ApplicationId(val name: String, val environment: Environment) {
+data class ApplicationDeploymentId(val name: String, val environment: Environment) {
     override fun toString(): String {
         return listOf(environment.affiliation, environment.name, name).joinToString(separator)
     }
@@ -8,9 +8,9 @@ data class ApplicationId(val name: String, val environment: Environment) {
     companion object {
         val separator = "::"
 
-        fun fromString(id: String): ApplicationId {
+        fun fromString(id: String): ApplicationDeploymentId {
             val (affiliation, environmentName, name) = id.split(separator)
-            return ApplicationId(name, Environment(environmentName, affiliation))
+            return ApplicationDeploymentId(name, Environment(environmentName, affiliation))
         }
     }
 }

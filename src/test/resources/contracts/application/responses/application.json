@@ -2,7 +2,7 @@
   "appId": "abc123",
   "name": "name",
   "tags": [],
-  "applicationInstances": [
+  "applicationDeployments": [
     {
       "affiliation": "paas",
       "environment": "utv",
@@ -16,10 +16,10 @@
       },
       "_links": {
         "self": {
-          "href": "http://localhost/api/applicationinstance"
+          "href": "http://localhost/api/applicationdeployment"
         },
-        "ApplicationInstanceDetails": {
-          "href": "http://localhost/api/applicationinstancedetails"
+        "ApplicationDeploymentDetails": {
+          "href": "http://localhost/api/applicationdeploymentdetails"
         }
       }
     }
