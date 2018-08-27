@@ -50,9 +50,11 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
 
         val currentLink =
             uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.refName).build()
+                .encode()
                 .toUriString()
         val deployedLink =
             uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.resolvedRef).build()
+                .encode()
                 .toUriString()
 
         return listOf(

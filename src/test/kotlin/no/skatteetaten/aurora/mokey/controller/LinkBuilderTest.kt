@@ -59,4 +59,29 @@ class LinkBuilderTest {
         assert(current.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?reference=master")
         assert(deployed.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?reference=123")
     }
+
+    @Test
+    fun `should create deploymentSepc links with overrides`() {
+
+        val linkBuilder = LinkBuilder("https://boober", mapOf())
+
+        val (current, deployed) = linkBuilder.deploymentSpec(
+            ApplicationDeploymentCommand(
+                overrideFiles = mapOf("foo/bar.json" to "version=1"),
+                applicationDeploymentRef = ApplicationDeploymentRef(
+                    environment = "foo",
+                    application = "bar"
+                ),
+                auroraConfig = AuroraConfigRef(
+                    name = "jedi",
+                    refName = "master",
+                    resolvedRef = "123"
+                )
+            )
+        )
+
+        val overrideValue = "%7B%22foo/bar.json%22:%22version%3D1%22%7D"
+        assert(current.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?overrides=$overrideValue&reference=master")
+        assert(deployed.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?overrides=$overrideValue&reference=123")
+    }
 }
