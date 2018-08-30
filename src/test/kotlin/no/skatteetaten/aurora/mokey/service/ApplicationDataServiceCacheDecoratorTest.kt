@@ -1,6 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
@@ -21,7 +24,11 @@ class ApplicationDataServiceCacheDecoratorTest {
         "aurora",
         "aurora",
         deployDetails = DeployDetails("Complete", 1, 1),
-        addresses = emptyList()
+        addresses = emptyList(),
+        deploymentCommand = ApplicationDeploymentCommand(
+            applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name"),
+            auroraConfig = AuroraConfigRef("affiliation", "master")
+        )
     )
     val app1v2 = app1v1.copy(deployTag = "prod")
 
@@ -36,12 +43,12 @@ class ApplicationDataServiceCacheDecoratorTest {
             .willReturn(listOf(app1v1))
             .willReturn(listOf(app1v2))
 
-        assertThat(applicationDataService.findApplicationDataByInstanceId(app1Id)).isNull()
+        assertThat(applicationDataService.findApplicationDataByApplicationDeploymentId(app1Id)).isNull()
 
         applicationDataService.refreshCache(affiliations)
-        assertThat(applicationDataService.findApplicationDataByInstanceId(app1Id)).isEqualTo(app1v1)
+        assertThat(applicationDataService.findApplicationDataByApplicationDeploymentId(app1Id)).isEqualTo(app1v1)
 
         applicationDataService.refreshCache(affiliations)
-        assertThat(applicationDataService.findApplicationDataByInstanceId(app1Id)).isEqualTo(app1v2)
+        assertThat(applicationDataService.findApplicationDataByApplicationDeploymentId(app1Id)).isEqualTo(app1v2)
     }
 }

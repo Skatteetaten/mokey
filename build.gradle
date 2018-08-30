@@ -51,6 +51,12 @@ dependencyManagement {
   }
 }
 
+// spring boot > 2.0.4 upgrades spring hateoas to version 0.25.0.RELEASE. This version changes how the ObjectMapper
+// that spring hateoas uses for generating hal+json is configured, and breaks the current format of the responses.
+// So, when upgrading to spring-hateoas 0.25.0 and beyond, be prepared to do some work with the serialization
+// configuration (see ApplicationConfig).
+ext['spring-hateoas.version'] = '0.24.0.RELEASE'
+
 def junitJupiterVersion = dependencyManagement.importedProperties['junit-jupiter.version']
 dependencies {
 
@@ -60,7 +66,7 @@ dependencies {
       'com.fasterxml.jackson.module:jackson-module-kotlin',
       'com.fasterxml.jackson.datatype:jackson-datatype-jsr310',
       "no.skatteetaten.aurora.springboot:aurora-spring-boot2-starter:1.2.2",
-      'io.fabric8:openshift-client:4.0.3',
+      'io.fabric8:openshift-client:4.0.4',
       'com.fkorotkov:kubernetes-dsl:1.0.1',
       "org.springframework.retry:spring-retry",
       'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21.2',

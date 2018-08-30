@@ -21,7 +21,7 @@ data class GroupedApplicationData(
 
 data class ApplicationData(
     val applicationId: String?,
-    val applicationInstanceId: String,
+    val applicationDeploymentId: String,
     val auroraStatus: AuroraStatus,
     val deployTag: String,
     val name: String,
@@ -34,7 +34,8 @@ data class ApplicationData(
     val deployDetails: DeployDetails,
     val addresses: List<Address>,
     val sprocketDone: String? = null,
-    val splunkIndex: String? = null
+    val splunkIndex: String? = null,
+    val deploymentCommand: ApplicationDeploymentCommand
 ) {
     val errors
         get(): List<PodError> = this.pods

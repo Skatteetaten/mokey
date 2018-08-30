@@ -2,10 +2,13 @@ package no.skatteetaten.aurora.mokey.contracts
 
 import java.time.Instant
 
-import no.skatteetaten.aurora.mokey.controller.ApplicationInstanceDetailsController
-import no.skatteetaten.aurora.mokey.controller.ApplicationInstanceDetailsResourceAssembler
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentDetailsController
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentDetailsResourceAssembler
 import no.skatteetaten.aurora.mokey.controller.LinkBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
+import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
@@ -17,16 +20,16 @@ import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.utils.Right
 
-class ApplicationinstancedetailsBase extends AbstractContractBase {
+class ApplicationdeploymentdetailsBase extends AbstractContractBase {
 
   void setup() {
     loadJsonResponses(this)
     def applicationDataService = Mock(ApplicationDataService) {
       findAllApplicationData(_ as List) >> [createApplicationData()]
-      findApplicationDataByInstanceId(_ as String) >> createApplicationData()
+      findApplicationDataByApplicationDeploymentId(_ as String) >> createApplicationData()
     }
-    def assembler = new ApplicationInstanceDetailsResourceAssembler(new LinkBuilder('http://localhost', [:]))
-    def controller = new ApplicationInstanceDetailsController(applicationDataService, assembler)
+    def assembler = new ApplicationDeploymentDetailsResourceAssembler(new LinkBuilder('http://localhost', [:]))
+    def controller = new ApplicationDeploymentDetailsController(applicationDataService, assembler)
     setupMockMvc(controller)
   }
 
@@ -37,7 +40,7 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
     def buildTime = response('$.buildTime')
 
     def applicationName = response('$._embedded.Application.name')
-    def applicationInstance = response('$._embedded.Application.applicationInstances[0]', Map)
+    def applicationDeployment = response('$._embedded.Application.applicationDeployments[0]', Map)
 
     def details = response('$.podResources[0]', Map)
     def podDetails = new PodDetails(
@@ -50,16 +53,22 @@ class ApplicationinstancedetailsBase extends AbstractContractBase {
 
     new ApplicationData('', '',
         new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
-        applicationInstance.version.deployTag,
+        applicationDeployment.version.deployTag,
         applicationName,
-        applicationInstance.namespace,
-        applicationInstance.affiliation,
+        applicationDeployment.namespace,
+        applicationDeployment.affiliation,
         '',
         '',
         [podDetails],
         new ImageDetails(dockerImageReference, Instant.parse(imageBuildTime), [:]),
         new DeployDetails('', 1, 1), [],
         '',
-        null)
+        null,
+        new ApplicationDeploymentCommand(
+            [:],
+            new ApplicationDeploymentRef(applicationDeployment.environment, applicationName),
+            new AuroraConfigRef(applicationDeployment.affiliation, "master", "123"),
+        )
+    )
   }
 }

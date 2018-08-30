@@ -1,17 +1,15 @@
 package no.skatteetaten.aurora.mokey.service
 
-import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
-import no.skatteetaten.aurora.mokey.extensions.deployTag
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
-import no.skatteetaten.aurora.mokey.extensions.managementPath
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationId
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -44,9 +42,9 @@ class ApplicationDataServiceOpenShift(
         else findAllApplicationDataByEnvironments(findAllEnvironments().filter { affiliations.contains(it.affiliation) })
     }
 
-    override fun findApplicationDataByInstanceId(id: String): ApplicationData? {
-        val applicationId: ApplicationId = ApplicationId.fromString(id)
-        return findAllApplicationDataByEnvironments(listOf(applicationId.environment)).find { it.name == applicationId.name }
+    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
+        val applicationDeploymentId: ApplicationDeploymentId = ApplicationDeploymentId.fromString(id)
+        return findAllApplicationDataByEnvironments(listOf(applicationDeploymentId.environment)).find { it.name == applicationDeploymentId.name }
     }
 
     fun findAllEnvironments(): List<Environment> {
@@ -58,17 +56,22 @@ class ApplicationDataServiceOpenShift(
             environments
                 .flatMap { environment ->
                     logger.debug("Find all applications in namespace={}", environment)
-                    val deploymentConfigs = openshiftService.deploymentConfigs(environment.namespace)
-                    deploymentConfigs.map { dc -> async(mtContext) { createApplicationData(dc) } }
+                    val applicationDeployments = openshiftService.applicationDeployments(environment.namespace)
+                    applicationDeployments.map { applicationDeployment ->
+                        async(mtContext) {
+                            createApplicationData(
+                                applicationDeployment
+                            )
+                        }
+                    }
                 }
                 .map { it.await() }
         }
     }
 
-    private fun createApplicationData(dc: DeploymentConfig): ApplicationData {
+    private fun createApplicationData(app: ApplicationDeployment): ApplicationData {
 
         //            val status = AuroraStatusCalculator.calculateStatus(app)
-        //            //TODO: Burde vi hatt en annen metrikk for apper som ikke er deployet med Boober?
         //            val commonTags = listOf(
         //                    Tag.of("aurora_version", app.auroraVersion),
         //                    Tag.of("aurora_namespace", app.namespace),
@@ -79,51 +82,50 @@ class ApplicationDataServiceOpenShift(
         //            meterRegistry.gauge("aurora_status", commonTags, status.level.level)
 
         return try {
-            tryCreateApplicationData(dc)
+            tryCreateApplicationData(app)
         } catch (e: Exception) {
-            val namespace = dc.metadata.namespace
-            val name = dc.metadata.name
+            val namespace = app.metadata.namespace
+            val name = app.metadata.name
             logger.error("Failed getting application name={}, namespace={} message={}", name, namespace, e.message, e)
             throw e
         }
     }
 
-    private fun tryCreateApplicationData(dc: DeploymentConfig): ApplicationData {
-        val affiliation = dc.affiliation
-        val namespace = dc.metadata.namespace
-        val name = dc.metadata.name
-        val latestVersion = dc.status.latestVersion ?: null
-
+    private fun tryCreateApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
+        val affiliation = applicationDeployment.metadata.affiliation
+        val namespace = applicationDeployment.metadata.namespace
+        val name = applicationDeployment.metadata.name
+        val pods = podService.getPodDetails(applicationDeployment)
         val applicationAddresses = addressService.getAddresses(namespace, name)
-        val pods = podService.getPodDetails(dc)
-        val imageDetails = imageService.getImageDetails(dc)
 
+        // TODO: Akkurat nå støtter vi kun DC.
+        val dc = openshiftService.dc(namespace, name) ?: throw RuntimeException("Could not fetch DC")
+        val latestVersion = dc.status.latestVersion ?: null
+        val imageDetails = imageService.getImageDetails(dc)
         val phase = latestVersion?.let { openshiftService.rc(namespace, "$name-$it")?.deploymentPhase }
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
+
         val auroraStatuses = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
-        // TODO: Should we store splunk index in an annotation/label?
-        val splunkIndex = dc.spec.template.spec.containers[0].env.find { it.name == "SPLUNK_INDEX" }?.let {
-            it.value
-        }
+        val splunkIndex = applicationDeployment.spec.splunkIndex
 
-        val applicationInstanceId = ApplicationId(name, Environment.fromNamespace(namespace, affiliation)).toString()
         return ApplicationData(
-            applicationId = dc.metadata.labels["appId"],
-            applicationInstanceId = applicationInstanceId,
+            applicationId = applicationDeployment.spec.applicationId,
+            applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
             auroraStatus = auroraStatuses,
             name = name,
             namespace = namespace,
-            deployTag = dc.deployTag,
-            booberDeployId = dc.booberDeployId,
+            deployTag = applicationDeployment.spec.deployTag ?: "",
+            booberDeployId = applicationDeployment.metadata.booberDeployId,
             affiliation = affiliation,
-            managementPath = dc.managementPath,
+            managementPath = applicationDeployment.spec.managementPath,
             pods = pods,
             imageDetails = imageDetails,
             deployDetails = deployDetails,
             addresses = applicationAddresses,
             sprocketDone = dc.sprocketDone,
-            splunkIndex = splunkIndex
+            splunkIndex = splunkIndex,
+            deploymentCommand = applicationDeployment.spec.command
         )
     }
 }

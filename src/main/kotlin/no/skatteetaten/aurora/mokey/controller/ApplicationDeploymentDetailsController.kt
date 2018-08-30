@@ -24,40 +24,40 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@ExposesResourceFor(ApplicationInstanceDetailsResource::class)
-@RequestMapping("/api/applicationinstancedetails")
-class ApplicationInstanceDetailsController(
+@ExposesResourceFor(ApplicationDeploymentDetailsResource::class)
+@RequestMapping("/api/applicationdeploymentdetails")
+class ApplicationDeploymentDetailsController(
     val applicationDataService: ApplicationDataService,
-    val assembler: ApplicationInstanceDetailsResourceAssembler
+    val assembler: ApplicationDeploymentDetailsResourceAssembler
 ) {
 
-    val logger: Logger = LoggerFactory.getLogger(ApplicationInstanceDetailsController::class.java)
+    val logger: Logger = LoggerFactory.getLogger(ApplicationDeploymentDetailsController::class.java)
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationInstanceDetailsResource? =
-        applicationDataService.findApplicationDataByInstanceId(id)
+    fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDeploymentDetailsResource? =
+        applicationDataService.findApplicationDataByApplicationDeploymentId(id)
             ?.let(assembler::toResource)
             ?: throw NoSuchResourceException("Does not exist")
 
     @GetMapping
-    fun getAll(@RequestParam affiliation: String, @AuthenticationPrincipal user: User): List<ApplicationInstanceDetailsResource> =
+    fun getAll(@RequestParam affiliation: String, @AuthenticationPrincipal user: User): List<ApplicationDeploymentDetailsResource> =
         assembler.toResources(applicationDataService.findAllApplicationData(listOf(affiliation)))
 }
 
 @Component
-class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) :
-    ResourceAssemblerSupport<ApplicationData, ApplicationInstanceDetailsResource>(
-        ApplicationInstanceDetailsController::class.java,
-        ApplicationInstanceDetailsResource::class.java
+class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder) :
+    ResourceAssemblerSupport<ApplicationData, ApplicationDeploymentDetailsResource>(
+        ApplicationDeploymentDetailsController::class.java,
+        ApplicationDeploymentDetailsResource::class.java
     ) {
 
     private val applicationAssembler = ApplicationResourceAssembler()
 
-    override fun toResource(applicationData: ApplicationData): ApplicationInstanceDetailsResource {
+    override fun toResource(applicationData: ApplicationData): ApplicationDeploymentDetailsResource {
 
         val errorResources = applicationData.errors.map(this::toErrorResource)
         val infoResponse = applicationData.firstInfoResponse
-        return ApplicationInstanceDetailsResource(
+        return ApplicationDeploymentDetailsResource(
             infoResponse?.buildTime,
             toGitInfoResource(infoResponse),
             applicationData.imageDetails?.let { toImageDetailsResource(it) },
@@ -112,7 +112,8 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 
         val selfLink =
-            ControllerLinkBuilder.linkTo(ApplicationInstanceDetailsController::class.java).slash(applicationData.applicationInstanceId)
+            ControllerLinkBuilder.linkTo(ApplicationDeploymentDetailsController::class.java)
+                .slash(applicationData.applicationDeploymentId)
                 .withSelfRel()
         val addressLinks =
             applicationData.addresses.map { linkBuilder.createLink(it.url.toString(), it::class.simpleName!!) }
@@ -120,11 +121,12 @@ class ApplicationInstanceDetailsResourceAssembler(val linkBuilder: LinkBuilder) 
             ?.map { createServiceLink(applicationData, it.value, it.key) }
             ?: emptyList()
 
-        // TODO: We should use AuroraConfig name instead of affiliation here.
-        val applyResultLink = if (applicationData.affiliation != null && applicationData.booberDeployId != null)
-            linkBuilder.applyResult(applicationData.affiliation, applicationData.booberDeployId) else null
+        val deploymentSpecLinks = linkBuilder.deploymentSpec(applicationData.deploymentCommand)
 
-        return (serviceLinks + addressLinks + applyResultLink + selfLink).filterNotNull()
+        val applyResultLink = if (applicationData.booberDeployId != null)
+            linkBuilder.applyResult(applicationData.deploymentCommand.auroraConfig.name, applicationData.booberDeployId) else null
+
+        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + selfLink).filterNotNull()
     }
 
     private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =
