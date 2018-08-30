@@ -17,6 +17,7 @@ import java.time.Instant
 @Service
 class AuroraStatusCalculator {
 
+    // This is a service because these should be loaded from application.yaml Create ConfigurationClass
     val AVERAGE_RESTART_OBSERVE_THRESHOLD = 20
     val AVERAGE_RESTART_ERROR_THRESHOLD = 100
     val DIFFERENT_DEPLOYMENT_HOUR_THRESHOLD = 2
