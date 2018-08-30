@@ -27,7 +27,7 @@ class ApplicationBase extends AbstractContractBase {
     def name = response('$.name')
     def affiliation = response('$.applicationDeployments[0].affiliation')
     def namespace = response('$.applicationDeployments[0].namespace')
-    new ApplicationData(applicationId, '', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
+    new ApplicationData(applicationId, '', new AuroraStatus(AuroraStatusLevel.HEALTHY, '', []),
         '', name, namespace, affiliation, '', '',
         [], null, new DeployDetails('', 1, 1), [], '', null,
         new ApplicationDeploymentCommand(

@@ -78,7 +78,8 @@ class ApplicationDataServiceOpenShiftTest {
 
         every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(
             AuroraStatusLevel.HEALTHY,
-            ""
+            "",
+            listOf()
         )
 
         val id = "affiliation::affiliation::app-name"

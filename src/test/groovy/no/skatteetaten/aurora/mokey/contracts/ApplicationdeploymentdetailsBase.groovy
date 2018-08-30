@@ -52,7 +52,7 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
 
 
     new ApplicationData('', '',
-        new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
+        new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
         applicationDeployment.version.deployTag,
         applicationName,
         applicationDeployment.namespace,

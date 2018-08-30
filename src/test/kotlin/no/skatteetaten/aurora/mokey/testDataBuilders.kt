@@ -35,7 +35,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentSpec
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
@@ -292,7 +292,7 @@ data class ApplicationDataBuilder(
         ApplicationData(
             applicationId,
             applicationDeploymentId,
-            AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
+            AuroraStatus(HEALTHY, "", listOf()),
             "",
             name,
             namespace,

@@ -39,8 +39,7 @@ class ApplicationDataServiceOpenShift(
 
         return if (affiliations == null)
             findAllApplicationDataByEnvironments()
-        else
-            findAllApplicationDataByEnvironments(findAllEnvironments().filter { affiliations.contains(it.affiliation) })
+        else findAllApplicationDataByEnvironments(findAllEnvironments().filter { affiliations.contains(it.affiliation) })
     }
 
     override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {

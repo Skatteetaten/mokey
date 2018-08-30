@@ -8,7 +8,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
@@ -42,7 +42,7 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
         val applicationData = ApplicationData(
             "abc123",
             ApplicationDeploymentId("name", Environment("env", "affiliation")).toString(),
-            AuroraStatus(AuroraStatusLevel.HEALTHY, ""),
+            AuroraStatus(HEALTHY, "", listOf()),
             "deployTag",
             "name",
             "namespace",

@@ -41,7 +41,19 @@ class ApplicationDeploymentResourceAssembler :
             applicationData.affiliation,
             environment.name,
             environment.namespace,
-            applicationData.auroraStatus.let { AuroraStatusResource(it.level.toString(), it.comment) },
+            applicationData.auroraStatus.let { status ->
+                AuroraStatusResource(
+                    status.level.name,
+                    status.comment,
+                    applicationData.auroraStatus.statuses.map {
+                        HealthStatusDetailResource(
+                            it.level.name,
+                            it.comment,
+                            it.ref
+                        )
+                    }
+                )
+            },
             Version(applicationData.deployTag, applicationData.imageDetails?.auroraVersion)
         ).apply {
             add(linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId).withSelfRel())

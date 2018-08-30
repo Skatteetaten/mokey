@@ -41,17 +41,33 @@ class ApplicationResourceAssembler :
         ApplicationResource::class.java
     ) {
     override fun toResource(data: GroupedApplicationData): ApplicationResource {
-        val applicationDeployements = data.applications.map {
-            val environment = Environment.fromNamespace(it.namespace, it.affiliation)
+        val applicationDeployements = data.applications.map { app ->
+            val environment = Environment.fromNamespace(app.namespace, app.affiliation)
             ApplicationDeploymentResource(
-                it.affiliation,
+                app.affiliation,
                 environment.name,
-                it.namespace,
-                it.auroraStatus.let { status -> AuroraStatusResource(status.level.toString(), status.comment) },
-                Version(it.deployTag, it.imageDetails?.auroraVersion)
+                app.namespace,
+                app.auroraStatus.let { status ->
+                    AuroraStatusResource(
+                        status.level.toString(),
+                        status.comment,
+                        app.auroraStatus.statuses.map {
+                            HealthStatusDetailResource(
+                                it.level.name,
+                                it.comment,
+                                it.ref
+                            )
+                        }
+                    )
+                },
+                Version(app.deployTag, app.imageDetails?.auroraVersion)
             ).apply {
-                add(linkTo(ApplicationDeploymentController::class.java).slash(it.applicationDeploymentId).withSelfRel())
-                add(linkTo(ApplicationDeploymentDetailsController::class.java).slash(it.applicationDeploymentId).withRel("ApplicationDeploymentDetails"))
+                add(linkTo(ApplicationDeploymentController::class.java).slash(app.applicationDeploymentId).withSelfRel())
+                add(
+                    linkTo(ApplicationDeploymentDetailsController::class.java).slash(app.applicationDeploymentId).withRel(
+                        "ApplicationDeploymentDetails"
+                    )
+                )
             }
         }
 

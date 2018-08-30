@@ -27,7 +27,7 @@ class ApplicationdeploymentBase extends AbstractContractBase {
   ApplicationData createApplicationData() {
     def applicationDeployment = response('$', Map)
 
-    new ApplicationData('', '', new AuroraStatus(AuroraStatusLevel.HEALTHY, ''),
+    new ApplicationData('', '', new AuroraStatus(AuroraStatusLevel.HEALTHY, '', []),
         applicationDeployment.version.deployTag, applicationDeployment.namespace, applicationDeployment.namespace,
         applicationDeployment.affiliation, '', '', [],
         new ImageDetails('', Instant.now(), [:]), new DeployDetails('', 0, 0), [], '', null,

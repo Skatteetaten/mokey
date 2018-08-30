@@ -40,7 +40,13 @@ data class ApplicationDeploymentResource(
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
 
-data class AuroraStatusResource(val code: String, val comment: String? = null)
+data class AuroraStatusResource(
+    val code: String,
+    val comment: String? = null,
+    val details: List<HealthStatusDetailResource>? = null
+)
+
+data class HealthStatusDetailResource(val code: String, val comment: String, val ref: String?)
 
 class ApplicationDeploymentDetailsResource(
     val buildTime: Instant? = null,
