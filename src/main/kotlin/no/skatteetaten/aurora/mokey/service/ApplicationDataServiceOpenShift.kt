@@ -105,14 +105,14 @@ class ApplicationDataServiceOpenShift(
         val phase = latestVersion?.let { openshiftService.rc(namespace, "$name-$it")?.deploymentPhase }
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
 
-        val auroraStatuses = auroraStatusCalculator.calculateStatus(deployDetails, pods)
+        val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
         return ApplicationData(
             applicationId = applicationDeployment.spec.applicationId,
             applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-            auroraStatus = auroraStatuses,
+            auroraStatus = auroraStatus,
             name = name,
             namespace = namespace,
             deployTag = applicationDeployment.spec.deployTag ?: "",
