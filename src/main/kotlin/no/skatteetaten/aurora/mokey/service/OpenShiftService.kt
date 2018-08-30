@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.service
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
@@ -12,10 +11,8 @@ import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
-import no.skatteetaten.aurora.mokey.controller.AffiliationController
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
-import org.springframework.retry.annotation.Backoff
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentList
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
