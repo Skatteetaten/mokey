@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
@@ -11,12 +12,21 @@ import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
+import no.skatteetaten.aurora.mokey.controller.AffiliationController
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
 import org.springframework.retry.annotation.Backoff
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentList
+import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
+import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewResourceAttributes
+import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
+import okhttp3.MediaType
 import okhttp3.Request
+import okhttp3.RequestBody
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
@@ -25,6 +35,7 @@ import org.springframework.stereotype.Service
 @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
 class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
+    val logger: Logger = LoggerFactory.getLogger(OpenShiftService::class.java)
     fun dc(namespace: String, name: String): DeploymentConfig? {
         return openShiftClient.deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
     }
@@ -61,16 +72,52 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return openShiftClient.projects().list().items
     }
 
-    // TODO; Denne nå vi ikke glemme å få på plass igjen i mokey eller i gobo
-    fun currentUserHasAccess(namespace: String): Boolean {
+    fun projectForToken(namespace: String): Project? {
         val user = SecurityContextHolder.getContext().authentication.principal as User
         val userClient = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
-        return userClient.projects().withName(namespace).getOrNull()?.let { true } ?: false
+        return userClient.projects().withName(namespace).getOrNull()
+    }
+
+    fun canViewAndAdmin(namespace: String): Boolean {
+        val user = SecurityContextHolder.getContext().authentication.principal as User
+        val userClient = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
+
+        val review = SelfSubjectAccessReview(
+            spec = SelfSubjectAccessReviewSpec(
+                resourceAttributes = SelfSubjectAccessReviewResourceAttributes(
+                    namespace = namespace,
+                    verb = "edit",
+                    resource = "services"
+                )
+            )
+        )
+        val result = userClient.selfSubjectAccessView(review)
+        return result.status.allowed
+    }
+}
+
+fun DefaultOpenShiftClient.selfSubjectAccessView(review: SelfSubjectAccessReview): SelfSubjectAccessReview {
+
+    val url = this.openshiftUrl.toURI().resolve("/apis/authorization.k8s.io/v1/selfsubjectaccessreviews")
+    return try {
+        val request = Request.Builder()
+            .url(url.toString())
+            .post(
+                RequestBody.create(
+                    MediaType.parse("application/json; charset=utf-8"),
+                    jacksonObjectMapper().writeValueAsString(review)
+                )
+            )
+            .build()
+        val response = this.httpClient.newCall(request).execute()
+        jacksonObjectMapper().readValue(response.body()?.bytes(), SelfSubjectAccessReview::class.java)
+            ?: throw KubernetesClientException("Error occurred while SelfSubjectAccessReview")
+    } catch (e: Exception) {
+        throw KubernetesClientException("Error occurred while posting SelfSubjectAccessReview", e)
     }
 }
 
 fun DefaultOpenShiftClient.applicationDeployments(namespace: String): List<ApplicationDeployment> {
-    // TODO: permissions to get AAI
     val url =
         this.openshiftUrl.toURI().resolve("/apis/skatteetaten.no/v1/namespaces/$namespace/applicationdeployments")
     return try {

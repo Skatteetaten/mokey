@@ -75,9 +75,10 @@ class ApplicationDataServiceOpenShift(
         //            val commonTags = listOf(
         //                    Tag.of("aurora_version", app.auroraVersion),
         //                    Tag.of("aurora_namespace", app.namespace),
-        //                    Tag.of("aurora_name", app.name),
+        //                    Tag.of("aurora_environment", app.namespace),
+        //                    Tag.of("aurora_deployment", app.name),
         //                    Tag.of("aurora_affiliation", app.affiliation),
-        //                    Tag.of("version_strategy", app.deployTag))
+        //                    Tag.of("aurora_version_strategy", app.deployTag))
         //
         //            meterRegistry.gauge("aurora_status", commonTags, status.level.level)
 

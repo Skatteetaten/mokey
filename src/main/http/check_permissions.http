@@ -1,0 +1,4 @@
+GET {{apiUrl}}/api/permissions/paas
+Authorization:Bearer {{token}}
+
+###
