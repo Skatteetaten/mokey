@@ -47,7 +47,7 @@ class ApplicationResourceAssembler :
                 app.affiliation,
                 environment.name,
                 app.namespace,
-                 app.auroraStatus.let { status ->
+                app.auroraStatus.let { status ->
                     AuroraStatusResource(
                         status.level.toString(),
                         status.comment,
@@ -63,7 +63,11 @@ class ApplicationResourceAssembler :
                 Version(app.deployTag, app.imageDetails?.auroraVersion)
             ).apply {
                 add(linkTo(ApplicationDeploymentController::class.java).slash(app.applicationDeploymentId).withSelfRel())
-                add(linkTo(ApplicationDeploymentDetailsController::class.java).slash(app.applicationDeploymentId).withRel("ApplicationDeploymentDetails"))
+                add(
+                    linkTo(ApplicationDeploymentDetailsController::class.java).slash(app.applicationDeploymentId).withRel(
+                        "ApplicationDeploymentDetails"
+                    )
+                )
             }
         }
 
