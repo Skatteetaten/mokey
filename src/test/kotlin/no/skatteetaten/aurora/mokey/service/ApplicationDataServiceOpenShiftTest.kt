@@ -4,6 +4,7 @@ import assertk.assert
 import assertk.assertions.contains
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
+import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -28,12 +29,14 @@ class ApplicationDataServiceOpenShiftTest {
     private val podService = mockk<PodService>()
     private val imageService = mockk<ImageService>()
     private val addressService = mockk<AddressService>()
+    private val meterRegistry = mockk<MeterRegistry>()
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
-        openShiftService,
-        auroraStatusCalculator,
-        podService,
-        addressService,
-        imageService
+        openshiftService = openShiftService,
+        auroraStatusCalculator = auroraStatusCalculator,
+        podService = podService,
+        meterRegistry = meterRegistry,
+        addressService = addressService,
+        imageService = imageService
     )
 
     @BeforeEach
@@ -69,6 +72,8 @@ class ApplicationDataServiceOpenShiftTest {
 
         val podDetails = PodDetailsDataBuilder().build()
         every { podService.getPodDetails(appDeployment) } returns listOf(podDetails)
+
+        every { meterRegistry.gauge("aurora_status", any(), any<Int>()) } returns 1
 
         val imageDetails = ImageDetailsDataBuilder().build()
         every { imageService.getImageDetails(dc) } returns imageDetails
