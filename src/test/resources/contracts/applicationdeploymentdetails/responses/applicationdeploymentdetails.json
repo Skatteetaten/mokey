@@ -1,60 +1,70 @@
 {
-  "buildTime" : "2018-07-02T07:04:16.541Z",
-  "gitInfo" : {
-    "commitId" : "",
-    "commitTime" : "2018-07-02T07:04:16.541Z"
+  "buildTime": "2018-07-02T07:04:16.541Z",
+  "gitInfo": {
+    "commitId": "",
+    "commitTime": "2018-07-02T07:04:16.541Z"
   },
-  "imageDetails" : {
-    "imageBuildTime" : "2018-04-05T07:52:14Z",
-    "dockerImageReference" : "docker/image/test@sha256:12339544fa78d3ee134d181330c986b7434b802719c9bcb7e5905a116248251"
+  "imageDetails": {
+    "imageBuildTime": "2018-04-05T07:52:14Z",
+    "dockerImageReference": "docker/image/test@sha256:12339544fa78d3ee134d181330c986b7434b802719c9bcb7e5905a116248251"
   },
-  "podResources" : [ {
-    "name" : "test-pod",
-    "status" : "Running",
-    "restartCount" : 0,
-    "ready" : true,
-    "startTime" : "2018-06-19T04:43:08Z",
-    "_links" : {
-      "metrics" : {
-        "href" : "http://metrics"
+  "podResources": [
+    {
+      "name": "test-pod",
+      "status": "Running",
+      "restartCount": 0,
+      "ready": true,
+      "startTime": "2018-06-19T04:43:08Z",
+      "_links": {
+        "metrics": {
+          "href": "http://metrics"
+        }
       }
     }
-  } ],
-  "dependencies" : [],
-  "errors" : [ ],
-  "_links" : {
-    "ApplyResult" : {
-      "href" : "http://localhost/v1/apply-result/paas/"
+  ],
+  "dependencies": [],
+  "errors": [],
+  "_links": {
+    "ApplyResult": {
+      "href": "http://localhost/v1/apply-result/paas/"
     },
-    "self" : {
-      "href" : "http://localhost/api/applicationdeploymentdetails"
+    "DeploymentSpecCurrent": {
+      "href": "http://localhost/v1/auroradeployspec/paas/utv/test?reference=master"
+    },
+    "DeploymentSpecDeployed": {
+      "href": "http://localhost/v1/auroradeployspec/paas/utv/test?reference=123"
+    },
+    "self": {
+      "href": "http://localhost/api/applicationdeploymentdetails"
     }
   },
-  "_embedded" : {
-    "Application" : {
-      "name" : "test",
-      "tags" : [ ],
-      "applicationDeployments": [ {
-        "affiliation" : "paas",
-        "environment" : "utv",
-        "namespace" : "paas-utv",
-        "status" : {
-          "code" : "HEALTHY",
-          "comment" : ""
-        },
-        "version" : {
-          "deployTag" : "master-SNAPSHOT",
-          "auroraVersion" : ""
-        },
-        "_links" : {
-          "self" : {
-            "href" : "http://localhost/api/applicationdeployment"
+  "_embedded": {
+    "Application": {
+      "name": "test",
+      "tags": [],
+      "applicationDeployments": [
+        {
+          "affiliation": "paas",
+          "environment": "utv",
+          "namespace": "paas-utv",
+          "status": {
+            "code": "HEALTHY",
+            "comment": ""
           },
-          "ApplicationDeploymentDetails" : {
-            "href" : "http://localhost/api/applicationdeploymentdetails"
+          "version": {
+            "deployTag": "master-SNAPSHOT",
+            "auroraVersion": ""
+          },
+          "_links": {
+            "self": {
+              "href": "http://localhost/api/applicationdeployment"
+            },
+            "ApplicationDeploymentDetails": {
+              "href": "http://localhost/api/applicationdeploymentdetails"
+            }
           }
         }
-      } ]
+      ]
     }
   }
 }
