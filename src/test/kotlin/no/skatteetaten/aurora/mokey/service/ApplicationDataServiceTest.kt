@@ -23,6 +23,6 @@ class ApplicationDataServiceTest {
         }
 
         val applicationData = service.findApplicationDataByApplicationId("234")
-        assert(applicationData?.name).isNotNull { it.isEqualTo("app2") }
+        assert(applicationData?.applicationDeploymentName).isNotNull { it.isEqualTo("app2") }
     }
 }

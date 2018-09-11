@@ -85,7 +85,7 @@ class ApplicationDataServiceOpenShiftTest {
         val id = "affiliation::affiliation::app-name"
         val applicationData = applicationDataServiceOpenShift.findApplicationDataByApplicationDeploymentId(id)
 
-        assert(applicationData?.name).isEqualTo(dcBuilder.dcName)
+        assert(applicationData?.applicationDeploymentName).isEqualTo(dcBuilder.dcName)
         assert(applicationData?.auroraStatus?.level).isEqualTo(AuroraStatusLevel.HEALTHY)
     }
 }

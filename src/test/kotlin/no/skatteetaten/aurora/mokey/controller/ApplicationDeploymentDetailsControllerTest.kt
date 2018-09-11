@@ -45,6 +45,7 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
             AuroraStatus(HEALTHY, "", listOf()),
             "deployTag",
             "name",
+            "name-1",
             "namespace",
             "affiliation",
             pods = listOf(PodDetailsDataBuilder().build()),

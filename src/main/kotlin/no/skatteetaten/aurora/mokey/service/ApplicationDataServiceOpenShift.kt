@@ -44,7 +44,7 @@ class ApplicationDataServiceOpenShift(
 
     override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
         val applicationDeploymentId: ApplicationDeploymentId = ApplicationDeploymentId.fromString(id)
-        return findAllApplicationDataByEnvironments(listOf(applicationDeploymentId.environment)).find { it.name == applicationDeploymentId.name }
+        return findAllApplicationDataByEnvironments(listOf(applicationDeploymentId.environment)).find { it.applicationDeploymentName == applicationDeploymentId.name }
     }
 
     fun findAllEnvironments(): List<Environment> {
@@ -55,8 +55,8 @@ class ApplicationDataServiceOpenShift(
         return runBlocking(mtContext) {
             environments
                 .flatMap { environment ->
-                    logger.debug("Find all applications in namespace={}", environment)
                     val applicationDeployments = openshiftService.applicationDeployments(environment.namespace)
+                    logger.debug("Found {} ApplicationDeployments in namespace={}", applicationDeployments.size, environment)
                     applicationDeployments.map { applicationDeployment ->
                         async(mtContext) {
                             createApplicationData(
@@ -114,7 +114,8 @@ class ApplicationDataServiceOpenShift(
             applicationId = applicationDeployment.spec.applicationId,
             applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
             auroraStatus = auroraStatus,
-            name = name,
+            applicationName = imageDetails?.dockerImageReference?.split("@")?.first() ?: name,
+            applicationDeploymentName = name,
             namespace = namespace,
             deployTag = applicationDeployment.spec.deployTag ?: "",
             booberDeployId = applicationDeployment.metadata.booberDeployId,

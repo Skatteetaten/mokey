@@ -23,20 +23,26 @@ abstract class HalResource : ResourceSupport() {
     }
 }
 
-class ApplicationResource(
-    val appId: String?,
-    val name: String,
-    val tags: List<String>,
-    val applicationDeployments: List<ApplicationDeploymentResource>
-) : HalResource()
+abstract class IdentifiedHalResource(private val identifier: String?) : HalResource() {
 
-data class ApplicationDeploymentResource(
+    val _id: String? @JsonProperty("id") get() = identifier
+}
+
+class ApplicationResource(
+    id: String?,
+    val name: String,
+    val applicationDeployments: List<ApplicationDeploymentResource>
+) : IdentifiedHalResource(id)
+
+class ApplicationDeploymentResource(
+    id: String?,
     val affiliation: String?,
     val environment: String,
     val namespace: String,
+    val name: String,
     val status: AuroraStatusResource,
     val version: Version
-) : HalResource()
+) : IdentifiedHalResource(id)
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
 

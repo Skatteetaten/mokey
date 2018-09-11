@@ -43,7 +43,7 @@ val LinkBuilderFactory.expandParams
 val ApplicationData.expandParams
     get(): Map<String, String> {
         val addressParams = addresses.map { it.url.toString() to it::class.simpleName!! }.toMap()
-        val metadataParams = mapOf("namespace" to namespace, "name" to name)
+        val metadataParams = mapOf("namespace" to namespace, "name" to applicationDeploymentName)
         val splunkParams = splunkIndex?.let {
             mapOf("splunkIndex" to it)
         } ?: mapOf()

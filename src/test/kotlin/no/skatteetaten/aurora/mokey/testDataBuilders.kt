@@ -295,6 +295,7 @@ data class ApplicationDataBuilder(
             AuroraStatus(HEALTHY, "", listOf()),
             "",
             name,
+            name,
             namespace,
             affiliation,
             deployDetails = DeployDetails(null, 1, 1),

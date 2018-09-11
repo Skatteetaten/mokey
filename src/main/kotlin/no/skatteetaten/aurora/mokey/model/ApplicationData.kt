@@ -10,12 +10,12 @@ data class GroupedApplicationData(
     val name: String,
     val applications: List<ApplicationData>
 ) {
-    constructor(application: ApplicationData) : this(application.applicationId, application.name, listOf(application))
+    constructor(application: ApplicationData) : this(application.applicationId, application.applicationName, listOf(application))
 
     companion object {
         fun create(applications: List<ApplicationData>): List<GroupedApplicationData> =
-            applications.groupBy { it.applicationId ?: it.name }
-                .map { GroupedApplicationData(it.value.first().applicationId, it.value.first().name, it.value) }
+            applications.groupBy { it.applicationId ?: it.applicationName }
+                .map { GroupedApplicationData(it.value.first().applicationId, it.value.first().applicationName, it.value) }
     }
 }
 
@@ -24,7 +24,8 @@ data class ApplicationData(
     val applicationDeploymentId: String,
     val auroraStatus: AuroraStatus,
     val deployTag: String,
-    val name: String,
+    val applicationName: String,
+    val applicationDeploymentName: String,
     val namespace: String,
     val affiliation: String?,
     val booberDeployId: String? = null,
