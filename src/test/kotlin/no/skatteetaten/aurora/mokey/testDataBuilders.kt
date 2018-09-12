@@ -49,10 +49,14 @@ import no.skatteetaten.aurora.utils.Right
 import org.apache.commons.codec.digest.DigestUtils
 import java.time.Instant
 
+const val DEFAULT_NAME = "app-name"
+const val DEFAULT_AFFILIATION = "affiliation"
+const val DEFAULT_ENV_NAME = "namespace"
+
 data class AuroraApplicationDeploymentDataBuilder(
-    val appName: String = "app-name",
-    val appNamespace: String = "namespace",
-    val affiliation: String = "affiliation",
+    val appName: String = DEFAULT_NAME,
+    val affiliation: String = DEFAULT_AFFILIATION,
+    val envName: String = DEFAULT_ENV_NAME,
     val managementPath: String = ":8081/actuator",
     val deployTag: String = "name:tag",
     val selector: Map<String, String> = mapOf("name" to appName),
@@ -62,6 +66,8 @@ data class AuroraApplicationDeploymentDataBuilder(
     val overrides: Map<String, String> = emptyMap(),
     val auroraConfigRefBranch: String = "master"
 ) {
+
+    val appNamespace: String get() = "$affiliation-$envName"
 
     fun build(): ApplicationDeployment {
         return ApplicationDeployment(
@@ -96,12 +102,14 @@ data class AuroraApplicationDeploymentDataBuilder(
 }
 
 data class DeploymentConfigDataBuilder(
-    val dcName: String = "app-name",
-    val dcNamespace: String = "namespace",
-    val dcAffiliation: String = "affiliation",
+    val dcName: String = DEFAULT_NAME,
+    val dcAffiliation: String = DEFAULT_AFFILIATION,
+    val dcEnvName: String = DEFAULT_ENV_NAME,
     val dcDeployTag: String = "name:tag",
     val dcSelector: Map<String, String> = mapOf("name" to dcName)
 ) {
+
+    val dcNamespace: String get() = "$dcAffiliation-$dcEnvName"
 
     fun build(): DeploymentConfig {
         return newDeploymentConfig {
@@ -132,7 +140,7 @@ data class DeploymentConfigDataBuilder(
 }
 
 data class RouteBuilder(
-    val routeName: String = "app-name",
+    val routeName: String = DEFAULT_NAME,
     val routeHost: String = "affiliation-namespace-app-name",
     val routePath: String? = null,
     val statusDone: String = "True",
@@ -174,7 +182,7 @@ data class RouteBuilder(
 }
 
 data class ServiceBuilder(
-    val serviceName: String = "app-name",
+    val serviceName: String = DEFAULT_NAME,
     val created: Instant = Instant.EPOCH,
     val serviceAnnotations: Map<String, String> = mapOf()
 ) {
@@ -285,10 +293,11 @@ data class ImageStreamTagDataBuilder(
 data class ApplicationDataBuilder(
     val applicationId: String = "abc123",
     val applicationDeploymentId: String = "cbd234",
-    val name: String = "name",
-    val namespace: String = "namespace",
-    val affiliation: String = "paas"
+    val name: String = DEFAULT_NAME,
+    val envName: String = DEFAULT_ENV_NAME,
+    val affiliation: String = DEFAULT_AFFILIATION
 ) {
+    val namespace: String get() = "$affiliation-$envName"
 
     fun build(): ApplicationData =
         ApplicationData(
@@ -303,8 +312,8 @@ data class ApplicationDataBuilder(
             deployDetails = DeployDetails(null, 1, 1),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(
-                applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name"),
-                auroraConfig = AuroraConfigRef("affiliation", "master")
+                applicationDeploymentRef = ApplicationDeploymentRef(DEFAULT_ENV_NAME, "name"),
+                auroraConfig = AuroraConfigRef(DEFAULT_AFFILIATION, "master")
             )
         )
 }

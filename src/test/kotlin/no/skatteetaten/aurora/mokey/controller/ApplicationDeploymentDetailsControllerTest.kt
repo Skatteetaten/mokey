@@ -4,13 +4,11 @@ import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -41,7 +39,7 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
     fun `should get applicationdetails given user with access`() {
         val applicationData = ApplicationData(
             "abc123",
-            ApplicationDeploymentId("name", Environment("env", "affiliation")).toString(),
+            "abc1234",
             AuroraStatus(HEALTHY, "", listOf()),
             "deployTag",
             "name",

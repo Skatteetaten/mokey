@@ -11,7 +11,6 @@ import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -40,14 +39,17 @@ class ApplicationDataServiceOpenShift(
 
     override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
 
-        return if (affiliations == null)
+        return if (affiliations == null) {
             findAllApplicationDataByEnvironments()
-        else findAllApplicationDataByEnvironments(findAllEnvironments().filter { affiliations.contains(it.affiliation) })
+        } else {
+            val allEnvironments = findAllEnvironments()
+            val environmentsForAffiliations = allEnvironments.filter { affiliations.contains(it.affiliation) }
+            findAllApplicationDataByEnvironments(environmentsForAffiliations)
+        }
     }
 
     override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
-        val applicationDeploymentId: ApplicationDeploymentId = ApplicationDeploymentId.fromString(id)
-        return findAllApplicationDataByEnvironments(listOf(applicationDeploymentId.environment)).find { it.applicationDeploymentName == applicationDeploymentId.name }
+        throw NotImplementedError("findApplicationDataByApplicationDeploymentId is not supported")
     }
 
     fun findAllEnvironments(): List<Environment> {
@@ -80,7 +82,7 @@ class ApplicationDataServiceOpenShift(
             ).also { it.applicationData?.registerAuroraStatusMetrics() }
         } catch (e: Exception) {
             logger.error(
-                "Failed getting application name={}, namespace={} message={}", it.metadata.name,
+                "Failed getting deployment name={}, namespace={} message={}", it.metadata.name,
                 it.metadata.namespace, e.message, e
             )
             MaybeApplicationData(applicationDeployment = it, error = e)
@@ -110,33 +112,24 @@ class ApplicationDataServiceOpenShift(
     private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
         val affiliation = applicationDeployment.metadata.affiliation
         val namespace = applicationDeployment.metadata.namespace
-        val openshiftName = applicationDeployment.metadata.name
+        val openShiftName = applicationDeployment.metadata.name
         val applicationDeploymentName = applicationDeployment.spec.applicationDeploymentName
-            ?: openshiftName
-        val applicationName = applicationDeployment.spec.applicationName ?: openshiftName
+            ?: throw OpenShiftObjectException("applicationDeploymentName was not set for deployment $namespace/$openShiftName")
+        val applicationName = applicationDeployment.spec.applicationName
+            ?: throw OpenShiftObjectException("applicationName was not set for deployment $namespace/$openShiftName")
 
-        fun isAnyNull(vararg o: Any?): Boolean = o.any { it == null }
-
-        if (applicationDeployment.spec.let { isAnyNull(it.applicationDeploymentName, it.applicationName) }) {
-            logger.warn(
-                "Required fields applicationName={} or applicationDeploymentName={} was not set for namespace={} " +
-                    "name={}. Falling back to defaults.",
-                applicationDeployment.spec.applicationName,
-                applicationDeployment.spec.applicationDeploymentName,
-                namespace,
-                openshiftName
-            )
+        // TODO: Akkurat nå støtter vi kun DC.
+        val dc = openshiftService.dc(namespace, openShiftName) ?: throw OpenShiftException("Could not fetch DC")
+        val deployDetails = dc.let {
+            val latestVersion = it.status.latestVersion ?: null
+            val phase = latestVersion
+                ?.let { version -> openshiftService.rc(namespace, "$openShiftName-$version")?.deploymentPhase }
+            DeployDetails(phase, it.spec.replicas, it.status.availableReplicas ?: 0)
         }
 
         val pods = podService.getPodDetails(applicationDeployment)
-        val applicationAddresses = addressService.getAddresses(namespace, openshiftName)
-
-        // TODO: Akkurat nå støtter vi kun DC.
-        val dc = openshiftService.dc(namespace, openshiftName) ?: throw RuntimeException("Could not fetch DC")
-        val latestVersion = dc.status.latestVersion ?: null
         val imageDetails = imageService.getImageDetails(dc)
-        val phase = latestVersion?.let { openshiftService.rc(namespace, "$openshiftName-$it")?.deploymentPhase }
-        val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
+        val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
