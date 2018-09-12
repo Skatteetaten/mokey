@@ -52,58 +52,67 @@ class ApplicationDataServiceOpenShift(
     }
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
+
         return runBlocking(mtContext) {
             environments
                 .flatMap { environment ->
-                    val applicationDeployments = openshiftService.applicationDeployments(environment.namespace)
-                    logger.debug("Found {} ApplicationDeployments in namespace={}", applicationDeployments.size, environment)
-                    applicationDeployments.map { applicationDeployment ->
-                        async(mtContext) {
-                            createApplicationData(
-                                applicationDeployment
-                            )
-                        }
-                    }
-                }
-                .map { it.await() }
+                    val deployments = openshiftService.applicationDeployments(environment.namespace)
+                    logger.debug("Found {} ApplicationDeployments in namespace={}", deployments.size, environment)
+                    deployments.map { async(mtContext) { tryCreateApplicationData(it) } }
+                }.mapNotNull { it.await().applicationData }
         }
     }
 
-    private fun createApplicationData(app: ApplicationDeployment): ApplicationData {
+    private data class MaybeApplicationData(
+        val applicationDeployment: ApplicationDeployment,
+        val applicationData: ApplicationData? = null,
+        val error: Exception? = null
+    )
 
-        //            val status = AuroraStatusCalculator.calculateStatus(app)
-        //            val commonTags = listOf(
-        //                    Tag.of("aurora_version", app.auroraVersion),
-        //                    Tag.of("aurora_namespace", app.namespace),
-        //                    Tag.of("aurora_environment", app.namespace),
-        //                    Tag.of("aurora_deployment", app.name),
-        //                    Tag.of("aurora_affiliation", app.affiliation),
-        //                    Tag.of("aurora_version_strategy", app.deployTag))
-        //
-        //            meterRegistry.gauge("aurora_status", commonTags, status.level.level)
-
+    private fun tryCreateApplicationData(it: ApplicationDeployment): MaybeApplicationData {
         return try {
-            tryCreateApplicationData(app)
+            MaybeApplicationData(
+                applicationDeployment = it,
+                applicationData = createApplicationData(it)
+            )
         } catch (e: Exception) {
-            val namespace = app.metadata.namespace
-            val name = app.metadata.name
-            logger.error("Failed getting application name={}, namespace={} message={}", name, namespace, e.message, e)
-            throw e
+            logger.error(
+                "Failed getting application name={}, namespace={} message={}", it.metadata.name,
+                it.metadata.namespace, e.message, e
+            )
+            MaybeApplicationData(applicationDeployment = it, error = e)
         }
     }
 
-    private fun tryCreateApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
+    private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
         val affiliation = applicationDeployment.metadata.affiliation
         val namespace = applicationDeployment.metadata.namespace
-        val name = applicationDeployment.metadata.name
+        val openshiftName = applicationDeployment.metadata.name
+        val applicationDeploymentName = applicationDeployment.spec.applicationDeploymentName
+            ?: openshiftName
+        val applicationName = applicationDeployment.spec.applicationName ?: openshiftName
+
+        fun isAnyNull(vararg o: Any?): Boolean = o.any { it == null }
+
+        if (applicationDeployment.spec.let { isAnyNull(it.applicationDeploymentName, it.applicationName) }) {
+            logger.warn(
+                "Required fields applicationName={} or applicationDeploymentName={} was not set for namespace={} " +
+                    "name={}. Falling back to defaults.",
+                applicationDeployment.spec.applicationName,
+                applicationDeployment.spec.applicationDeploymentName,
+                namespace,
+                openshiftName
+            )
+        }
+
         val pods = podService.getPodDetails(applicationDeployment)
-        val applicationAddresses = addressService.getAddresses(namespace, name)
+        val applicationAddresses = addressService.getAddresses(namespace, openshiftName)
 
         // TODO: Akkurat nå støtter vi kun DC.
-        val dc = openshiftService.dc(namespace, name) ?: throw RuntimeException("Could not fetch DC")
+        val dc = openshiftService.dc(namespace, openshiftName) ?: throw RuntimeException("Could not fetch DC")
         val latestVersion = dc.status.latestVersion ?: null
         val imageDetails = imageService.getImageDetails(dc)
-        val phase = latestVersion?.let { openshiftService.rc(namespace, "$name-$it")?.deploymentPhase }
+        val phase = latestVersion?.let { openshiftService.rc(namespace, "$openshiftName-$it")?.deploymentPhase }
         val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
 
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
@@ -114,8 +123,8 @@ class ApplicationDataServiceOpenShift(
             applicationId = applicationDeployment.spec.applicationId,
             applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
             auroraStatus = auroraStatus,
-            applicationName = imageDetails?.dockerImageReference?.split("@")?.first() ?: name,
-            applicationDeploymentName = name,
+            applicationName = applicationName,
+            applicationDeploymentName = applicationDeploymentName,
             namespace = namespace,
             deployTag = applicationDeployment.spec.deployTag ?: "",
             booberDeployId = applicationDeployment.metadata.booberDeployId,

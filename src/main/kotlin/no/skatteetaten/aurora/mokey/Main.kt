@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey
 
 import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
@@ -22,11 +23,17 @@ class CacheWarmup(
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
 ) : InitializingBean {
 
+    private val logger = LoggerFactory.getLogger(CacheWarmup::class.java)
+
     val affiliations: List<String>?
         get() = if (affiliationsConfig.isBlank()) null
         else affiliationsConfig.split(",").map { it.trim() }
 
     override fun afterPropertiesSet() {
-        applicationDataService.refreshCache(affiliations)
+        try {
+            applicationDataService.refreshCache(affiliations)
+        } catch (e: Exception) {
+            logger.error("Unable to refresh cache during initialization", e)
+        }
     }
 }

@@ -82,7 +82,9 @@ data class AuroraApplicationDeploymentDataBuilder(
                     )
                 ),
                 applicationId = DigestUtils.sha1Hex(appName),
+                applicationName = appName,
                 applicationDeploymentId = DigestUtils.sha1Hex(appName + appNamespace),
+                applicationDeploymentName = appName,
                 splunkIndex = splunkIndex,
                 managementPath = managementPath,
                 releaseTo = releaseTo,

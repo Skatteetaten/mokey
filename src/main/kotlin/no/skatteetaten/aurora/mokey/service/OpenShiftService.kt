@@ -123,9 +123,8 @@ fun DefaultOpenShiftClient.applicationDeployments(namespace: String): List<Appli
     return try {
         val request = Request.Builder().url(url.toString()).build()
         val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeploymentList::class.java)?.let {
-            it.items
-        } ?: throw KubernetesClientException("Error occurred while fetching list of applications namespace=$namespace")
+        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeploymentList::class.java)
+            ?.items ?: throw KubernetesClientException("Error occurred while fetching list of applications in namespace=$namespace")
     } catch (e: Exception) {
         throw KubernetesClientException("Error occurred while fetching list of applications namespace=$namespace", e)
     }
