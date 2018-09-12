@@ -1,5 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.runBlocking
@@ -23,6 +25,7 @@ class ApplicationDataServiceOpenShift(
     val openshiftService: OpenShiftService,
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
+    val meterRegistry: MeterRegistry,
     val addressService: AddressService,
     val imageService: ImageService
 ) : ApplicationDataService {
@@ -74,7 +77,20 @@ class ApplicationDataServiceOpenShift(
             MaybeApplicationData(
                 applicationDeployment = it,
                 applicationData = createApplicationData(it)
-            )
+            ).also {
+                it.applicationData?.let { ad ->
+                    val commonTags = listOf(
+                        Tag.of("aurora_version", ad.imageDetails?.auroraVersion ?: ""),
+                        Tag.of("aurora_namespace", ad.namespace),
+                        Tag.of("aurora_environment", ad.deploymentCommand.applicationDeploymentRef.environment),
+                        Tag.of("aurora_deployment", ad.applicationDeploymentName),
+                        Tag.of("aurora_affiliation", ad.affiliation ?: ""),
+                        Tag.of("aurora_version_strategy", ad.deployTag)
+                    )
+
+                    meterRegistry.gauge("aurora_status", commonTags, ad.auroraStatus.level.level)
+                }
+            }
         } catch (e: Exception) {
             logger.error(
                 "Failed getting application name={}, namespace={} message={}", it.metadata.name,
