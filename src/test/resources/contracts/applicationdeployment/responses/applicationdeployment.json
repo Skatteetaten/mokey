@@ -1,4 +1,6 @@
 {
+  "identifier": "appDeploymentId",
+  "name": "test",
   "affiliation": "paas",
   "environment": "utv",
   "namespace": "paas-utv",
@@ -12,7 +14,10 @@
   },
   "_links": {
     "self": {
-      "href": "http://localhost/api/applicationdeployment"
+      "href": "http://localhost/api/applicationdeployment/appDeploymentId"
+    },
+    "ApplicationDeploymentDetails": {
+      "href": "http://localhost/api/applicationdeploymentdetails/appDeploymentId"
     }
   }
 }

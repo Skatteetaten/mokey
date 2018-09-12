@@ -23,12 +23,13 @@ class ApplicationBase extends AbstractContractBase {
   }
 
   ApplicationData createApplicationData() {
-    def applicationId = response('$.appId')
+    def applicationId = response('$.identifier')
+    def applicationDeploymentId = response('$.applicationDeployments[0].identifier')
     def name = response('$.name')
     def affiliation = response('$.applicationDeployments[0].affiliation')
     def namespace = response('$.applicationDeployments[0].namespace')
-    new ApplicationData(applicationId, '', new AuroraStatus(AuroraStatusLevel.HEALTHY, '', []),
-        '', name, namespace, affiliation, '', '',
+    new ApplicationData(applicationId, applicationDeploymentId, new AuroraStatus(AuroraStatusLevel.HEALTHY, '', []),
+        '', name, name, namespace, affiliation, '', '',
         [], null, new DeployDetails('', 1, 1), [], '', null,
         new ApplicationDeploymentCommand(
             [:],

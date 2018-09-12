@@ -1,10 +1,12 @@
 [
   {
-    "appId": "abc123",
+    "identifier": "abc123",
     "name": "name",
     "tags": [],
     "applicationDeployments": [
       {
+        "identifier": "abc1234",
+        "name": "name",
         "affiliation": "paas",
         "environment": "utv",
         "namespace": "paas-utv",
@@ -17,10 +19,10 @@
         },
         "_links" : {
           "self" : {
-            "href" : "http://localhost/api/applicationdeployment"
+            "href" : "http://localhost/api/applicationdeployment/abc1234"
           },
           "ApplicationDeploymentDetails" : {
-            "href" : "http://localhost/api/applicationdeploymentdetails"
+            "href" : "http://localhost/api/applicationdeploymentdetails/abc1234"
           }
         }
       }

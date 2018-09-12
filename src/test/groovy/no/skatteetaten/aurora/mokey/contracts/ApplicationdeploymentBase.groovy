@@ -3,9 +3,9 @@ package no.skatteetaten.aurora.mokey.contracts
 import java.time.Instant
 
 import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentController
+import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
-import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -27,16 +27,21 @@ class ApplicationdeploymentBase extends AbstractContractBase {
   ApplicationData createApplicationData() {
     def applicationDeployment = response('$', Map)
 
-    new ApplicationData('', '', new AuroraStatus(AuroraStatusLevel.HEALTHY, '', []),
-        applicationDeployment.version.deployTag, applicationDeployment.namespace, applicationDeployment.namespace,
-        applicationDeployment.affiliation, '', '', [],
+    String applicationDeploymentId = applicationDeployment.identifier
+    String applicationDeploymentName = applicationDeployment.name
+    String deployTag = applicationDeployment.version.deployTag
+    String namespace = applicationDeployment.namespace
+    String affiliation = applicationDeployment.affiliation
+    new ApplicationData(
+        '', applicationDeploymentId, new AuroraStatus(AuroraStatusLevel.HEALTHY, '', []),
+        deployTag, '', applicationDeploymentName, namespace,
+        affiliation, '', '', [],
         new ImageDetails('', Instant.now(), [:]), new DeployDetails('', 0, 0), [], '', null,
-           new ApplicationDeploymentCommand(
-           [:],
+        new ApplicationDeploymentCommand(
+            [:],
             new ApplicationDeploymentRef(applicationDeployment.environment, ""),
-            new AuroraConfigRef(applicationDeployment.affiliation, "master", "123"),
+            new AuroraConfigRef(affiliation, "master", "123"),
         )
     )
-
   }
 }

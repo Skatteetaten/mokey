@@ -36,15 +36,17 @@
         "href": "http://localhost/v1/auroradeployspec/paas/utv/test?reference=123"
       },
       "self": {
-        "href": "http://localhost/api/applicationdeploymentdetails"
+        "href": "http://localhost/api/applicationdeploymentdetails/appDeploymentId"
       }
     },
     "_embedded": {
       "Application": {
+        "identifier": "appId",
         "name": "test",
-        "tags": [],
         "applicationDeployments": [
           {
+            "identifier": "appDeploymentId",
+            "name": "test",
             "affiliation": "paas",
             "environment": "utv",
             "namespace": "paas-utv",
@@ -58,10 +60,10 @@
             },
             "_links": {
               "self": {
-                "href": "http://localhost/api/applicationdeployment"
+                "href": "http://localhost/api/applicationdeployment/appDeploymentId"
               },
               "ApplicationDeploymentDetails": {
-                "href": "http://localhost/api/applicationdeploymentdetails"
+                "href": "http://localhost/api/applicationdeploymentdetails/appDeploymentId"
               }
             }
           }

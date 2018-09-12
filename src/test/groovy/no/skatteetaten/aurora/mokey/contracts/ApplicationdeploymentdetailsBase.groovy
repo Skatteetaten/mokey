@@ -40,6 +40,7 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
     def buildTime = response('$.buildTime')
 
     def applicationName = response('$._embedded.Application.name')
+    def applicationId = response('$._embedded.Application.identifier')
     def applicationDeployment = response('$._embedded.Application.applicationDeployments[0]', Map)
 
     def details = response('$.podResources[0]', Map)
@@ -51,12 +52,13 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
                 Instant.parse(commitTime), Instant.parse(buildTime))), new Right())))
 
 
-    new ApplicationData('', '',
+    new ApplicationData(applicationId, applicationDeployment.identifier as String,
         new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
-        applicationDeployment.version.deployTag,
+        applicationDeployment.version.deployTag as String,
         applicationName,
-        applicationDeployment.namespace,
-        applicationDeployment.affiliation,
+        applicationDeployment.name as String,
+        applicationDeployment.namespace as String,
+        applicationDeployment.affiliation as String,
         '',
         '',
         [podDetails],
