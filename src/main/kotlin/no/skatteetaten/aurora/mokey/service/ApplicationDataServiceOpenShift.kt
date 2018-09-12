@@ -77,26 +77,33 @@ class ApplicationDataServiceOpenShift(
             MaybeApplicationData(
                 applicationDeployment = it,
                 applicationData = createApplicationData(it)
-            ).also {
-                it.applicationData?.let { ad ->
-                    val commonTags = listOf(
-                        Tag.of("aurora_version", ad.imageDetails?.auroraVersion ?: ""),
-                        Tag.of("aurora_namespace", ad.namespace),
-                        Tag.of("aurora_environment", ad.deploymentCommand.applicationDeploymentRef.environment),
-                        Tag.of("aurora_deployment", ad.applicationDeploymentName),
-                        Tag.of("aurora_affiliation", ad.affiliation ?: ""),
-                        Tag.of("aurora_version_strategy", ad.deployTag)
-                    )
-
-                    meterRegistry.gauge("aurora_status", commonTags, ad.auroraStatus.level.level)
-                }
-            }
+            ).also { it.applicationData?.registerAuroraStatusMetrics() }
         } catch (e: Exception) {
             logger.error(
                 "Failed getting application name={}, namespace={} message={}", it.metadata.name,
                 it.metadata.namespace, e.message, e
             )
             MaybeApplicationData(applicationDeployment = it, error = e)
+        }
+    }
+
+    /**
+     * TODO: The call to registerAuroraStatusMetrics is very awkwardly done. Metrics are correctly registered now, but
+     * only accidentally because the tryCreateApplicationData method is regularly called. Metrics registration should
+     * be done in a more deterministic way.
+     */
+    private fun ApplicationData.registerAuroraStatusMetrics() {
+        this.apply {
+            val commonTags = listOf(
+                Tag.of("aurora_version", imageDetails?.auroraVersion ?: ""),
+                Tag.of("aurora_namespace", namespace),
+                Tag.of("aurora_environment", deploymentCommand.applicationDeploymentRef.environment),
+                Tag.of("aurora_deployment", applicationDeploymentName),
+                Tag.of("aurora_affiliation", affiliation ?: ""),
+                Tag.of("aurora_version_strategy", deployTag)
+            )
+
+            meterRegistry.gauge("aurora_status", commonTags, auroraStatus.level.level)
         }
     }
 
