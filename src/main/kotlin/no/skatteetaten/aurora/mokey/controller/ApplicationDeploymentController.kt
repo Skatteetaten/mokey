@@ -4,12 +4,14 @@ import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.hateoas.ExposesResourceFor
+import org.springframework.hateoas.ResourceSupport
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import kotlin.reflect.KClass
 
 @RestController
 @ExposesResourceFor(ApplicationDeploymentResource::class)
@@ -59,6 +61,16 @@ class ApplicationDeploymentResourceAssembler :
             Version(applicationData.deployTag, applicationData.imageDetails?.auroraVersion)
         ).apply {
             add(linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId).withSelfRel())
+            add(
+                linkTo(ApplicationDeploymentDetailsController::class.java)
+                    .slash(applicationData.applicationDeploymentId)
+                    .withRel(resourceClassNameToRelName(ApplicationDeploymentDetailsResource::class))
+            )
+            add(
+                linkTo(ApplicationController::class.java)
+                    .slash(applicationData.applicationId)
+                    .withRel(resourceClassNameToRelName(ApplicationResource::class))
+            )
         }
     }
 }

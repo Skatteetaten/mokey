@@ -7,6 +7,7 @@ import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
+import kotlin.reflect.KClass
 
 abstract class HalResource : ResourceSupport() {
 
@@ -23,10 +24,7 @@ abstract class HalResource : ResourceSupport() {
     }
 }
 
-abstract class IdentifiedHalResource(private val identifier: String?) : HalResource() {
-
-    val _id: String? @JsonProperty("id") get() = identifier
-}
+abstract class IdentifiedHalResource(val identifier: String?) : HalResource()
 
 class ApplicationResource(
     id: String?,
@@ -92,3 +90,6 @@ data class ManagementEndpointErrorResource(
 ) {
     val type: String = ManagementEndpointError::class.simpleName!!
 }
+
+fun <T : ResourceSupport> resourceClassNameToRelName(kClass: KClass<T>): String =
+    kClass.simpleName!!.replace("Resource$".toRegex(), "")
