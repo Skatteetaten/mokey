@@ -29,3 +29,10 @@ Create a file  src/main/http/rest-client.env.json
   
 Fill in the token value with a valid ocp token from `oc whoami -t`
 Run the http commands from Intellij
+
+
+## OpenShift
+
+Mokey must be run as a clust-admin user; example oc command to grant the privileges:
+
+    oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:paas-mokey:mokey

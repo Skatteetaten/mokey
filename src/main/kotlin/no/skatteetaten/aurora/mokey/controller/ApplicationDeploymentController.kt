@@ -38,9 +38,11 @@ class ApplicationDeploymentResourceAssembler :
     override fun toResource(applicationData: ApplicationData): ApplicationDeploymentResource {
         val environment = Environment.fromNamespace(applicationData.namespace, applicationData.affiliation)
         return ApplicationDeploymentResource(
+            applicationData.applicationDeploymentId,
             applicationData.affiliation,
             environment.name,
             environment.namespace,
+            applicationData.applicationDeploymentName,
             applicationData.auroraStatus.let { status ->
                 AuroraStatusResource(
                     status.level.name,
@@ -57,6 +59,16 @@ class ApplicationDeploymentResourceAssembler :
             Version(applicationData.deployTag, applicationData.imageDetails?.auroraVersion)
         ).apply {
             add(linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId).withSelfRel())
+            add(
+                linkTo(ApplicationDeploymentDetailsController::class.java)
+                    .slash(applicationData.applicationDeploymentId)
+                    .withRel(resourceClassNameToRelName(ApplicationDeploymentDetailsResource::class))
+            )
+            add(
+                linkTo(ApplicationController::class.java)
+                    .slash(applicationData.applicationId)
+                    .withRel(resourceClassNameToRelName(ApplicationResource::class))
+            )
         }
     }
 }

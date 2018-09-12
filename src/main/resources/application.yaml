@@ -15,7 +15,8 @@ aurora:
 
 logging:
   level:
-    no.skatteetaten.aurora.mokey: INFO
+    no.skatteetaten.aurora.mokey: DEBUG
+    io.fabric8.openshift.client.DefaultOpenShiftClient: DEBUG
     org:
       hibernate: WARN
       springframework: WARN

@@ -7,6 +7,7 @@ import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
+import kotlin.reflect.KClass
 
 abstract class HalResource : ResourceSupport() {
 
@@ -23,20 +24,23 @@ abstract class HalResource : ResourceSupport() {
     }
 }
 
-class ApplicationResource(
-    val appId: String?,
-    val name: String,
-    val tags: List<String>,
-    val applicationDeployments: List<ApplicationDeploymentResource>
-) : HalResource()
+abstract class IdentifiedHalResource(val identifier: String?) : HalResource()
 
-data class ApplicationDeploymentResource(
+class ApplicationResource(
+    id: String?,
+    val name: String,
+    val applicationDeployments: List<ApplicationDeploymentResource>
+) : IdentifiedHalResource(id)
+
+class ApplicationDeploymentResource(
+    id: String?,
     val affiliation: String?,
     val environment: String,
     val namespace: String,
+    val name: String,
     val status: AuroraStatusResource,
     val version: Version
-) : HalResource()
+) : IdentifiedHalResource(id)
 
 data class Version(val deployTag: String?, val auroraVersion: String?)
 
@@ -86,3 +90,6 @@ data class ManagementEndpointErrorResource(
 ) {
     val type: String = ManagementEndpointError::class.simpleName!!
 }
+
+fun <T : ResourceSupport> resourceClassNameToRelName(kClass: KClass<T>): String =
+    kClass.simpleName!!.replace("Resource$".toRegex(), "")

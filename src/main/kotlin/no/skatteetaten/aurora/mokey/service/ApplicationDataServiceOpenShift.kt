@@ -11,7 +11,6 @@ import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentId
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -40,14 +39,17 @@ class ApplicationDataServiceOpenShift(
 
     override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
 
-        return if (affiliations == null)
+        return if (affiliations == null) {
             findAllApplicationDataByEnvironments()
-        else findAllApplicationDataByEnvironments(findAllEnvironments().filter { affiliations.contains(it.affiliation) })
+        } else {
+            val allEnvironments = findAllEnvironments()
+            val environmentsForAffiliations = allEnvironments.filter { affiliations.contains(it.affiliation) }
+            findAllApplicationDataByEnvironments(environmentsForAffiliations)
+        }
     }
 
     override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
-        val applicationDeploymentId: ApplicationDeploymentId = ApplicationDeploymentId.fromString(id)
-        return findAllApplicationDataByEnvironments(listOf(applicationDeploymentId.environment)).find { it.name == applicationDeploymentId.name }
+        throw NotImplementedError("findApplicationDataByApplicationDeploymentId is not supported")
     }
 
     fun findAllEnvironments(): List<Environment> {
@@ -55,59 +57,79 @@ class ApplicationDataServiceOpenShift(
     }
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
+
         return runBlocking(mtContext) {
             environments
                 .flatMap { environment ->
-                    logger.debug("Find all applications in namespace={}", environment)
-                    val applicationDeployments = openshiftService.applicationDeployments(environment.namespace)
-                    applicationDeployments.map { applicationDeployment ->
-                        async(mtContext) {
-                            createApplicationData(
-                                applicationDeployment
-                            )
-                        }
-                    }
-                }
-                .map { it.await() }
+                    val deployments = openshiftService.applicationDeployments(environment.namespace)
+                    logger.debug("Found {} ApplicationDeployments in namespace={}", deployments.size, environment)
+                    deployments.map { async(mtContext) { tryCreateApplicationData(it) } }
+                }.mapNotNull { it.await().applicationData }
         }
     }
 
-    private fun createApplicationData(app: ApplicationDeployment): ApplicationData {
+    private data class MaybeApplicationData(
+        val applicationDeployment: ApplicationDeployment,
+        val applicationData: ApplicationData? = null,
+        val error: Exception? = null
+    )
+
+    private fun tryCreateApplicationData(it: ApplicationDeployment): MaybeApplicationData {
         return try {
-            val ad = tryCreateApplicationData(app)
+            MaybeApplicationData(
+                applicationDeployment = it,
+                applicationData = createApplicationData(it)
+            ).also { it.applicationData?.registerAuroraStatusMetrics() }
+        } catch (e: Exception) {
+            logger.error(
+                "Failed getting deployment name={}, namespace={} message={}", it.metadata.name,
+                it.metadata.namespace, e.message, e
+            )
+            MaybeApplicationData(applicationDeployment = it, error = e)
+        }
+    }
+
+    /**
+     * TODO: The call to registerAuroraStatusMetrics is very awkwardly done. Metrics are correctly registered now, but
+     * only accidentally because the tryCreateApplicationData method is regularly called. Metrics registration should
+     * be done in a more deterministic way.
+     */
+    private fun ApplicationData.registerAuroraStatusMetrics() {
+        this.apply {
             val commonTags = listOf(
-                Tag.of("aurora_version", ad.imageDetails?.auroraVersion ?: ""),
-                Tag.of("aurora_namespace", ad.namespace),
-                Tag.of("aurora_environment", ad.deploymentCommand.applicationDeploymentRef.environment),
-                Tag.of("aurora_deployment", ad.name),
-                Tag.of("aurora_affiliation", ad.affiliation ?: ""),
-                Tag.of("aurora_version_strategy", ad.deployTag)
+                Tag.of("aurora_version", imageDetails?.auroraVersion ?: ""),
+                Tag.of("aurora_namespace", namespace),
+                Tag.of("aurora_environment", deploymentCommand.applicationDeploymentRef.environment),
+                Tag.of("aurora_deployment", applicationDeploymentName),
+                Tag.of("aurora_affiliation", affiliation ?: ""),
+                Tag.of("aurora_version_strategy", deployTag)
             )
 
-            meterRegistry.gauge("aurora_status", commonTags, ad.auroraStatus.level.level)
-
-            ad
-        } catch (e: Exception) {
-            val namespace = app.metadata.namespace
-            val name = app.metadata.name
-            logger.error("Failed getting application name={}, namespace={} message={}", name, namespace, e.message, e)
-            throw e
+            meterRegistry.gauge("aurora_status", commonTags, auroraStatus.level.level)
         }
     }
 
-    private fun tryCreateApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
+    private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
         val affiliation = applicationDeployment.metadata.affiliation
         val namespace = applicationDeployment.metadata.namespace
-        val name = applicationDeployment.metadata.name
-        val pods = podService.getPodDetails(applicationDeployment)
-        val applicationAddresses = addressService.getAddresses(namespace, name)
+        val openShiftName = applicationDeployment.metadata.name
+        val applicationDeploymentName = applicationDeployment.spec.applicationDeploymentName
+            ?: throw OpenShiftObjectException("applicationDeploymentName was not set for deployment $namespace/$openShiftName")
+        val applicationName = applicationDeployment.spec.applicationName
+            ?: throw OpenShiftObjectException("applicationName was not set for deployment $namespace/$openShiftName")
 
         // TODO: Akkurat nå støtter vi kun DC.
-        val dc = openshiftService.dc(namespace, name) ?: throw RuntimeException("Could not fetch DC")
-        val latestVersion = dc.status.latestVersion ?: null
+        val dc = openshiftService.dc(namespace, openShiftName) ?: throw OpenShiftException("Could not fetch DC")
+        val deployDetails = dc.let {
+            val latestVersion = it.status.latestVersion ?: null
+            val phase = latestVersion
+                ?.let { version -> openshiftService.rc(namespace, "$openShiftName-$version")?.deploymentPhase }
+            DeployDetails(phase, it.spec.replicas, it.status.availableReplicas ?: 0)
+        }
+
+        val pods = podService.getPodDetails(applicationDeployment)
         val imageDetails = imageService.getImageDetails(dc)
-        val phase = latestVersion?.let { openshiftService.rc(namespace, "$name-$it")?.deploymentPhase }
-        val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
+        val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
         val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
 
@@ -117,7 +139,8 @@ class ApplicationDataServiceOpenShift(
             applicationId = applicationDeployment.spec.applicationId,
             applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
             auroraStatus = auroraStatus,
-            name = name,
+            applicationName = applicationName,
+            applicationDeploymentName = applicationDeploymentName,
             namespace = namespace,
             deployTag = applicationDeployment.spec.deployTag ?: "",
             booberDeployId = applicationDeployment.metadata.booberDeployId,

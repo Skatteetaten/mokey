@@ -22,6 +22,7 @@ class ApplicationDataServiceCacheDecoratorTest {
         "default",
         "testapp",
         "aurora",
+        "aurora-1",
         "aurora",
         deployDetails = DeployDetails("Complete", 1, 1),
         addresses = emptyList(),

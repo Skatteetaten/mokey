@@ -93,6 +93,8 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
     }
 }
 
+private val logger = LoggerFactory.getLogger(DefaultOpenShiftClient::class.java)
+
 fun DefaultOpenShiftClient.selfSubjectAccessView(review: SelfSubjectAccessReview): SelfSubjectAccessReview {
 
     val url = this.openshiftUrl.toURI().resolve("/apis/authorization.k8s.io/v1/selfsubjectaccessreviews")
@@ -117,12 +119,12 @@ fun DefaultOpenShiftClient.selfSubjectAccessView(review: SelfSubjectAccessReview
 fun DefaultOpenShiftClient.applicationDeployments(namespace: String): List<ApplicationDeployment> {
     val url =
         this.openshiftUrl.toURI().resolve("/apis/skatteetaten.no/v1/namespaces/$namespace/applicationdeployments")
+    logger.debug("Requesting url={}", url)
     return try {
         val request = Request.Builder().url(url.toString()).build()
         val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeploymentList::class.java)?.let {
-            it.items
-        } ?: throw KubernetesClientException("Error occurred while fetching list of applications namespace=$namespace")
+        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeploymentList::class.java)
+            ?.items ?: throw KubernetesClientException("Error occurred while fetching list of applications in namespace=$namespace")
     } catch (e: Exception) {
         throw KubernetesClientException("Error occurred while fetching list of applications namespace=$namespace", e)
     }

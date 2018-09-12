@@ -3,7 +3,10 @@ package no.skatteetaten.aurora.mokey.service
 import assertk.assert
 import assertk.assertions.contains
 import assertk.assertions.hasSize
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import io.fabric8.kubernetes.api.model.ObjectMeta
+import io.fabric8.openshift.api.model.Project
 import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.clearMocks
 import io.mockk.every
@@ -15,7 +18,7 @@ import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -58,39 +61,47 @@ class ApplicationDataServiceOpenShiftTest {
 
     @Test
     fun `find application data by id`() {
-        val appBuilder = AuroraApplicationDeploymentDataBuilder()
-
         val dcBuilder = DeploymentConfigDataBuilder()
-
-        val appDeployment = appBuilder.build()
-        every { openShiftService.applicationDeployments(dcBuilder.dcAffiliation) } returns listOf(appDeployment)
-
+        val appDeployment = AuroraApplicationDeploymentDataBuilder().build()
         val dc = dcBuilder.build()
-        every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         val replicationController = ReplicationControllerDataBuilder().build()
-        every { openShiftService.rc(dcBuilder.dcNamespace, "app-name-1") } returns replicationController
-
         val podDetails = PodDetailsDataBuilder().build()
-        every { podService.getPodDetails(appDeployment) } returns listOf(podDetails)
-
-        every { meterRegistry.gauge("aurora_status", any(), any<Int>()) } returns 1
-
         val imageDetails = ImageDetailsDataBuilder().build()
-        every { imageService.getImageDetails(dc) } returns imageDetails
-
         val addresses = listOf(ServiceAddress(URI.create("http://app-name"), Instant.EPOCH))
-        every { addressService.getAddresses(dcBuilder.dcNamespace, "app-name") } returns addresses
 
-        every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(
-            AuroraStatusLevel.HEALTHY,
-            "",
-            listOf()
+        every { openShiftService.projects() } returns listOf(
+            Project("1", "Project", ObjectMeta().apply { name = dcBuilder.dcNamespace }, null, null)
         )
+        every { openShiftService.applicationDeployments(dcBuilder.dcNamespace) } returns listOf(appDeployment)
+        every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
+        every { openShiftService.rc(dcBuilder.dcNamespace, "${dcBuilder.dcName}-1") } returns replicationController
+        every { podService.getPodDetails(appDeployment) } returns listOf(podDetails)
+        every { meterRegistry.gauge("aurora_status", any(), any<Int>()) } returns 1
+        every { imageService.getImageDetails(dc) } returns imageDetails
+        every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
+        every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(HEALTHY, "", listOf())
 
-        val id = "affiliation::affiliation::app-name"
-        val applicationData = applicationDataServiceOpenShift.findApplicationDataByApplicationDeploymentId(id)
+        val applicationData =
+            applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
 
-        assert(applicationData?.name).isEqualTo(dcBuilder.dcName)
-        assert(applicationData?.auroraStatus?.level).isEqualTo(AuroraStatusLevel.HEALTHY)
+        assert(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
+        assert(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
+        assert(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
+        assert(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
+        assert(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
+    }
+
+    @Test
+    fun `should exclude application data for failing deployments`() {
+        val dcBuilder = DeploymentConfigDataBuilder()
+        val appDeployment = AuroraApplicationDeploymentDataBuilder().build()
+
+        every { openShiftService.projects() } returns listOf(
+            Project("1", "Project", ObjectMeta().apply { name = dcBuilder.dcNamespace }, null, null)
+        )
+        every { openShiftService.applicationDeployments(dcBuilder.dcNamespace) } returns listOf(appDeployment)
+        every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns null
+
+        assert(applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation))).isEmpty()
     }
 }

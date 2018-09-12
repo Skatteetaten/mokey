@@ -17,7 +17,9 @@ data class ApplicationDeployment(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ApplicationDeploymentSpec(
     val applicationId: String,
+    val applicationName: String?,
     val applicationDeploymentId: String,
+    val applicationDeploymentName: String?,
     val splunkIndex: String? = null,
     val managementPath: String?,
     val releaseTo: String?,

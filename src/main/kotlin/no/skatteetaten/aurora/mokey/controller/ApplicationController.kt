@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.slf4j.Logger
@@ -40,42 +39,17 @@ class ApplicationResourceAssembler :
         ApplicationController::class.java,
         ApplicationResource::class.java
     ) {
+
+    private val applicationDeploymentAssembler = ApplicationDeploymentResourceAssembler()
+
     override fun toResource(data: GroupedApplicationData): ApplicationResource {
-        val applicationDeployements = data.applications.map { app ->
-            val environment = Environment.fromNamespace(app.namespace, app.affiliation)
-            ApplicationDeploymentResource(
-                app.affiliation,
-                environment.name,
-                app.namespace,
-                app.auroraStatus.let { status ->
-                    AuroraStatusResource(
-                        status.level.toString(),
-                        status.comment,
-                        app.auroraStatus.statuses.map {
-                            HealthStatusDetailResource(
-                                it.level.name,
-                                it.comment,
-                                it.ref
-                            )
-                        }
-                    )
-                },
-                Version(app.deployTag, app.imageDetails?.auroraVersion)
-            ).apply {
-                add(linkTo(ApplicationDeploymentController::class.java).slash(app.applicationDeploymentId).withSelfRel())
-                add(
-                    linkTo(ApplicationDeploymentDetailsController::class.java).slash(app.applicationDeploymentId).withRel(
-                        "ApplicationDeploymentDetails"
-                    )
-                )
-            }
-        }
+
+        val applicationDeployments = data.applications.map(applicationDeploymentAssembler::toResource)
 
         return ApplicationResource(
             data.applicationId,
             data.name,
-            emptyList(),
-            applicationDeployements
+            applicationDeployments
         ).apply {
             data.applicationId?.let {
                 add(linkTo(ApplicationController::class.java).slash(it).withSelfRel())
