@@ -65,6 +65,10 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return (openShiftClient as DefaultOpenShiftClient).applicationDeployments(namespace)
     }
 
+    fun applicationDeployment(namespace: String, name: String): ApplicationDeployment {
+        return (openShiftClient as DefaultOpenShiftClient).applicationDeployment(namespace, name)
+    }
+
     fun projects(): List<Project> {
         return openShiftClient.projects().list().items
     }
@@ -116,6 +120,23 @@ fun DefaultOpenShiftClient.selfSubjectAccessView(review: SelfSubjectAccessReview
     }
 }
 
+fun DefaultOpenShiftClient.applicationDeployment(namespace: String, name: String): ApplicationDeployment {
+    val url =
+        this.openshiftUrl.toURI().resolve("/apis/skatteetaten.no/v1/namespaces/$namespace/applicationdeployments/$name")
+    logger.debug("Requesting url={}", url)
+    return try {
+        val request = Request.Builder().url(url.toString()).build()
+        val response = this.httpClient.newCall(request).execute()
+        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeployment::class.java)
+            ?: throw KubernetesClientException("Error occurred while fetching application in namespace=$namespace with name=$name")
+    } catch (e: Exception) {
+        throw KubernetesClientException(
+            "Error occurred while fetching list of applications namespace=$namespace with name=$name",
+            e
+        )
+    }
+}
+
 fun DefaultOpenShiftClient.applicationDeployments(namespace: String): List<ApplicationDeployment> {
     val url =
         this.openshiftUrl.toURI().resolve("/apis/skatteetaten.no/v1/namespaces/$namespace/applicationdeployments")
@@ -124,7 +145,8 @@ fun DefaultOpenShiftClient.applicationDeployments(namespace: String): List<Appli
         val request = Request.Builder().url(url.toString()).build()
         val response = this.httpClient.newCall(request).execute()
         jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeploymentList::class.java)
-            ?.items ?: throw KubernetesClientException("Error occurred while fetching list of applications in namespace=$namespace")
+            ?.items
+            ?: throw KubernetesClientException("Error occurred while fetching list of applications in namespace=$namespace")
     } catch (e: Exception) {
         throw KubernetesClientException("Error occurred while fetching list of applications namespace=$namespace", e)
     }

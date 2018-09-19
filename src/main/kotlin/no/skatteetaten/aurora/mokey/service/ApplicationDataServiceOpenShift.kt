@@ -68,6 +68,13 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
+    fun createSingleItem(namespace: String, name: String): ApplicationData {
+        val applicationDeployment = openshiftService.applicationDeployment(namespace, name)
+        tryCreateApplicationData(applicationDeployment).applicationData?.let {
+            return it
+        } ?: throw tryCreateApplicationData(applicationDeployment).error!!
+    }
+
     private data class MaybeApplicationData(
         val applicationDeployment: ApplicationDeployment,
         val applicationData: ApplicationData? = null,
