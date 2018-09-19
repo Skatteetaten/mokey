@@ -30,14 +30,15 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
         )
     }
 
-    fun files(deploymentCommand: ApplicationDeploymentCommand) : List<Link>{
+    fun files(deploymentCommand: ApplicationDeploymentCommand): List<Link> {
 
         val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
-            .pathSegment( "v1", "auroraconfig", deploymentCommand.auroraConfig.name)
+            .pathSegment("v1", "auroraconfig", deploymentCommand.auroraConfig.name)
             .queryParam("environment", deploymentCommand.applicationDeploymentRef.environment)
             .queryParam("application", deploymentCommand.applicationDeploymentRef.application)
 
-        val currentLink = uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.refName).build()
+        val currentLink =
+            uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.refName).build()
                 .encode()
                 .toUriString()
         val deployedLink =
