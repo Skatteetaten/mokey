@@ -58,6 +58,7 @@ class ApplicationDeploymentDetailsResource(
     val imageDetails: ImageDetailsResource?,
     val podResources: List<PodResource>,
     val dependencies: Map<String, String> = emptyMap(),
+    val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
 
     val errors: List<ManagementEndpointErrorResource> = emptyList()
 ) : HalResource()
@@ -79,6 +80,20 @@ class PodResource(
     val ready: Boolean,
     val startTime: String?
 ) : ResourceSupport()
+
+data class ApplicationDeploymentCommandResource(
+    val overrideFiles: Map<String, String> = emptyMap(),
+    val applicationDeploymentRef: ApplicationDeploymentRefResource,
+    val auroraConfig: AuroraConfigRefResource
+)
+
+data class ApplicationDeploymentRefResource(val environment: String, val application: String)
+
+data class AuroraConfigRefResource(
+    val name: String,
+    val refName: String,
+    val resolvedRef: String? = null
+)
 
 data class ManagementEndpointErrorResource(
     val podName: String,

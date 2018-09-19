@@ -23,6 +23,18 @@
     }
   ],
   "dependencies": [],
+  "applicationDeploymentCommand": {
+    "overrideFiles": [],
+    "applicationDeploymentRef": {
+      "environment": "utv",
+      "application": "test"
+    },
+    "auroraConfig": {
+      "name": "paas",
+      "refName": "master",
+      "resolvedRef": "123"
+    }
+  },
   "errors": [],
   "_links": {
     "ApplyResult": {
