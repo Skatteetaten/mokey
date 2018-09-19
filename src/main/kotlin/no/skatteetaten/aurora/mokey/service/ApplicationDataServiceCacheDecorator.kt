@@ -2,7 +2,6 @@ package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.service.DataSources.CACHE
-import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -16,7 +15,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Primary
 @ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 @ApplicationDataSource(CACHE)
-class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val applicationDataService: ApplicationDataService) : ApplicationDataService {
+class ApplicationDataServiceCacheDecorator(val applicationDataService: ApplicationDataServiceOpenShift) :
+    ApplicationDataService {
 
     // TODO: replace with Redis
     val cache = ConcurrentHashMap<String, ApplicationData>()
@@ -25,8 +25,8 @@ class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val a
 
     override fun findAllAffiliations(): List<String> {
         return cache.mapNotNull { it.value.affiliation }
-                .filter(String::isNotBlank)
-                .distinct()
+            .filter(String::isNotBlank)
+            .distinct()
     }
 
     override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
@@ -35,14 +35,22 @@ class ApplicationDataServiceCacheDecorator(@ApplicationDataSource(CLUSTER) val a
 
     override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
         return cache
-                .map { it.value }
-                .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
+            .map { it.value }
+            .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
     }
 
     // TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
     fun cache() {
         refreshCache()
+    }
+
+    fun refreshItem(applicationId: String) {
+
+        cache[applicationId]?.let { current ->
+            val data = applicationDataService.createSingleItem(current.namespace, current.applicationDeploymentName)
+            cache[applicationId] = data
+        } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
     }
 
     fun refreshCache(affiliations: List<String>? = null) {
