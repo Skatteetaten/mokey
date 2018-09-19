@@ -47,6 +47,12 @@
       "DeploymentSpecDeployed": {
         "href": "http://localhost/v1/auroradeployspec/paas/utv/test?reference=123"
       },
+      "FilesCurrent": {
+        "href": "http://localhost/v1/auroraconfig/paas?environment=utv&application=test&reference=master"
+      },
+      "FilesDeployed": {
+        "href": "http://localhost/v1/auroraconfig/paas?environment=utv&application=test&reference=123"
+      },
       "self": {
         "href": "http://localhost/api/applicationdeploymentdetails/appDeploymentId"
       }
