@@ -12,9 +12,7 @@ data class RefreshParams(val applicationDeploymentId: String)
 class RefreshCacheController(val crawlService: ApplicationDataServiceCacheDecorator) {
 
     @PostMapping
-    fun refreshCache(@RequestBody params: RefreshParams): Boolean {
+    fun refreshCache(@RequestBody params: RefreshParams) {
         crawlService.refreshItem(params.applicationDeploymentId)
-
-        return true
     }
 }
