@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
@@ -63,6 +64,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             applicationData.imageDetails?.let { toImageDetailsResource(it) },
             applicationData.pods.mapNotNull { toPodResource(applicationData, it) },
             infoResponse?.dependencies ?: emptyMap(),
+            toDeploymentCommandResource(applicationData.deploymentCommand),
             errorResources
         ).apply {
             embedResource("Application", applicationAssembler.toResource(GroupedApplicationData(applicationData)))
@@ -94,6 +96,20 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     private fun toGitInfoResource(aPod: InfoResponse?) =
         GitInfoResource(aPod?.commitId, aPod?.commitTime)
 
+    private fun toDeploymentCommandResource(deploymentCommand: ApplicationDeploymentCommand) =
+        ApplicationDeploymentCommandResource(
+            deploymentCommand.overrideFiles,
+            ApplicationDeploymentRefResource(
+                deploymentCommand.applicationDeploymentRef.environment,
+                deploymentCommand.applicationDeploymentRef.application
+            ),
+            AuroraConfigRefResource(
+                deploymentCommand.auroraConfig.name,
+                deploymentCommand.auroraConfig.refName,
+                deploymentCommand.auroraConfig.resolvedRef
+            )
+        )
+
     private fun toErrorResource(podError: PodError): ManagementEndpointErrorResource {
         val podName = podError.podDetails.openShiftPodExcerpt.name
         return podError.error
@@ -124,7 +140,10 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         val deploymentSpecLinks = linkBuilder.deploymentSpec(applicationData.deploymentCommand)
 
         val applyResultLink = if (applicationData.booberDeployId != null)
-            linkBuilder.applyResult(applicationData.deploymentCommand.auroraConfig.name, applicationData.booberDeployId) else null
+            linkBuilder.applyResult(
+                applicationData.deploymentCommand.auroraConfig.name,
+                applicationData.booberDeployId
+            ) else null
 
         return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + selfLink).filterNotNull()
     }
