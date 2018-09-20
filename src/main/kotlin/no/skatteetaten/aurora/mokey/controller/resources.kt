@@ -82,6 +82,7 @@ class PodResource(
 ) : ResourceSupport()
 
 data class ApplicationDeploymentCommandResource(
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     val overrideFiles: Map<String, String> = emptyMap(),
     val applicationDeploymentRef: ApplicationDeploymentRefResource,
     val auroraConfig: AuroraConfigRefResource

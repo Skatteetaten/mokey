@@ -24,7 +24,6 @@
   ],
   "dependencies": [],
   "applicationDeploymentCommand": {
-    "overrideFiles": [],
     "applicationDeploymentRef": {
       "environment": "utv",
       "application": "test"
