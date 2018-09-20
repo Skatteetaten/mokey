@@ -116,12 +116,12 @@ class ManagementEndpointTest : AbstractTest() {
 
         val managementEndpoint = ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.INFO.key to infoLink)))
 
-        managementEndpoint.getInfoEndpointResponse().let {
+        managementEndpoint.getInfoEndpointResponse().deserialized.let {
             assert(it.commitId).isEqualTo("5df5258")
             assert(it.commitTime).isEqualTo(Instant.parse("2018-03-23T10:53:31Z"))
             assert(it.buildTime).isEqualTo(Instant.parse("2018-03-23T10:55:40Z"))
         }
-        managementEndpoint.getInfoEndpointResponse().let {
+        managementEndpoint.getInfoEndpointResponse().deserialized.let {
             assert(it.commitId).isEqualTo("37473fd")
             assert(it.commitTime).isEqualTo(Instant.parse("2018-03-26T11:31:39Z"))
             assert(it.buildTime).isEqualTo(Instant.parse("2018-03-26T11:36:21Z"))

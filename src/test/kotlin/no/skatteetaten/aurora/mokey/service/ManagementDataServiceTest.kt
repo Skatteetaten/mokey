@@ -9,6 +9,7 @@ import io.mockk.mockk
 import no.skatteetaten.aurora.mokey.model.Endpoint
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
+import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.utils.Left
@@ -57,8 +58,8 @@ class ManagementDataServiceTest {
 
     @Test
     fun `Load management endpoint`() {
-        every { managementEndpoint.getInfoEndpointResponse() } returns InfoResponse()
-        every { managementEndpoint.getHealthEndpointResponse() } returns HealthResponse(status = HealthStatus.UP)
+        every { managementEndpoint.getInfoEndpointResponse() } returns HttpResponse(InfoResponse(), "")
+        every { managementEndpoint.getHealthEndpointResponse() } returns HttpResponse(HealthResponse(status = HealthStatus.UP), "")
         every { managementEndpoint.links } returns ManagementLinks(emptyMap())
         every { managementEndpointFactory.create(any()) } returns managementEndpoint
 

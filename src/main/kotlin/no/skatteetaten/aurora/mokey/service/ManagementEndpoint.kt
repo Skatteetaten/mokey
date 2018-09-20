@@ -9,6 +9,7 @@ import no.skatteetaten.aurora.mokey.model.Endpoint.ENV
 import no.skatteetaten.aurora.mokey.model.Endpoint.HEALTH
 import no.skatteetaten.aurora.mokey.model.Endpoint.INFO
 import no.skatteetaten.aurora.mokey.model.HealthResponse
+import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import org.slf4j.Logger
@@ -35,13 +36,13 @@ class ManagementEndpoint internal constructor(
 ) {
 
     @Throws(ManagementEndpointException::class)
-    fun getHealthEndpointResponse(): HealthResponse = findJsonResource(HEALTH, HealthResponse::class)
+    fun getHealthEndpointResponse(): HttpResponse<HealthResponse> = findJsonResource(HEALTH, HealthResponse::class)
 
     @Throws(ManagementEndpointException::class)
-    fun getInfoEndpointResponse(): InfoResponse = findJsonResource(INFO, InfoResponse::class)
+    fun getInfoEndpointResponse(): HttpResponse<InfoResponse> = findJsonResource(INFO, InfoResponse::class)
 
     @Throws(ManagementEndpointException::class)
-    fun getEnvEndpointResponse(): JsonNode = findJsonResource(ENV, JsonNode::class)
+    fun getEnvEndpointResponse(): HttpResponse<JsonNode> = findJsonResource(ENV, JsonNode::class)
 
     private fun <T : Any> findJsonResource(endpoint: Endpoint, type: KClass<T>) =
             findJsonResource(restTemplate, endpoint, links.linkFor(endpoint), type)
@@ -54,7 +55,7 @@ class ManagementEndpoint internal constructor(
 
             val response = findJsonResource(restTemplate, Endpoint.MANAGEMENT, managementUrl, JsonNode::class)
             val links = try {
-                ManagementLinks.parseManagementResponse(response)
+                ManagementLinks.parseManagementResponse(response.deserialized)
             } catch (e: Exception) {
                 throw ManagementEndpointException(Endpoint.MANAGEMENT, "INVALID_FORMAT", managementUrl, e)
             }
@@ -62,7 +63,7 @@ class ManagementEndpoint internal constructor(
             return ManagementEndpoint(restTemplate, links)
         }
 
-        private fun <T : Any> findJsonResource(restTemplate: RestTemplate, endpoint: Endpoint, url: String, type: KClass<T>): T {
+        private fun <T : Any> findJsonResource(restTemplate: RestTemplate, endpoint: Endpoint, url: String, type: KClass<T>): HttpResponse<T> {
 
             logger.debug("Getting resource with url={}", url)
             try {
@@ -72,7 +73,8 @@ class ManagementEndpoint internal constructor(
                     if (!e.statusCode.is5xxServerError) throw e
                     String(e.responseBodyAsByteArray)
                 } ?: ""
-                return jacksonObjectMapper().readValue(responseText, type.java)
+                val deserialized = jacksonObjectMapper().readValue(responseText, type.java)
+                return HttpResponse(deserialized, responseText)
             } catch (e: Exception) {
                 val errorCode = when (e) {
                     is HttpStatusCodeException -> "ERROR_${e.statusCode}"

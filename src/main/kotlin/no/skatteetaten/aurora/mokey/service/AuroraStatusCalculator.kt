@@ -91,7 +91,7 @@ class AuroraStatusCalculator {
     fun findPodStatuses(pods: List<PodDetails>): List<HealthStatusDetail> {
         return pods.mapNotNull { pod ->
             pod.managementData.value?.health?.value?.let {
-                val statusLevel = fromApplicationStatus(it.status.name)
+                val statusLevel = fromApplicationStatus(it.deserialized.status.name)
                 val podName = pod.openShiftPodExcerpt.name
                 HealthStatusDetail(statusLevel, "POD_HEALTH_CHECK", podName)
             }

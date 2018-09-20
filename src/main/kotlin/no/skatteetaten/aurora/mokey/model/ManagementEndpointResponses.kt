@@ -32,6 +32,11 @@ data class ManagementLinks(private val links: Map<String, String>) {
     }
 }
 
+class HttpResponse<T>(
+    val deserialized: T,
+    val textResponse: String
+)
+
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
 data class HealthResponse(

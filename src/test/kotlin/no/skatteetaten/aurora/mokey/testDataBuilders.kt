@@ -41,6 +41,7 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
+import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
@@ -240,7 +241,14 @@ data class ManagementDataBuilder(
     val env: JsonNode = MissingNode.getInstance()
 ) {
 
-    fun build() = Right(ManagementData(ManagementLinks(emptyMap()), Right(info), Right(health)/*, Right(env)*/))
+    fun build() = Right(
+        ManagementData(
+            ManagementLinks(emptyMap()),
+            Right(HttpResponse(info, "")),
+            Right(HttpResponse(health, ""))
+            /*, Right(env)*/
+        )
+    )
 }
 
 data class PodDetailsDataBuilder(
