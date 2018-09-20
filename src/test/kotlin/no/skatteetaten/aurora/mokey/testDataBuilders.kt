@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
 import com.fkorotkov.kubernetes.metadata
+import com.fkorotkov.kubernetes.newContainerState
 import com.fkorotkov.kubernetes.newContainerStatus
 import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
@@ -10,6 +11,7 @@ import com.fkorotkov.kubernetes.newRawExtension
 import com.fkorotkov.kubernetes.newReplicationController
 import com.fkorotkov.kubernetes.newService
 import com.fkorotkov.kubernetes.status
+import com.fkorotkov.kubernetes.waiting
 import com.fkorotkov.openshift.from
 import com.fkorotkov.openshift.image
 import com.fkorotkov.openshift.imageChangeParams
@@ -221,6 +223,11 @@ data class PodDataBuilder(
                     newContainerStatus {
                         restartCount = 1
                         ready = true
+                        state = newContainerState {
+                            waiting {
+                                reason = "reason"
+                            }
+                        }
                     }
                 )
             }
