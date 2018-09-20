@@ -42,6 +42,29 @@ class LinkBuilderTest {
     }
 
     @Test
+    fun `should create files links`() {
+
+        val linkBuilder = LinkBuilder("https://boober", mapOf())
+
+        val (current, deployed) = linkBuilder.files(
+            ApplicationDeploymentCommand(
+                applicationDeploymentRef = ApplicationDeploymentRef(
+                    environment = "foo",
+                    application = "bar"
+                ),
+                auroraConfig = AuroraConfigRef(
+                    name = "jedi",
+                    refName = "master",
+                    resolvedRef = "123"
+                )
+            )
+        )
+
+        assert(current.href).isEqualTo("https://boober/v1/auroraconfig/jedi?environment=foo&application=bar&reference=master")
+        assert(deployed.href).isEqualTo("https://boober/v1/auroraconfig/jedi?environment=foo&application=bar&reference=123")
+    }
+
+    @Test
     fun `should create deploymentSepc links`() {
 
         val linkBuilder = LinkBuilder("https://boober", mapOf())

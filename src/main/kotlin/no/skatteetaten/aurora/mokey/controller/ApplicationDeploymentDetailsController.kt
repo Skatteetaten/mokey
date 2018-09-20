@@ -139,13 +139,15 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         val deploymentSpecLinks = linkBuilder.deploymentSpec(applicationData.deploymentCommand)
 
+        val filesLinks = linkBuilder.files(applicationData.deploymentCommand)
+
         val applyResultLink = if (applicationData.booberDeployId != null)
             linkBuilder.applyResult(
                 applicationData.deploymentCommand.auroraConfig.name,
                 applicationData.booberDeployId
             ) else null
 
-        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + selfLink).filterNotNull()
+        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + filesLinks + selfLink).filterNotNull()
     }
 
     private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =
