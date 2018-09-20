@@ -23,17 +23,17 @@ class PodService(
 
     companion object {
         fun createPodDetails(pod: Pod, managementResult: ManagementResult): PodDetails {
-            val status = pod.status.containerStatuses.firstOrNull()
+            val containerStatus = pod.status.containerStatuses.firstOrNull()
 
-            val podStateReason = status?.state?.waiting?.reason
+            val podStateReason = containerStatus?.state?.waiting?.reason
             val podPhase = podStateReason ?: pod.status.phase
 
             return PodDetails(
                     OpenShiftPodExcerpt(
                             name = pod.metadata.name,
                             status = podPhase,
-                            restartCount = status?.restartCount ?: 0,
-                            ready = status?.ready ?: false,
+                            restartCount = containerStatus?.restartCount ?: 0,
+                            ready = containerStatus?.ready ?: false,
                             podIP = pod.status.podIP,
                             deployment = pod.metadata.labels["deployment"],
                             startTime = pod.status.startTime
