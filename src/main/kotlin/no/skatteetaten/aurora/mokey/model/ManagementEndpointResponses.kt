@@ -32,7 +32,7 @@ data class ManagementLinks(private val links: Map<String, String>) {
     }
 }
 
-class HttpResponse<T>(
+data class HttpResponse<T>(
     val deserialized: T,
     val textResponse: String
 )

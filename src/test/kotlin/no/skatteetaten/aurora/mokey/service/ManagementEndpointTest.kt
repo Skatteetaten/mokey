@@ -13,6 +13,7 @@ import no.skatteetaten.aurora.mokey.model.Endpoint.MANAGEMENT
 import no.skatteetaten.aurora.mokey.model.HealthPart
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
+import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
@@ -83,7 +84,7 @@ class ManagementEndpointTest : AbstractTest() {
         val response = managementEndpoint.getHealthEndpointResponse()
 
         assert(response).isEqualTo(
-            HealthResponse(
+            HttpResponse(HealthResponse(
                 HealthStatus.UP,
                 mutableMapOf(
                     "atsServiceHelse" to HealthPart(HealthStatus.UP, mutableMapOf()),
@@ -101,7 +102,7 @@ class ManagementEndpointTest : AbstractTest() {
                         )
                     )
                 )
-            )
+            ), json)
         )
     }
 
