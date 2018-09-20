@@ -85,8 +85,8 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         val pod = podDetails.openShiftPodExcerpt
         val managementResponsesResource = podDetails.managementData.value
             ?.let { managementData ->
-                val health = managementData.health.value?.textResponse?.let { HttpResponseResource(it) }
-                val info = managementData.info.value?.textResponse?.let { HttpResponseResource(it) }
+                val health = managementData.health.value?.let { HttpResponseResource(it.textResponse, it.createdAt) }
+                val info = managementData.info.value?.let { HttpResponseResource(it.textResponse, it.createdAt) }
                 ManagementResponsesResource(health, info)
             }
         return PodResource(

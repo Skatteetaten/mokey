@@ -27,8 +27,12 @@ class ManagementEndpointFactory(val restTemplate: RestTemplate) {
     }
 }
 
-class ManagementEndpointException(val endpoint: Endpoint, val errorCode: String, url: String? = null, cause: Exception? = null)
-    : RuntimeException("${endpoint}_$errorCode", cause)
+class ManagementEndpointException(
+    val endpoint: Endpoint,
+    val errorCode: String,
+    url: String? = null,
+    cause: Exception? = null
+) : RuntimeException("${endpoint}_$errorCode", cause)
 
 class ManagementEndpoint internal constructor(
     private val restTemplate: RestTemplate,
@@ -45,7 +49,7 @@ class ManagementEndpoint internal constructor(
     fun getEnvEndpointResponse(): HttpResponse<JsonNode> = findJsonResource(ENV, JsonNode::class)
 
     private fun <T : Any> findJsonResource(endpoint: Endpoint, type: KClass<T>) =
-            findJsonResource(restTemplate, endpoint, links.linkFor(endpoint), type)
+        findJsonResource(restTemplate, endpoint, links.linkFor(endpoint), type)
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(ManagementEndpoint::class.java)
@@ -63,7 +67,12 @@ class ManagementEndpoint internal constructor(
             return ManagementEndpoint(restTemplate, links)
         }
 
-        private fun <T : Any> findJsonResource(restTemplate: RestTemplate, endpoint: Endpoint, url: String, type: KClass<T>): HttpResponse<T> {
+        private fun <T : Any> findJsonResource(
+            restTemplate: RestTemplate,
+            endpoint: Endpoint,
+            url: String,
+            type: KClass<T>
+        ): HttpResponse<T> {
 
             logger.debug("Getting resource with url={}", url)
             try {
@@ -73,8 +82,7 @@ class ManagementEndpoint internal constructor(
                     if (!e.statusCode.is5xxServerError) throw e
                     String(e.responseBodyAsByteArray)
                 } ?: ""
-                val deserialized = jacksonObjectMapper().readValue(responseText, type.java)
-                return HttpResponse(deserialized, responseText)
+                return toHttpResponse(responseText, type)
             } catch (e: Exception) {
                 val errorCode = when (e) {
                     is HttpStatusCodeException -> "ERROR_${e.statusCode}"
@@ -85,6 +93,11 @@ class ManagementEndpoint internal constructor(
                 }
                 throw ManagementEndpointException(endpoint, errorCode, url, e)
             }
+        }
+
+        fun <T : Any> toHttpResponse(jsonString: String, type: KClass<T>): HttpResponse<T> {
+            val deserialized = jacksonObjectMapper().readValue(jsonString, type.java)
+            return HttpResponse(deserialized, jsonString)
         }
     }
 }

@@ -83,7 +83,8 @@ class PodResource(
 ) : ResourceSupport()
 
 data class HttpResponseResource(
-    val textResponse: String
+    val textResponse: String,
+    val createdAt: Instant
 )
 
 data class ManagementResponsesResource(
