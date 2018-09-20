@@ -24,10 +24,14 @@ class PodService(
     companion object {
         fun createPodDetails(pod: Pod, managementResult: ManagementResult): PodDetails {
             val status = pod.status.containerStatuses.firstOrNull()
+
+            val podStateReason = status?.state?.waiting?.reason
+            val podPhase = podStateReason ?: pod.status.phase
+
             return PodDetails(
                     OpenShiftPodExcerpt(
                             name = pod.metadata.name,
-                            status = pod.status.phase,
+                            status = podPhase,
                             restartCount = status?.restartCount ?: 0,
                             ready = status?.ready ?: false,
                             podIP = pod.status.podIP,
