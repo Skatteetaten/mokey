@@ -69,19 +69,14 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return (openShiftClient as DefaultOpenShiftClient).applicationDeployment(namespace, name)
     }
 
-    fun projects(): List<Project> {
-        return openShiftClient.projects().list().items
-    }
+    fun projects(): List<Project> = openShiftClient.projects().list().items
 
-    fun projectForToken(namespace: String): Project? {
-        val user = SecurityContextHolder.getContext().authentication.principal as User
-        val userClient = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
-        return userClient.projects().withName(namespace).getOrNull()
-    }
+    fun projectByNamespaceForUser(namespace: String): Project? =
+        createUserClient().projects().withName(namespace).getOrNull()
+
+    fun projectsForUser(): Set<Project> = createUserClient().projects().list().items.toSet()
 
     fun canViewAndAdmin(namespace: String): Boolean {
-        val user = SecurityContextHolder.getContext().authentication.principal as User
-        val userClient = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
 
         val review = SelfSubjectAccessReview(
             spec = SelfSubjectAccessReviewSpec(
@@ -92,8 +87,13 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
                 )
             )
         )
-        val result = userClient.selfSubjectAccessView(review)
+        val result = createUserClient().selfSubjectAccessView(review)
         return result.status.allowed
+    }
+
+    private fun createUserClient(): DefaultOpenShiftClient {
+        val user = SecurityContextHolder.getContext().authentication.principal as User
+        return DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
     }
 }
 
