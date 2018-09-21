@@ -40,17 +40,13 @@ class ApplicationDataServiceCacheDecorator(
 
     // TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
-    fun cache() {
-        refreshCache()
-    }
+    fun cache() = refreshCache()
 
-    fun refreshItem(applicationId: String) {
-
-        cache[applicationId]?.let { current ->
+    fun refreshItem(applicationId: String) =
+        findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
             val data = applicationDataService.createSingleItem(current.namespace, current.applicationDeploymentName)
             cache[applicationId] = data
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
-    }
 
     fun refreshCache(affiliations: List<String>? = null) {
 
@@ -81,12 +77,8 @@ class ApplicationDataServiceCacheDecorator(
     private fun getFromCacheForUser(id: String? = null): List<ApplicationData> {
 
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
-        val projectNames = if (values.size == 1) {
-            // We may not need this optimalization because projectsForUser can be cached
-            listOfNotNull(openShiftService.projectByNamespaceForUser(values[0].namespace))
-        } else {
-            openShiftService.projectsForUser()
-        }.map { it.metadata.name }
+
+        val projectNames = openShiftService.projectsForUser().map { it.metadata.name }
 
         return values.filter { projectNames.contains(it.namespace) }
     }
