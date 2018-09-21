@@ -1,5 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.kubernetes.api.model.ObjectMeta
+import io.fabric8.openshift.api.model.Project
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
@@ -45,7 +47,7 @@ class ApplicationDataServiceCacheDecoratorTest {
             .willReturn(listOf(app1v1))
             .willReturn(listOf(app1v2))
 
-        given(openshiftService.currentUserHasAccess(app1v1.namespace)).willReturn(true)
+        given(openshiftService.projectByNamespaceForUser(app1v1.namespace)).willReturn(project())
         // assertThat(applicationDataService.findApplicationDataByApplicationDeploymentId(app1Id)).isNull()
 
         applicationDataService.refreshCache(affiliations)
@@ -63,7 +65,7 @@ class ApplicationDataServiceCacheDecoratorTest {
             .willReturn(listOf(app1v1))
 
         applicationDataService.refreshCache(affiliations)
-        given(openshiftService.currentUserHasAccess(app1v1.namespace)).willReturn(false)
+        given(openshiftService.projectByNamespaceForUser(app1v1.namespace)).willReturn(project())
         assertThat(applicationDataService.findApplicationDataByApplicationDeploymentId(app1Id)).isNull()
     }
 
@@ -74,8 +76,15 @@ class ApplicationDataServiceCacheDecoratorTest {
         given(sourceApplicationDataService.findAllApplicationData(affiliations))
             .willReturn(listOf(app1v1))
         applicationDataService.refreshCache(affiliations)
-        given(openshiftService.userProjectNames()).willReturn(emptySet())
+        given(openshiftService.projectsForUser()).willReturn(emptySet())
         assertThat(applicationDataService.findAllApplicationData(affiliations)).isEmpty()
     }
 
+    fun project() = Project().apply {
+
+        metadata = ObjectMeta().apply {
+            namespace = app1v1.namespace
+            name = app1v1.namespace
+        }
+    }
 }

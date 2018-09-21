@@ -31,21 +31,12 @@ class ApplicationDataServiceCacheDecorator(
             .distinct()
     }
 
-    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
-        return cache[id]?.let {
-            if (openShiftService.currentUserHasAccess(it.namespace)) {
-                it
-            } else null
-        }
-    }
+    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? =
+        getFromCacheForUser(id).firstOrNull()
 
-    override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
-        val projectNames = openShiftService.userProjectNames()
-        return cache
-            .map { it.value }
-            .filter { projectNames.contains(it.namespace) }
+    override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> =
+        getFromCacheForUser()
             .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
-    }
 
     // TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
@@ -84,7 +75,23 @@ class ApplicationDataServiceCacheDecorator(
         logger.info("number of apps={} time={}", keys.size, time.totalTimeSeconds)
     }
 
-    fun withStopWatch(block: () -> Unit): StopWatch {
+    /**
+     * Gets elements from the cache that can be accessed by the current user
+     */
+    private fun getFromCacheForUser(id: String? = null): List<ApplicationData> {
+
+        val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
+        val projectNames = if (values.size == 1) {
+            // We may not need this optimalization because projectsForUser can be cached
+            listOfNotNull(openShiftService.projectByNamespaceForUser(values[0].namespace))
+        } else {
+            openShiftService.projectsForUser()
+        }.map { it.metadata.name }
+
+        return values.filter { projectNames.contains(it.namespace) }
+    }
+
+    private fun withStopWatch(block: () -> Unit): StopWatch {
         return StopWatch().also {
             it.start()
             block()
