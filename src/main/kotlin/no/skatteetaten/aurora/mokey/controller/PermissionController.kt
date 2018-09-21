@@ -17,7 +17,7 @@ class PermissionController(val openShiftService: OpenShiftService) {
     @GetMapping("/{namespace}")
     fun checkPermissions(@PathVariable namespace: String): AuroraNamespacePermissions {
 
-        return openShiftService.projectForToken(namespace)?.let {
+        return openShiftService.projectByNamespaceForUser(namespace)?.let {
 
             logger.info("{}", it)
             AuroraNamespacePermissions(

@@ -15,8 +15,10 @@ import java.util.concurrent.ConcurrentHashMap
 @Primary
 @ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 @ApplicationDataSource(CACHE)
-class ApplicationDataServiceCacheDecorator(val applicationDataService: ApplicationDataServiceOpenShift) :
-    ApplicationDataService {
+class ApplicationDataServiceCacheDecorator(
+    val applicationDataService: ApplicationDataServiceOpenShift,
+    val openShiftService: OpenShiftService
+) : ApplicationDataService {
 
     // TODO: replace with Redis
     val cache = ConcurrentHashMap<String, ApplicationData>()
@@ -29,29 +31,22 @@ class ApplicationDataServiceCacheDecorator(val applicationDataService: Applicati
             .distinct()
     }
 
-    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
-        return cache[id]
-    }
+    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? =
+        getFromCacheForUser(id).firstOrNull()
 
-    override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
-        return cache
-            .map { it.value }
+    override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> =
+        getFromCacheForUser()
             .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
-    }
 
     // TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
-    fun cache() {
-        refreshCache()
-    }
+    fun cache() = refreshCache()
 
-    fun refreshItem(applicationId: String) {
-
-        cache[applicationId]?.let { current ->
+    fun refreshItem(applicationId: String) =
+        findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
             val data = applicationDataService.createSingleItem(current.namespace, current.applicationDeploymentName)
             cache[applicationId] = data
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
-    }
 
     fun refreshCache(affiliations: List<String>? = null) {
 
@@ -76,7 +71,19 @@ class ApplicationDataServiceCacheDecorator(val applicationDataService: Applicati
         logger.info("number of apps={} time={}", keys.size, time.totalTimeSeconds)
     }
 
-    fun withStopWatch(block: () -> Unit): StopWatch {
+    /**
+     * Gets elements from the cache that can be accessed by the current user
+     */
+    private fun getFromCacheForUser(id: String? = null): List<ApplicationData> {
+
+        val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
+
+        val projectNames = openShiftService.projectsForUser().map { it.metadata.name }
+
+        return values.filter { projectNames.contains(it.namespace) }
+    }
+
+    private fun withStopWatch(block: () -> Unit): StopWatch {
         return StopWatch().also {
             it.start()
             block()
