@@ -15,8 +15,10 @@ import java.util.concurrent.ConcurrentHashMap
 @Primary
 @ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 @ApplicationDataSource(CACHE)
-class ApplicationDataServiceCacheDecorator(val applicationDataService: ApplicationDataServiceOpenShift) :
-    ApplicationDataService {
+class ApplicationDataServiceCacheDecorator(
+    val applicationDataService: ApplicationDataServiceOpenShift,
+    val openShiftService: OpenShiftService
+) : ApplicationDataService {
 
     // TODO: replace with Redis
     val cache = ConcurrentHashMap<String, ApplicationData>()
@@ -30,12 +32,18 @@ class ApplicationDataServiceCacheDecorator(val applicationDataService: Applicati
     }
 
     override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
-        return cache[id]
+        return cache[id]?.let {
+            if (openShiftService.currentUserHasAccess(it.namespace)) {
+                it
+            } else null
+        }
     }
 
     override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
+        val projectNames = openShiftService.userProjectNames()
         return cache
             .map { it.value }
+            .filter { projectNames.contains(it.namespace) }
             .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
     }
 

@@ -79,6 +79,18 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return userClient.projects().withName(namespace).getOrNull()
     }
 
+    fun userProjectNames(): Set<String> {
+        val user = SecurityContextHolder.getContext().authentication.principal as User
+        val userClient = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
+        return userClient.projects().list().items.map { it.metadata.name }.toSet()
+    }
+
+    fun currentUserHasAccess(namespace: String): Boolean {
+        val user = SecurityContextHolder.getContext().authentication.principal as User
+        val userClient = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
+        return userClient.projects().withName(namespace).getOrNull()?.let { true } ?: false
+    }
+
     fun canViewAndAdmin(namespace: String): Boolean {
         val user = SecurityContextHolder.getContext().authentication.principal as User
         val userClient = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
