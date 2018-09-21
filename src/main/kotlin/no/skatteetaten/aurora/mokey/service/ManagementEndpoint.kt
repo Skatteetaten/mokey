@@ -82,7 +82,7 @@ class ManagementEndpoint internal constructor(
                     if (!e.statusCode.is5xxServerError) throw e
                     String(e.responseBodyAsByteArray)
                 } ?: ""
-                return toHttpResponse(responseText, type)
+                return toHttpResponse(responseText, type.java)
             } catch (e: Exception) {
                 val errorCode = when (e) {
                     is HttpStatusCodeException -> "ERROR_${e.statusCode}"
@@ -95,8 +95,9 @@ class ManagementEndpoint internal constructor(
             }
         }
 
-        fun <T : Any> toHttpResponse(jsonString: String, type: KClass<T>): HttpResponse<T> {
-            val deserialized = jacksonObjectMapper().readValue(jsonString, type.java)
+        @JvmStatic
+        fun <T : Any> toHttpResponse(jsonString: String, clazz: Class<T>): HttpResponse<T> {
+            val deserialized = jacksonObjectMapper().readValue(jsonString, clazz)
             return HttpResponse(deserialized, jsonString)
         }
     }

@@ -2,6 +2,8 @@ package no.skatteetaten.aurora.mokey.contracts
 
 import java.time.Instant
 
+import org.intellij.lang.annotations.Language
+
 import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentDetailsController
 import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentDetailsResourceAssembler
 import no.skatteetaten.aurora.mokey.controller.LinkBuilder
@@ -18,6 +20,7 @@ import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.mokey.service.ManagementEndpoint
 import no.skatteetaten.aurora.utils.Right
 
 class ApplicationdeploymentdetailsBase extends AbstractContractBase {
@@ -44,13 +47,23 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
     def applicationDeployment = response('$._embedded.Application.applicationDeployments[0]', Map)
 
     def details = response('$.podResources[0]', Map)
+    @Language("JSON")
+    def infoResponseJson = """{
+  "git": {
+    "build.time": \"${buildTime}",
+    "commit.time": \"${commitTime}",
+    "commit.id.abbrev": ""
+  },
+  "podLinks": {
+    "metrics": "${details._links.metrics.href}"  
+  }
+}"""
+    def infoResponse = ManagementEndpoint.toHttpResponse(infoResponseJson, InfoResponse)
     def podDetails = new PodDetails(
-        new OpenShiftPodExcerpt(details.name, details.status, details.restartCount, details.ready,
-            '', details.startTime, ''),
-        new Right(new ManagementData(null,
-            new Right(new InfoResponse(['metrics': details._links.metrics.href], [:], [:], '',
-                Instant.parse(commitTime), Instant.parse(buildTime))), new Right())))
-
+        new OpenShiftPodExcerpt(details.name as String, details.status as String, details.restartCount as Integer,
+            details.ready as Boolean, '', details.startTime as String, ''),
+        new Right(new ManagementData(null, new Right(infoResponse), new Right()))
+    )
 
     new ApplicationData(applicationId, applicationDeployment.identifier as String,
         new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
