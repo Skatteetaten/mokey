@@ -47,8 +47,7 @@ class ApplicationDataServiceCacheDecoratorTest {
             .willReturn(listOf(app1v1))
             .willReturn(listOf(app1v2))
 
-        given(openshiftService.projectByNamespaceForUser(app1v1.namespace)).willReturn(project())
-        // assertThat(applicationDataService.findApplicationDataByApplicationDeploymentId(app1Id)).isNull()
+        given(openshiftService.projectsForUser()).willReturn(setOf(project()))
 
         applicationDataService.refreshCache(affiliations)
         assertThat(applicationDataService.findApplicationDataByApplicationDeploymentId(app1Id)).isEqualTo(app1v1)
