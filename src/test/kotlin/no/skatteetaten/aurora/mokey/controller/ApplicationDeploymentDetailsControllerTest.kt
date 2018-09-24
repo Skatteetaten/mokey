@@ -1,11 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
-//import org.springframework.test.web.servlet.match.MockRestRequestMatchers.jsonPath
+// import org.springframework.test.web.servlet.match.MockRestRequestMatchers.jsonPath
 
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
@@ -83,13 +79,5 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
                     `is`(managementDataBuilder.infoResponseJson)
                 )
             )
-//            .let { println(prettyPrint(it.andReturn().response.contentAsString)) }
-    }
-
-    fun prettyPrint(s: String): String? = jacksonObjectMapper().apply {
-        configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-        registerModules(JavaTimeModule())
-    }.let {
-        it.writerWithDefaultPrettyPrinter().writeValueAsString(it.readValue(s))
     }
 }
