@@ -78,8 +78,19 @@ class PodResource(
     val status: String,
     val restartCount: Int,
     val ready: Boolean,
-    val startTime: String?
+    val startTime: String?,
+    val managementResponses: ManagementResponsesResource?
 ) : ResourceSupport()
+
+data class HttpResponseResource(
+    val textResponse: String,
+    val createdAt: Instant
+)
+
+data class ManagementResponsesResource(
+    val health: HttpResponseResource?,
+    val info: HttpResponseResource?
+)
 
 data class ApplicationDeploymentCommandResource(
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)

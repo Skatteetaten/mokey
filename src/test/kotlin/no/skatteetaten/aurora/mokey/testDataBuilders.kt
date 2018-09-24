@@ -40,15 +40,17 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.HealthResponse
-import no.skatteetaten.aurora.mokey.model.HealthStatus
+import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.service.ManagementEndpoint.Companion.toHttpResponse
 import no.skatteetaten.aurora.utils.Right
 import org.apache.commons.codec.digest.DigestUtils
+import org.intellij.lang.annotations.Language
 import java.time.Instant
 
 const val DEFAULT_NAME = "app-name"
@@ -234,22 +236,44 @@ data class PodDataBuilder(
         }
 }
 
-data class ManagementDataBuilder(
-    val info: InfoResponse = InfoResponse(),
-    val health: HealthResponse = HealthResponse(HealthStatus.UP),
-    val env: JsonNode = MissingNode.getInstance()
-) {
+class ManagementDataBuilder(
 
-    fun build() = Right(ManagementData(ManagementLinks(emptyMap()), Right(info), Right(health)/*, Right(env)*/))
+    @Language("JSON")
+    val infoResponseJson: String = """{
+  "git": {
+    "build.time": "2018-01-01 00:00:01Z",
+    "commit.time": "2018-01-01 00:00:01Z",
+    "commit.id.abbrev": ""
+  },
+ "podLinks": {
+    "metrics": "http://localhost"
+  }
+}""",
+
+    @Language("JSON")
+    val healthResponseJson: String = """{"status": "UP"}"""
+) {
+    val info: HttpResponse<InfoResponse> = toHttpResponse(infoResponseJson, InfoResponse::class.java)
+    val health: HttpResponse<HealthResponse> = toHttpResponse(healthResponseJson, HealthResponse::class.java)
+    val env: JsonNode = MissingNode.getInstance()
+
+    fun build() = Right(
+        ManagementData(
+            ManagementLinks(emptyMap()),
+            Right(info),
+            Right(health)
+            /*, Right(env)*/
+        )
+    )
 }
 
 data class PodDetailsDataBuilder(
     val name: String = "name",
-    val status: String = "status"
+    val status: String = "status",
+    val managementDataBuilder: ManagementDataBuilder = ManagementDataBuilder()
 ) {
-
-    fun build() =
-        PodDetails(
+    fun build(): PodDetails {
+        return PodDetails(
             OpenShiftPodExcerpt(
                 name = name,
                 status = status,
@@ -257,8 +281,9 @@ data class PodDetailsDataBuilder(
                 podIP = "127.0.0.1",
                 startTime = ""
             ),
-            ManagementDataBuilder().build()
+            managementDataBuilder.build()
         )
+    }
 }
 
 data class ImageDetailsDataBuilder(

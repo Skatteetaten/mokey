@@ -58,11 +58,12 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         val errorResources = applicationData.errors.map(this::toErrorResource)
         val infoResponse = applicationData.firstInfoResponse
+
         return ApplicationDeploymentDetailsResource(
             infoResponse?.buildTime,
             toGitInfoResource(infoResponse),
             applicationData.imageDetails?.let { toImageDetailsResource(it) },
-            applicationData.pods.mapNotNull { toPodResource(applicationData, it) },
+            applicationData.pods.map { toPodResource(applicationData, it) },
             infoResponse?.dependencies ?: emptyMap(),
             toDeploymentCommandResource(applicationData.deploymentCommand),
             errorResources
@@ -77,17 +78,24 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
         val podLinks = podDetails.managementData.value?.let { managementData ->
-            val podManagementLinks = managementData.info.value?.podLinks
+            val podManagementLinks = managementData.info.value?.deserialized?.podLinks
             podManagementLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
         } ?: listOf()
 
         val pod = podDetails.openShiftPodExcerpt
+        val managementResponsesResource = podDetails.managementData.value
+            ?.let { managementData ->
+                val health = managementData.health.value?.let { HttpResponseResource(it.textResponse, it.createdAt) }
+                val info = managementData.info.value?.let { HttpResponseResource(it.textResponse, it.createdAt) }
+                ManagementResponsesResource(health, info)
+            }
         return PodResource(
             pod.name,
             pod.status,
             pod.restartCount,
             pod.ready,
-            pod.startTime
+            pod.startTime,
+            managementResponsesResource
         ).apply {
             this.add(podLinks)
         }
@@ -170,5 +178,5 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 private val ApplicationData.firstInfoResponse: InfoResponse?
     get() {
         val pod = this.pods.firstOrNull()
-        return pod?.managementData?.value?.info?.value
+        return pod?.managementData?.value?.info?.value?.deserialized
     }

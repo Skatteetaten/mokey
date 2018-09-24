@@ -13,6 +13,7 @@ import no.skatteetaten.aurora.mokey.model.Endpoint.MANAGEMENT
 import no.skatteetaten.aurora.mokey.model.HealthPart
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
+import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
@@ -83,7 +84,7 @@ class ManagementEndpointTest : AbstractTest() {
         val response = managementEndpoint.getHealthEndpointResponse()
 
         assert(response).isEqualTo(
-            HealthResponse(
+            HttpResponse(HealthResponse(
                 HealthStatus.UP,
                 mutableMapOf(
                     "atsServiceHelse" to HealthPart(HealthStatus.UP, mutableMapOf()),
@@ -101,7 +102,7 @@ class ManagementEndpointTest : AbstractTest() {
                         )
                     )
                 )
-            )
+            ), json)
         )
     }
 
@@ -116,12 +117,12 @@ class ManagementEndpointTest : AbstractTest() {
 
         val managementEndpoint = ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.INFO.key to infoLink)))
 
-        managementEndpoint.getInfoEndpointResponse().let {
+        managementEndpoint.getInfoEndpointResponse().deserialized.let {
             assert(it.commitId).isEqualTo("5df5258")
             assert(it.commitTime).isEqualTo(Instant.parse("2018-03-23T10:53:31Z"))
             assert(it.buildTime).isEqualTo(Instant.parse("2018-03-23T10:55:40Z"))
         }
-        managementEndpoint.getInfoEndpointResponse().let {
+        managementEndpoint.getInfoEndpointResponse().deserialized.let {
             assert(it.commitId).isEqualTo("37473fd")
             assert(it.commitTime).isEqualTo(Instant.parse("2018-03-26T11:31:39Z"))
             assert(it.buildTime).isEqualTo(Instant.parse("2018-03-26T11:36:21Z"))
