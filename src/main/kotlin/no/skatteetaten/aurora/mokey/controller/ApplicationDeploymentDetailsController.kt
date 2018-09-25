@@ -60,13 +60,13 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         val infoResponse = applicationData.firstInfoResponse
 
         return ApplicationDeploymentDetailsResource(
-            infoResponse?.buildTime,
-            toGitInfoResource(infoResponse),
-            applicationData.imageDetails?.let { toImageDetailsResource(it) },
-            applicationData.pods.map { toPodResource(applicationData, it) },
-            infoResponse?.dependencies ?: emptyMap(),
-            toDeploymentCommandResource(applicationData.deploymentCommand),
-            errorResources
+            buildTime = infoResponse?.buildTime,
+            gitInfo = toGitInfoResource(infoResponse),
+            imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
+            podResources = applicationData.pods.map { toPodResource(applicationData, it) },
+            dependencies = infoResponse?.dependencies ?: emptyMap(),
+            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
+            errors = errorResources
         ).apply {
             // TODO: Should this really embedd not the public application but the entire application?
             embedResource(
@@ -110,12 +110,12 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
     private fun toDeploymentCommandResource(deploymentCommand: ApplicationDeploymentCommand) =
         ApplicationDeploymentCommandResource(
-            deploymentCommand.overrideFiles,
-            ApplicationDeploymentRefResource(
+            overrideFiles = deploymentCommand.overrideFiles,
+            applicationDeploymentRef = ApplicationDeploymentRefResource(
                 deploymentCommand.applicationDeploymentRef.environment,
                 deploymentCommand.applicationDeploymentRef.application
             ),
-            AuroraConfigRefResource(
+            auroraConfig = AuroraConfigRefResource(
                 deploymentCommand.auroraConfig.name,
                 deploymentCommand.auroraConfig.refName,
                 deploymentCommand.auroraConfig.resolvedRef
