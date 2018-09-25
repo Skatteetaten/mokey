@@ -11,6 +11,7 @@ import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -143,15 +144,7 @@ class ApplicationDataServiceOpenShift(
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
         return ApplicationData(
-            applicationId = applicationDeployment.spec.applicationId,
-            applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-            auroraStatus = auroraStatus,
-            applicationName = applicationName,
-            applicationDeploymentName = applicationDeploymentName,
-            namespace = namespace,
-            deployTag = applicationDeployment.spec.deployTag ?: "",
             booberDeployId = applicationDeployment.metadata.booberDeployId,
-            affiliation = affiliation,
             managementPath = applicationDeployment.spec.managementPath,
             pods = pods,
             imageDetails = imageDetails,
@@ -159,7 +152,18 @@ class ApplicationDataServiceOpenShift(
             addresses = applicationAddresses,
             sprocketDone = dc.sprocketDone,
             splunkIndex = splunkIndex,
-            deploymentCommand = applicationDeployment.spec.command
+            deploymentCommand = applicationDeployment.spec.command,
+            publicData = ApplicationPublicData(
+                applicationId = applicationDeployment.spec.applicationId,
+                applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
+                auroraStatus = auroraStatus,
+                applicationName = applicationName,
+                applicationDeploymentName = applicationDeploymentName,
+                namespace = namespace,
+                affiliation = affiliation,
+                auroraVersion = imageDetails?.auroraVersion,
+                deployTag = applicationDeployment.spec.deployTag ?: ""
+            )
         )
     }
 }

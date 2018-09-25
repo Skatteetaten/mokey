@@ -10,24 +10,38 @@ data class GroupedApplicationData(
     val name: String,
     val applications: List<ApplicationData>
 ) {
-    constructor(application: ApplicationData) : this(application.applicationId, application.applicationName, listOf(application))
+    constructor(application: ApplicationData) : this(
+        application.applicationId,
+        application.applicationName,
+        listOf(application)
+    )
 
     companion object {
         fun create(applications: List<ApplicationData>): List<GroupedApplicationData> =
             applications.groupBy { it.applicationId ?: it.applicationName }
-                .map { GroupedApplicationData(it.value.first().applicationId, it.value.first().applicationName, it.value) }
+                .map {
+                    GroupedApplicationData(
+                        it.value.first().applicationId,
+                        it.value.first().applicationName,
+                        it.value
+                    )
+                }
     }
 }
 
-data class ApplicationData(
+data class ApplicationPublicData(
     val applicationId: String?,
     val applicationDeploymentId: String,
-    val auroraStatus: AuroraStatus,
-    val deployTag: String,
     val applicationName: String,
     val applicationDeploymentName: String,
-    val namespace: String,
+    val auroraStatus: AuroraStatus,
     val affiliation: String?,
+    val namespace: String,
+    val deployTag: String,
+    val auroraVersion: String?
+)
+
+data class ApplicationData(
     val booberDeployId: String? = null,
     val managementPath: String? = null,
     val pods: List<PodDetails> = emptyList(),
@@ -36,7 +50,8 @@ data class ApplicationData(
     val addresses: List<Address>,
     val sprocketDone: String? = null,
     val splunkIndex: String? = null,
-    val deploymentCommand: ApplicationDeploymentCommand
+    val deploymentCommand: ApplicationDeploymentCommand,
+    val publicData: ApplicationPublicData
 ) {
     val errors
         get(): List<PodError> = this.pods
@@ -45,6 +60,15 @@ data class ApplicationData(
                 listOf(data, data.value?.info, data.value?.health).map { it?.error?.let { PodError(podDetails, it) } }
             }
             .filterNotNull()
+
+    val applicationId get() = publicData.applicationId
+    val applicationDeploymentId get() = publicData.applicationDeploymentId
+    val applicationName get() = publicData.applicationName
+    val applicationDeploymentName get() = publicData.applicationDeploymentName
+    val auroraStatus get() = publicData.auroraStatus
+    val affiliation get() = publicData.affiliation
+    val namespace get() = publicData.namespace
+    val deployTag get() = publicData.deployTag
 }
 
 data class PodDetails(
