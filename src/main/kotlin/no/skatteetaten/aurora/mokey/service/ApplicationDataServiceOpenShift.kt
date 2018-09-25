@@ -49,6 +49,14 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
+    override fun findAllPublicApplicationData(affiliations: List<String>?): List<ApplicationPublicData> {
+        throw NotImplementedError("findAllPublicApplicationDataByApplicationDeploymentId is not supported")
+    }
+
+    override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? {
+        throw NotImplementedError("findPublicApplicationDataByApplicationDeploymentId is not supported")
+    }
+
     override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
         throw NotImplementedError("findApplicationDataByApplicationDeploymentId is not supported")
     }

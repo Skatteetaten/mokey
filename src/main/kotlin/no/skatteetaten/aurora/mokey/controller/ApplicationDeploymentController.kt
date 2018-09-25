@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.hateoas.ExposesResourceFor
@@ -23,19 +24,20 @@ class ApplicationDeploymentController(
     @GetMapping("/{id}")
     fun get(@PathVariable id: String): ApplicationDeploymentResource {
         val application =
-            applicationDataService.findApplicationDataByApplicationDeploymentId(id)
+            applicationDataService.findPublicApplicationDataByApplicationDeploymentId(id)
                 ?: throw NoSuchResourceException("Does not exist")
         return assembler.toResource(application)
     }
+
 }
 
 class ApplicationDeploymentResourceAssembler :
-    ResourceAssemblerSupport<ApplicationData, ApplicationDeploymentResource>(
+    ResourceAssemblerSupport<ApplicationPublicData, ApplicationDeploymentResource>(
         ApplicationDeploymentController::class.java,
         ApplicationDeploymentResource::class.java
     ) {
 
-    override fun toResource(applicationData: ApplicationData): ApplicationDeploymentResource {
+    override fun toResource(applicationData: ApplicationPublicData): ApplicationDeploymentResource {
         val environment = Environment.fromNamespace(applicationData.namespace, applicationData.affiliation)
         return ApplicationDeploymentResource(
             applicationData.applicationDeploymentId,
@@ -56,7 +58,7 @@ class ApplicationDeploymentResourceAssembler :
                     }
                 )
             },
-            Version(applicationData.deployTag, applicationData.imageDetails?.auroraVersion)
+            Version(applicationData.deployTag, applicationData.auroraVersion)
         ).apply {
             add(linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId).withSelfRel())
             add(

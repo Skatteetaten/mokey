@@ -10,6 +10,7 @@ import no.skatteetaten.aurora.mokey.controller.LinkBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -65,13 +66,18 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
         new Right(new ManagementData(null, new Right(infoResponse), new Right()))
     )
 
-    new ApplicationData(applicationId, applicationDeployment.identifier as String,
-        new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
-        applicationDeployment.version.deployTag as String,
+    def publicData = new ApplicationPublicData(
+        applicationId,
+        applicationDeployment.identifier as String,
         applicationName,
         applicationDeployment.name as String,
-        applicationDeployment.namespace as String,
+        new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
         applicationDeployment.affiliation as String,
+        applicationDeployment.namespace as String,
+        "",
+        null
+    )
+    new ApplicationData(
         '',
         '',
         [podDetails],
@@ -83,7 +89,7 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
             [:],
             new ApplicationDeploymentRef(applicationDeployment.environment, applicationName),
             new AuroraConfigRef(applicationDeployment.affiliation, "master", "123"),
-        )
+        ), publicData
     )
   }
 }

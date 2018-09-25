@@ -68,7 +68,11 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             toDeploymentCommandResource(applicationData.deploymentCommand),
             errorResources
         ).apply {
-            embedResource("Application", applicationAssembler.toResource(GroupedApplicationData(applicationData)))
+            // TODO: Should this really embedd not the public application but the entire application?
+            embedResource(
+                "Application",
+                applicationAssembler.toResource(GroupedApplicationData(applicationData.publicData))
+            )
             this.add(createApplicationLinks(applicationData))
         }
     }

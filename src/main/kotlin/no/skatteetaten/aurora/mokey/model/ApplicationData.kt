@@ -8,16 +8,16 @@ import java.time.Instant
 data class GroupedApplicationData(
     val applicationId: String?,
     val name: String,
-    val applications: List<ApplicationData>
+    val applications: List<ApplicationPublicData>
 ) {
-    constructor(application: ApplicationData) : this(
+    constructor(application: ApplicationPublicData) : this(
         application.applicationId,
         application.applicationName,
         listOf(application)
     )
 
     companion object {
-        fun create(applications: List<ApplicationData>): List<GroupedApplicationData> =
+        fun create(applications: List<ApplicationPublicData>): List<GroupedApplicationData> =
             applications.groupBy { it.applicationId ?: it.applicationName }
                 .map {
                     GroupedApplicationData(
@@ -38,7 +38,7 @@ data class ApplicationPublicData(
     val affiliation: String?,
     val namespace: String,
     val deployTag: String,
-    val auroraVersion: String?
+    val auroraVersion: String? = null
 )
 
 data class ApplicationData(

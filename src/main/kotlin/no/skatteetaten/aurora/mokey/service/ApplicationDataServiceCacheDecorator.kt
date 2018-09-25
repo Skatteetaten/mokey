@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.service.DataSources.CACHE
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,10 +21,19 @@ class ApplicationDataServiceCacheDecorator(
     val openShiftService: OpenShiftService
 ) : ApplicationDataService {
 
-    // TODO: replace with Redis
+
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceCacheDecorator::class.java)
+
+    override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? {
+        return cache[id]?.publicData
+    }
+
+    override fun findAllPublicApplicationData(affiliations: List<String>?): List<ApplicationPublicData> {
+        return cache.map { it.value.publicData }
+            .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
+    }
 
     override fun findAllAffiliations(): List<String> {
         return cache.mapNotNull { it.value.affiliation }
