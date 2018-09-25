@@ -74,8 +74,8 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
         new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
         applicationDeployment.affiliation as String,
         applicationDeployment.namespace as String,
-        "",
-        null
+        "master-SNAPSHOT",
+        ""
     )
     new ApplicationData(
         '',

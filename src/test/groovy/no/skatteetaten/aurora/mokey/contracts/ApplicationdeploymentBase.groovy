@@ -35,7 +35,7 @@ class ApplicationdeploymentBase extends AbstractContractBase {
         affiliation,
         namespace,
         deployTag,
-        null
+        ""
     )
   }
 }
