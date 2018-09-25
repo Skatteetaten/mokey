@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
 import io.fabric8.kubernetes.client.ConfigBuilder
+import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -31,9 +32,13 @@ class BearerAuthenticationManager : AuthenticationManager {
 
     override fun authenticate(authentication: Authentication?): Authentication {
 
-        val token = getBearerTokenFromAuthentication(authentication)
-        val client = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(token).build())
-        val openShiftUser = client.currentUser()
-        return PreAuthenticatedAuthenticationToken(openShiftUser, token)
+        try {
+            val token = getBearerTokenFromAuthentication(authentication)
+            val client = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(token).build())
+            val openShiftUser = client.currentUser()
+            return PreAuthenticatedAuthenticationToken(openShiftUser, token)
+        } catch (e: KubernetesClientException) {
+            throw BadCredentialsException(e.localizedMessage, e)
+        }
     }
 }
