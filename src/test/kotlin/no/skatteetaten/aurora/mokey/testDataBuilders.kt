@@ -348,7 +348,8 @@ data class ApplicationDataBuilder(
                 auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
                 affiliation = affiliation,
                 namespace = namespace,
-                deployTag = ""
+                deployTag = "",
+                dockerImageRepo = null
             )
         )
 }

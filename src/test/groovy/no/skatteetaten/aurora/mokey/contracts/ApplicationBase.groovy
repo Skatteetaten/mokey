@@ -33,6 +33,7 @@ class ApplicationBase extends AbstractContractBase {
         affiliation,
         namespace,
         "",
+        null,
         null
     )
   }

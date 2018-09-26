@@ -59,7 +59,8 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
             affiliation = "affiliation",
             namespace = "namespace",
             deployTag = "deployTag",
-            auroraVersion = null
+            auroraVersion = null,
+            dockerImageRepo = null
         )
 
     )

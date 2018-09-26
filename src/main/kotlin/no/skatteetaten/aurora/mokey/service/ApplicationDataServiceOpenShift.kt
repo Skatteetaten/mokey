@@ -170,7 +170,8 @@ class ApplicationDataServiceOpenShift(
                 namespace = namespace,
                 affiliation = affiliation,
                 auroraVersion = imageDetails?.auroraVersion,
-                deployTag = applicationDeployment.spec.deployTag ?: ""
+                deployTag = applicationDeployment.spec.deployTag ?: "",
+                dockerImageRepo = imageDetails?.dockerImageRepo
             )
         )
     }

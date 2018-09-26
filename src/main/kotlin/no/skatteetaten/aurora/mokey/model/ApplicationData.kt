@@ -38,7 +38,8 @@ data class ApplicationPublicData(
     val affiliation: String?,
     val namespace: String,
     val deployTag: String,
-    val auroraVersion: String? = null
+    val auroraVersion: String? = null,
+    val dockerImageRepo: String?
 )
 
 data class ApplicationData(
@@ -113,6 +114,8 @@ data class ImageDetails(
 ) {
     val auroraVersion: String
         get() = environmentVariables["AURORA_VERSION"] ?: ""
+    val dockerImageRepo: String?
+        get() = dockerImageReference?.replace(Regex("@.*$"), "")
 }
 
 data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)

@@ -34,7 +34,8 @@ class ApplicationDataServiceCacheDecoratorTest {
             applicationName = "testapp",
             applicationDeploymentName = "aurora",
             namespace = "aurora-1",
-            affiliation = "aurora"
+            affiliation = "aurora",
+            dockerImageRepo = null
         )
     )
     val app1v2 = app1v1.copy(publicData = app1v1.publicData.copy(deployTag = "prod"))
