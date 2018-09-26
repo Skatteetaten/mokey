@@ -33,6 +33,7 @@ class WebSecurityConfig(
                 .requestMatchers(forPort(managementPort)).permitAll()
                 .antMatchers("/docs/index.html").permitAll()
                 .antMatchers("/").permitAll()
+            .antMatchers("/api/applicationdeploymentdetails/**").authenticated()
                 .antMatchers("/api/**").permitAll()
                 .anyRequest().authenticated()
     }
@@ -41,7 +42,7 @@ class WebSecurityConfig(
 
     @Bean
     internal fun preAuthenticationProvider() = PreAuthenticatedAuthenticationProvider().apply {
-        setPreAuthenticatedUserDetailsService({ it: PreAuthenticatedAuthenticationToken ->
+        setPreAuthenticatedUserDetailsService { it: PreAuthenticatedAuthenticationToken ->
 
             val principal = it.principal as io.fabric8.openshift.api.model.User
             val fullName = principal.fullName
@@ -51,7 +52,7 @@ class WebSecurityConfig(
             User(username, it.credentials as String, fullName).also {
                 logger.info("Logged in user username=$username, name='$fullName' tokenSnippet=${it.tokenSnippet}")
             }
-        })
+        }
     }
 
     @Bean
