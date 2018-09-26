@@ -28,11 +28,6 @@ class ApplicationDeploymentController(
                 ?: throw NoSuchResourceException("Does not exist")
         return assembler.toResource(application)
     }
-
-    @GetMapping
-    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<ApplicationDeploymentResource> {
-        return applicationDataService.findAllPublicApplicationData(affiliation).map { assembler.toResource(it) }
-    }
 }
 
 class ApplicationDeploymentResourceAssembler :
