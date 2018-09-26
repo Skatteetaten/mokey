@@ -346,6 +346,8 @@ data class ApplicationDataBuilder(
             deploymentCommand = ApplicationDeploymentCommand(
                 applicationDeploymentRef = ApplicationDeploymentRef(DEFAULT_ENV_NAME, "name"),
                 auroraConfig = AuroraConfigRef(DEFAULT_AFFILIATION, "master")
-            )
+            ),
+            releaseTo = "releaseTo",
+            time = Instant.EPOCH
         )
 }

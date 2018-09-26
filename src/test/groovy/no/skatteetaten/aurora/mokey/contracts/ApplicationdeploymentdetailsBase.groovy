@@ -83,7 +83,9 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
             [:],
             new ApplicationDeploymentRef(applicationDeployment.environment, applicationName),
             new AuroraConfigRef(applicationDeployment.affiliation, "master", "123"),
-        )
+        ),
+        "releaseTo",
+        Instant.EPOCH
     )
   }
 }
