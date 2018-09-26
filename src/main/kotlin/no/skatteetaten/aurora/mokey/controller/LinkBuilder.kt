@@ -16,10 +16,10 @@ class LinkBuilderFactory(
     @Value("\${openshift-cluster}") val cluster: String
 ) {
     @Bean
-    fun linkBuilder(): LinkBuilder = LinkBuilder(booberApiUrl, cluster, expandParams)
+    fun linkBuilder(): LinkBuilder = LinkBuilder(booberApiUrl, expandParams)
 }
 
-class LinkBuilder(private val booberApiUrl: String, private val cluster: String, private val globalExpandParams: Map<String, String>) {
+class LinkBuilder(private val booberApiUrl: String, private val globalExpandParams: Map<String, String>) {
 
     fun applyResult(auroraConfigName: String, deployId: String): Link {
         return createLink(
@@ -121,7 +121,7 @@ class LinkBuilder(private val booberApiUrl: String, private val cluster: String,
         val url = UriComponentsBuilder
             .newInstance()
             .scheme("https")
-            .host(cluster + "-master.paas.skead.no")
+            .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
             .port(8443)
             .pathSegment("console/project", project, "browse/pods", pod)
             .queryParam("tab", tab)
