@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
-import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.PodDetails
@@ -15,6 +14,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.Link
 import org.springframework.hateoas.mvc.ControllerLinkBuilder
+import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Component
@@ -52,8 +52,6 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         ApplicationDeploymentDetailsResource::class.java
     ) {
 
-    private val applicationAssembler = ApplicationResourceAssembler()
-
     override fun toResource(applicationData: ApplicationData): ApplicationDeploymentDetailsResource {
 
         val errorResources = applicationData.errors.map(this::toErrorResource)
@@ -68,11 +66,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
             errors = errorResources
         ).apply {
-            // TODO: Should this really embedd not the public application but the entire application?
-            embedResource(
-                "Application",
-                applicationAssembler.toResource(GroupedApplicationData(applicationData.publicData))
-            )
+
             this.add(createApplicationLinks(applicationData))
         }
     }
@@ -161,7 +155,11 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         val applyLink = linkBuilder.apply(deploymentCommand = applicationData.deploymentCommand)
         val auroraConfigFileLinks = linkBuilder.auroraConfigFile(deploymentCommand = applicationData.deploymentCommand)
-        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + filesLinks + applyLink + auroraConfigFileLinks + selfLink).filterNotNull()
+
+        val applicationDeploymentRel =
+            linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId)
+                .withRel("ApplicationDeployment")
+        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + filesLinks + applyLink + auroraConfigFileLinks + applicationDeploymentRel + selfLink).filterNotNull()
     }
 
     private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =

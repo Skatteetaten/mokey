@@ -43,9 +43,6 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
     def commitTime = response('$.gitInfo.commitTime')
     def buildTime = response('$.buildTime')
 
-    def applicationName = response('$._embedded.Application.name')
-    def applicationId = response('$._embedded.Application.identifier')
-    def applicationDeployment = response('$._embedded.Application.applicationDeployments[0]', Map)
 
     def details = response('$.podResources[0]', Map)
     @Language("JSON")
@@ -67,13 +64,9 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
     )
 
     def publicData = new ApplicationPublicData(
-        applicationId,
-        applicationDeployment.identifier as String,
-        applicationName,
-        applicationDeployment.name as String,
+        "", "appDeploymentId", "", "",
         new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
-        applicationDeployment.affiliation as String,
-        applicationDeployment.namespace as String,
+        "", "",
         "master-SNAPSHOT",
         ""
     )
@@ -87,8 +80,8 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
         null,
         new ApplicationDeploymentCommand(
             [:],
-            new ApplicationDeploymentRef(applicationDeployment.environment, applicationName),
-            new AuroraConfigRef(applicationDeployment.affiliation, "master", "123"),
+            new ApplicationDeploymentRef("utv", "test"),
+            new AuroraConfigRef("paas", "master", "123"),
         ), publicData
     )
   }
