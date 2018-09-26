@@ -21,7 +21,6 @@ class ApplicationDataServiceCacheDecorator(
     val openShiftService: OpenShiftService
 ) : ApplicationDataService {
 
-
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceCacheDecorator::class.java)

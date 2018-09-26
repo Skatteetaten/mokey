@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
@@ -28,7 +27,6 @@ class ApplicationDeploymentController(
                 ?: throw NoSuchResourceException("Does not exist")
         return assembler.toResource(application)
     }
-
 }
 
 class ApplicationDeploymentResourceAssembler :
