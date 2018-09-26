@@ -16,10 +16,10 @@ class LinkBuilderFactory(
     @Value("\${openshift-cluster}") val cluster: String
 ) {
     @Bean
-    fun linkBuilder(): LinkBuilder = LinkBuilder(booberApiUrl, expandParams)
+    fun linkBuilder(): LinkBuilder = LinkBuilder(booberApiUrl, cluster, expandParams)
 }
 
-class LinkBuilder(private val booberApiUrl: String, private val globalExpandParams: Map<String, String>) {
+class LinkBuilder(private val booberApiUrl: String, private val cluster: String, private val globalExpandParams: Map<String, String>) {
 
     fun applyResult(auroraConfigName: String, deployId: String): Link {
         return createLink(
@@ -114,6 +114,21 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
             createLink(currentLink, "DeploymentSpecCurrent"),
             createLink(deployedLink, "DeploymentSpecDeployed")
         )
+    }
+
+    // TODO: Must improve the way we create deep links to pods.
+    fun openShiftConsolePodLink(tab: String, pod: String, project: String): Link {
+        val url = UriComponentsBuilder
+            .newInstance()
+            .scheme("https")
+            .host(cluster + "-master.paas.skead.no")
+            .port(8443)
+            .pathSegment("console/project", project, "browse/pods", pod)
+            .queryParam("tab", tab)
+            .build()
+            .toUriString()
+
+        return Link("ocp_console_" + tab, url)
     }
 
     fun createLink(linkString: String, rel: String, expandParams: Map<String, String> = mapOf()): Link {
