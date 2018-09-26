@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
-abstract class ServiceException(message: String?, cause: Throwable?) : RuntimeException(message, cause) {
-    constructor(message: String) : this(message, null)
-}
+open class ServiceException(message: String? = null, cause: Throwable? = null) : Exception(message, cause)
 
-class OpenShiftException(messages: String?, cause: Throwable?) : ServiceException(messages, cause)
+class NoAccessException(message: String) : ServiceException(message)
+open class OpenShiftException(message: String? = null, cause: Throwable? = null) : ServiceException(message, cause)
+class OpenShiftObjectException(message: String? = null, cause: Throwable? = null) : OpenShiftException(message, cause)

@@ -4,3 +4,4 @@
 /out/
 aoc
 *.iml
+rest-client.env.json

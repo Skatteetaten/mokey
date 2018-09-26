@@ -1,0 +1,4 @@
+GET {{apiUrl}}/api/applicationdeploymentdetails/0373fa6e7259e7d28b317b1bf055947696998ada
+Authorization:Bearer {{token}}
+
+###

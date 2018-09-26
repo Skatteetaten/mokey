@@ -1,0 +1,13 @@
+{
+  "_links": {
+    "health": {
+      "href": "http://localhost:8081/health"
+    },
+    "env": {
+      "href": "http://localhost:8081/env"
+    },
+    "info": {
+      "href": "http://localhost:8081/info"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "identifier": "appDeploymentId",
+  "name": "test",
+  "affiliation": "paas",
+  "environment": "utv",
+  "namespace": "paas-utv",
+  "status": {
+    "code": "HEALTHY",
+    "comment": ""
+  },
+  "version": {
+    "deployTag": "master-SNAPSHOT",
+    "auroraVersion": ""
+  },
+  "_links": {
+    "self": {
+      "href": "http://localhost/api/applicationdeployment/appDeploymentId"
+    },
+    "ApplicationDeploymentDetails": {
+      "href": "http://localhost/api/applicationdeploymentdetails/appDeploymentId"
+    }
+  }
+}

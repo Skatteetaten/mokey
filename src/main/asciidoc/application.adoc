@@ -1,0 +1,11 @@
+= Application
+
+The application resource is used for getting the cached information for an application in a namespace
+
+== Example request
+include::{snippets}/application/path-parameters.adoc[]
+include::{snippets}/application/httpie-request.adoc[]
+
+== Response
+include::{snippets}/application/response-fields.adoc[]
+include::{snippets}/application/http-response.adoc[]

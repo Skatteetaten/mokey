@@ -1,0 +1,89 @@
+{
+  "buildTime": "2018-07-02T07:04:16.541Z",
+  "gitInfo": {
+    "commitId": "",
+    "commitTime": "2018-07-02T07:04:16.541Z"
+  },
+  "imageDetails": {
+    "imageBuildTime": "2018-04-05T07:52:14Z",
+    "dockerImageReference": "docker/image/test@sha256:12339544fa78d3ee134d181330c986b7434b802719c9bcb7e5905a116248251"
+  },
+  "podResources": [
+    {
+      "name": "test-pod",
+      "status": "Running",
+      "restartCount": 0,
+      "ready": true,
+      "startTime": "2018-06-19T04:43:08Z",
+      "_links": {
+        "metrics": {
+          "href": "http://metrics"
+        }
+      }
+    }
+  ],
+  "dependencies": [],
+  "applicationDeploymentCommand": {
+    "applicationDeploymentRef": {
+      "environment": "utv",
+      "application": "test"
+    },
+    "auroraConfig": {
+      "name": "paas",
+      "refName": "master",
+      "resolvedRef": "123"
+    }
+  },
+  "errors": [],
+  "_links": {
+    "ApplyResult": {
+      "href": "http://localhost/v1/apply-result/paas/"
+    },
+    "DeploymentSpecCurrent": {
+      "href": "http://localhost/v1/auroradeployspec/paas/utv/test?reference=master"
+    },
+    "DeploymentSpecDeployed": {
+      "href": "http://localhost/v1/auroradeployspec/paas/utv/test?reference=123"
+    },
+    "FilesCurrent": {
+      "href": "http://localhost/v1/auroraconfig/paas?environment=utv&application=test&reference=master"
+    },
+    "FilesDeployed": {
+      "href": "http://localhost/v1/auroraconfig/paas?environment=utv&application=test&reference=123"
+    },
+    "self": {
+      "href": "http://localhost/api/applicationdeploymentdetails/appDeploymentId"
+    }
+  },
+  "_embedded": {
+    "Application": {
+      "identifier": "appId",
+      "name": "test",
+      "applicationDeployments": [
+        {
+          "identifier": "appDeploymentId",
+          "name": "test",
+          "affiliation": "paas",
+          "environment": "utv",
+          "namespace": "paas-utv",
+          "status": {
+            "code": "HEALTHY",
+            "comment": ""
+          },
+          "version": {
+            "deployTag": "master-SNAPSHOT",
+            "auroraVersion": ""
+          },
+          "_links": {
+            "self": {
+              "href": "http://localhost/api/applicationdeployment/appDeploymentId"
+            },
+            "ApplicationDeploymentDetails": {
+              "href": "http://localhost/api/applicationdeploymentdetails/appDeploymentId"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

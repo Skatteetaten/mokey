@@ -1,0 +1,59 @@
+{
+  "name": "reference",
+  "namespace": "aurora",
+  "affiliation": "aurora",
+  "deployTag" : "1",
+  "booberDeployId" : "1337",
+  "targetReplicas": 1,
+  "availableReplicas": 1,
+  "managementPath": ":8081/actuator",
+  "deploymentPhase": "Complete",
+  "pods": [
+    {
+      "openShiftPodExcerpt" : {
+        "name": "reference-2-hx1gz",
+        "status": "Running",
+        "restartCount": 0,
+        "podIP": "10.254.23.39",
+        "startTime": "2018-01-30T05:27:55Z",
+        "deployment": "reference-2"
+      },
+      "links": {
+        "trace": "http://10.254.23.39:8081/trace",
+        "loggers": "http://10.254.23.39:8081/loggers",
+        "self": "http://10.254.23.39:8081/actuator",
+        "health": "http://10.254.23.39:8081/health",
+        "prometheus": "http://10.254.23.39:8081/prometheus",
+        "env": "http://10.254.23.39:8081/env",
+        "info": "http://10.254.23.39:8081/info"
+      }
+    }
+  ],
+  "imageStream": {
+    "registryUrl": "https://docker-registry.aurora.sits.no:5000",
+    "group": "no_skatteetaten_aurora",
+    "name": "reference",
+    "tag": "1",
+    "env": {
+      "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/jre/bin",
+      "JAVA_HOME": "/jre",
+      "JAVA_VERSION_MAJOR": "8",
+      "JAVA_VERSION_MINOR": "152",
+      "JAVA_VERSION_BUILD": "16",
+      "JAVA_PACKAGE": "server-jre",
+      "LANG": "C.UTF-8",
+      "HOME": "/u01",
+      "JOLOKIA_VERSION": "1.3.7",
+      "JOLOKIA_PATH": "/opt/jolokia/jolokia-jvm-1.3.7-agent.jar",
+      "BASE_IMAGE_VERSION": "8.152.18",
+      "ALPINE_VERSION": "3.6",
+      "TRUST_STORE": "/jre/lib/security/cacerts",
+      "APP_VERSION": "1.0.0",
+      "AURORA_VERSION": "1.0.0-b1.6.0-flange-8.152.18",
+      "IMAGE_BUILD_TIME": "2018-01-25T09:38:04Z",
+      "LOGBACK_FILE": "/u01/architect/logback.xml",
+      "PUSH_EXTRA_TAGS": "major,minor,patch,latest",
+      "TZ": "Europe/Oslo"
+    }
+  }
+}

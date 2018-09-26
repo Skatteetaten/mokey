@@ -1,0 +1,4 @@
+GET {{apiUrl}}/api/application?affiliation=paas
+#Authorization:Bearer {{token}}
+#
+####

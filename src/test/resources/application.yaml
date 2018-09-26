@@ -1,0 +1,13 @@
+logging:
+  level:
+    no.skatteetaten.aurora.mokey: INFO
+    org:
+      hibernate: WARN
+      springframework: WARN
+      apache:
+        catalina: WARN
+        velocity: WARN
+
+  pattern:
+    console: "%d [%thread] %-5level %logger:%L %X - %msg %n%rEx{full}"
+
