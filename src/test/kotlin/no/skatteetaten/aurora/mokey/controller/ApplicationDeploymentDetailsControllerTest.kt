@@ -23,6 +23,7 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Instant
 
 @WebMvcTest(
     ApplicationDeploymentDetailsController::class,
@@ -56,7 +57,9 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
         deploymentCommand = ApplicationDeploymentCommand(
             auroraConfig = AuroraConfigRef("affiliation", "master", "123"),
             applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name")
-        )
+        ),
+        releaseTo = "releaseTo",
+        time = Instant.EPOCH
     )
 
     @Test

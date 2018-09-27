@@ -10,12 +10,22 @@ data class GroupedApplicationData(
     val name: String,
     val applications: List<ApplicationData>
 ) {
-    constructor(application: ApplicationData) : this(application.applicationId, application.applicationName, listOf(application))
+    constructor(application: ApplicationData) : this(
+        application.applicationId,
+        application.applicationName,
+        listOf(application)
+    )
 
     companion object {
         fun create(applications: List<ApplicationData>): List<GroupedApplicationData> =
             applications.groupBy { it.applicationId ?: it.applicationName }
-                .map { GroupedApplicationData(it.value.first().applicationId, it.value.first().applicationName, it.value) }
+                .map {
+                    GroupedApplicationData(
+                        it.value.first().applicationId,
+                        it.value.first().applicationName,
+                        it.value
+                    )
+                }
     }
 }
 
@@ -36,7 +46,10 @@ data class ApplicationData(
     val addresses: List<Address>,
     val sprocketDone: String? = null,
     val splunkIndex: String? = null,
-    val deploymentCommand: ApplicationDeploymentCommand
+    val deploymentCommand: ApplicationDeploymentCommand,
+    val releaseTo: String?,
+    val time: Instant = Instant.now()
+
 ) {
     val errors
         get(): List<PodError> = this.pods

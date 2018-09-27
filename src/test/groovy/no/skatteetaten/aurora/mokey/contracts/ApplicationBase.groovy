@@ -1,5 +1,7 @@
 package no.skatteetaten.aurora.mokey.contracts
 
+import java.time.Instant
+
 import no.skatteetaten.aurora.mokey.controller.ApplicationController
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
@@ -35,7 +37,9 @@ class ApplicationBase extends AbstractContractBase {
             [:],
             new ApplicationDeploymentRef("", ""),
             new AuroraConfigRef("", "", ""),
-        )
+        ),
+        "releaseTo",
+        Instant.EPOCH
     )
   }
 }
