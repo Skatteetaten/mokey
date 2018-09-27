@@ -41,6 +41,7 @@ class ApplicationDataServiceOpenShift(
     override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
 
         return if (affiliations == null) {
+            logger.debug("finding applications in all envs")
             findAllApplicationDataByEnvironments()
         } else {
             val allEnvironments = findAllEnvironments()
@@ -67,9 +68,11 @@ class ApplicationDataServiceOpenShift(
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
 
+        logger.info("finding all applications in environments=$environments")
         return runBlocking(mtContext) {
             environments
                 .flatMap { environment ->
+                    logger.debug("Finding ApplicationDeployments in namespace={}", environment)
                     val deployments = openshiftService.applicationDeployments(environment.namespace)
                     logger.debug("Found {} ApplicationDeployments in namespace={}", deployments.size, environment)
                     deployments.map { async(mtContext) { tryCreateApplicationData(it) } }

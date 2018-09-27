@@ -32,6 +32,7 @@ class WebSecurityConfig(
             .authorizeRequests()
             .requestMatchers(forPort(managementPort)).permitAll()
             .antMatchers("/api/applicationdeploymentdetails/**").authenticated()
+            .antMatchers("/refresh").authenticated()
             .anyRequest().permitAll()
     }
 

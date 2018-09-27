@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey
 import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.InitializingBean
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -19,19 +18,14 @@ fun main(args: Array<String>) {
 @Component
 @ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 class CacheWarmup(
-    val applicationDataService: ApplicationDataServiceCacheDecorator,
-    @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
+    val applicationDataService: ApplicationDataServiceCacheDecorator
 ) : InitializingBean {
 
     private val logger = LoggerFactory.getLogger(CacheWarmup::class.java)
 
-    val affiliations: List<String>?
-        get() = if (affiliationsConfig.isBlank()) null
-        else affiliationsConfig.split(",").map { it.trim() }
-
     override fun afterPropertiesSet() {
         try {
-            applicationDataService.refreshCache(affiliations)
+            applicationDataService.cache()
         } catch (e: Exception) {
             logger.error("Unable to refresh cache during initialization", e)
         }

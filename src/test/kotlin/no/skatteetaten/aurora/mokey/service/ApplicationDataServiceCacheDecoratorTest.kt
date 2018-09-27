@@ -42,7 +42,7 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     val sourceApplicationDataService = mock(ApplicationDataServiceOpenShift::class.java)
     val openshiftService = mock(OpenShiftService::class.java)
-    val applicationDataService = ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService)
+    val applicationDataService = ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService, "aurora")
 
     @Test
     fun `should update cache from OpenShiftApplicationDataService`() {

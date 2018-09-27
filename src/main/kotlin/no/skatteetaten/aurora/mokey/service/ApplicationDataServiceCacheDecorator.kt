@@ -5,6 +5,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.service.DataSources.CACHE
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Primary
 import org.springframework.scheduling.annotation.Scheduled
@@ -18,8 +19,13 @@ import java.util.concurrent.ConcurrentHashMap
 @ApplicationDataSource(CACHE)
 class ApplicationDataServiceCacheDecorator(
     val applicationDataService: ApplicationDataServiceOpenShift,
-    val openShiftService: OpenShiftService
+    val openShiftService: OpenShiftService,
+    @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
 ) : ApplicationDataService {
+
+    val affiliations: List<String>?
+        get() = if (affiliationsConfig.isBlank()) null
+        else affiliationsConfig.split(",").map { it.trim() }
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
@@ -49,7 +55,7 @@ class ApplicationDataServiceCacheDecorator(
 
     // TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
-    fun cache() = refreshCache()
+    fun cache() = refreshCache(affiliations)
 
     fun refreshItem(applicationId: String) =
         findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
