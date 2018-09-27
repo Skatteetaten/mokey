@@ -1,5 +1,7 @@
 package no.skatteetaten.aurora.mokey.contracts
 
+import java.time.Instant
+
 import no.skatteetaten.aurora.mokey.controller.ApplicationController
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
@@ -34,7 +36,9 @@ class ApplicationBase extends AbstractContractBase {
         namespace,
         "",
         null,
-        null
+        null,
+        "releaseTo",
+        Instant.EPOCH
     )
   }
 }

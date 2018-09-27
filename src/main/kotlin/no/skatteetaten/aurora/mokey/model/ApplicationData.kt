@@ -39,7 +39,9 @@ data class ApplicationPublicData(
     val namespace: String,
     val deployTag: String,
     val auroraVersion: String? = null,
-    val dockerImageRepo: String?
+    val dockerImageRepo: String?,
+    val releaseTo: String?,
+    val time: Instant = Instant.now()
 )
 
 data class ApplicationData(
@@ -53,6 +55,7 @@ data class ApplicationData(
     val splunkIndex: String? = null,
     val deploymentCommand: ApplicationDeploymentCommand,
     val publicData: ApplicationPublicData
+
 ) {
     val errors
         get(): List<PodError> = this.pods

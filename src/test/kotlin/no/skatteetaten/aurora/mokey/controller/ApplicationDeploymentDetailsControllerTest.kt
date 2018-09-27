@@ -24,6 +24,7 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Instant
 
 @WebMvcTest(
     ApplicationDeploymentDetailsController::class,
@@ -60,9 +61,10 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
             namespace = "namespace",
             deployTag = "deployTag",
             auroraVersion = null,
-            dockerImageRepo = null
+            dockerImageRepo = null,
+                releaseTo = "releaseTo",
+    time = Instant.EPOCH
         )
-
     )
 
     @Test

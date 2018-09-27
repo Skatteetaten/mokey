@@ -56,7 +56,8 @@ class ApplicationDeploymentResourceAssembler :
                     }
                 )
             },
-            version = Version(applicationData.deployTag, applicationData.auroraVersion)
+            version = Version(applicationData.deployTag, applicationData.auroraVersion, applicationData.releaseTo),
+            time = applicationData.time
         ).apply {
             add(linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId).withSelfRel())
             add(

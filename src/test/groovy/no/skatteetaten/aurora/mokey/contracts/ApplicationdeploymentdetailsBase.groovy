@@ -69,7 +69,9 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
         "", "",
         "master-SNAPSHOT",
         "",
-        null
+        null,
+        "releaseTo",
+        Instant.EPOCH
     )
     new ApplicationData(
         '',

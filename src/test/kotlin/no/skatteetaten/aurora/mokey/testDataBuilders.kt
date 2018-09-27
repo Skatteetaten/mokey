@@ -349,7 +349,9 @@ data class ApplicationDataBuilder(
                 affiliation = affiliation,
                 namespace = namespace,
                 deployTag = "",
-                dockerImageRepo = null
+                dockerImageRepo = null,
+                    releaseTo = "releaseTo",
+    time = Instant.EPOCH
             )
         )
 }
