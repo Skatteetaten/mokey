@@ -39,10 +39,11 @@ class ApplicationDeploymentResource(
     val namespace: String,
     val name: String,
     val status: AuroraStatusResource,
-    val version: Version
+    val version: Version,
+    val time: Instant
 ) : IdentifiedHalResource(id)
 
-data class Version(val deployTag: String?, val auroraVersion: String?)
+data class Version(val deployTag: String?, val auroraVersion: String?, val releaseTo: String?)
 
 data class AuroraStatusResource(
     val code: String,

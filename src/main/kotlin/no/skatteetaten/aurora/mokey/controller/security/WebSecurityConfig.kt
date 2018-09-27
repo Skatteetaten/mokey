@@ -33,7 +33,7 @@ class WebSecurityConfig(
                 .requestMatchers(forPort(managementPort)).permitAll()
                 .antMatchers("/docs/index.html").permitAll()
                 .antMatchers("/").permitAll()
-            .antMatchers("/api/applicationdeploymentdetails/**").authenticated()
+                .antMatchers("/api/applicationdeploymentdetails/**").authenticated()
                 .antMatchers("/api/**").permitAll()
                 .anyRequest().authenticated()
     }
