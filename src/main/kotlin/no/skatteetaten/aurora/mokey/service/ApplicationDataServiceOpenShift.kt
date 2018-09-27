@@ -175,7 +175,7 @@ class ApplicationDataServiceOpenShift(
                 auroraVersion = imageDetails?.auroraVersion,
                 deployTag = applicationDeployment.spec.deployTag ?: "",
                 dockerImageRepo = imageDetails?.dockerImageRepo,
-                    releaseTo = applicationDeployment.spec.releaseTo
+                releaseTo = applicationDeployment.spec.releaseTo
             )
         )
     }
