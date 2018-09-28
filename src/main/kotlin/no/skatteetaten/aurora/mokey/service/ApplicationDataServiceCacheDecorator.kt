@@ -24,7 +24,7 @@ class ApplicationDataServiceCacheDecorator(
 ) : ApplicationDataService {
 
     val affiliations: List<String>?
-        get() = if (affiliationsConfig.isBlank()) null
+        get() = if (affiliationsConfig.isBlank()) applicationDataService.findAllAffiliations()
         else affiliationsConfig.split(",").map { it.trim() }
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
