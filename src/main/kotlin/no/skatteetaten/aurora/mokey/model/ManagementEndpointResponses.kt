@@ -42,11 +42,11 @@ enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
 data class HealthResponse(
     val status: HealthStatus,
-    val parts: MutableMap<String, HealthPart> = mutableMapOf()
+    val details: MutableMap<String, HealthPart> = mutableMapOf()
 ) {
     @JsonAnySetter(enabled = true)
     private fun setAny(name: String, value: HealthPart) {
-        parts[name] = value
+        details[name] = value
     }
 }
 
