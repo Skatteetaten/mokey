@@ -159,7 +159,11 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         val applicationDeploymentRel =
             linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId)
                 .withRel("ApplicationDeployment")
-        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + filesLinks + applyLink + auroraConfigFileLinks + applicationDeploymentRel + selfLink).filterNotNull()
+
+        val applicationRel = linkTo(ApplicationController::class.java).slash(applicationData.applicationId)
+            .withRel("Application")
+        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + filesLinks + applyLink +
+            auroraConfigFileLinks + applicationDeploymentRel + applicationRel + selfLink).filterNotNull()
     }
 
     private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =
