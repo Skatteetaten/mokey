@@ -15,6 +15,7 @@ aurora:
 
 logging:
     level:
+        no.skatteetaten.aurora: INFO
         no.skatteetaten.aurora.mokey: INFO
         io.fabric8.openshift.client.DefaultOpenShiftClient: INFO
         org:
@@ -28,6 +29,7 @@ boober-api-url: "http://boober"
 metrics-hostname: "http://metrics.skead.no"
 splunk-hostname: "https://splunk.skead.no"
 
+
 ---
 spring:
     profiles: local
@@ -36,6 +38,7 @@ mokey:
     cache:
         enabled: true
         affiliations: aurora,paas,sirius,safir
+
 
 logging:
     pattern:

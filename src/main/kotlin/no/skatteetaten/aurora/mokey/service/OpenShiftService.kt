@@ -97,7 +97,7 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
     }
 }
 
-private val logger = LoggerFactory.getLogger(DefaultOpenShiftClient::class.java)
+private val logger = LoggerFactory.getLogger(OpenShiftService::class.java)
 
 fun DefaultOpenShiftClient.selfSubjectAccessView(review: SelfSubjectAccessReview): SelfSubjectAccessReview {
 

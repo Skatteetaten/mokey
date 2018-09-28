@@ -39,7 +39,7 @@ class ApplicationDataServiceOpenShift(
     }
 
     override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
-
+        logger.debug("finding application for affiliations=$affiliations")
         return if (affiliations == null) {
             logger.debug("finding applications in all envs")
             findAllApplicationDataByEnvironments()
@@ -129,6 +129,7 @@ class ApplicationDataServiceOpenShift(
     }
 
     private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
+        logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
         val affiliation = applicationDeployment.metadata.affiliation
         val namespace = applicationDeployment.metadata.namespace
         val openShiftName = applicationDeployment.metadata.name
