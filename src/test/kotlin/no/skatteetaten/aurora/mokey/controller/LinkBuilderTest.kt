@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.controller
 
 import assertk.assert
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
@@ -114,5 +115,18 @@ class LinkBuilderTest {
         val files: Map<String, String> = jacksonObjectMapper()
             .readValue(UriUtils.decode(overrideValue, Charset.defaultCharset().toString()))
         assert(files["foo/bar.json"] == "version=1")
+    }
+
+    @Test
+    fun `should create OpenShift Console links`() {
+        val linkBuilder = LinkBuilder("", mapOf("cluster" to "utv"))
+
+        val links = linkBuilder.openShiftConsoleLinks("noodlenose-8981", "paas-test")
+
+        assert(links.find { it.rel == "ocp_console_details" }).isNotNull()
+        assert(links.find { it.rel == "ocp_console_environment" }).isNotNull()
+        assert(links.find { it.rel == "ocp_console_terminal" }).isNotNull()
+        assert(links.find { it.rel == "ocp_console_events" }).isNotNull()
+        assert(links.find { it.rel == "ocp_console_log" }).isNotNull()
     }
 }

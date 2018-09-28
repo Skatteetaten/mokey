@@ -82,9 +82,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             podManagementLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
         } ?: listOf()
 
-        val consoleLinks = listOf("details", "environment", "terminal", "events", "log").map {
-            linkBuilder.openShiftConsolePodLink(it, pod.name, applicationData.namespace)
-        }
+        val consoleLinks = linkBuilder.openShiftConsoleLinks(pod.name, applicationData.namespace)
 
         val managementResponsesResource = podDetails.managementData.value
             ?.let { managementData ->

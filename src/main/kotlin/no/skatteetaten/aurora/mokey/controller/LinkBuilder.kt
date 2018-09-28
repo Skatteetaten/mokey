@@ -116,19 +116,20 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
         )
     }
 
-    // TODO: Must improve the way we create deep links to pods.
-    fun openShiftConsolePodLink(tab: String, pod: String, project: String): Link {
-        val url = UriComponentsBuilder
-            .newInstance()
-            .scheme("https")
-            .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
-            .port(8443)
-            .pathSegment("console/project", project, "browse/pods", pod)
-            .queryParam("tab", tab)
-            .build()
-            .toUriString()
-
-        return Link(url, "ocp_console_" + tab)
+    // TODO: Should improve the way we create deep links to pods in the console.
+    fun openShiftConsoleLinks(pod: String, project: String): List<Link> {
+        return listOf("details", "environment", "terminal", "events", "log").map {
+            val url = UriComponentsBuilder
+                    .newInstance()
+                    .scheme("https")
+                    .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
+                    .port(8443)
+                    .pathSegment("console/project", project, "browse/pods", pod)
+                    .queryParam("tab", it)
+                    .build()
+                    .toUriString()
+            Link(url, "ocp_console_" + it)
+        }
     }
 
     fun createLink(linkString: String, rel: String, expandParams: Map<String, String> = mapOf()): Link {
