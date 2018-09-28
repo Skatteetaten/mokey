@@ -75,12 +75,15 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference)
 
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
+        val pod = podDetails.openShiftPodExcerpt
+
         val podLinks = podDetails.managementData.value?.let { managementData ->
             val podManagementLinks = managementData.info.value?.deserialized?.podLinks
             podManagementLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
         } ?: listOf()
 
-        val pod = podDetails.openShiftPodExcerpt
+        val consoleLinks = linkBuilder.openShiftConsoleLinks(pod.name, applicationData.namespace)
+
         val managementResponsesResource = podDetails.managementData.value
             ?.let { managementData ->
                 val health = managementData.health.value?.let { HttpResponseResource(it.textResponse, it.createdAt) }
@@ -95,7 +98,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             pod.startTime,
             managementResponsesResource
         ).apply {
-            this.add(podLinks)
+            this.add(podLinks + consoleLinks)
         }
     }
 
