@@ -128,7 +128,7 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
             .build()
             .toUriString()
 
-        return Link("ocp_console_" + tab, url)
+        return Link(url, "ocp_console_" + tab)
     }
 
     fun createLink(linkString: String, rel: String, expandParams: Map<String, String> = mapOf()): Link {
