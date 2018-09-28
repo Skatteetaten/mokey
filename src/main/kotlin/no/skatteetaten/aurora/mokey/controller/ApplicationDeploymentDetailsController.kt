@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
-import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.PodDetails
@@ -15,6 +14,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.Link
 import org.springframework.hateoas.mvc.ControllerLinkBuilder
+import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Component
@@ -52,23 +52,21 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         ApplicationDeploymentDetailsResource::class.java
     ) {
 
-    private val applicationAssembler = ApplicationResourceAssembler()
-
     override fun toResource(applicationData: ApplicationData): ApplicationDeploymentDetailsResource {
 
         val errorResources = applicationData.errors.map(this::toErrorResource)
         val infoResponse = applicationData.firstInfoResponse
 
         return ApplicationDeploymentDetailsResource(
-            infoResponse?.buildTime,
-            toGitInfoResource(infoResponse),
-            applicationData.imageDetails?.let { toImageDetailsResource(it) },
-            applicationData.pods.map { toPodResource(applicationData, it) },
-            infoResponse?.dependencies ?: emptyMap(),
-            toDeploymentCommandResource(applicationData.deploymentCommand),
-            errorResources
+            buildTime = infoResponse?.buildTime,
+            gitInfo = toGitInfoResource(infoResponse),
+            imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
+            podResources = applicationData.pods.map { toPodResource(applicationData, it) },
+            dependencies = infoResponse?.dependencies ?: emptyMap(),
+            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
+            errors = errorResources
         ).apply {
-            embedResource("Application", applicationAssembler.toResource(GroupedApplicationData(applicationData)))
+
             this.add(createApplicationLinks(applicationData))
         }
     }
@@ -106,12 +104,12 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
     private fun toDeploymentCommandResource(deploymentCommand: ApplicationDeploymentCommand) =
         ApplicationDeploymentCommandResource(
-            deploymentCommand.overrideFiles,
-            ApplicationDeploymentRefResource(
+            overrideFiles = deploymentCommand.overrideFiles,
+            applicationDeploymentRef = ApplicationDeploymentRefResource(
                 deploymentCommand.applicationDeploymentRef.environment,
                 deploymentCommand.applicationDeploymentRef.application
             ),
-            AuroraConfigRefResource(
+            auroraConfig = AuroraConfigRefResource(
                 deploymentCommand.auroraConfig.name,
                 deploymentCommand.auroraConfig.refName,
                 deploymentCommand.auroraConfig.resolvedRef
@@ -157,7 +155,15 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         val applyLink = linkBuilder.apply(deploymentCommand = applicationData.deploymentCommand)
         val auroraConfigFileLinks = linkBuilder.auroraConfigFile(deploymentCommand = applicationData.deploymentCommand)
-        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + filesLinks + applyLink + auroraConfigFileLinks + selfLink).filterNotNull()
+
+        val applicationDeploymentRel =
+            linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId)
+                .withRel("ApplicationDeployment")
+
+        val applicationRel = linkTo(ApplicationController::class.java).slash(applicationData.applicationId)
+            .withRel("Application")
+        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + filesLinks + applyLink +
+            auroraConfigFileLinks + applicationDeploymentRel + applicationRel + selfLink).filterNotNull()
     }
 
     private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =

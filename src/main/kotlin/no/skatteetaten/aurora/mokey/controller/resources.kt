@@ -40,6 +40,7 @@ class ApplicationDeploymentResource(
     val name: String,
     val status: AuroraStatusResource,
     val version: Version,
+    val dockerImageRepo: String?,
     val time: Instant
 ) : IdentifiedHalResource(id)
 

@@ -8,16 +8,16 @@ import java.time.Instant
 data class GroupedApplicationData(
     val applicationId: String?,
     val name: String,
-    val applications: List<ApplicationData>
+    val applications: List<ApplicationPublicData>
 ) {
-    constructor(application: ApplicationData) : this(
+    constructor(application: ApplicationPublicData) : this(
         application.applicationId,
         application.applicationName,
         listOf(application)
     )
 
     companion object {
-        fun create(applications: List<ApplicationData>): List<GroupedApplicationData> =
+        fun create(applications: List<ApplicationPublicData>): List<GroupedApplicationData> =
             applications.groupBy { it.applicationId ?: it.applicationName }
                 .map {
                     GroupedApplicationData(
@@ -29,15 +29,22 @@ data class GroupedApplicationData(
     }
 }
 
-data class ApplicationData(
+data class ApplicationPublicData(
     val applicationId: String?,
     val applicationDeploymentId: String,
-    val auroraStatus: AuroraStatus,
-    val deployTag: String,
     val applicationName: String,
     val applicationDeploymentName: String,
-    val namespace: String,
+    val auroraStatus: AuroraStatus,
     val affiliation: String?,
+    val namespace: String,
+    val deployTag: String,
+    val auroraVersion: String? = null,
+    val dockerImageRepo: String?,
+    val releaseTo: String?,
+    val time: Instant = Instant.now()
+)
+
+data class ApplicationData(
     val booberDeployId: String? = null,
     val managementPath: String? = null,
     val pods: List<PodDetails> = emptyList(),
@@ -47,8 +54,7 @@ data class ApplicationData(
     val sprocketDone: String? = null,
     val splunkIndex: String? = null,
     val deploymentCommand: ApplicationDeploymentCommand,
-    val releaseTo: String?,
-    val time: Instant = Instant.now()
+    val publicData: ApplicationPublicData
 
 ) {
     val errors
@@ -58,6 +64,15 @@ data class ApplicationData(
                 listOf(data, data.value?.info, data.value?.health).map { it?.error?.let { PodError(podDetails, it) } }
             }
             .filterNotNull()
+
+    val applicationId get() = publicData.applicationId
+    val applicationDeploymentId get() = publicData.applicationDeploymentId
+    val applicationName get() = publicData.applicationName
+    val applicationDeploymentName get() = publicData.applicationDeploymentName
+    val auroraStatus get() = publicData.auroraStatus
+    val affiliation get() = publicData.affiliation
+    val namespace get() = publicData.namespace
+    val deployTag get() = publicData.deployTag
 }
 
 data class PodDetails(
@@ -102,6 +117,8 @@ data class ImageDetails(
 ) {
     val auroraVersion: String
         get() = environmentVariables["AURORA_VERSION"] ?: ""
+    val dockerImageRepo: String?
+        get() = dockerImageReference?.replace(Regex("@.*$"), "")
 }
 
 data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)

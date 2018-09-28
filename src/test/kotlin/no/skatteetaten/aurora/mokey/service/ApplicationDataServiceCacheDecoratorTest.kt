@@ -5,6 +5,7 @@ import io.fabric8.openshift.api.model.Project
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
@@ -19,29 +20,32 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     val app1Id = "some_id"
     val app1v1 = ApplicationData(
-        applicationId = app1Id,
-        applicationDeploymentId = app1Id,
-        auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
-        deployTag = "default",
-        applicationName = "testapp",
-        applicationDeploymentName = "aurora",
-        namespace = "aurora-1",
-        affiliation = "aurora",
+
         deployDetails = DeployDetails("Complete", 1, 1),
         addresses = emptyList(),
         deploymentCommand = ApplicationDeploymentCommand(
             applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name"),
             auroraConfig = AuroraConfigRef("affiliation", "master")
         ),
-        releaseTo = "releaseTo",
-        time = Instant.EPOCH
-
+        publicData = ApplicationPublicData(
+            applicationId = app1Id,
+            applicationDeploymentId = app1Id,
+            auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
+            deployTag = "default",
+            applicationName = "testapp",
+            applicationDeploymentName = "aurora",
+            namespace = "aurora-1",
+            affiliation = "aurora",
+            dockerImageRepo = null,
+                releaseTo = "releaseTo",
+    time = Instant.EPOCH
+        )
     )
-    val app1v2 = app1v1.copy(deployTag = "prod")
+    val app1v2 = app1v1.copy(publicData = app1v1.publicData.copy(deployTag = "prod"))
 
     val sourceApplicationDataService = mock(ApplicationDataServiceOpenShift::class.java)
     val openshiftService = mock(OpenShiftService::class.java)
-    val applicationDataService = ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService)
+    val applicationDataService = ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService, "aurora")
 
     @Test
     fun `should update cache from OpenShiftApplicationDataService`() {

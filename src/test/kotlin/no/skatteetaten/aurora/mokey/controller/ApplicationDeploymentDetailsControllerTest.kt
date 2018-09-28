@@ -7,6 +7,7 @@ import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
@@ -43,14 +44,6 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
     val managementDataBuilder = podDetailsDataBuilder.managementDataBuilder
 
     val applicationData = ApplicationData(
-        "abc123",
-        "abc1234",
-        AuroraStatus(HEALTHY, "", listOf()),
-        "deployTag",
-        "name",
-        "name-1",
-        "namespace",
-        "affiliation",
         pods = listOf(podDetailsDataBuilder.build()),
         deployDetails = DeployDetails("Complete", 1, 1),
         addresses = emptyList(),
@@ -58,8 +51,20 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
             auroraConfig = AuroraConfigRef("affiliation", "master", "123"),
             applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name")
         ),
-        releaseTo = "releaseTo",
-        time = Instant.EPOCH
+        publicData = ApplicationPublicData(
+            applicationId = "abc123",
+            applicationDeploymentId = "abc1234",
+            applicationName = "name",
+            applicationDeploymentName = "name-1",
+            auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
+            affiliation = "affiliation",
+            namespace = "namespace",
+            deployTag = "deployTag",
+            auroraVersion = null,
+            dockerImageRepo = null,
+                releaseTo = "releaseTo",
+    time = Instant.EPOCH
+        )
     )
 
     @Test

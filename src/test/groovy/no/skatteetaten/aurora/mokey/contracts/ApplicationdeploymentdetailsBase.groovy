@@ -10,6 +10,7 @@ import no.skatteetaten.aurora.mokey.controller.LinkBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -42,9 +43,6 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
     def commitTime = response('$.gitInfo.commitTime')
     def buildTime = response('$.buildTime')
 
-    def applicationName = response('$._embedded.Application.name')
-    def applicationId = response('$._embedded.Application.identifier')
-    def applicationDeployment = response('$._embedded.Application.applicationDeployments[0]', Map)
 
     def details = response('$.podResources[0]', Map)
     @Language("JSON")
@@ -65,13 +63,17 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
         new Right(new ManagementData(null, new Right(infoResponse), new Right()))
     )
 
-    new ApplicationData(applicationId, applicationDeployment.identifier as String,
+    def publicData = new ApplicationPublicData(
+        "", "appDeploymentId", "", "",
         new AuroraStatus(AuroraStatusLevel.HEALTHY, "", []),
-        applicationDeployment.version.deployTag as String,
-        applicationName,
-        applicationDeployment.name as String,
-        applicationDeployment.namespace as String,
-        applicationDeployment.affiliation as String,
+        "", "",
+        "master-SNAPSHOT",
+        "",
+        null,
+        "releaseTo",
+        Instant.EPOCH
+    )
+    new ApplicationData(
         '',
         '',
         [podDetails],
@@ -81,11 +83,9 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
         null,
         new ApplicationDeploymentCommand(
             [:],
-            new ApplicationDeploymentRef(applicationDeployment.environment, applicationName),
-            new AuroraConfigRef(applicationDeployment.affiliation, "master", "123"),
-        ),
-        "releaseTo",
-        Instant.EPOCH
+            new ApplicationDeploymentRef("utv", "test"),
+            new AuroraConfigRef("paas", "master", "123"),
+        ), publicData
     )
   }
 }

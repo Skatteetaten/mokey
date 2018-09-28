@@ -35,6 +35,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentSpec
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
@@ -333,21 +334,24 @@ data class ApplicationDataBuilder(
 
     fun build(): ApplicationData =
         ApplicationData(
-            applicationId,
-            applicationDeploymentId,
-            AuroraStatus(HEALTHY, "", listOf()),
-            "",
-            name,
-            name,
-            namespace,
-            affiliation,
             deployDetails = DeployDetails(null, 1, 1),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(
                 applicationDeploymentRef = ApplicationDeploymentRef(DEFAULT_ENV_NAME, "name"),
                 auroraConfig = AuroraConfigRef(DEFAULT_AFFILIATION, "master")
             ),
-            releaseTo = "releaseTo",
-            time = Instant.EPOCH
+            publicData = ApplicationPublicData(
+                applicationId = applicationId,
+                applicationDeploymentId = applicationDeploymentId,
+                applicationName = name,
+                applicationDeploymentName = name,
+                auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
+                affiliation = affiliation,
+                namespace = namespace,
+                deployTag = "",
+                dockerImageRepo = null,
+                    releaseTo = "releaseTo",
+    time = Instant.EPOCH
+            )
         )
 }
