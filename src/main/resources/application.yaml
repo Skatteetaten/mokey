@@ -9,20 +9,20 @@ spring:
         active: local
 
 aurora:
-  starter:
-    headerfilter:
-      enabled: false
+    starter:
+        headerfilter:
+            enabled: false
 
 logging:
-  level:
-    no.skatteetaten.aurora.mokey: DEBUG
-    io.fabric8.openshift.client.DefaultOpenShiftClient: DEBUG
-    org:
-      hibernate: WARN
-      springframework: WARN
-      apache:
-        catalina: WARN
-        velocity: WARN
+    level:
+        no.skatteetaten.aurora.mokey: INFO
+        io.fabric8.openshift.client.DefaultOpenShiftClient: INFO
+        org:
+            hibernate: WARN
+            springframework: WARN
+            apache:
+                catalina: WARN
+                velocity: WARN
 
 boober-api-url: "http://boober"
 metrics-hostname: "http://metrics.skead.no"
@@ -39,11 +39,11 @@ mokey:
 
 logging:
     pattern:
-      console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
+        console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
 
 openshift-cluster: utv
 
 ---
 spring:
-  profiles: openshift
+    profiles: openshift
