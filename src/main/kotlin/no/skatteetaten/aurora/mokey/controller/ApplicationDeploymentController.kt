@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.hateoas.ExposesResourceFor
@@ -23,27 +23,27 @@ class ApplicationDeploymentController(
     @GetMapping("/{id}")
     fun get(@PathVariable id: String): ApplicationDeploymentResource {
         val application =
-            applicationDataService.findApplicationDataByApplicationDeploymentId(id)
+            applicationDataService.findPublicApplicationDataByApplicationDeploymentId(id)
                 ?: throw NoSuchResourceException("Does not exist")
         return assembler.toResource(application)
     }
 }
 
 class ApplicationDeploymentResourceAssembler :
-    ResourceAssemblerSupport<ApplicationData, ApplicationDeploymentResource>(
+    ResourceAssemblerSupport<ApplicationPublicData, ApplicationDeploymentResource>(
         ApplicationDeploymentController::class.java,
         ApplicationDeploymentResource::class.java
     ) {
 
-    override fun toResource(applicationData: ApplicationData): ApplicationDeploymentResource {
+    override fun toResource(applicationData: ApplicationPublicData): ApplicationDeploymentResource {
         val environment = Environment.fromNamespace(applicationData.namespace, applicationData.affiliation)
         return ApplicationDeploymentResource(
-            applicationData.applicationDeploymentId,
-            applicationData.affiliation,
-            environment.name,
-            environment.namespace,
-            applicationData.applicationDeploymentName,
-            applicationData.auroraStatus.let { status ->
+            id = applicationData.applicationDeploymentId,
+            affiliation = applicationData.affiliation,
+            environment = environment.name,
+            namespace = environment.namespace,
+            name = applicationData.applicationDeploymentName,
+            status = applicationData.auroraStatus.let { status ->
                 AuroraStatusResource(
                     status.level.name,
                     status.comment,
@@ -56,8 +56,9 @@ class ApplicationDeploymentResourceAssembler :
                     }
                 )
             },
-            Version(applicationData.deployTag, applicationData.imageDetails?.auroraVersion, applicationData.releaseTo),
-            applicationData.time
+            version = Version(applicationData.deployTag, applicationData.auroraVersion, applicationData.releaseTo),
+            time = applicationData.time,
+            dockerImageRepo = applicationData.dockerImageRepo
         ).apply {
             add(linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId).withSelfRel())
             add(

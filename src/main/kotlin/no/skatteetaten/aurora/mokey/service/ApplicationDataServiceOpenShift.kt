@@ -11,6 +11,7 @@ import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -40,12 +41,21 @@ class ApplicationDataServiceOpenShift(
     override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
 
         return if (affiliations == null) {
+            logger.debug("finding applications in all envs")
             findAllApplicationDataByEnvironments()
         } else {
             val allEnvironments = findAllEnvironments()
             val environmentsForAffiliations = allEnvironments.filter { affiliations.contains(it.affiliation) }
             findAllApplicationDataByEnvironments(environmentsForAffiliations)
         }
+    }
+
+    override fun findAllPublicApplicationData(affiliations: List<String>?): List<ApplicationPublicData> {
+        throw NotImplementedError("findAllPublicApplicationDataByApplicationDeploymentId is not supported")
+    }
+
+    override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? {
+        throw NotImplementedError("findPublicApplicationDataByApplicationDeploymentId is not supported")
     }
 
     override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
@@ -58,9 +68,11 @@ class ApplicationDataServiceOpenShift(
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
 
+        logger.info("finding all applications in environments=$environments")
         return runBlocking(mtContext) {
             environments
                 .flatMap { environment ->
+                    logger.debug("Finding ApplicationDeployments in namespace={}", environment)
                     val deployments = openshiftService.applicationDeployments(environment.namespace)
                     logger.debug("Found {} ApplicationDeployments in namespace={}", deployments.size, environment)
                     deployments.map { async(mtContext) { tryCreateApplicationData(it) } }
@@ -143,15 +155,7 @@ class ApplicationDataServiceOpenShift(
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
         return ApplicationData(
-            applicationId = applicationDeployment.spec.applicationId,
-            applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-            auroraStatus = auroraStatus,
-            applicationName = applicationName,
-            applicationDeploymentName = applicationDeploymentName,
-            namespace = namespace,
-            deployTag = applicationDeployment.spec.deployTag ?: "",
             booberDeployId = applicationDeployment.metadata.booberDeployId,
-            affiliation = affiliation,
             managementPath = applicationDeployment.spec.managementPath,
             pods = pods,
             imageDetails = imageDetails,
@@ -160,7 +164,19 @@ class ApplicationDataServiceOpenShift(
             sprocketDone = dc.sprocketDone,
             splunkIndex = splunkIndex,
             deploymentCommand = applicationDeployment.spec.command,
-            releaseTo = applicationDeployment.spec.releaseTo
+            publicData = ApplicationPublicData(
+                applicationId = applicationDeployment.spec.applicationId,
+                applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
+                auroraStatus = auroraStatus,
+                applicationName = applicationName,
+                applicationDeploymentName = applicationDeploymentName,
+                namespace = namespace,
+                affiliation = affiliation,
+                auroraVersion = imageDetails?.auroraVersion,
+                deployTag = applicationDeployment.spec.deployTag ?: "",
+                dockerImageRepo = imageDetails?.dockerImageRepo,
+                releaseTo = applicationDeployment.spec.releaseTo
+            )
         )
     }
 }

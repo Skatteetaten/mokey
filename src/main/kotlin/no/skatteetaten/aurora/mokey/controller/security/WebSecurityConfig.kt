@@ -28,14 +28,12 @@ class WebSecurityConfig(
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 
         http.authenticationProvider(preAuthenticationProvider())
-                .addFilter(requestHeaderAuthenticationFilter())
-                .authorizeRequests()
-                .requestMatchers(forPort(managementPort)).permitAll()
-                .antMatchers("/docs/index.html").permitAll()
-                .antMatchers("/").permitAll()
-                .antMatchers("/api/applicationdeploymentdetails/**").authenticated()
-                .antMatchers("/api/**").permitAll()
-                .anyRequest().authenticated()
+            .addFilter(requestHeaderAuthenticationFilter())
+            .authorizeRequests()
+            .requestMatchers(forPort(managementPort)).permitAll()
+            .antMatchers("/api/applicationdeploymentdetails/**").authenticated()
+            .antMatchers("/refresh").authenticated()
+            .anyRequest().permitAll()
     }
 
     private fun forPort(port: Int) = RequestMatcher { request: HttpServletRequest -> port == request.localPort }

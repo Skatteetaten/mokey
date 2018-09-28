@@ -1,9 +1,11 @@
 package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.service.DataSources.CACHE
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Primary
 import org.springframework.scheduling.annotation.Scheduled
@@ -17,13 +19,26 @@ import java.util.concurrent.ConcurrentHashMap
 @ApplicationDataSource(CACHE)
 class ApplicationDataServiceCacheDecorator(
     val applicationDataService: ApplicationDataServiceOpenShift,
-    val openShiftService: OpenShiftService
+    val openShiftService: OpenShiftService,
+    @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
 ) : ApplicationDataService {
 
-    // TODO: replace with Redis
+    val affiliations: List<String>?
+        get() = if (affiliationsConfig.isBlank()) null
+        else affiliationsConfig.split(",").map { it.trim() }
+
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceCacheDecorator::class.java)
+
+    override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? {
+        return cache[id]?.publicData
+    }
+
+    override fun findAllPublicApplicationData(affiliations: List<String>?): List<ApplicationPublicData> {
+        return cache.map { it.value.publicData }
+            .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
+    }
 
     override fun findAllAffiliations(): List<String> {
         return cache.mapNotNull { it.value.affiliation }
@@ -40,7 +55,7 @@ class ApplicationDataServiceCacheDecorator(
 
     // TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
-    fun cache() = refreshCache()
+    fun cache() = refreshCache(affiliations)
 
     fun refreshItem(applicationId: String) =
         findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
