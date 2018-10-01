@@ -123,23 +123,21 @@ object HealthResponseParser {
         else -> handleSpringBoot1Format(json)
     }
 
-    private fun handleSpringBoot2Format(json: JsonNode): HealthResponse {
-        val healthStatus = json.status
-        val allDetails = json.details
-        val parts = allDetails.mapValues {
-            val status = it.value.status
-            val partDetails = it.value.details
-            HealthPart(status, partDetails)
-        }
-        return HealthResponse(healthStatus, parts)
-    }
+    private fun handleSpringBoot2Format(json: JsonNode): HealthResponse =
+        handleSpringBootFormat(json) { it.details }
 
-    private fun handleSpringBoot1Format(json: JsonNode): HealthResponse {
+    private fun handleSpringBoot1Format(json: JsonNode): HealthResponse =
+        handleSpringBootFormat(json) { it.allNodesExceptStatus }
+
+    private fun handleSpringBootFormat(
+        json: JsonNode,
+        detailsExtractor: (JsonNode) -> Map<String, JsonNode>
+    ): HealthResponse {
         val healthStatus = json.status
-        val allDetails = json.allNodesExceptStatus
+        val allDetails = detailsExtractor(json)
         val parts = allDetails.mapValues {
             val status = it.value.status
-            val partDetails = it.value.allNodesExceptStatus
+            val partDetails = detailsExtractor(it.value)
             HealthPart(status, partDetails)
         }
         return HealthResponse(healthStatus, parts)
@@ -147,7 +145,7 @@ object HealthResponseParser {
 
     private val JsonNode.format
         get(): HealthResponseFormat {
-            return if (this.has(DETAILS_PROPERTY) && this.size() == 2) {
+            return if (this.has(DETAILS_PROPERTY) && this.has(STATUS_PROPERTY) && this.size() == 2) {
                 HealthResponseFormat.SPRING_BOOT_2X
             } else {
                 HealthResponseFormat.SPRING_BOOT_1X
@@ -157,8 +155,7 @@ object HealthResponseParser {
     private val JsonNode.details get() = this.extract("/$DETAILS_PROPERTY").asMap()
 
     private val JsonNode.allNodesExceptStatus
-        get() =
-            this.asMap().toMutableMap().also { it.remove(STATUS_PROPERTY) }.toMap()
+        get() = this.asMap().toMutableMap().also { it.remove(STATUS_PROPERTY) }.toMap()
 
     private val JsonNode.status
         get(): HealthStatus {
