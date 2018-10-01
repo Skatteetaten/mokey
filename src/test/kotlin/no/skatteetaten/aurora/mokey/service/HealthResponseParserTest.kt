@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import assertk.assert
 import assertk.assertions.isEqualTo
 import com.fasterxml.jackson.databind.node.IntNode
 import com.fasterxml.jackson.databind.node.LongNode
@@ -35,27 +36,31 @@ class HealthResponseParserTest {
 }"""
 
         val response = parse(json)
-        assertk.assert(response).isEqualTo(
-            HealthResponse(
-                HealthStatus.UP,
-                mutableMapOf(
-                    "atsServiceHelse" to HealthPart(HealthStatus.UP, mutableMapOf()),
-                    "diskSpace" to HealthPart(
-                        HealthStatus.UP, mutableMapOf(
-                            "total" to LongNode.valueOf(10718543872),
-                            "threshold" to IntNode.valueOf(10485760),
-                            "free" to LongNode.valueOf(10508611584)
-                        )
-                    ),
-                    "db" to HealthPart(
-                        HealthStatus.UP, mutableMapOf(
-                            "hello" to TextNode.valueOf("Hello"),
-                            "database" to TextNode.valueOf("Oracle")
-                        )
+        val expected = HealthResponse(
+            status = HealthStatus.UP,
+            parts = mutableMapOf(
+                "atsServiceHelse" to HealthPart(
+                    status = HealthStatus.UP,
+                    details = mutableMapOf()
+                ),
+                "diskSpace" to HealthPart(
+                    status = HealthStatus.UP,
+                    details = mutableMapOf(
+                        "total" to 10718543872.node(),
+                        "threshold" to 10485760.node(),
+                        "free" to 10508611584.node()
+                    )
+                ),
+                "db" to HealthPart(
+                    status = HealthStatus.UP,
+                    details = mutableMapOf(
+                        "hello" to "Hello".node(),
+                        "database" to "Oracle".node()
                     )
                 )
             )
         )
+        assert(response).isEqualTo(expected)
     }
 
     @Test
@@ -83,27 +88,34 @@ class HealthResponseParserTest {
 }"""
 
         val response = parse(json)
-        assertk.assert(response).isEqualTo(
-            HealthResponse(
-                HealthStatus.UP,
-                mutableMapOf(
-                    "diskSpace" to HealthPart(
-                        HealthStatus.UP, mutableMapOf(
-                            "total" to LongNode.valueOf(10718543872),
-                            "threshold" to IntNode.valueOf(10485760),
-                            "free" to LongNode.valueOf(10502053888)
-                        )
-                    ),
-                    "db" to HealthPart(
-                        HealthStatus.UP, mutableMapOf(
-                            "hello" to TextNode.valueOf("Hello"),
-                            "database" to TextNode.valueOf("Oracle")
-                        )
+        val expected = HealthResponse(
+            status = HealthStatus.UP,
+            parts = mutableMapOf(
+                "diskSpace" to HealthPart(
+                    status = HealthStatus.UP,
+                    details = mutableMapOf(
+                        "total" to 10718543872.node(),
+                        "threshold" to 10485760.node(),
+                        "free" to 10502053888.node()
+                    )
+                ),
+                "db" to HealthPart(
+                    status = HealthStatus.UP,
+                    details = mutableMapOf(
+                        "hello" to "Hello".node(),
+                        "database" to "Oracle".node()
                     )
                 )
             )
         )
+        assert(response).isEqualTo(expected)
     }
+
+    private fun String.node() = TextNode.valueOf(this)!!
+
+    private fun Int.node() = IntNode.valueOf(this)!!
+
+    private fun Long.node() = LongNode.valueOf(this)!!
 
     private fun parse(json: String) = HealthResponseParser.parse(jacksonObjectMapper().readTree(json))
 }
