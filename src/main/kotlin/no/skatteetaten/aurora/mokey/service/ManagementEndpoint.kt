@@ -4,11 +4,15 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import no.skatteetaten.aurora.mokey.extensions.asMap
+import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.model.Endpoint
 import no.skatteetaten.aurora.mokey.model.Endpoint.ENV
 import no.skatteetaten.aurora.mokey.model.Endpoint.HEALTH
 import no.skatteetaten.aurora.mokey.model.Endpoint.INFO
+import no.skatteetaten.aurora.mokey.model.HealthPart
 import no.skatteetaten.aurora.mokey.model.HealthResponse
+import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
@@ -40,7 +44,11 @@ class ManagementEndpoint internal constructor(
 ) {
 
     @Throws(ManagementEndpointException::class)
-    fun getHealthEndpointResponse(): HttpResponse<HealthResponse> = findJsonResource(HEALTH, HealthResponse::class)
+    fun getHealthEndpointResponse(): HttpResponse<HealthResponse> {
+        val response = findJsonResource(HEALTH, JsonNode::class)
+        val healthResponse = HealthResponseParser.parse(response.deserialized)
+        return HttpResponse(healthResponse, response.textResponse, response.createdAt)
+    }
 
     @Throws(ManagementEndpointException::class)
     fun getInfoEndpointResponse(): HttpResponse<InfoResponse> = findJsonResource(INFO, InfoResponse::class)
@@ -101,4 +109,60 @@ class ManagementEndpoint internal constructor(
             return HttpResponse(deserialized, jsonString)
         }
     }
+}
+
+object HealthResponseParser {
+
+    enum class HealthResponseFormat { SPRING_BOOT_1X, SPRING_BOOT_2X }
+
+    private const val STATUS_PROPERTY = "status"
+    private const val DETAILS_PROPERTY = "details"
+
+    fun parse(json: JsonNode): HealthResponse = when (json.format) {
+        HealthResponseFormat.SPRING_BOOT_2X -> handleSpringBoot2Format(json)
+        else -> handleSpringBoot1Format(json)
+    }
+
+    private fun handleSpringBoot2Format(json: JsonNode): HealthResponse =
+        handleSpringBootFormat(json) { it.details }
+
+    private fun handleSpringBoot1Format(json: JsonNode): HealthResponse =
+        handleSpringBootFormat(json) { it.allNodesExceptStatus }
+
+    private fun handleSpringBootFormat(
+        json: JsonNode,
+        detailsExtractor: (JsonNode) -> Map<String, JsonNode>
+    ): HealthResponse {
+        val healthStatus = json.status
+        val allDetails = detailsExtractor(json)
+        val parts = allDetails.mapValues {
+            val status = it.value.status
+            val partDetails = detailsExtractor(it.value)
+            HealthPart(status, partDetails)
+        }
+        return HealthResponse(healthStatus, parts)
+    }
+
+    private val JsonNode.format
+        get(): HealthResponseFormat {
+            return if (this.has(DETAILS_PROPERTY) && this.has(STATUS_PROPERTY) && this.size() == 2) {
+                HealthResponseFormat.SPRING_BOOT_2X
+            } else {
+                HealthResponseFormat.SPRING_BOOT_1X
+            }
+        }
+
+    private val JsonNode.details get() = this.extract("/$DETAILS_PROPERTY").asMap()
+
+    private val JsonNode.allNodesExceptStatus
+        get() = this.asMap().toMutableMap().also { it.remove(STATUS_PROPERTY) }.toMap()
+
+    private val JsonNode.status
+        get(): HealthStatus {
+            return try {
+                this.extract("/$STATUS_PROPERTY")?.textValue()?.let { HealthStatus.valueOf(it) }
+            } catch (e: Throwable) {
+                null
+            } ?: throw IllegalArgumentException("Element did not contain valid $STATUS_PROPERTY property")
+        }
 }
