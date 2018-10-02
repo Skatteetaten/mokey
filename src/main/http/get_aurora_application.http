@@ -1,4 +1,4 @@
-GET {{apiUrl}}/api/application?affiliation=paas
+GET {{apiUrl}}/api/application?affiliation=aurora
 #Authorization:Bearer {{token}}
 #
 ####

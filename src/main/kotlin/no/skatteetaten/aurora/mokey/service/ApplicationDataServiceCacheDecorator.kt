@@ -71,6 +71,7 @@ class ApplicationDataServiceCacheDecorator(
         val time = withStopWatch {
             val applications = applicationDataService.findAllApplicationData(affiliations)
             applications.forEach {
+                logger.debug("Added cache for deploymentId=${it.applicationDeploymentId} name=${it.applicationDeploymentName} namespace=${it.namespace}")
                 cache[it.applicationDeploymentId] = it
                 newKeys.add(it.applicationDeploymentId)
             }

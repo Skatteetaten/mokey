@@ -46,7 +46,7 @@ data class HealthResponse(
 )
 
 data class HealthPart(
-    val status: HealthStatus=HealthStatus.UP,
+    val status: HealthStatus = HealthStatus.UP,
     val details: Map<String, JsonNode> = emptyMap()
 )
 

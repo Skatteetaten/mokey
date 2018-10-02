@@ -15,7 +15,6 @@ aurora:
 
 logging:
     level:
-        no.skatteetaten.aurora: INFO
         no.skatteetaten.aurora.mokey: INFO
         io.fabric8.openshift.client.DefaultOpenShiftClient: INFO
         org:
@@ -37,7 +36,7 @@ spring:
 mokey:
     cache:
         enabled: true
-        affiliations: aurora,paas,sirius,safir
+        affiliations: aurora
 
 
 logging:
