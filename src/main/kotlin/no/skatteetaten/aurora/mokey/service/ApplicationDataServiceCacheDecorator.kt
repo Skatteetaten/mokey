@@ -83,7 +83,7 @@ class ApplicationDataServiceCacheDecorator(
             cache.remove(it)
         }
         val keys = cache.keys().toList()
-        logger.debug("cache keys={}", keys)
+        //   logger.debug("cache keys={}", keys)
         logger.info("number of apps={} time={}", keys.size, time.totalTimeSeconds)
     }
 
