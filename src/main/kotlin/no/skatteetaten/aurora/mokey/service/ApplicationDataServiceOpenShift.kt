@@ -68,13 +68,12 @@ class ApplicationDataServiceOpenShift(
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
 
-        logger.info("finding all applications in environments=$environments")
+        logger.debug("finding all applications in environments=$environments")
         return runBlocking(mtContext) {
             val applicationDeployments = environments.flatMap { environment ->
                 logger.debug("Finding ApplicationDeployments in namespace={}", environment)
                 openshiftService.applicationDeployments(environment.namespace)
             }
-            logger.debug("Found count=${applicationDeployments.size} number of application Deployments");
 
             val results = applicationDeployments.map {
                 async(mtContext) { tryCreateApplicationData(it) }
@@ -82,12 +81,18 @@ class ApplicationDataServiceOpenShift(
                 it.await()
             }
 
-            logger.debug("Found result count=${results.size}")
-
             val errors = results.mapNotNull { it.error }
-            logger.debug("Found errors count=${errors.size}")
 
-            results.mapNotNull { it.applicationData }
+            val data = results.mapNotNull { it.applicationData }
+            data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach {
+                val names = it.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
+                logger.info("Duplicate applicationDeploymeentId for=${names}")
+            }
+
+
+
+            logger.info("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
+            data
         }
     }
 
