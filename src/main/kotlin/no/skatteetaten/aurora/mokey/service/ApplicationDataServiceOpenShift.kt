@@ -70,13 +70,24 @@ class ApplicationDataServiceOpenShift(
 
         logger.info("finding all applications in environments=$environments")
         return runBlocking(mtContext) {
-            environments
-                .flatMap { environment ->
-                    logger.debug("Finding ApplicationDeployments in namespace={}", environment)
-                    val deployments = openshiftService.applicationDeployments(environment.namespace)
-                    logger.debug("Found {} ApplicationDeployments in namespace={}", deployments.size, environment)
-                    deployments.map { async(mtContext) { tryCreateApplicationData(it) } }
-                }.mapNotNull { it.await().applicationData }
+            val applicationDeployments = environments.flatMap { environment ->
+                logger.debug("Finding ApplicationDeployments in namespace={}", environment)
+                openshiftService.applicationDeployments(environment.namespace)
+            }
+            logger.debug("Found count=${applicationDeployments.size} number of application Deployments");
+
+            val results = applicationDeployments.map {
+                async(mtContext) { tryCreateApplicationData(it) }
+            }.map {
+                it.await()
+            }
+
+            logger.debug("Found result count=${results.size}")
+
+            val errors = results.mapNotNull { it.error }
+            logger.debug("Found errors count=${errors.size}")
+
+            results.mapNotNull { it.applicationData }
         }
     }
 
