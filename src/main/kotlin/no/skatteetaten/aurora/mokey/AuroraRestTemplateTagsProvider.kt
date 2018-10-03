@@ -17,14 +17,11 @@ class AuroraRestTemplateTagsProvider : RestTemplateExchangeTagsProvider {
         response: ClientHttpResponse?
     ): Iterable<Tag> {
 
-        val host = request.uri.host?.let {
-            "{management}/${it.substringAfterLast("/")}"
-        } ?: "none"
 
         return Arrays.asList(
             RestTemplateExchangeTags.method(request),
             RestTemplateExchangeTags.status(response),
-            Tag.of("clientName", host)
+            RestTemplateExchangeTags.uri(urlTemplate)
         )
     }
 }
