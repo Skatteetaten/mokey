@@ -17,7 +17,6 @@ class AuroraRestTemplateTagsProvider : RestTemplateExchangeTagsProvider {
         response: ClientHttpResponse?
     ): Iterable<Tag> {
 
-
         return Arrays.asList(
             RestTemplateExchangeTags.method(request),
             RestTemplateExchangeTags.status(response),

@@ -11,7 +11,7 @@ def overrides = [
     docs: false,
     credentialsId: "github",
     suggestVersionAndTagReleases: [
-      [branch: 'master', versionHint: '1']
+      [branch: 'master', versionHint: '1.0']
     ]
 ]
 
