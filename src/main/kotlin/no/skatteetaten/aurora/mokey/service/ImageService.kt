@@ -20,7 +20,10 @@ class ImageService(val openShiftService: OpenShiftService) {
     fun getImageDetails(namespace: String, name: String, tagName: String): ImageDetails {
         val image = openShiftService.imageStreamTag(namespace, name, tagName)?.image
         val env = image?.env ?: emptyMap()
-        val imageBuildTime = env["IMAGE_BUILD_TIME"]?.let { DateParser.parseString(it) }
+        val imageBuildTime = (
+            env["IMAGE_BUILD_TIME"]
+                ?: image?.dockerImageMetadata?.additionalProperties?.getOrDefault("Created", null) as String?
+            )?.let(DateParser::parseString)
         return ImageDetails(image?.dockerImageReference, imageBuildTime, env)
     }
 }

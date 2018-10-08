@@ -27,7 +27,7 @@ class ApplicationDataServiceTest {
                 )
         }
 
-        val applicationData = service.findPublicApplicationDataByApplicationId("234")
-        assert(applicationData?.applicationDeploymentName).isNotNull { it.isEqualTo("app2") }
+        val applicationData = service.findAllPublicApplicationDataByApplicationId("234")
+        assert(applicationData.first().applicationDeploymentName).isNotNull { it.isEqualTo("app2") }
     }
 }

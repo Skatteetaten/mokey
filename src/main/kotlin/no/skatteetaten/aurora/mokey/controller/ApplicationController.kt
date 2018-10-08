@@ -24,11 +24,11 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
 
     @GetMapping("/{applicationId}")
     fun getApplication(@PathVariable applicationId: String): ApplicationResource? =
-        applicationDataService.findPublicApplicationDataByApplicationId(applicationId)
-            ?.let { assembler.toResource(GroupedApplicationData(it)) }
+        applicationDataService.findAllPublicApplicationDataByApplicationId(applicationId)
+            .let { GroupedApplicationData.create(it).firstOrNull()?.let(assembler::toResource) }
 
     @GetMapping
-    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): MutableList<ApplicationResource> {
+    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<ApplicationResource> {
         val allApplicationData = applicationDataService.findAllPublicApplicationData(affiliation)
         return assembler.toResources(GroupedApplicationData.create(allApplicationData))
     }
