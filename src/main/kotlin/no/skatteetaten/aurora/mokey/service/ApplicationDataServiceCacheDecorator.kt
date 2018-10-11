@@ -40,6 +40,12 @@ class ApplicationDataServiceCacheDecorator(
             .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
     }
 
+    override fun findAllVisibleAffiliations(): List<String> =
+        getFromCacheForUser()
+            .mapNotNull { it.affiliation }
+            .filter(String::isNotBlank)
+            .distinct()
+
     override fun findAllAffiliations(): List<String> {
         return cache.mapNotNull { it.value.affiliation }
             .filter(String::isNotBlank)

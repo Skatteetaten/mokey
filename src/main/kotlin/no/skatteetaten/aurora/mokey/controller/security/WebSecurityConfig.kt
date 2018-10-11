@@ -31,8 +31,7 @@ class WebSecurityConfig(
             .addFilter(requestHeaderAuthenticationFilter())
             .authorizeRequests()
             .requestMatchers(forPort(managementPort)).permitAll()
-            .antMatchers("/api/applicationdeploymentdetails/**").authenticated()
-            .antMatchers("/refresh").authenticated()
+            .antMatchers("/api/auth/**").authenticated()
             .anyRequest().permitAll()
     }
 

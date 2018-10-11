@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @ExposesResourceFor(ApplicationDeploymentDetailsResource::class)
-@RequestMapping("/api/applicationdeploymentdetails")
+@RequestMapping("/api/auth/applicationdeploymentdetails")
 class ApplicationDeploymentDetailsController(
     val applicationDataService: ApplicationDataService,
     val assembler: ApplicationDeploymentDetailsResourceAssembler

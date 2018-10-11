@@ -29,6 +29,9 @@ class ApplicationDataServiceOpenShift(
     val addressService: AddressService,
     val imageService: ImageService
 ) : ApplicationDataService {
+    override fun findAllVisibleAffiliations(): List<String> {
+        throw NotImplementedError("findAllVisibleAffiliations is not supported")
+    }
 
     val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
 

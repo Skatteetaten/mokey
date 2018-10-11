@@ -6,6 +6,8 @@ import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 interface ApplicationDataService {
     fun findAllAffiliations(): List<String>
 
+    fun findAllVisibleAffiliations(): List<String>
+
     fun findAllPublicApplicationDataByApplicationId(id: String): List<ApplicationPublicData> =
         findAllPublicApplicationData().filter { it.applicationId == id }
 

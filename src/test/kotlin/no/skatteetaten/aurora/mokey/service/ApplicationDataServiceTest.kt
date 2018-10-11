@@ -13,6 +13,8 @@ class ApplicationDataServiceTest {
     @Test
     fun `Get ApplicationData by applicationId`() {
         val service = object : ApplicationDataService {
+            override fun findAllVisibleAffiliations(): List<String> = emptyList()
+
             override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? = null
             override fun findAllPublicApplicationData(affiliations: List<String>?): List<ApplicationPublicData> =
                 findAllApplicationData(affiliations).map { it.publicData }

@@ -73,7 +73,7 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
 
         given(applicationDataService.findApplicationDataByApplicationDeploymentId(ID)).willReturn(applicationData)
 
-        mockMvc.perform(get("/api/applicationdeploymentdetails/{id}", "123"))
+        mockMvc.perform(get("/api/auth/applicationdeploymentdetails/{id}", "123"))
             .andExpect(status().isOk)
             .andExpect(
                 jsonPath(
