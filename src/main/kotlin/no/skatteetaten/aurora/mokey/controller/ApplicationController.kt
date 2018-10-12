@@ -28,8 +28,11 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
             .let { GroupedApplicationData.create(it).firstOrNull()?.let(assembler::toResource) }
 
     @GetMapping
-    fun getApplications(@RequestParam("affiliation") affiliation: List<String>): List<ApplicationResource> {
-        val allApplicationData = applicationDataService.findAllPublicApplicationData(affiliation)
+    fun getApplications(
+        @RequestParam(required = false, defaultValue = "", name = "affiliation") affiliation: List<String>,
+        @RequestParam(required = false, defaultValue = "", name = "id") id: List<String>
+    ): List<ApplicationResource> {
+        val allApplicationData = applicationDataService.findAllPublicApplicationData(affiliation, id)
         return assembler.toResources(GroupedApplicationData.create(allApplicationData))
     }
 }

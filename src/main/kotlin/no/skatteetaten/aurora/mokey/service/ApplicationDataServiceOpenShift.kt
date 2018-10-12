@@ -29,6 +29,9 @@ class ApplicationDataServiceOpenShift(
     val addressService: AddressService,
     val imageService: ImageService
 ) : ApplicationDataService {
+    override fun findAllVisibleAffiliations(): List<String> {
+        throw NotImplementedError("findAllVisibleAffiliations is not supported")
+    }
 
     val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
 
@@ -38,9 +41,9 @@ class ApplicationDataServiceOpenShift(
         return findAllEnvironments().map { it.affiliation }.toSet().toList()
     }
 
-    override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> {
+    override fun findAllApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationData> {
         logger.debug("finding application for affiliations=$affiliations")
-        return if (affiliations == null) {
+        val apps = if (affiliations.isEmpty()) {
             logger.debug("finding applications in all envs")
             findAllApplicationDataByEnvironments()
         } else {
@@ -48,9 +51,10 @@ class ApplicationDataServiceOpenShift(
             val environmentsForAffiliations = allEnvironments.filter { affiliations.contains(it.affiliation) }
             findAllApplicationDataByEnvironments(environmentsForAffiliations)
         }
+        return apps.filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
 
-    override fun findAllPublicApplicationData(affiliations: List<String>?): List<ApplicationPublicData> {
+    override fun findAllPublicApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationPublicData> {
         throw NotImplementedError("findAllPublicApplicationDataByApplicationDeploymentId is not supported")
     }
 

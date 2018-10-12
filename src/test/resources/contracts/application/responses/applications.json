@@ -22,7 +22,7 @@
             "href" : "http://localhost/api/applicationdeployment/abc1234"
           },
           "ApplicationDeploymentDetails" : {
-            "href" : "http://localhost/api/applicationdeploymentdetails/abc1234"
+            "href" : "http://localhost/api/auth/applicationdeploymentdetails/abc1234"
           }
         }
       }

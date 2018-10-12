@@ -29,7 +29,7 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
   void setup() {
     loadJsonResponses(this)
     def applicationDataService = Mock(ApplicationDataService) {
-      findAllApplicationData(_ as List) >> [createApplicationData()]
+      findAllApplicationData(_ as List, _ as  List) >> [createApplicationData()]
       findApplicationDataByApplicationDeploymentId(_ as String) >> createApplicationData()
     }
     def assembler = new ApplicationDeploymentDetailsResourceAssembler(new LinkBuilder('http://localhost', [:]))

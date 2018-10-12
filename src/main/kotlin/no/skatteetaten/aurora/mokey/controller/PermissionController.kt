@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/permissions")
+@RequestMapping("/api/auth/permissions")
 class PermissionController(val openShiftService: OpenShiftService) {
 
     val logger: Logger = LoggerFactory.getLogger(PermissionController::class.java)

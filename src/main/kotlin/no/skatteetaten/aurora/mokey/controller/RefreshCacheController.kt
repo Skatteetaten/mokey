@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 
 data class RefreshParams(val applicationDeploymentId: String)
 @RestController
-@RequestMapping("/refresh")
+@RequestMapping("/api/auth/refresh")
 @ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 class RefreshCacheController(val crawlService: ApplicationDataServiceCacheDecorator) {
 

@@ -6,8 +6,8 @@ Contract.make {
   request {
     method 'GET'
     url $(
-        stub(~/\/api\/applicationdeploymentdetails\/\w+/),
-        test('/api/applicationdeploymentdetails/123')
+        stub(~/\/api\/auth\/applicationdeploymentdetails\/\w+/),
+        test('/api/auth/applicationdeploymentdetails/123')
     )
   }
   response {

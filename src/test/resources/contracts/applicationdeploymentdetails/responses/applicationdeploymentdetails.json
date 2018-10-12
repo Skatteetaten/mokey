@@ -52,7 +52,7 @@
       "href": "http://localhost/v1/auroraconfig/paas?environment=utv&application=test&reference=123"
     },
     "self": {
-      "href": "http://localhost/api/applicationdeploymentdetails/appDeploymentId"
+      "href": "http://localhost/api/auth/applicationdeploymentdetails/appDeploymentId"
     }
   }
 }

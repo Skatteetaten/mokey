@@ -17,7 +17,7 @@
       "href": "http://localhost/api/applicationdeployment/appDeploymentId"
     },
     "ApplicationDeploymentDetails": {
-      "href": "http://localhost/api/applicationdeploymentdetails/appDeploymentId"
+      "href": "http://localhost/api/auth/applicationdeploymentdetails/appDeploymentId"
     }
   }
 }
