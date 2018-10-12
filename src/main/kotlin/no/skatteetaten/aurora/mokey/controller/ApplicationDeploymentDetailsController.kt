@@ -41,8 +41,12 @@ class ApplicationDeploymentDetailsController(
             ?: throw NoSuchResourceException("Does not exist")
 
     @GetMapping
-    fun getAll(@RequestParam affiliation: String, @AuthenticationPrincipal user: User): List<ApplicationDeploymentDetailsResource> =
-        assembler.toResources(applicationDataService.findAllApplicationData(listOf(affiliation)))
+
+    fun getAll(
+        @RequestParam(required = false, defaultValue = "",  name="affiliation") affiliation: List<String>,
+        @RequestParam(required = false, defaultValue = "",  name="id") id: List<String>
+    ): List<ApplicationDeploymentDetailsResource> =
+        assembler.toResources(applicationDataService.findAllApplicationData(affiliation, id))
 }
 
 @Component

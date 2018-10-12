@@ -13,9 +13,9 @@ interface ApplicationDataService {
 
     fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData?
 
-    fun findAllApplicationData(affiliations: List<String>? = null): List<ApplicationData>
+    fun findAllApplicationData(affiliations: List<String>, ids:List<String> = emptyList()): List<ApplicationData>
 
     fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData?
 
-    fun findAllPublicApplicationData(affiliations: List<String>? = null): List<ApplicationPublicData>
+    fun findAllPublicApplicationData(affiliations: List<String> = emptyList(), ids:List<String> = emptyList()): List<ApplicationPublicData>
 }

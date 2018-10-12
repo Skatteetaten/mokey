@@ -23,8 +23,8 @@ class ApplicationDataServiceCacheDecorator(
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
 ) : ApplicationDataService {
 
-    val affiliations: List<String>?
-        get() = if (affiliationsConfig.isBlank()) null
+    val affiliations: List<String>
+        get() = if (affiliationsConfig.isBlank()) emptyList()
         else affiliationsConfig.split(",").map { it.trim() }
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
@@ -35,9 +35,13 @@ class ApplicationDataServiceCacheDecorator(
         return cache[id]?.publicData
     }
 
-    override fun findAllPublicApplicationData(affiliations: List<String>?): List<ApplicationPublicData> {
+    override fun findAllPublicApplicationData(
+        affiliations: List<String>,
+        ids: List<String>
+    ): List<ApplicationPublicData> {
         return cache.map { it.value.publicData }
-            .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
+            .filter { if (affiliations.isEmpty()) true else affiliations.contains(it.affiliation) }
+            .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
 
     override fun findAllVisibleAffiliations(): List<String> =
@@ -55,9 +59,10 @@ class ApplicationDataServiceCacheDecorator(
     override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? =
         getFromCacheForUser(id).firstOrNull()
 
-    override fun findAllApplicationData(affiliations: List<String>?): List<ApplicationData> =
+    override fun findAllApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationData> =
         getFromCacheForUser()
-            .filter { if (affiliations == null) true else affiliations.contains(it.affiliation) }
+            .filter { if (affiliations.isEmpty()) true else affiliations.contains(it.affiliation) }
+            .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
     // TODO: property
     @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
@@ -69,7 +74,7 @@ class ApplicationDataServiceCacheDecorator(
             cache[applicationId] = data
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
 
-    fun refreshCache(affiliations: List<String>? = null) {
+    fun refreshCache(affiliations: List<String> = emptyList()) {
 
         val allKeys = cache.keys().toList()
         val newKeys = mutableListOf<String>()

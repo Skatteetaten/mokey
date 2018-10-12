@@ -16,13 +16,13 @@ class ApplicationDataServiceTest {
             override fun findAllVisibleAffiliations(): List<String> = emptyList()
 
             override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? = null
-            override fun findAllPublicApplicationData(affiliations: List<String>?): List<ApplicationPublicData> =
+            override fun findAllPublicApplicationData(affiliations: List<String>, ids:List<String>): List<ApplicationPublicData> =
                 findAllApplicationData(affiliations).map { it.publicData }
 
             override fun findAllAffiliations(): List<String> = emptyList()
             override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? = null
 
-            override fun findAllApplicationData(affiliations: List<String>?) =
+            override fun findAllApplicationData(affiliations: List<String>, ids:List<String>) =
                 listOf(
                     ApplicationDataBuilder(name = "app1", applicationId = "123").build(),
                     ApplicationDataBuilder(name = "app2", applicationId = "234").build()
