@@ -43,8 +43,8 @@ class ApplicationDeploymentDetailsController(
     @GetMapping
 
     fun getAll(
-        @RequestParam(required = false, defaultValue = "",  name="affiliation") affiliation: List<String>,
-        @RequestParam(required = false, defaultValue = "",  name="id") id: List<String>
+        @RequestParam(required = false, defaultValue = "", name = "affiliation") affiliation: List<String>,
+        @RequestParam(required = false, defaultValue = "", name = "id") id: List<String>
     ): List<ApplicationDeploymentDetailsResource> =
         assembler.toResources(applicationDataService.findAllApplicationData(affiliation, id))
 }

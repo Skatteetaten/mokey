@@ -13,7 +13,7 @@ class ApplicationBase extends AbstractContractBase {
   void setup() {
     loadJsonResponses(this)
     def applicationDataService = Mock(ApplicationDataService) {
-      findAllPublicApplicationData(_ as List) >> [createApplicationData()]
+      findAllPublicApplicationData(_ as List, _ as List) >> [createApplicationData()]
       findAllPublicApplicationDataByApplicationId(_ as String) >> [createApplicationData()]
     }
     def controller = new ApplicationController(applicationDataService)

@@ -54,7 +54,7 @@ class ApplicationDataServiceOpenShift(
         return apps.filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
 
-    override fun findAllPublicApplicationData(affiliations: List<String>, ids:List<String>): List<ApplicationPublicData> {
+    override fun findAllPublicApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationPublicData> {
         throw NotImplementedError("findAllPublicApplicationDataByApplicationDeploymentId is not supported")
     }
 
