@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.model
 
-data class AuroraStatus(val level: AuroraStatusLevel, val comment: String, val statuses: List<HealthStatusDetail>)
+data class AuroraStatus(val level: AuroraStatusLevel, val comment: String, val statuses: List<HealthStatusDetail> = emptyList())
 
 enum class AuroraStatusLevel(val level: Int) {
     DOWN(3),
