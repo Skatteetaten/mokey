@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-data class RefreshParams(val applicationDeploymentId: String)
+data class RefreshParams(val applicationDeploymentId: String?, val affiliations: List<String>?)
 @RestController
 @RequestMapping("/api/auth/refresh")
 @ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
@@ -15,6 +15,12 @@ class RefreshCacheController(val crawlService: ApplicationDataServiceCacheDecora
 
     @PostMapping
     fun refreshCache(@RequestBody params: RefreshParams) {
-        crawlService.refreshItem(params.applicationDeploymentId)
+        params.applicationDeploymentId?.let {
+            crawlService.refreshItem(it)
+        }
+
+        params.affiliations?.let {
+            crawlService.refreshCache(it)
+        }
     }
 }
