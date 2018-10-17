@@ -39,7 +39,7 @@ data class ApplicationPublicData(
     val namespace: String,
     val deployTag: String,
     val auroraVersion: String? = null,
-    val dockerImageRepo: String?,
+    val dockerImageRepo: String? = null,
     val releaseTo: String?,
     val time: Instant = Instant.now()
 )
@@ -49,8 +49,8 @@ data class ApplicationData(
     val managementPath: String? = null,
     val pods: List<PodDetails> = emptyList(),
     val imageDetails: ImageDetails? = null,
-    val deployDetails: DeployDetails,
-    val addresses: List<Address>,
+    val deployDetails: DeployDetails? = null,
+    val addresses: List<Address> = emptyList(),
     val sprocketDone: String? = null,
     val splunkIndex: String? = null,
     val deploymentCommand: ApplicationDeploymentCommand,

@@ -12,6 +12,8 @@ import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
+import no.skatteetaten.aurora.mokey.model.AuroraStatus
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -54,7 +56,9 @@ class ApplicationDataServiceOpenShift(
         return apps.filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
 
-    override fun findAllPublicApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationPublicData> {
+    override fun findAllPublicApplicationData(
+        affiliations: List<String>, ids: List<String>
+    ): List<ApplicationPublicData> {
         throw NotImplementedError("findAllPublicApplicationDataByApplicationDeploymentId is not supported")
     }
 
@@ -156,8 +160,26 @@ class ApplicationDataServiceOpenShift(
         val applicationName = applicationDeployment.spec.applicationName
             ?: throw OpenShiftObjectException("applicationName was not set for deployment $namespace/$openShiftName")
 
-        // TODO: Akkurat nå støtter vi kun DC.
-        val dc = openshiftService.dc(namespace, openShiftName) ?: throw OpenShiftException("Could not fetch DC")
+        val dc = openshiftService.dc(namespace, openShiftName)
+
+        if (dc == null) {
+            return ApplicationData(
+                booberDeployId = applicationDeployment.metadata.booberDeployId,
+                managementPath = applicationDeployment.spec.managementPath,
+                deploymentCommand = applicationDeployment.spec.command,
+                publicData = ApplicationPublicData(
+                    applicationId = applicationDeployment.spec.applicationId,
+                    applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
+                    auroraStatus = AuroraStatus(AuroraStatusLevel.OFF, "No Deployment Config found"),
+                    applicationName = applicationName,
+                    applicationDeploymentName = applicationDeploymentName,
+                    namespace = namespace,
+                    affiliation = affiliation,
+                    deployTag = applicationDeployment.spec.deployTag ?: "",
+                    releaseTo = applicationDeployment.spec.releaseTo
+                )
+            )
+        }
         val deployDetails = dc.let {
             val latestVersion = it.status.latestVersion ?: null
             val phase = latestVersion

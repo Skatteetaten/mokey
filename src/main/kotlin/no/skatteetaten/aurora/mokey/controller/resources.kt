@@ -55,6 +55,7 @@ data class AuroraStatusResource(
 data class HealthStatusDetailResource(val code: String, val comment: String, val ref: String?)
 
 class ApplicationDeploymentDetailsResource(
+    id: String,
     val buildTime: Instant? = null,
     val gitInfo: GitInfoResource?,
     val imageDetails: ImageDetailsResource?,
@@ -63,7 +64,7 @@ class ApplicationDeploymentDetailsResource(
     val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
 
     val errors: List<ManagementEndpointErrorResource> = emptyList()
-) : HalResource()
+) : IdentifiedHalResource(id)
 
 data class ImageDetailsResource(
     val imageBuildTime: Instant?,
