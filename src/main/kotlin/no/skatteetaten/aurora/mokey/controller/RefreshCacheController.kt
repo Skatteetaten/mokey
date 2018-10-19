@@ -15,12 +15,13 @@ class RefreshCacheController(val crawlService: ApplicationDataServiceCacheDecora
 
     @PostMapping
     fun refreshCache(@RequestBody params: RefreshParams) {
-        params.applicationDeploymentId?.let {
-            crawlService.refreshItem(it)
-        }
 
         params.affiliations?.let {
             crawlService.refreshCache(it)
+        }
+
+        params.applicationDeploymentId?.let {
+            crawlService.refreshItem(it)
         }
     }
 }

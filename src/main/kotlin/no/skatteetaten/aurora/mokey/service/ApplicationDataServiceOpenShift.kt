@@ -35,7 +35,7 @@ class ApplicationDataServiceOpenShift(
         throw NotImplementedError("findAllVisibleAffiliations is not supported")
     }
 
-    val mtContext = newFixedThreadPoolContext(6, "mookeyPool")
+    val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 

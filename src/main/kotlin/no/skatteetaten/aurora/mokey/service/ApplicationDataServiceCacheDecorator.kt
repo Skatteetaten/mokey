@@ -76,26 +76,43 @@ class ApplicationDataServiceCacheDecorator(
 
     fun refreshCache(affiliations: List<String> = emptyList()) {
 
-        val allKeys = cache.keys().toList()
-        val newKeys = mutableListOf<String>()
+        val applications = refreshDeploymentsForAffiliations(affiliations)
+        val activeDeploymentIds = applications.map { it.applicationDeploymentId}
+        removeDeletedDeploymentsFromCache(affiliations, activeDeploymentIds)
+    }
 
+
+    private fun refreshDeploymentsForAffiliations(affiliations: List<String>): MutableList<ApplicationData> {
+        val applications = mutableListOf<ApplicationData>()
         val time = withStopWatch {
-            val applications = applicationDataService.findAllApplicationData(affiliations)
-            applications.forEach {
-                logger.debug("Added cache for deploymentId=${it.applicationDeploymentId} name=${it.applicationDeploymentName} namespace=${it.namespace}")
-                cache[it.applicationDeploymentId] = it
-                newKeys.add(it.applicationDeploymentId)
+            applications += applicationDataService.findAllApplicationData(affiliations)
+        }
+
+        applications.forEach {
+            logger.debug("Added cache for deploymentId=${it.applicationDeploymentId} name=${it.applicationDeploymentName} namespace=${it.namespace}")
+            cache[it.applicationDeploymentId] = it
+        }
+
+        logger.info("number of apps={} time={}", applications.size, time.totalTimeSeconds)
+
+        return applications
+    }
+
+    private fun removeDeletedDeploymentsFromCache(affiliations: List<String>, newDeploymentIds: List<String>) {
+
+        val deploymentIdsToMatch = if (affiliations.isEmpty()) {
+            cache.keys().toList()
+        } else  {
+            cache.mapNotNull {
+                if (affiliations.contains(it.value.affiliation)) it.key
+                else null
             }
         }
 
-        val deleteKeys = allKeys - newKeys
-        deleteKeys.forEach {
+        (deploymentIdsToMatch - newDeploymentIds).forEach {
             logger.info("Remove application since it does not exist anymore {}", it)
             cache.remove(it)
         }
-        val keys = cache.keys().toList()
-        //   logger.debug("cache keys={}", keys)
-        logger.info("number of apps={} time={}", keys.size, time.totalTimeSeconds)
     }
 
     /**
