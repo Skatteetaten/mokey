@@ -105,7 +105,7 @@ class ApplicationDataServiceCacheDecorator(
     private fun findCacheKeysForGivenAffiliations(affiliations: List<String>): List<String> {
         return if (affiliations.isEmpty()) {
             cache.keys().toList()
-        } else  {
+        } else {
             cache.mapNotNull {
                 if (affiliations.contains(it.value.affiliation)) it.key
                 else null
