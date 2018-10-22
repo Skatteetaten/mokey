@@ -76,13 +76,17 @@ class ApplicationDataServiceCacheDecorator(
 
     fun refreshCache(affiliations: List<String> = emptyList()) {
 
-        val applications = refreshDeploymentsForAffiliations(affiliations)
-        val activeDeploymentIds = applications.map { it.applicationDeploymentId}
-        removeDeletedDeploymentsFromCache(affiliations, activeDeploymentIds)
+        val applications = refreshDeployments(affiliations)
+        val previousKeys = findCacheKeysForGivenAffiliations(affiliations)
+        val newKeys = applications.map { it.applicationDeploymentId }
+
+        (previousKeys - newKeys).forEach {
+            logger.info("Remove application since it does not exist anymore {}", it)
+            cache.remove(it)
+        }
     }
 
-
-    private fun refreshDeploymentsForAffiliations(affiliations: List<String>): MutableList<ApplicationData> {
+    private fun refreshDeployments(affiliations: List<String>): List<ApplicationData> {
         val applications = mutableListOf<ApplicationData>()
         val time = withStopWatch {
             applications += applicationDataService.findAllApplicationData(affiliations)
@@ -98,20 +102,14 @@ class ApplicationDataServiceCacheDecorator(
         return applications
     }
 
-    private fun removeDeletedDeploymentsFromCache(affiliations: List<String>, newDeploymentIds: List<String>) {
-
-        val deploymentIdsToMatch = if (affiliations.isEmpty()) {
+    private fun findCacheKeysForGivenAffiliations(affiliations: List<String>): List<String> {
+        return if (affiliations.isEmpty()) {
             cache.keys().toList()
         } else  {
             cache.mapNotNull {
                 if (affiliations.contains(it.value.affiliation)) it.key
                 else null
             }
-        }
-
-        (deploymentIdsToMatch - newDeploymentIds).forEach {
-            logger.info("Remove application since it does not exist anymore {}", it)
-            cache.remove(it)
         }
     }
 

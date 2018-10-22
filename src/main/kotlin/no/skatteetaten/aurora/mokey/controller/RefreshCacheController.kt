@@ -7,7 +7,18 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-data class RefreshParams(val applicationDeploymentId: String?, val affiliations: List<String>?)
+fun <T : Any> isNull(value: T?): Boolean {
+    return value == null
+}
+
+data class RefreshParams(val applicationDeploymentId: String?, val affiliations: List<String>?) {
+    init {
+        if (listOf(applicationDeploymentId, affiliations).all(::isNull)) {
+            throw IllegalArgumentException("Must specify one of: 'affiliations', 'applicationDeploymentId'")
+        }
+    }
+}
+
 @RestController
 @RequestMapping("/api/auth/refresh")
 @ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
