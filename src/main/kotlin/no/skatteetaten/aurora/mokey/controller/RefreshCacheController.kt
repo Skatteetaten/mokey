@@ -11,13 +11,7 @@ fun <T : Any> isNull(value: T?): Boolean {
     return value == null
 }
 
-data class RefreshParams(val applicationDeploymentId: String?, val affiliations: List<String>?) {
-    init {
-        if (listOf(applicationDeploymentId, affiliations).all(::isNull)) {
-            throw IllegalArgumentException("Must specify one of: 'affiliations', 'applicationDeploymentId'")
-        }
-    }
-}
+data class RefreshParams(val applicationDeploymentId: String?, val affiliations: List<String>?)
 
 @RestController
 @RequestMapping("/api/auth/refresh")
@@ -26,6 +20,10 @@ class RefreshCacheController(val crawlService: ApplicationDataServiceCacheDecora
 
     @PostMapping
     fun refreshCache(@RequestBody params: RefreshParams) {
+
+        if (listOf(params.applicationDeploymentId, params.affiliations).all(::isNull)) {
+            throw IllegalArgumentException("Must specify one of: ['affiliations', 'applicationDeploymentId'] as parameter to refresh.")
+        }
 
         params.affiliations?.let {
             crawlService.refreshCache(it)
