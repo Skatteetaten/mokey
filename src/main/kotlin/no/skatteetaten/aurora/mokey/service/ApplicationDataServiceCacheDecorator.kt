@@ -76,26 +76,41 @@ class ApplicationDataServiceCacheDecorator(
 
     fun refreshCache(affiliations: List<String> = emptyList()) {
 
-        val allKeys = cache.keys().toList()
-        val newKeys = mutableListOf<String>()
+        val applications = refreshDeployments(affiliations)
+        val previousKeys = findCacheKeysForGivenAffiliations(affiliations)
+        val newKeys = applications.map { it.applicationDeploymentId }
 
-        val time = withStopWatch {
-            val applications = applicationDataService.findAllApplicationData(affiliations)
-            applications.forEach {
-                logger.debug("Added cache for deploymentId=${it.applicationDeploymentId} name=${it.applicationDeploymentName} namespace=${it.namespace}")
-                cache[it.applicationDeploymentId] = it
-                newKeys.add(it.applicationDeploymentId)
-            }
-        }
-
-        val deleteKeys = allKeys - newKeys
-        deleteKeys.forEach {
+        (previousKeys - newKeys).forEach {
             logger.info("Remove application since it does not exist anymore {}", it)
             cache.remove(it)
         }
-        val keys = cache.keys().toList()
-        //   logger.debug("cache keys={}", keys)
-        logger.info("number of apps={} time={}", keys.size, time.totalTimeSeconds)
+    }
+
+    private fun refreshDeployments(affiliations: List<String>): List<ApplicationData> {
+        val applications = mutableListOf<ApplicationData>()
+        val time = withStopWatch {
+            applications += applicationDataService.findAllApplicationData(affiliations)
+        }
+
+        applications.forEach {
+            logger.debug("Added cache for deploymentId=${it.applicationDeploymentId} name=${it.applicationDeploymentName} namespace=${it.namespace}")
+            cache[it.applicationDeploymentId] = it
+        }
+
+        logger.info("number of apps={} time={}", applications.size, time.totalTimeSeconds)
+
+        return applications
+    }
+
+    private fun findCacheKeysForGivenAffiliations(affiliations: List<String>): List<String> {
+        return if (affiliations.isEmpty()) {
+            cache.keys().toList()
+        } else {
+            cache.mapNotNull {
+                if (affiliations.contains(it.value.affiliation)) it.key
+                else null
+            }
+        }
     }
 
     /**
