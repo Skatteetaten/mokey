@@ -7,10 +7,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-fun <T : Any> isNull(value: T?): Boolean {
-    return value == null
-}
-
 data class RefreshParams(val applicationDeploymentId: String?, val affiliations: List<String>?)
 
 @RestController
@@ -21,7 +17,7 @@ class RefreshCacheController(val crawlService: ApplicationDataServiceCacheDecora
     @PostMapping
     fun refreshCache(@RequestBody params: RefreshParams) {
 
-        if (listOf(params.applicationDeploymentId, params.affiliations).all(::isNull)) {
+        if ((params.applicationDeploymentId ?: params.affiliations) == null) {
             throw IllegalArgumentException("Must specify one of: ['affiliations', 'applicationDeploymentId'] as parameter to refresh.")
         }
 
