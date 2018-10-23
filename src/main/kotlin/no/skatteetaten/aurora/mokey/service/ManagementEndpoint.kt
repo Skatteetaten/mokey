@@ -16,6 +16,10 @@ import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
+import no.skatteetaten.aurora.utils.Either
+import no.skatteetaten.aurora.utils.Left
+import no.skatteetaten.aurora.utils.Right
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -34,7 +38,7 @@ class ManagementEndpointFactory(val restTemplate: RestTemplate) {
 class ManagementEndpointException(
     val endpoint: Endpoint,
     val errorCode: String,
-    url: String? = null,
+    val url: String? = null,
     cause: Exception? = null
 ) : RuntimeException("${endpoint}_$errorCode", cause)
 
@@ -43,15 +47,26 @@ class ManagementEndpoint internal constructor(
     val links: ManagementLinks
 ) {
 
-    @Throws(ManagementEndpointException::class)
-    fun getHealthEndpointResponse(): HttpResponse<HealthResponse> {
-        val response = findJsonResource(HEALTH, JsonNode::class)
-        val healthResponse = HealthResponseParser.parse(response.deserialized)
-        return HttpResponse(healthResponse, response.textResponse, response.createdAt)
+    fun getHealthEndpointResponse(): Either<ManagementEndpointError, HttpResponse<HealthResponse>> {
+        return try {
+            val response = findJsonResource(HEALTH, JsonNode::class)
+            val healthResponse = HealthResponseParser.parse(response.deserialized)
+            Right(HttpResponse(healthResponse, response.textResponse, response.createdAt))
+        } catch (e: ManagementEndpointException) {
+            Left(ManagementEndpointError(message = "Error while communicating with health endpoint",
+                endpointType = HEALTH, code = e.errorCode, rootCause = e.cause?.message, url = e.url))
+        }
     }
 
-    @Throws(ManagementEndpointException::class)
-    fun getInfoEndpointResponse(): HttpResponse<InfoResponse> = findJsonResource(INFO, InfoResponse::class)
+    fun getInfoEndpointResponse(): Either<ManagementEndpointError, HttpResponse<InfoResponse>> {
+        return try {
+            val response = findJsonResource(INFO, InfoResponse::class)
+            Right(response)
+        } catch (e: ManagementEndpointException) {
+            Left(ManagementEndpointError(message = "Error while communicating with info endpoint",
+                endpointType = INFO, code = e.errorCode, rootCause = e.cause?.message, url = e.url))
+        }
+    }
 
     @Throws(ManagementEndpointException::class)
     fun getEnvEndpointResponse(): HttpResponse<JsonNode> = findJsonResource(ENV, JsonNode::class)

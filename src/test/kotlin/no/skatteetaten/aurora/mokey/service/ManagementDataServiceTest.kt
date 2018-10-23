@@ -14,6 +14,7 @@ import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.utils.Left
 import no.skatteetaten.aurora.utils.Right
+import no.skatteetaten.aurora.utils.value
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -58,8 +59,8 @@ class ManagementDataServiceTest {
 
     @Test
     fun `Load management endpoint`() {
-        every { managementEndpoint.getInfoEndpointResponse() } returns HttpResponse(InfoResponse(), "")
-        every { managementEndpoint.getHealthEndpointResponse() } returns HttpResponse(HealthResponse(status = HealthStatus.UP), "")
+        every { managementEndpoint.getInfoEndpointResponse() } returns Right(HttpResponse(InfoResponse(), ""))
+        every { managementEndpoint.getHealthEndpointResponse() } returns Right(HttpResponse(HealthResponse(status = HealthStatus.UP), ""))
         every { managementEndpoint.links } returns ManagementLinks(emptyMap())
         every { managementEndpointFactory.create(any()) } returns managementEndpoint
 

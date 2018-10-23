@@ -15,6 +15,9 @@ import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
+import no.skatteetaten.aurora.utils.Left
+import no.skatteetaten.aurora.utils.error
+import no.skatteetaten.aurora.utils.value
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -81,7 +84,7 @@ class ManagementEndpointTest : AbstractTest() {
 
         val managementEndpoint =
             ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.HEALTH.key to healthLink)))
-        val response = managementEndpoint.getHealthEndpointResponse()
+        val response = managementEndpoint.getHealthEndpointResponse().value
 
         assert(response).isEqualTo(
             HttpResponse(HealthResponse(
@@ -102,7 +105,7 @@ class ManagementEndpointTest : AbstractTest() {
                         )
                     )
                 )
-            ), json, response.createdAt)
+            ), json, response!!.createdAt)
         )
     }
 
@@ -117,12 +120,12 @@ class ManagementEndpointTest : AbstractTest() {
 
         val managementEndpoint = ManagementEndpoint(restTemplate, ManagementLinks(mapOf(Endpoint.INFO.key to infoLink)))
 
-        managementEndpoint.getInfoEndpointResponse().deserialized.let {
+        managementEndpoint.getInfoEndpointResponse().value!!.deserialized.let {
             assert(it.commitId).isEqualTo("5df5258")
             assert(it.commitTime).isEqualTo(Instant.parse("2018-03-23T10:53:31Z"))
             assert(it.buildTime).isEqualTo(Instant.parse("2018-03-23T10:55:40Z"))
         }
-        managementEndpoint.getInfoEndpointResponse().deserialized.let {
+        managementEndpoint.getInfoEndpointResponse().value!!.deserialized.let {
             assert(it.commitId).isEqualTo("37473fd")
             assert(it.commitTime).isEqualTo(Instant.parse("2018-03-26T11:31:39Z"))
             assert(it.buildTime).isEqualTo(Instant.parse("2018-03-26T11:36:21Z"))
@@ -183,8 +186,9 @@ class ManagementEndpointTest : AbstractTest() {
             { managementEndpoint.getHealthEndpointResponse() },
             { managementEndpoint.getInfoEndpointResponse() }
         ).forEach {
-            val e = assertThrows(ManagementEndpointException::class.java, { it.invoke() })
-            assertThat(e.errorCode).isEqualTo("LINK_MISSING")
+            val resp = it.invoke()
+            assertThat(resp is Left)
+            assertThat(resp.error!!.code).isEqualTo("LINK_MISSING")
         }
     }
 

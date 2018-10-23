@@ -7,7 +7,13 @@ import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.PodError
+import no.skatteetaten.aurora.mokey.model.Endpoint
+import no.skatteetaten.aurora.mokey.model.HttpResponse
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.utils.Either
+import no.skatteetaten.aurora.utils.Right
+import no.skatteetaten.aurora.utils.error
 import no.skatteetaten.aurora.utils.value
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -91,10 +97,13 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         val managementResponsesResource = podDetails.managementData.value
             ?.let { managementData ->
-                val health = managementData.health.value?.let { HttpResponseResource(it.textResponse, it.createdAt) }
-                val info = managementData.info.value?.let { HttpResponseResource(it.textResponse, it.createdAt) }
+
+                val health = toHttpResponseResource(managementData.health, pod.name, Endpoint.HEALTH)
+                val info = toHttpResponseResource(managementData.info, pod.name, Endpoint.INFO)
+
                 ManagementResponsesResource(health, info)
             }
+
         return PodResource(
             pod.name,
             pod.status,
@@ -104,6 +113,22 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             managementResponsesResource
         ).apply {
             this.add(podLinks + consoleLinks)
+        }
+    }
+
+    private fun <T> toHttpResponseResource(mgmtData: Either<ManagementEndpointError, HttpResponse<T>>, podName: String, endpoint: Endpoint): HttpResponseResource {
+        return if (mgmtData is Right) {
+            val resp = mgmtData.value
+            HttpResponseResource(hasResponse = true, textResponse = resp?.textResponse, createdAt = resp?.createdAt)
+        } else {
+            val error = mgmtData.error
+            HttpResponseResource(hasResponse = false, error = ManagementEndpointErrorResource(
+                    podName = podName,
+                    message = error?.message ?: "",
+                    endpoint = error?.endpointType ?: endpoint,
+                    url = error?.url,
+                    code = error?.code ?: "",
+                    rootCause = error?.rootCause))
         }
     }
 

@@ -35,7 +35,7 @@ class ManagementDataService(val managementEndpointFactory: ManagementEndpointFac
             val managementEndpoint = managementEndpointFactory.create(url)
             val infoEndpointResponse = managementEndpoint.getInfoEndpointResponse()
             val healthEndpointResponse = managementEndpoint.getHealthEndpointResponse()
-            Right(ManagementData(managementEndpoint.links, Right(infoEndpointResponse), Right(healthEndpointResponse)))
+            Right(ManagementData(managementEndpoint.links, infoEndpointResponse, healthEndpointResponse))
         } catch (e: ManagementEndpointException) {
             Left(ManagementEndpointError("Error while communicating with management endpoint",
                     e.endpoint, e.errorCode, e.cause?.message, url = url))
