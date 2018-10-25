@@ -76,11 +76,9 @@ abstract class AbstractContractBase extends Specification {
   }
 
   def setupMockMvc(Object controller) {
-    def objectMapper = ObjectMapperConfigurer.configureObjectMapper(new ObjectMapper())
-    objectMapper.registerModule(new Jackson2HalModule())
+    def objectMapper = ObjectMapperConfigurer.createObjectMapper()
     objectMapper.setHandlerInstantiator(
         new Jackson2HalModule.HalHandlerInstantiator(new AnnotationRelProvider(), null, null, new HalConfiguration()))
-
 
     def converter = new MappingJackson2HttpMessageConverter()
     converter.setObjectMapper(objectMapper)

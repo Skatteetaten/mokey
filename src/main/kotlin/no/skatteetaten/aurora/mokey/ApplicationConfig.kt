@@ -1,12 +1,8 @@
 package no.skatteetaten.aurora.mokey
 
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import okhttp3.OkHttpClient
-import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -15,9 +11,10 @@ import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
@@ -25,26 +22,16 @@ import java.util.concurrent.TimeUnit
 @Configuration
 @EnableScheduling
 @EnableHypermediaSupport(type = [HAL])
-class ApplicationConfig : BeanPostProcessor {
-
-    override fun postProcessAfterInitialization(bean: Any?, beanName: String?): Any {
-        if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
-            configureObjectMapper(bean)
-        }
-
-        return super.postProcessAfterInitialization(bean, beanName)
-    }
+class ApplicationConfig : WebMvcConfigurer {
 
     @Bean
-    fun mapperBuilder(): Jackson2ObjectMapperBuilder = Jackson2ObjectMapperBuilder().apply {
-        serializationInclusion(JsonInclude.Include.NON_NULL)
-        featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        featuresToEnable(SerializationFeature.INDENT_OUTPUT)
-    }
+    fun client(): OpenShiftClient = DefaultOpenShiftClient()
 
-    @Bean
-    fun client(): OpenShiftClient {
-        return DefaultOpenShiftClient()
+    override fun configureContentNegotiation(configurer: ContentNegotiationConfigurer) {
+        configurer
+            .ignoreAcceptHeader(true)
+            .favorParameter(true)
+            .defaultContentType(MediaType.parseMediaType("application/hal+json;charset=UTF-8"))
     }
 
     @Bean

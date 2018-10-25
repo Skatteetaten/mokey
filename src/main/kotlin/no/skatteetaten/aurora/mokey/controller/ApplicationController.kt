@@ -5,6 +5,7 @@ import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
+import org.springframework.hateoas.Resources
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.web.bind.annotation.GetMapping
@@ -31,9 +32,9 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
     fun getApplications(
         @RequestParam(required = false, defaultValue = "", name = "affiliation") affiliation: List<String>,
         @RequestParam(required = false, defaultValue = "", name = "id") id: List<String>
-    ): List<ApplicationResource> {
+    ): Resources<ApplicationResource> {
         val allApplicationData = applicationDataService.findAllPublicApplicationData(affiliation, id)
-        return assembler.toResources(GroupedApplicationData.create(allApplicationData))
+        return Resources(assembler.toResources(GroupedApplicationData.create(allApplicationData)))
     }
 }
 

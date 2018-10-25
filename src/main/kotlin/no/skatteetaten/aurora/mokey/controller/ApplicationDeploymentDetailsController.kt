@@ -13,6 +13,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.Link
+import org.springframework.hateoas.Resources
 import org.springframework.hateoas.mvc.ControllerLinkBuilder
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
@@ -41,12 +42,11 @@ class ApplicationDeploymentDetailsController(
             ?: throw NoSuchResourceException("Does not exist")
 
     @GetMapping
-
     fun getAll(
         @RequestParam(required = false, defaultValue = "", name = "affiliation") affiliation: List<String>,
         @RequestParam(required = false, defaultValue = "", name = "id") id: List<String>
-    ): List<ApplicationDeploymentDetailsResource> =
-        assembler.toResources(applicationDataService.findAllApplicationData(affiliation, id))
+    ): Resources<ApplicationDeploymentDetailsResource> =
+        Resources(assembler.toResources(applicationDataService.findAllApplicationData(affiliation, id)))
 }
 
 @Component

@@ -26,7 +26,7 @@ buildscript {
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.2.71"
   id "org.jetbrains.kotlin.plugin.spring" version "1.2.71"
-  id 'org.springframework.boot' version '2.0.4.RELEASE'
+  id 'org.springframework.boot' version '2.0.6.RELEASE'
   id 'org.jlleitschuh.gradle.ktlint' version '4.0.0'
 }
 
@@ -53,12 +53,6 @@ dependencyManagement {
     mavenBom "org.springframework.cloud:spring-cloud-contract-dependencies:2.0.0.RELEASE"
   }
 }
-
-// spring boot > 2.0.4 upgrades spring hateoas to version 0.25.0.RELEASE. This version changes how the ObjectMapper
-// that spring hateoas uses for generating hal+json is configured, and breaks the current format of the responses.
-// So, when upgrading to spring-hateoas 0.25.0 and beyond, be prepared to do some work with the serialization
-// configuration (see ApplicationConfig).
-ext['spring-hateoas.version'] = '0.24.0.RELEASE'
 
 def junitJupiterVersion = dependencyManagement.importedProperties['junit-jupiter.version']
 dependencies {
