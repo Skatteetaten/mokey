@@ -121,7 +121,6 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             mgmtData.value?.let {
                 HttpResponseResource(hasResponse = true, textResponse = it.textResponse, createdAt = it.createdAt)
             } ?: HttpResponseResource(hasResponse = false, error = toErrorResource(PodError(podDetails, nullSafeManagementEndpointError(endpoint))))
-
         } else {
             mgmtData.error?.let {
                 HttpResponseResource(hasResponse = false, error = toErrorResource(PodError(podDetails, it)))
@@ -162,7 +161,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     }
 
     private fun nullSafeManagementEndpointError(endpoint: Endpoint): ManagementEndpointError {
-        return ManagementEndpointError(message = "Endpoint error is null", endpointType = endpoint, code= "API_ERROR")
+        return ManagementEndpointError(message = "Endpoint error is null", endpointType = endpoint, code = "API_ERROR")
     }
 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
