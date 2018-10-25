@@ -98,8 +98,8 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         val managementResponsesResource = podDetails.managementData.value
             ?.let { managementData ->
 
-                val health = toHttpResponseResource(managementData.health, pod.name, Endpoint.HEALTH)
-                val info = toHttpResponseResource(managementData.info, pod.name, Endpoint.INFO)
+                val health = toHttpResponseResource(managementData.health, podDetails, Endpoint.HEALTH)
+                val info = toHttpResponseResource(managementData.info, podDetails, Endpoint.INFO)
 
                 ManagementResponsesResource(health, info)
             }
@@ -116,19 +116,16 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         }
     }
 
-    private fun <T> toHttpResponseResource(mgmtData: Either<ManagementEndpointError, HttpResponse<T>>, podName: String, endpoint: Endpoint): HttpResponseResource {
+    private fun <T> toHttpResponseResource(mgmtData: Either<ManagementEndpointError, HttpResponse<T>>, podDetails: PodDetails, endpoint: Endpoint): HttpResponseResource {
         return if (mgmtData is Right) {
-            val resp = mgmtData.value
-            HttpResponseResource(hasResponse = true, textResponse = resp?.textResponse, createdAt = resp?.createdAt)
+            mgmtData.value?.let {
+                HttpResponseResource(hasResponse = true, textResponse = it.textResponse, createdAt = it.createdAt)
+            } ?: HttpResponseResource(hasResponse = false, error = toErrorResource(PodError(podDetails, nullSafeManagementEndpointError(endpoint))))
+
         } else {
-            val error = mgmtData.error
-            HttpResponseResource(hasResponse = false, error = ManagementEndpointErrorResource(
-                    podName = podName,
-                    message = error?.message ?: "",
-                    endpoint = error?.endpointType ?: endpoint,
-                    url = error?.url,
-                    code = error?.code ?: "",
-                    rootCause = error?.rootCause))
+            mgmtData.error?.let {
+                HttpResponseResource(hasResponse = false, error = toErrorResource(PodError(podDetails, it)))
+            } ?: HttpResponseResource(hasResponse = false, error = toErrorResource(PodError(podDetails, nullSafeManagementEndpointError(endpoint))))
         }
     }
 
@@ -162,6 +159,10 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
                     it.rootCause
                 )
             }
+    }
+
+    private fun nullSafeManagementEndpointError(endpoint: Endpoint): ManagementEndpointError {
+        return ManagementEndpointError(message = "Endpoint error is null", endpointType = endpoint, code= "API_ERROR")
     }
 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
