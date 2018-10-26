@@ -12,15 +12,16 @@ import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import no.skatteetaten.aurora.utils.Left
 import no.skatteetaten.aurora.utils.Right
-import no.skatteetaten.aurora.utils.value
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class ManagementDataServiceTest {
     private val managementEndpointFactory = mockk<ManagementEndpointFactory>()
     private val managementEndpoint = mockk<ManagementEndpoint>()
+    private val managementEndpointError = mockk<ManagementEndpointError>()
     private val managementDataService = ManagementDataService(managementEndpointFactory)
 
     @BeforeEach
@@ -41,24 +42,24 @@ class ManagementDataServiceTest {
     }
 
     @Test
-    fun `Load management endpoint throw exception`() {
-        every { managementEndpoint.getInfoEndpointResponse() } throws Exception("test exception")
+    fun `Load management endpoint returns Right even if health and info return Left`() {
+        every { managementEndpoint.getInfoEndpointResponse() } returns Left(managementEndpointError)
+        every { managementEndpoint.getHealthEndpointResponse() } returns Left(managementEndpointError)
+        every { managementEndpoint.links } returns mockk<ManagementLinks>()
         every { managementEndpointFactory.create(any()) } returns managementEndpoint
         val result = managementDataService.load("http://localhost", "/test")
-        assert((result as Left).value.message).isEqualTo("Unexpected error while loading management data")
+        assert((result as Right).value.links).isNotNull()
     }
 
     @Test
-    fun `Load management endpoint throw ManagementEndpointException`() {
-        val managementEndpoint = mockk<ManagementEndpoint>()
-        every { managementEndpoint.getInfoEndpointResponse() } throws ManagementEndpointException(Endpoint.HEALTH, "")
-        every { managementEndpointFactory.create(any()) } returns managementEndpoint
+    fun `Load returns Left if unable to create endpoints`() {
+        every { managementEndpointFactory.create(any()) } throws ManagementEndpointException(Endpoint.MANAGEMENT, "")
         val result = managementDataService.load("http://localhost", "/test")
         assert((result as Left).value.message).isEqualTo("Error while communicating with management endpoint")
     }
 
     @Test
-    fun `Load management endpoint`() {
+    fun `Load management endpoint returns Right on happy day`() {
         every { managementEndpoint.getInfoEndpointResponse() } returns Right(HttpResponse(InfoResponse(), ""))
         every { managementEndpoint.getHealthEndpointResponse() } returns Right(HttpResponse(HealthResponse(status = HealthStatus.UP), ""))
         every { managementEndpoint.links } returns ManagementLinks(emptyMap())
