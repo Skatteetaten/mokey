@@ -72,8 +72,8 @@ dependencies {
   )
 
   [
-      'org.spockframework:spock-core:1.1-groovy-2.4',
-      'org.spockframework:spock-spring:1.1-groovy-2.4',
+      'org.spockframework:spock-core:1.2-groovy-2.4',
+      'org.spockframework:spock-spring:1.2-groovy-2.4',
       'org.springframework.restdocs:spring-restdocs-mockmvc',
       'org.springframework.security:spring-security-test',
       'org.junit.jupiter:junit-jupiter-api',
