@@ -14,6 +14,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
+import java.time.Duration
 import java.time.Instant
 
 class ApplicationDataServiceCacheDecoratorTest {
@@ -45,13 +46,15 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     val sourceApplicationDataService = mock(ApplicationDataServiceOpenShift::class.java)
     val openshiftService = mock(OpenShiftService::class.java)
-    val applicationDataService = ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService, "aurora")
+    val applicationDataService = ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService, "aurora", Duration.ofSeconds(1))
 
     @Test
     fun `should update cache from OpenShiftApplicationDataService`() {
-        val affiliations = listOf("aurora")
+        val affiliation = "aurora"
+        val affiliations = listOf(affiliation)
 
-        given(sourceApplicationDataService.findAllApplicationData(affiliations))
+        given(sourceApplicationDataService.findAllAffiliations(affiliations)).willReturn(affiliations)
+        given(sourceApplicationDataService.findAllApplicationData(affiliation))
             .willReturn(listOf(app1v1))
             .willReturn(listOf(app1v2))
 
@@ -66,9 +69,12 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     @Test
     fun `should return empty response if current user has no access`() {
-        val affiliations = listOf("aurora")
 
-        given(sourceApplicationDataService.findAllApplicationData(affiliations))
+        val affiliation = "aurora"
+        val affiliations = listOf(affiliation)
+
+        given(sourceApplicationDataService.findAllAffiliations(affiliations)).willReturn(affiliations)
+        given(sourceApplicationDataService.findAllApplicationData(affiliation))
             .willReturn(listOf(app1v1))
 
         applicationDataService.refreshCache(affiliations)
@@ -78,9 +84,12 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     @Test
     fun `should skip application if we do not have access`() {
-        val affiliations = listOf("aurora")
 
-        given(sourceApplicationDataService.findAllApplicationData(affiliations))
+        val affiliation = "aurora"
+        val affiliations = listOf(affiliation)
+
+        given(sourceApplicationDataService.findAllAffiliations(affiliations)).willReturn(affiliations)
+        given(sourceApplicationDataService.findAllApplicationData(affiliation))
             .willReturn(listOf(app1v1))
         applicationDataService.refreshCache(affiliations)
         given(openshiftService.projectsForUser()).willReturn(emptySet())
