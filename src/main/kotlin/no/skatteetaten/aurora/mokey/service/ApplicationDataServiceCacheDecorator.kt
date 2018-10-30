@@ -22,7 +22,7 @@ class ApplicationDataServiceCacheDecorator(
     val applicationDataService: ApplicationDataServiceOpenShift,
     val openShiftService: OpenShiftService,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
-    @Value("\${mokey.crawler.sleep:1s }") val sleep: Duration
+    @Value("\${mokey.crawler.sleep:1s}") val sleep: Duration
 
 ) : ApplicationDataService {
 
