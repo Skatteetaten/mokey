@@ -2,9 +2,9 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.async
+import kotlinx.coroutines.newFixedThreadPoolContext
+import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
@@ -31,6 +31,7 @@ class ApplicationDataServiceOpenShift(
     val addressService: AddressService,
     val imageService: ImageService
 ) : ApplicationDataService {
+
     override fun findAllVisibleAffiliations(): List<String> {
         throw NotImplementedError("findAllVisibleAffiliations is not supported")
     }
@@ -43,16 +44,26 @@ class ApplicationDataServiceOpenShift(
         return findAllEnvironments().map { it.affiliation }.toSet().toList()
     }
 
-    override fun findAllApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationData> {
-        logger.debug("finding application for affiliations=$affiliations")
-        val apps = if (affiliations.isEmpty()) {
-            logger.debug("finding applications in all envs")
-            findAllApplicationDataByEnvironments()
+    fun findAllAffiliations(affiliations: List<String>): List<String> {
+        return if (affiliations.isNotEmpty()) {
+            affiliations
         } else {
-            val allEnvironments = findAllEnvironments()
-            val environmentsForAffiliations = allEnvironments.filter { affiliations.contains(it.affiliation) }
-            findAllApplicationDataByEnvironments(environmentsForAffiliations)
+            findAllEnvironments().map { it.affiliation }.distinct()
         }
+    }
+
+    override fun findAllApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationData> {
+        return affiliations.flatMap {
+            findAllApplicationData(it, ids)
+        }
+    }
+
+    fun findAllApplicationData(affiliation: String, ids: List<String> = emptyList()): List<ApplicationData> {
+        logger.debug("finding application for affiliation=$affiliation")
+        val environments = findAllEnvironments()
+            .filter { it.affiliation == affiliation }
+        val apps = findAllApplicationDataByEnvironments(environments)
+
         return apps.filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
 
@@ -75,7 +86,7 @@ class ApplicationDataServiceOpenShift(
         return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
     }
 
-    private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
+    private fun findAllApplicationDataByEnvironments(environments: List<Environment>): List<ApplicationData> {
 
         logger.debug("finding all applications in environments=$environments")
         return runBlocking(mtContext) {

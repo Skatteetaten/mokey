@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Primary
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 @Service
@@ -20,7 +21,9 @@ import java.util.concurrent.ConcurrentHashMap
 class ApplicationDataServiceCacheDecorator(
     val applicationDataService: ApplicationDataServiceOpenShift,
     val openShiftService: OpenShiftService,
-    @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
+    @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
+    @Value("\${mokey.crawler.sleep:1s }") val sleep: Duration
+
 ) : ApplicationDataService {
 
     val affiliations: List<String>
@@ -65,7 +68,7 @@ class ApplicationDataServiceCacheDecorator(
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
     // TODO: property
-    @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
+    @Scheduled(fixedRateString = "\${mokey.crawler.rate:2m}", initialDelayString = "\${mokey.crawler.delay:2m}")
     fun cache() = refreshCache(affiliations)
 
     fun refreshItem(applicationId: String) =
@@ -74,22 +77,29 @@ class ApplicationDataServiceCacheDecorator(
             cache[applicationId] = data
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
 
-    fun refreshCache(affiliations: List<String> = emptyList()) {
+    fun refreshCache(affiliationInput: List<String> = emptyList()) {
 
-        val applications = refreshDeployments(affiliations)
-        val previousKeys = findCacheKeysForGivenAffiliations(affiliations)
-        val newKeys = applications.map { it.applicationDeploymentId }
+        val affiliations = applicationDataService.findAllAffiliations(affiliationInput)
 
-        (previousKeys - newKeys).forEach {
-            logger.info("Remove application since it does not exist anymore {}", it)
-            cache.remove(it)
+        affiliations.forEach { affiliation ->
+
+            val applications = refreshDeployments(affiliation)
+            val previousKeys = findCacheKeysForGivenAffiliation(affiliation)
+            val newKeys = applications.map { it.applicationDeploymentId }
+
+            (previousKeys - newKeys).forEach {
+                logger.info("Remove application since it does not exist anymore applicationDeploymentId={}", it)
+                cache.remove(it)
+            }
+
+            Thread.sleep(sleep.toMillis())
         }
     }
 
-    private fun refreshDeployments(affiliations: List<String>): List<ApplicationData> {
+    private fun refreshDeployments(affiliation: String): List<ApplicationData> {
         val applications = mutableListOf<ApplicationData>()
         val time = withStopWatch {
-            applications += applicationDataService.findAllApplicationData(affiliations)
+            applications += applicationDataService.findAllApplicationData(affiliation)
         }
 
         applications.forEach {
@@ -102,15 +112,10 @@ class ApplicationDataServiceCacheDecorator(
         return applications
     }
 
-    private fun findCacheKeysForGivenAffiliations(affiliations: List<String>): List<String> {
-        return if (affiliations.isEmpty()) {
-            cache.keys().toList()
-        } else {
-            cache.mapNotNull {
-                if (affiliations.contains(it.value.affiliation)) it.key
-                else null
-            }
-        }
+    private fun findCacheKeysForGivenAffiliation(affiliation: String): List<String> {
+        return cache
+            .filter { it.value.affiliation == affiliation }
+            .map { it.key }
     }
 
     /**
