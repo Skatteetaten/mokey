@@ -109,7 +109,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     }
 
     private fun <T> toHttpResponseResource(result: ManagementEndpointResult<T>, podDetails: PodDetails): HttpResponseResource {
-        return if (result.code == "OK") {
+        return if (result.isSuccess) {
             HttpResponseResource(hasResponse = true, textResponse = result.textResponse, createdAt = result.createdAt)
         } else {
             HttpResponseResource(hasResponse = false, error = ManagementEndpointErrorResource(

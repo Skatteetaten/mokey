@@ -62,7 +62,7 @@ class ManagementEndpoint(val url: String, private val endpointType: Endpoint) {
     fun <S : Any> findJsonResource(restTemplate: RestTemplate, parser: (node: JsonNode) -> S): ManagementEndpointResult<S> {
         val intermediate = this.findJsonResource(restTemplate, JsonNode::class)
 
-        if (intermediate.code != "OK") {
+        if (! intermediate.isSuccess) {
             return toManagementEndpointResultAsError(
                     textResponse = intermediate.textResponse,
                     code = intermediate.code,
@@ -77,7 +77,7 @@ class ManagementEndpoint(val url: String, private val endpointType: Endpoint) {
             )
         } catch (e: Exception) {
             toManagementEndpointResultAsError(
-                    textResponse = "Failed to decode",
+                    textResponse = "Failed to parse Json",
                     exception = e
             )
         }

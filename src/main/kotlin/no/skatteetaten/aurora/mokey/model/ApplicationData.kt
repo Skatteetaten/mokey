@@ -93,7 +93,10 @@ data class ManagementEndpointResult<T>(
     val code: String,
     val rootCause: String? = null,
     val url: String? = null
-)
+) {
+    val isSuccess: Boolean
+        get() = code == "OK"
+}
 
 data class OpenShiftPodExcerpt(
     val name: String,
