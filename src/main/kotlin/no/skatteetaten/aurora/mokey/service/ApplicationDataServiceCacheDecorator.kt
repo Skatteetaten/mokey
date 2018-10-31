@@ -22,7 +22,7 @@ class ApplicationDataServiceCacheDecorator(
     val applicationDataService: ApplicationDataServiceOpenShift,
     val openShiftService: OpenShiftService,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
-    @Value("\${mokey.crawler.sleep:1s}") val sleep: Duration
+    @Value("\${mokey.crawler.sleepSeconds:1}") val sleep: Long
 
 ) : ApplicationDataService {
 
@@ -92,7 +92,7 @@ class ApplicationDataServiceCacheDecorator(
                 cache.remove(it)
             }
 
-            Thread.sleep(sleep.toMillis())
+            Thread.sleep(sleep * 1000)
         }
     }
 
