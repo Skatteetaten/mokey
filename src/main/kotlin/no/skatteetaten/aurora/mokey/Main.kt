@@ -25,7 +25,7 @@ class CacheWarmup(
 
     override fun afterPropertiesSet() {
         try {
-            applicationDataService.cache()
+            applicationDataService.cacheAtStartup()
         } catch (e: Exception) {
             logger.error("Unable to refresh cache during initialization", e)
         }

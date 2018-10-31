@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CACHE
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -66,7 +67,6 @@ class ApplicationDataServiceCacheDecorator(
             .filter { if (affiliations.isEmpty()) true else affiliations.contains(it.affiliation) }
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
-    // TODO: property
     @Scheduled(
         fixedRateString = "\${mokey.crawler.rateSeconds:120000}",
         initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
@@ -79,29 +79,41 @@ class ApplicationDataServiceCacheDecorator(
             cache[applicationId] = data
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
 
+    fun cacheAtStartup() {
+        applicationDataService.findAndGroupAffiliations(affiliations)
+            .forEach { refreshAffiliation(it.key, it.value) }
+    }
     fun refreshCache(affiliationInput: List<String> = emptyList()) {
 
-        val affiliations = applicationDataService.findAllAffiliations(affiliationInput)
+        val affiliations = applicationDataService.findAndGroupAffiliations(affiliationInput)
 
-        affiliations.forEach { affiliation ->
-
-            val applications = refreshDeployments(affiliation)
-            val previousKeys = findCacheKeysForGivenAffiliation(affiliation)
-            val newKeys = applications.map { it.applicationDeploymentId }
-
-            (previousKeys - newKeys).forEach {
-                logger.info("Remove application since it does not exist anymore applicationDeploymentId={}", it)
-                cache.remove(it)
-            }
-
+        affiliations.forEach { (affiliation, env) ->
+            refreshAffiliation(affiliation, env)
             Thread.sleep(sleep * 1000)
         }
     }
 
-    private fun refreshDeployments(affiliation: String): List<ApplicationData> {
+    private fun refreshAffiliation(
+        affiliation: String,
+        env: List<Environment>
+    ) {
+        val applications = refreshDeployments(affiliation, env)
+        val previousKeys = findCacheKeysForGivenAffiliation(affiliation)
+        val newKeys = applications.map { it.applicationDeploymentId }
+
+        (previousKeys - newKeys).forEach {
+            logger.info("Remove application since it does not exist anymore applicationDeploymentId={}", it)
+            cache.remove(it)
+        }
+    }
+
+    private fun refreshDeployments(
+        affiliation: String,
+        env: List<Environment>
+    ): List<ApplicationData> {
         val applications = mutableListOf<ApplicationData>()
         val time = withStopWatch {
-            applications += applicationDataService.findAllApplicationData(affiliation)
+            applications += applicationDataService.findAllApplicationDataForEnv(environments = env)
         }
 
         applications.forEach {
@@ -109,7 +121,7 @@ class ApplicationDataServiceCacheDecorator(
             cache[it.applicationDeploymentId] = it
         }
 
-        logger.info("number of affiliation=$affiliation apps={} time={}", applications.size, time.totalTimeSeconds)
+        logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${time.totalTimeSeconds}", applications.size, time.totalTimeSeconds)
 
         return applications
     }

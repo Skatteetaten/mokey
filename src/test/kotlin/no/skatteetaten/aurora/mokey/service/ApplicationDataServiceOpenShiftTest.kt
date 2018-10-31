@@ -2,9 +2,9 @@ package no.skatteetaten.aurora.mokey.service
 
 import assertk.assert
 import assertk.assertions.contains
-import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
+import assertk.assertions.isTrue
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.openshift.api.model.Project
 import io.micrometer.core.instrument.MeterRegistry
@@ -52,12 +52,10 @@ class ApplicationDataServiceOpenShiftTest {
     fun `find all affiliations`() {
         val project = ProjectDataBuilder().build()
         every { openShiftService.projects() } returns listOf(project)
-        val affiliations = applicationDataServiceOpenShift.findAllAffiliations()
+        val affiliations = applicationDataServiceOpenShift.findAndGroupAffiliations()
 
-        assert(affiliations) {
-            hasSize(1)
-            contains("affiliation")
-        }
+        assert(affiliations.size).isEqualTo(1)
+        assert(affiliations.containsKey("affiliation")).isTrue()
     }
 
     @Test

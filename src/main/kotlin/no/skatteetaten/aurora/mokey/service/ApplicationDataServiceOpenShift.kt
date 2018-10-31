@@ -32,6 +32,15 @@ class ApplicationDataServiceOpenShift(
     val imageService: ImageService
 ) : ApplicationDataService {
 
+    override fun findAllAffiliations(): List<String> {
+        return findAndGroupAffiliations().keys.toList()
+    }
+
+    override fun findAllApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationData> {
+        val affiliationGroups = findAndGroupAffiliations(affiliations)
+        return findAllApplicationDataForEnv(ids, affiliationGroups)
+    }
+
     override fun findAllVisibleAffiliations(): List<String> {
         throw NotImplementedError("findAllVisibleAffiliations is not supported")
     }
@@ -40,31 +49,26 @@ class ApplicationDataServiceOpenShift(
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 
-    override fun findAllAffiliations(): List<String> {
-        return findAllEnvironments().map { it.affiliation }.toSet().toList()
+    fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
+        return findAllEnvironments().filter {
+            if (affiliations.isNotEmpty()) {
+                affiliations.contains(it.affiliation)
+            } else true
+        }.groupBy { it.affiliation }
     }
 
-    fun findAllAffiliations(affiliations: List<String>): List<String> {
-        return if (affiliations.isNotEmpty()) {
-            affiliations
-        } else {
-            findAllEnvironments().map { it.affiliation }.distinct()
+    fun findAllApplicationDataForEnv(ids: List<String>, affiliationEnvs: Map<String, List<Environment>>): List<ApplicationData> {
+        return affiliationEnvs.flatMap {
+            findAllApplicationDataForEnv(it.value, ids)
         }
     }
 
-    override fun findAllApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationData> {
-        return affiliations.flatMap {
-            findAllApplicationData(it, ids)
-        }
-    }
-
-    fun findAllApplicationData(affiliation: String, ids: List<String> = emptyList()): List<ApplicationData> {
-        logger.debug("finding application for affiliation=$affiliation")
-        val environments = findAllEnvironments()
-            .filter { it.affiliation == affiliation }
-        val apps = findAllApplicationDataByEnvironments(environments)
-
-        return apps.filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
+    fun findAllApplicationDataForEnv(
+        environments: List<Environment>,
+        ids: List<String> = emptyList()
+    ): List<ApplicationData> {
+        return findAllApplicationDataByEnvironments(environments)
+            .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
 
     override fun findAllPublicApplicationData(
