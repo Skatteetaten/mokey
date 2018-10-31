@@ -107,7 +107,7 @@ class ApplicationDataServiceCacheDecorator(
             cache[it.applicationDeploymentId] = it
         }
 
-        logger.info("number of apps={} time={}", applications.size, time.totalTimeSeconds)
+        logger.info("number of affiliation=$affiliation apps={} time={}", applications.size, time.totalTimeSeconds)
 
         return applications
     }
