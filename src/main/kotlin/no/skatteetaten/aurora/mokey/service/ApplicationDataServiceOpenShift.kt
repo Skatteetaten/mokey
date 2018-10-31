@@ -113,7 +113,7 @@ class ApplicationDataServiceOpenShift(
                 logger.info("Duplicate applicationDeploymeentId for=$names")
             }
 
-            logger.info("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
+            logger.debug("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
             data
         }
     }
