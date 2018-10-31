@@ -67,7 +67,10 @@ class ApplicationDataServiceCacheDecorator(
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
     // TODO: property
-    @Scheduled(fixedRateString = "\${mokey.crawler.rate:2m}", initialDelayString = "\${mokey.crawler.delay:2m}")
+    @Scheduled(
+        fixedRateString = "\${mokey.crawler.rateSeconds:120_000}",
+        initialDelayString = "\${mokey.crawler.delaySeconds:120_000}"
+    )
     fun cache() = refreshCache(affiliations)
 
     fun refreshItem(applicationId: String) =
