@@ -91,6 +91,7 @@ class ApplicationDataServiceCacheDecorator(
             refreshAffiliation(affiliation, env)
             Thread.sleep(sleep * 1000)
         }
+        logger.info("Crawler done total cached=${cache.keys.size}")
     }
 
     private fun refreshAffiliation(
@@ -121,7 +122,7 @@ class ApplicationDataServiceCacheDecorator(
             cache[it.applicationDeploymentId] = it
         }
 
-        logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${time.totalTimeSeconds}", applications.size, time.totalTimeSeconds)
+        logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${time.totalTimeSeconds}")
 
         return applications
     }
