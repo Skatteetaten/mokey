@@ -6,25 +6,24 @@ import com.fasterxml.jackson.databind.JsonNode
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.service.DateParser
-import no.skatteetaten.aurora.mokey.service.ManagementEndpointException
 import java.time.Instant
 
 enum class Endpoint(val key: String) {
     HEALTH("health"),
     INFO("info"),
     ENV("env"),
-    MANAGEMENT("_links")
+    DISCOVERY("_links")
 }
 
 data class ManagementLinks(private val links: Map<String, String>) {
 
-    fun linkFor(endpoint: Endpoint): String {
-        return links[endpoint.key] ?: throw ManagementEndpointException(endpoint, "LINK_MISSING")
+    fun linkFor(endpoint: Endpoint): String? {
+        return links[endpoint.key]
     }
 
     companion object {
         fun parseManagementResponse(response: JsonNode): ManagementLinks {
-            val asMap = response[Endpoint.MANAGEMENT.key].asMap()
+            val asMap = response[Endpoint.DISCOVERY.key].asMap()
             val links = asMap
                     .mapValues { it.value["href"].asText()!! }
             return ManagementLinks(links)
@@ -32,11 +31,7 @@ data class ManagementLinks(private val links: Map<String, String>) {
     }
 }
 
-data class HttpResponse<T>(
-    val deserialized: T,
-    val textResponse: String,
-    val createdAt: Instant = Instant.now()
-)
+data class DiscoveryResponse(private val links: Map<String, String>)
 
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 

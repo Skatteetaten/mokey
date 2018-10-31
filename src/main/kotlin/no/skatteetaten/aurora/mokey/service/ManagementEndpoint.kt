@@ -6,20 +6,18 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.extensions.extract
-import no.skatteetaten.aurora.mokey.model.Endpoint
-import no.skatteetaten.aurora.mokey.model.Endpoint.ENV
-import no.skatteetaten.aurora.mokey.model.Endpoint.HEALTH
-import no.skatteetaten.aurora.mokey.model.Endpoint.INFO
-import no.skatteetaten.aurora.mokey.model.HealthPart
+import no.skatteetaten.aurora.mokey.model.InfoResponse
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
+import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
-import no.skatteetaten.aurora.mokey.model.HttpResponse
-import no.skatteetaten.aurora.mokey.model.InfoResponse
-import no.skatteetaten.aurora.mokey.model.ManagementLinks
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
-import no.skatteetaten.aurora.utils.Either
-import no.skatteetaten.aurora.utils.Left
-import no.skatteetaten.aurora.utils.Right
+import no.skatteetaten.aurora.mokey.model.HealthPart
+import no.skatteetaten.aurora.mokey.model.Endpoint
+import no.skatteetaten.aurora.mokey.model.Endpoint.DISCOVERY
+import no.skatteetaten.aurora.mokey.model.Endpoint.HEALTH
+import no.skatteetaten.aurora.mokey.model.Endpoint.INFO
+import no.skatteetaten.aurora.mokey.model.Endpoint.ENV
+import no.skatteetaten.aurora.mokey.model.ManagementLinks.Companion.parseManagementResponse
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -29,99 +27,150 @@ import org.springframework.web.client.RestTemplate
 import kotlin.reflect.KClass
 
 @Service
-class ManagementEndpointFactory(val restTemplate: RestTemplate) {
-    fun create(managementUrl: String): ManagementEndpoint {
-        return ManagementEndpoint.create(restTemplate, managementUrl)
+class ManagementInterfaceFactory(val restTemplate: RestTemplate) {
+    fun create(discoveryUrl: String): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
+        return ManagementInterface.create(restTemplate, discoveryUrl)
     }
 }
 
-class ManagementEndpointException(
-    val endpoint: Endpoint,
-    val errorCode: String,
-    val url: String? = null,
-    cause: Exception? = null
-) : RuntimeException("${endpoint}_$errorCode", cause)
+class ManagementEndpoint(val url: String, private val endpointType: Endpoint) {
 
-class ManagementEndpoint internal constructor(
+    val logger: Logger = LoggerFactory.getLogger(ManagementEndpoint::class.java)
+
+    fun <T : Any> findJsonResource(restTemplate: RestTemplate, clazz: KClass<T>): ManagementEndpointResult<T> {
+        logger.debug("Getting resource with url={}", url)
+
+        try {
+            val responseText: String = try {
+                restTemplate.getForObject(url, String::class.java)
+            } catch (e: HttpStatusCodeException) {
+                if (!e.statusCode.is5xxServerError) throw e
+                String(e.responseBodyAsByteArray)
+            } ?: "Error while communicating with management endpoint"
+            return toManagementEndpointResult(
+                    textResponse = responseText,
+                    clazz = clazz.java
+            )
+        } catch (e: Exception) {
+            return toManagementEndpointResultAsError(
+                    textResponse = "Error while communicating with management endpoint",
+                    exception = e
+            )
+        }
+    }
+
+    fun <S : Any> findJsonResource(restTemplate: RestTemplate, parser: (node: JsonNode) -> S): ManagementEndpointResult<S> {
+        val intermediate = this.findJsonResource(restTemplate, JsonNode::class)
+
+        if (intermediate.code != "OK") {
+            return toManagementEndpointResultAsError(
+                    textResponse = intermediate.textResponse,
+                    code = intermediate.code,
+                    rootCause = intermediate.rootCause
+            )
+        }
+
+        return try {
+            toManagementEndpointResultAsSuccess(
+                    deserialized = parser(intermediate.deserialized!!),
+                    textResponse = intermediate.textResponse
+            )
+        } catch (e: Exception) {
+            toManagementEndpointResultAsError(
+                    textResponse = "Failed to decode",
+                    exception = e
+            )
+        }
+    }
+
+    private fun <T : Any> toManagementEndpointResult(deserialized: T?, textResponse: String, code: String, rootCause: String?): ManagementEndpointResult<T> {
+        return ManagementEndpointResult(
+                deserialized = deserialized,
+                textResponse = textResponse,
+                code = code,
+                rootCause = rootCause,
+                endpointType = this.endpointType,
+                url = this.url
+        )
+    }
+
+    private fun <T : Any> toManagementEndpointResultAsSuccess(deserialized: T, textResponse: String): ManagementEndpointResult<T> {
+        return toManagementEndpointResult(
+                deserialized = deserialized,
+                textResponse = textResponse,
+                code = "OK",
+                rootCause = null)
+    }
+
+    private fun <T : Any> toManagementEndpointResultAsError(textResponse: String, code: String, rootCause: String?): ManagementEndpointResult<T> {
+        return toManagementEndpointResult(
+                deserialized = null,
+                textResponse = textResponse,
+                code = code,
+                rootCause = rootCause)
+    }
+
+    private fun <T : Any> toManagementEndpointResultAsError(textResponse: String, exception: Exception): ManagementEndpointResult<T> {
+        val errorCode = when (exception) {
+            is HttpStatusCodeException -> "ERROR_${exception.statusCode}"
+            is RestClientException -> "ERROR_HTTP"
+            is JsonParseException -> "INVALID_JSON"
+            is MismatchedInputException -> "INVALID_JSON"
+            else -> "ERROR_UNKNOWN"
+        }
+
+        return toManagementEndpointResult(
+                deserialized = null,
+                textResponse = textResponse,
+                code = errorCode,
+                rootCause = exception.message)
+    }
+
+    private fun <T : Any> toManagementEndpointResult(textResponse: String, clazz: Class<T>): ManagementEndpointResult<T> {
+        return try {
+            toManagementEndpointResultAsSuccess(
+                    deserialized = jacksonObjectMapper().readValue(textResponse, clazz),
+                    textResponse = textResponse
+            )
+        } catch (e: Exception) {
+            toManagementEndpointResultAsError(
+                    textResponse = "Failed to parse Json",
+                    exception = e
+            )
+        }
+    }
+}
+
+class ManagementInterface internal constructor(
     private val restTemplate: RestTemplate,
-    val links: ManagementLinks
+    val links: ManagementLinks,
+    val infoEndpoint: ManagementEndpoint? = null,
+    val envEndpoint: ManagementEndpoint? = null,
+    val healthEndpoint: ManagementEndpoint? = null
 ) {
+    fun getHealthEndpointResult(): ManagementEndpointResult<HealthResponse>? =
+            healthEndpoint?.findJsonResource(restTemplate, HealthResponseParser::parse)
 
-    fun getHealthEndpointResponse(): Either<ManagementEndpointError, HttpResponse<HealthResponse>> {
-        return try {
-            val response = findJsonResource(HEALTH, JsonNode::class)
-            val healthResponse = HealthResponseParser.parse(response.deserialized)
-            Right(HttpResponse(healthResponse, response.textResponse, response.createdAt))
-        } catch (e: ManagementEndpointException) {
-            Left(ManagementEndpointError(message = "Error while communicating with health endpoint",
-                endpointType = HEALTH, code = e.errorCode, rootCause = e.cause?.message, url = e.url))
-        }
-    }
+    fun getInfoEndpointResult(): ManagementEndpointResult<InfoResponse>? =
+            infoEndpoint?.findJsonResource(restTemplate, InfoResponse::class)
 
-    fun getInfoEndpointResponse(): Either<ManagementEndpointError, HttpResponse<InfoResponse>> {
-        return try {
-            val response = findJsonResource(INFO, InfoResponse::class)
-            Right(response)
-        } catch (e: ManagementEndpointException) {
-            Left(ManagementEndpointError(message = "Error while communicating with info endpoint",
-                endpointType = INFO, code = e.errorCode, rootCause = e.cause?.message, url = e.url))
-        }
-    }
-
-    @Throws(ManagementEndpointException::class)
-    fun getEnvEndpointResponse(): HttpResponse<JsonNode> = findJsonResource(ENV, JsonNode::class)
-
-    private fun <T : Any> findJsonResource(endpoint: Endpoint, type: KClass<T>) =
-        findJsonResource(restTemplate, endpoint, links.linkFor(endpoint), type)
+    fun getEnvEndpointResult(): ManagementEndpointResult<JsonNode>? =
+            envEndpoint?.findJsonResource(restTemplate, JsonNode::class)
 
     companion object {
-        val logger: Logger = LoggerFactory.getLogger(ManagementEndpoint::class.java)
+        fun create(restTemplate: RestTemplate, discoveryUrl: String): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
+            val discoveryEndpoint = ManagementEndpoint(discoveryUrl, DISCOVERY)
+            val response = discoveryEndpoint.findJsonResource(restTemplate, ::parseManagementResponse)
 
-        @Throws(ManagementEndpointException::class)
-        fun create(restTemplate: RestTemplate, managementUrl: String): ManagementEndpoint {
-
-            val response = findJsonResource(restTemplate, Endpoint.MANAGEMENT, managementUrl, JsonNode::class)
-            val links = try {
-                ManagementLinks.parseManagementResponse(response.deserialized)
-            } catch (e: Exception) {
-                throw ManagementEndpointException(Endpoint.MANAGEMENT, "INVALID_FORMAT", managementUrl, e)
-            }
-
-            return ManagementEndpoint(restTemplate, links)
-        }
-
-        private fun <T : Any> findJsonResource(
-            restTemplate: RestTemplate,
-            endpoint: Endpoint,
-            url: String,
-            type: KClass<T>
-        ): HttpResponse<T> {
-
-            logger.debug("Getting resource with url={}", url)
-            try {
-                val responseText: String = try {
-                    restTemplate.getForObject(url, String::class.java)
-                } catch (e: HttpStatusCodeException) {
-                    if (!e.statusCode.is5xxServerError) throw e
-                    String(e.responseBodyAsByteArray)
-                } ?: ""
-                return toHttpResponse(responseText, type.java)
-            } catch (e: Exception) {
-                val errorCode = when (e) {
-                    is HttpStatusCodeException -> "ERROR_${e.statusCode}"
-                    is RestClientException -> "ERROR_HTTP"
-                    is JsonParseException -> "INVALID_JSON"
-                    is MismatchedInputException -> "INVALID_JSON"
-                    else -> "ERROR_UNKNOWN"
-                }
-                throw ManagementEndpointException(endpoint, errorCode, url, e)
-            }
-        }
-
-        @JvmStatic
-        fun <T : Any> toHttpResponse(jsonString: String, clazz: Class<T>): HttpResponse<T> {
-            val deserialized = jacksonObjectMapper().readValue(jsonString, clazz)
-            return HttpResponse(deserialized, jsonString)
+            return response.deserialized?.let { links ->
+                Pair(ManagementInterface(
+                        restTemplate = restTemplate,
+                        links = links,
+                        infoEndpoint = links.linkFor(INFO)?.let { url -> ManagementEndpoint(url, INFO) },
+                        envEndpoint = links.linkFor(ENV)?.let { url -> ManagementEndpoint(url, ENV) },
+                        healthEndpoint = links.linkFor(HEALTH)?.let { url -> ManagementEndpoint(url, HEALTH) }
+                ), response)
+            } ?: Pair(null, response)
         }
     }
 }

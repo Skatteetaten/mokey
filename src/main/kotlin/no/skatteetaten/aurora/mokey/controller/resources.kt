@@ -93,8 +93,10 @@ data class HttpResponseResource(
 )
 
 data class ManagementResponsesResource(
+    val links: HttpResponseResource,
     val health: HttpResponseResource?,
-    val info: HttpResponseResource?
+    val info: HttpResponseResource?,
+    val env: HttpResponseResource?
 )
 
 data class ApplicationDeploymentCommandResource(

@@ -6,15 +6,8 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.PodDetails
-import no.skatteetaten.aurora.mokey.model.PodError
-import no.skatteetaten.aurora.mokey.model.Endpoint
-import no.skatteetaten.aurora.mokey.model.HttpResponse
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import no.skatteetaten.aurora.utils.Either
-import no.skatteetaten.aurora.utils.Right
-import no.skatteetaten.aurora.utils.error
-import no.skatteetaten.aurora.utils.value
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
@@ -64,7 +57,6 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
     override fun toResource(applicationData: ApplicationData): ApplicationDeploymentDetailsResource {
 
-        val errorResources = applicationData.errors.map(this::toErrorResource)
         val infoResponse = applicationData.firstInfoResponse
 
         return ApplicationDeploymentDetailsResource(
@@ -74,8 +66,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
             podResources = applicationData.pods.map { toPodResource(applicationData, it) },
             dependencies = infoResponse?.dependencies ?: emptyMap(),
-            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
-            errors = errorResources
+            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand)
         ).apply {
 
             this.add(createApplicationLinks(applicationData))
@@ -88,20 +79,21 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
         val pod = podDetails.openShiftPodExcerpt
 
-        val podLinks = podDetails.managementData.value?.let { managementData ->
-            val podManagementLinks = managementData.info.value?.deserialized?.podLinks
+        val podLinks = podDetails.managementData.let { managementData ->
+            val podManagementLinks = managementData.info?.deserialized?.podLinks
             podManagementLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
         } ?: listOf()
 
         val consoleLinks = linkBuilder.openShiftConsoleLinks(pod.name, applicationData.namespace)
 
-        val managementResponsesResource = podDetails.managementData.value
-            ?.let { managementData ->
+        val managementResponsesResource = podDetails.managementData.let {
+            managementData ->
+                val links = toHttpResponseResource(managementData.links, podDetails)
+                val health = managementData.health?.let { toHttpResponseResource(managementData.health, podDetails) }
+                val info = managementData.info?.let { toHttpResponseResource(managementData.info, podDetails) }
+                val env = managementData.env?.let { toHttpResponseResource(managementData.env, podDetails) }
 
-                val health = toHttpResponseResource(managementData.health, podDetails, Endpoint.HEALTH)
-                val info = toHttpResponseResource(managementData.info, podDetails, Endpoint.INFO)
-
-                ManagementResponsesResource(health, info)
+                ManagementResponsesResource(links, health, info, env)
             }
 
         return PodResource(
@@ -116,15 +108,18 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         }
     }
 
-    private fun <T> toHttpResponseResource(mgmtData: Either<ManagementEndpointError, HttpResponse<T>>, podDetails: PodDetails, endpoint: Endpoint): HttpResponseResource {
-        return if (mgmtData is Right) {
-            mgmtData.value?.let {
-                HttpResponseResource(hasResponse = true, textResponse = it.textResponse, createdAt = it.createdAt)
-            } ?: HttpResponseResource(hasResponse = false, error = toErrorResource(PodError(podDetails, nullSafeManagementEndpointError(endpoint))))
+    private fun <T> toHttpResponseResource(result: ManagementEndpointResult<T>, podDetails: PodDetails): HttpResponseResource {
+        return if (result.code == "OK") {
+            HttpResponseResource(hasResponse = true, textResponse = result.textResponse, createdAt = result.createdAt)
         } else {
-            mgmtData.error?.let {
-                HttpResponseResource(hasResponse = false, error = toErrorResource(PodError(podDetails, it)))
-            } ?: HttpResponseResource(hasResponse = false, error = toErrorResource(PodError(podDetails, nullSafeManagementEndpointError(endpoint))))
+            HttpResponseResource(hasResponse = false, error = ManagementEndpointErrorResource(
+                    podName = podDetails.openShiftPodExcerpt.name,
+                    message = result.textResponse,
+                    endpoint = result.endpointType,
+                    url = result.url,
+                    code = result.code,
+                    rootCause = result.rootCause
+            ))
         }
     }
 
@@ -144,25 +139,6 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
                 deploymentCommand.auroraConfig.resolvedRef
             )
         )
-
-    private fun toErrorResource(podError: PodError): ManagementEndpointErrorResource {
-        val podName = podError.podDetails.openShiftPodExcerpt.name
-        return podError.error
-            .let {
-                ManagementEndpointErrorResource(
-                    podName,
-                    it.message,
-                    it.endpointType,
-                    it.url,
-                    it.code,
-                    it.rootCause
-                )
-            }
-    }
-
-    private fun nullSafeManagementEndpointError(endpoint: Endpoint): ManagementEndpointError {
-        return ManagementEndpointError(message = "Endpoint error is null", endpointType = endpoint, code = "API_ERROR")
-    }
 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 
@@ -217,5 +193,5 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 private val ApplicationData.firstInfoResponse: InfoResponse?
     get() {
         val pod = this.pods.firstOrNull()
-        return pod?.managementData?.value?.info?.value?.deserialized
+        return pod?.managementData?.info?.deserialized
     }

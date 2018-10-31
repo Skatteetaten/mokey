@@ -1,8 +1,6 @@
 package no.skatteetaten.aurora.mokey.model
 
-import no.skatteetaten.aurora.utils.Either
-import no.skatteetaten.aurora.utils.error
-import no.skatteetaten.aurora.utils.value
+import com.fasterxml.jackson.databind.JsonNode
 import java.time.Instant
 
 data class GroupedApplicationData(
@@ -57,14 +55,6 @@ data class ApplicationData(
     val publicData: ApplicationPublicData
 
 ) {
-    val errors
-        get(): List<PodError> = this.pods
-            .flatMap { podDetails: PodDetails ->
-                val data = podDetails.managementData
-                listOf(data, data.value?.info, data.value?.health).map { it?.error?.let { PodError(podDetails, it) } }
-            }
-            .filterNotNull()
-
     val applicationId get() = publicData.applicationId
     val applicationDeploymentId get() = publicData.applicationDeploymentId
     val applicationName get() = publicData.applicationName
@@ -77,12 +67,7 @@ data class ApplicationData(
 
 data class PodDetails(
     val openShiftPodExcerpt: OpenShiftPodExcerpt,
-    val managementData: Either<ManagementEndpointError, ManagementData>
-)
-
-data class PodError(
-    val podDetails: PodDetails,
-    val error: ManagementEndpointError
+    val managementData: ManagementData
 )
 
 data class ManagementEndpointError(
@@ -94,10 +79,20 @@ data class ManagementEndpointError(
 )
 
 data class ManagementData(
-    val links: ManagementLinks? = null,
-    val info: Either<ManagementEndpointError, HttpResponse<InfoResponse>>,
-    val health: Either<ManagementEndpointError, HttpResponse<HealthResponse>>/*,
-        val env: Either<ManagementEndpointError, JsonNode>*/
+    val links: ManagementEndpointResult<ManagementLinks>,
+    val info: ManagementEndpointResult<InfoResponse>? = null,
+    val health: ManagementEndpointResult<HealthResponse>? = null,
+    val env: ManagementEndpointResult<JsonNode>? = null
+)
+
+data class ManagementEndpointResult<T>(
+    val deserialized: T? = null,
+    val textResponse: String,
+    val createdAt: Instant = Instant.now(),
+    val endpointType: Endpoint,
+    val code: String,
+    val rootCause: String? = null,
+    val url: String? = null
 )
 
 data class OpenShiftPodExcerpt(
