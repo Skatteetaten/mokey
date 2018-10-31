@@ -68,8 +68,8 @@ class ApplicationDataServiceCacheDecorator(
 
     // TODO: property
     @Scheduled(
-        fixedRateString = "\${mokey.crawler.rateSeconds:120_000}",
-        initialDelayString = "\${mokey.crawler.delaySeconds:120_000}"
+        fixedRateString = "\${mokey.crawler.rateSeconds:120000}",
+        initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
     )
     fun cache() = refreshCache(affiliations)
 
