@@ -110,7 +110,7 @@ class ApplicationDataServiceOpenShift(
             val data = results.mapNotNull { it.applicationData }
             data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach {
                 val names = it.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
-                logger.info("Duplicate applicationDeploymeentId for=$names")
+                logger.debug("Duplicate applicationDeploymeentId for=$names")
             }
 
             logger.debug("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
