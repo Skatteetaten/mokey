@@ -83,15 +83,21 @@ class ApplicationDataServiceCacheDecorator(
         applicationDataService.findAndGroupAffiliations(affiliations)
             .forEach { refreshAffiliation(it.key, it.value) }
     }
+
     fun refreshCache(affiliationInput: List<String> = emptyList()) {
 
+        val watch = StopWatch().also { it.start() }
         val affiliations = applicationDataService.findAndGroupAffiliations(affiliationInput)
 
         affiliations.forEach { (affiliation, env) ->
             refreshAffiliation(affiliation, env)
             Thread.sleep(sleep * 1000)
         }
-        logger.info("Crawler done total cached=${cache.keys.size}")
+        val time: Double = watch.let {
+            it.stop()
+            it.totalTimeSeconds
+        }
+        logger.info("Crawler done total cached=${cache.keys.size} timeSeconds=$time")
     }
 
     private fun refreshAffiliation(
