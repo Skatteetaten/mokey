@@ -137,7 +137,9 @@ class ApplicationDataServiceCacheDecorator(
             cache[it.applicationDeploymentId] = it
         }
 
-        logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${time.totalTimeSeconds}")
+        if (applications.isNotEmpty()) {
+            logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${time.totalTimeSeconds}")
+        }
 
         return applications
     }
