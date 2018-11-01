@@ -36,7 +36,6 @@ class ApplicationDataServiceOpenShift(
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 
-
     override fun findAllAffiliations(): List<String> {
         return findAndGroupAffiliations().keys.toList()
     }
@@ -65,7 +64,6 @@ class ApplicationDataServiceOpenShift(
         throw NotImplementedError("findApplicationDataByApplicationDeploymentId is not supported")
     }
 
-
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         return findAllEnvironments().filter {
             if (affiliations.isNotEmpty()) {
@@ -87,7 +85,6 @@ class ApplicationDataServiceOpenShift(
         return findAllApplicationDataByEnvironments(environments)
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
-
 
     fun findAllEnvironments(): List<Environment> {
         return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
