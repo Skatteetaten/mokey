@@ -90,8 +90,17 @@ class ApplicationDataServiceCacheDecorator(
         val affiliations = applicationDataService.findAndGroupAffiliations(affiliationInput)
 
         affiliations.forEach { (affiliation, env) ->
+
+            val affiliationWatch = StopWatch().also { it.start() }
             refreshAffiliation(affiliation, env)
-            Thread.sleep(sleep * 1000)
+            val affiliationTime = affiliationWatch.let {
+                it.stop()
+                it.totalTimeMillis
+            }
+
+            if (affiliationTime > 200) {
+                Thread.sleep(sleep * 1000)
+            }
         }
         val time: Double = watch.let {
             it.stop()
