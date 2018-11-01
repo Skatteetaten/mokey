@@ -32,6 +32,11 @@ class ApplicationDataServiceOpenShift(
     val imageService: ImageService
 ) : ApplicationDataService {
 
+    val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
+
+    val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
+
+
     override fun findAllAffiliations(): List<String> {
         return findAndGroupAffiliations().keys.toList()
     }
@@ -45,9 +50,21 @@ class ApplicationDataServiceOpenShift(
         throw NotImplementedError("findAllVisibleAffiliations is not supported")
     }
 
-    val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
+    override fun findAllPublicApplicationData(
+        affiliations: List<String>,
+        ids: List<String>
+    ): List<ApplicationPublicData> {
+        throw NotImplementedError("findAllPublicApplicationDataByApplicationDeploymentId is not supported")
+    }
 
-    val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
+    override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? {
+        throw NotImplementedError("findPublicApplicationDataByApplicationDeploymentId is not supported")
+    }
+
+    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
+        throw NotImplementedError("findApplicationDataByApplicationDeploymentId is not supported")
+    }
+
 
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         return findAllEnvironments().filter {
@@ -71,20 +88,6 @@ class ApplicationDataServiceOpenShift(
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
 
-    override fun findAllPublicApplicationData(
-        affiliations: List<String>,
-        ids: List<String>
-    ): List<ApplicationPublicData> {
-        throw NotImplementedError("findAllPublicApplicationDataByApplicationDeploymentId is not supported")
-    }
-
-    override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? {
-        throw NotImplementedError("findPublicApplicationDataByApplicationDeploymentId is not supported")
-    }
-
-    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
-        throw NotImplementedError("findApplicationDataByApplicationDeploymentId is not supported")
-    }
 
     fun findAllEnvironments(): List<Environment> {
         return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
@@ -108,8 +111,8 @@ class ApplicationDataServiceOpenShift(
             val errors = results.mapNotNull { it.error }
 
             val data = results.mapNotNull { it.applicationData }
-            data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach {
-                val names = it.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
+            data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach { data ->
+                val names = data.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
                 logger.debug("Duplicate applicationDeploymeentId for=$names")
             }
 
