@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
 @EnableHypermediaSupport(type = [HAL])
 class ApplicationConfig : BeanPostProcessor {
 
-    override fun postProcessAfterInitialization(bean: Any?, beanName: String?): Any {
+    override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
         if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
             configureObjectMapper(bean)
         }
@@ -49,7 +49,7 @@ class ApplicationConfig : BeanPostProcessor {
 
     @Bean
     fun restTemplate(builder: RestTemplateBuilder): RestTemplate {
-        return builder.requestFactory({ createRequestFactory(2, 2) })
+        return builder.requestFactory { createRequestFactory(2, 2) }
             .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
                 request.headers.accept = mutableListOf(MediaType.APPLICATION_JSON)
                 execution.execute(request, body)

@@ -10,6 +10,7 @@ import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.Environment
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -37,21 +38,28 @@ class ApplicationDataServiceCacheDecoratorTest {
             namespace = "aurora-1",
             affiliation = "aurora",
             dockerImageRepo = null,
-                releaseTo = "releaseTo",
-    time = Instant.EPOCH
+            releaseTo = "releaseTo",
+            time = Instant.EPOCH
         )
     )
     val app1v2 = app1v1.copy(publicData = app1v1.publicData.copy(deployTag = "prod"))
 
     val sourceApplicationDataService = mock(ApplicationDataServiceOpenShift::class.java)
     val openshiftService = mock(OpenShiftService::class.java)
-    val applicationDataService = ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService, "aurora")
+    val applicationDataService =
+        ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService, "aurora", 1L)
+
+    val affiliation = "aurora"
+    val envs = listOf(Environment("aurora-1", affiliation))
+    val affiliationEnvs = mapOf(affiliation to envs)
+
+    val affiliations = listOf(affiliation)
 
     @Test
     fun `should update cache from OpenShiftApplicationDataService`() {
-        val affiliations = listOf("aurora")
 
-        given(sourceApplicationDataService.findAllApplicationData(affiliations))
+        given(sourceApplicationDataService.findAndGroupAffiliations(affiliations)).willReturn(affiliationEnvs)
+        given(sourceApplicationDataService.findAllApplicationDataForEnv(envs))
             .willReturn(listOf(app1v1))
             .willReturn(listOf(app1v2))
 
@@ -66,9 +74,8 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     @Test
     fun `should return empty response if current user has no access`() {
-        val affiliations = listOf("aurora")
-
-        given(sourceApplicationDataService.findAllApplicationData(affiliations))
+        given(sourceApplicationDataService.findAndGroupAffiliations(affiliations)).willReturn(affiliationEnvs)
+        given(sourceApplicationDataService.findAllApplicationDataForEnv(envs))
             .willReturn(listOf(app1v1))
 
         applicationDataService.refreshCache(affiliations)
@@ -78,10 +85,11 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     @Test
     fun `should skip application if we do not have access`() {
-        val affiliations = listOf("aurora")
 
-        given(sourceApplicationDataService.findAllApplicationData(affiliations))
+        given(sourceApplicationDataService.findAndGroupAffiliations(affiliations)).willReturn(affiliationEnvs)
+        given(sourceApplicationDataService.findAllApplicationDataForEnv(envs))
             .willReturn(listOf(app1v1))
+
         applicationDataService.refreshCache(affiliations)
         given(openshiftService.projectsForUser()).willReturn(emptySet())
         assertThat(applicationDataService.findAllApplicationData(affiliations)).isEmpty()

@@ -2,9 +2,9 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.async
+import kotlinx.coroutines.newFixedThreadPoolContext
+import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
@@ -31,29 +31,22 @@ class ApplicationDataServiceOpenShift(
     val addressService: AddressService,
     val imageService: ImageService
 ) : ApplicationDataService {
-    override fun findAllVisibleAffiliations(): List<String> {
-        throw NotImplementedError("findAllVisibleAffiliations is not supported")
-    }
 
     val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 
     override fun findAllAffiliations(): List<String> {
-        return findAllEnvironments().map { it.affiliation }.toSet().toList()
+        return findAndGroupAffiliations().keys.toList()
     }
 
     override fun findAllApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationData> {
-        logger.debug("finding application for affiliations=$affiliations")
-        val apps = if (affiliations.isEmpty()) {
-            logger.debug("finding applications in all envs")
-            findAllApplicationDataByEnvironments()
-        } else {
-            val allEnvironments = findAllEnvironments()
-            val environmentsForAffiliations = allEnvironments.filter { affiliations.contains(it.affiliation) }
-            findAllApplicationDataByEnvironments(environmentsForAffiliations)
-        }
-        return apps.filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
+        val affiliationGroups = findAndGroupAffiliations(affiliations)
+        return findAllApplicationDataForEnv(ids, affiliationGroups)
+    }
+
+    override fun findAllVisibleAffiliations(): List<String> {
+        throw NotImplementedError("findAllVisibleAffiliations is not supported")
     }
 
     override fun findAllPublicApplicationData(
@@ -71,11 +64,33 @@ class ApplicationDataServiceOpenShift(
         throw NotImplementedError("findApplicationDataByApplicationDeploymentId is not supported")
     }
 
+    fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
+        return findAllEnvironments().filter {
+            if (affiliations.isNotEmpty()) {
+                affiliations.contains(it.affiliation)
+            } else true
+        }.groupBy { it.affiliation }
+    }
+
+    fun findAllApplicationDataForEnv(ids: List<String>, affiliationEnvs: Map<String, List<Environment>>): List<ApplicationData> {
+        return affiliationEnvs.flatMap {
+            findAllApplicationDataForEnv(it.value, ids)
+        }
+    }
+
+    fun findAllApplicationDataForEnv(
+        environments: List<Environment>,
+        ids: List<String> = emptyList()
+    ): List<ApplicationData> {
+        return findAllApplicationDataByEnvironments(environments)
+            .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
+    }
+
     fun findAllEnvironments(): List<Environment> {
         return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
     }
 
-    private fun findAllApplicationDataByEnvironments(environments: List<Environment> = findAllEnvironments()): List<ApplicationData> {
+    private fun findAllApplicationDataByEnvironments(environments: List<Environment>): List<ApplicationData> {
 
         logger.debug("finding all applications in environments=$environments")
         return runBlocking(mtContext) {
@@ -93,12 +108,12 @@ class ApplicationDataServiceOpenShift(
             val errors = results.mapNotNull { it.error }
 
             val data = results.mapNotNull { it.applicationData }
-            data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach {
-                val names = it.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
-                logger.info("Duplicate applicationDeploymeentId for=$names")
+            data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach { data ->
+                val names = data.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
+                logger.debug("Duplicate applicationDeploymeentId for=$names")
             }
 
-            logger.info("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
+            logger.debug("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
             data
         }
     }

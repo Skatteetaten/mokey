@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
+import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CACHE
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,7 +21,9 @@ import java.util.concurrent.ConcurrentHashMap
 class ApplicationDataServiceCacheDecorator(
     val applicationDataService: ApplicationDataServiceOpenShift,
     val openShiftService: OpenShiftService,
-    @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String
+    @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
+    @Value("\${mokey.crawler.sleepSeconds:1}") val sleep: Long
+
 ) : ApplicationDataService {
 
     val affiliations: List<String>
@@ -64,8 +67,10 @@ class ApplicationDataServiceCacheDecorator(
             .filter { if (affiliations.isEmpty()) true else affiliations.contains(it.affiliation) }
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
-    // TODO: property
-    @Scheduled(fixedRate = 120_000, initialDelay = 120_000)
+    @Scheduled(
+        fixedRateString = "\${mokey.crawler.rateSeconds:120000}",
+        initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
+    )
     fun cache() = refreshCache(affiliations)
 
     fun refreshItem(applicationId: String) =
@@ -74,22 +79,57 @@ class ApplicationDataServiceCacheDecorator(
             cache[applicationId] = data
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
 
-    fun refreshCache(affiliations: List<String> = emptyList()) {
+    fun cacheAtStartup() {
+        applicationDataService.findAndGroupAffiliations(affiliations)
+            .forEach { refreshAffiliation(it.key, it.value) }
+    }
 
-        val applications = refreshDeployments(affiliations)
-        val previousKeys = findCacheKeysForGivenAffiliations(affiliations)
+    fun refreshCache(affiliationInput: List<String> = emptyList()) {
+
+        val watch = StopWatch().also { it.start() }
+        val affiliations = applicationDataService.findAndGroupAffiliations(affiliationInput)
+
+        affiliations.forEach { (affiliation, env) ->
+
+            val affiliationWatch = StopWatch().also { it.start() }
+            refreshAffiliation(affiliation, env)
+            val affiliationTime = affiliationWatch.let {
+                it.stop()
+                it.totalTimeMillis
+            }
+
+            if (affiliationTime > 200) {
+                Thread.sleep(sleep * 1000)
+            }
+        }
+        val time: Double = watch.let {
+            it.stop()
+            it.totalTimeSeconds
+        }
+        logger.info("Crawler done total cached=${cache.keys.size} timeSeconds=$time")
+    }
+
+    private fun refreshAffiliation(
+        affiliation: String,
+        env: List<Environment>
+    ) {
+        val applications = refreshDeployments(affiliation, env)
+        val previousKeys = findCacheKeysForGivenAffiliation(affiliation)
         val newKeys = applications.map { it.applicationDeploymentId }
 
         (previousKeys - newKeys).forEach {
-            logger.info("Remove application since it does not exist anymore {}", it)
+            logger.info("Remove application since it does not exist anymore applicationDeploymentId={}", it)
             cache.remove(it)
         }
     }
 
-    private fun refreshDeployments(affiliations: List<String>): List<ApplicationData> {
+    private fun refreshDeployments(
+        affiliation: String,
+        env: List<Environment>
+    ): List<ApplicationData> {
         val applications = mutableListOf<ApplicationData>()
         val time = withStopWatch {
-            applications += applicationDataService.findAllApplicationData(affiliations)
+            applications += applicationDataService.findAllApplicationDataForEnv(environments = env)
         }
 
         applications.forEach {
@@ -97,20 +137,17 @@ class ApplicationDataServiceCacheDecorator(
             cache[it.applicationDeploymentId] = it
         }
 
-        logger.info("number of apps={} time={}", applications.size, time.totalTimeSeconds)
+        if (applications.isNotEmpty()) {
+            logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${time.totalTimeSeconds}")
+        }
 
         return applications
     }
 
-    private fun findCacheKeysForGivenAffiliations(affiliations: List<String>): List<String> {
-        return if (affiliations.isEmpty()) {
-            cache.keys().toList()
-        } else {
-            cache.mapNotNull {
-                if (affiliations.contains(it.value.affiliation)) it.key
-                else null
-            }
-        }
+    private fun findCacheKeysForGivenAffiliation(affiliation: String): List<String> {
+        return cache
+            .filter { it.value.affiliation == affiliation }
+            .map { it.key }
     }
 
     /**
