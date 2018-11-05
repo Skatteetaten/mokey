@@ -6,18 +6,18 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.extensions.extract
-import no.skatteetaten.aurora.mokey.model.InfoResponse
+import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
-import no.skatteetaten.aurora.mokey.model.HealthResponse
-import no.skatteetaten.aurora.mokey.model.HealthStatus
-import no.skatteetaten.aurora.mokey.model.HealthPart
-import no.skatteetaten.aurora.mokey.model.Endpoint
-import no.skatteetaten.aurora.mokey.model.Endpoint.DISCOVERY
-import no.skatteetaten.aurora.mokey.model.Endpoint.HEALTH
-import no.skatteetaten.aurora.mokey.model.Endpoint.INFO
-import no.skatteetaten.aurora.mokey.model.Endpoint.ENV
 import no.skatteetaten.aurora.mokey.model.ManagementLinks.Companion.parseManagementResponse
+import no.skatteetaten.aurora.mokey.model.EndpointType.DISCOVERY
+import no.skatteetaten.aurora.mokey.model.EndpointType.HEALTH
+import no.skatteetaten.aurora.mokey.model.EndpointType.INFO
+import no.skatteetaten.aurora.mokey.model.EndpointType.ENV
+import no.skatteetaten.aurora.mokey.model.HealthResponse
+import no.skatteetaten.aurora.mokey.model.InfoResponse
+import no.skatteetaten.aurora.mokey.model.HealthPart
+import no.skatteetaten.aurora.mokey.model.HealthStatus
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -28,12 +28,12 @@ import kotlin.reflect.KClass
 
 @Service
 class ManagementInterfaceFactory(val restTemplate: RestTemplate) {
-    fun create(discoveryUrl: String): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
-        return ManagementInterface.create(restTemplate, discoveryUrl)
+    fun create(host: String?, path: String?): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
+        return ManagementInterface.create(restTemplate, host, path)
     }
 }
 
-class ManagementEndpoint(val url: String, private val endpointType: Endpoint) {
+class ManagementEndpoint(val url: String, private val endpointType: EndpointType) {
 
     val logger: Logger = LoggerFactory.getLogger(ManagementEndpoint::class.java)
 
@@ -78,7 +78,9 @@ class ManagementEndpoint(val url: String, private val endpointType: Endpoint) {
         } catch (e: Exception) {
             toManagementEndpointResultAsError(
                     textResponse = "Failed to parse Json",
-                    exception = e
+                    code = "INVALID_FORMAT",
+                    rootCause = e.message
+
             )
         }
     }
@@ -147,18 +149,32 @@ class ManagementInterface internal constructor(
     val infoEndpoint: ManagementEndpoint? = null,
     val envEndpoint: ManagementEndpoint? = null,
     val healthEndpoint: ManagementEndpoint? = null
+
 ) {
-    fun getHealthEndpointResult(): ManagementEndpointResult<HealthResponse>? =
+    fun getHealthEndpointResult(): ManagementEndpointResult<HealthResponse> =
             healthEndpoint?.findJsonResource(restTemplate, HealthResponseParser::parse)
+                    ?: toManagementEndpointResultLinkMissing(HEALTH)
 
-    fun getInfoEndpointResult(): ManagementEndpointResult<InfoResponse>? =
+    fun getInfoEndpointResult(): ManagementEndpointResult<InfoResponse> =
             infoEndpoint?.findJsonResource(restTemplate, InfoResponse::class)
+                    ?: toManagementEndpointResultLinkMissing(INFO)
 
-    fun getEnvEndpointResult(): ManagementEndpointResult<JsonNode>? =
+    fun getEnvEndpointResult(): ManagementEndpointResult<JsonNode> =
             envEndpoint?.findJsonResource(restTemplate, JsonNode::class)
+                    ?: toManagementEndpointResultLinkMissing(ENV)
 
     companion object {
-        fun create(restTemplate: RestTemplate, discoveryUrl: String): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
+        fun create(restTemplate: RestTemplate, host: String?, path: String?): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
+            if (host.isNullOrBlank()) {
+                return Pair(null, toManagementEndpointResultDiscoveryConfigError("Host address is missing")
+                )
+            } else if (path.isNullOrBlank()) {
+                return Pair(null, toManagementEndpointResultDiscoveryConfigError("Management path is missing")
+                )
+            }
+
+            // TODO Url composition must be more robust.
+            val discoveryUrl = "http://$host$path"
             val discoveryEndpoint = ManagementEndpoint(discoveryUrl, DISCOVERY)
             val response = discoveryEndpoint.findJsonResource(restTemplate, ::parseManagementResponse)
 
@@ -171,6 +187,24 @@ class ManagementInterface internal constructor(
                         healthEndpoint = links.linkFor(HEALTH)?.let { url -> ManagementEndpoint(url, HEALTH) }
                 ), response)
             } ?: Pair(null, response)
+        }
+
+        private fun <T : Any> toManagementEndpointResultLinkMissing(endpointType: EndpointType): ManagementEndpointResult<T> {
+            return ManagementEndpointResult(
+                    textResponse = "Unable to invoke management endpoint",
+                    rootCause = "Unknown endpoint link",
+                    endpointType = endpointType,
+                    code = "LINK_MISSING"
+            )
+        }
+
+        private fun <T : Any> toManagementEndpointResultDiscoveryConfigError(cause: String): ManagementEndpointResult<T> {
+            return ManagementEndpointResult(
+                    textResponse = "Unable to invoke management endpoint",
+                    rootCause = cause,
+                    endpointType = EndpointType.DISCOVERY,
+                    code = "ERROR_CONFIGURATION"
+            )
         }
     }
 }

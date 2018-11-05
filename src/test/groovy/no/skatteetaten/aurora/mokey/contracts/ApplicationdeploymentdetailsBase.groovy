@@ -1,5 +1,7 @@
 package no.skatteetaten.aurora.mokey.contracts
 
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
+
 import java.time.Instant
 
 import org.intellij.lang.annotations.Language
@@ -22,7 +24,6 @@ import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.mokey.service.ManagementEndpoint
-import no.skatteetaten.aurora.utils.Right
 
 class ApplicationdeploymentdetailsBase extends AbstractContractBase {
 
@@ -60,7 +61,8 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
     def podDetails = new PodDetails(
         new OpenShiftPodExcerpt(details.name as String, details.status as String, details.restartCount as Integer,
             details.ready as Boolean, '', details.startTime as String, ''),
-        new Right(new ManagementData(null, new Right(infoResponse), new Right()))
+        new ManagementData(
+                new ManagementEndpointResult())
     )
 
     def publicData = new ApplicationPublicData(

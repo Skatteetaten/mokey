@@ -2,7 +2,7 @@ package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
-import no.skatteetaten.aurora.mokey.model.Endpoint
+import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
@@ -61,9 +61,7 @@ class ApplicationDeploymentDetailsResource(
     val imageDetails: ImageDetailsResource?,
     val podResources: List<PodResource>,
     val dependencies: Map<String, String> = emptyMap(),
-    val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
-
-    val errors: List<ManagementEndpointErrorResource> = emptyList()
+    val applicationDeploymentCommand: ApplicationDeploymentCommandResource
 ) : IdentifiedHalResource(id)
 
 data class ImageDetailsResource(
@@ -117,7 +115,7 @@ data class AuroraConfigRefResource(
 data class ManagementEndpointErrorResource(
     val podName: String,
     val message: String,
-    val endpoint: Endpoint,
+    val endpoint: EndpointType,
     val url: String?,
     val code: String,
     val rootCause: String? = null

@@ -72,7 +72,7 @@ data class PodDetails(
 
 data class ManagementEndpointError(
     val message: String,
-    val endpointType: Endpoint,
+    val endpointType: EndpointType,
     val code: String,
     val rootCause: String? = null,
     val url: String? = null
@@ -89,7 +89,7 @@ data class ManagementEndpointResult<T>(
     val deserialized: T? = null,
     val textResponse: String,
     val createdAt: Instant = Instant.now(),
-    val endpointType: Endpoint,
+    val endpointType: EndpointType,
     val code: String,
     val rootCause: String? = null,
     val url: String? = null
