@@ -6,6 +6,7 @@ import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.HealthResponse
+import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.service.HealthResponseParser
@@ -18,18 +19,18 @@ data class ManagementEndpointResultDataBuilder<T>(
     val code: String = "OK",
     val createdAt: Instant = Instant.now(),
     val endpointType: EndpointType,
-    val rootCause: String? = null,
+    val errorMessage: String? = null,
     val url: String? = null
 ) {
     fun build(): ManagementEndpointResult<T> =
             ManagementEndpointResult(
                     deserialized = deserialized,
-                    textResponse = textResponse,
-                    code = code,
+                    response = HttpResponse(content = textResponse, code = 200),
                     createdAt = createdAt,
                     endpointType = endpointType,
-                    rootCause = rootCause,
-                    url = url
+                    errorMessage = errorMessage,
+                    url = url,
+                    resultCode = "OK"
             )
 }
 
@@ -70,24 +71,24 @@ class ManagementDataBuilder(
 ) {
     private val info: ManagementEndpointResult<InfoResponse> = ManagementEndpointResult(
             deserialized = jacksonObjectMapper().readValue(infoResponseJson, InfoResponse::class.java),
-            textResponse = infoResponseJson,
-            code = "OK",
+            response = HttpResponse(content = infoResponseJson, code = 200),
+            resultCode = "OK",
             url = "http://localhost:8081/info",
             endpointType = EndpointType.INFO
     )
 
     private val health: ManagementEndpointResult<HealthResponse> = ManagementEndpointResult(
             deserialized = HealthResponseParser.parse(jacksonObjectMapper().readValue(healthResponseJson, JsonNode::class.java)),
-            textResponse = healthResponseJson,
-            code = "OK",
+            response = HttpResponse(content = healthResponseJson, code = 200),
+            resultCode = "OK",
             url = "http://localhost:8081/health",
             endpointType = EndpointType.HEALTH
     )
 
     private val links: ManagementEndpointResult<ManagementLinks> = ManagementEndpointResult(
             deserialized = ManagementLinks.parseManagementResponse(jacksonObjectMapper().readValue(linksResponseJson, JsonNode::class.java)),
-            textResponse = linksResponseJson,
-            code = "OK",
+            response = HttpResponse(content = linksResponseJson, code = 200),
+            resultCode = "OK",
             url = "http://localhost:8081/actuator",
             endpointType = EndpointType.DISCOVERY
     )

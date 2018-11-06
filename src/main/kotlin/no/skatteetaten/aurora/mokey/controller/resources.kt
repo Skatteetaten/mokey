@@ -2,7 +2,6 @@ package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
-import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
@@ -86,7 +85,9 @@ class PodResource(
 data class HttpResponseResource(
     val hasResponse: Boolean,
     val textResponse: String? = null,
-    val createdAt: Instant? = null,
+    val httpCode: Int? = null,
+    val createdAt: Instant = Instant.now(),
+    val url: String? = null,
     val error: ManagementEndpointErrorResource? = null
 )
 
@@ -113,12 +114,8 @@ data class AuroraConfigRefResource(
 )
 
 data class ManagementEndpointErrorResource(
-    val podName: String,
-    val message: String,
-    val endpoint: EndpointType,
-    val url: String?,
     val code: String,
-    val rootCause: String? = null
+    val message: String? = null
 ) {
     val type: String = ManagementEndpointError::class.simpleName!!
 }

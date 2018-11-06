@@ -60,13 +60,13 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         val infoResponse = applicationData.firstInfoResponse
 
         return ApplicationDeploymentDetailsResource(
-            id = applicationData.applicationDeploymentId,
-            buildTime = infoResponse?.buildTime,
-            gitInfo = toGitInfoResource(infoResponse),
-            imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
-            podResources = applicationData.pods.map { toPodResource(applicationData, it) },
-            dependencies = infoResponse?.dependencies ?: emptyMap(),
-            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand)
+                id = applicationData.applicationDeploymentId,
+                buildTime = infoResponse?.buildTime,
+                gitInfo = toGitInfoResource(infoResponse),
+                imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
+                podResources = applicationData.pods.map { toPodResource(applicationData, it) },
+                dependencies = infoResponse?.dependencies ?: emptyMap(),
+                applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand)
         ).apply {
 
             this.add(createApplicationLinks(applicationData))
@@ -74,7 +74,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     }
 
     private fun toImageDetailsResource(imageDetails: ImageDetails) =
-        ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference)
+            ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference)
 
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
         val pod = podDetails.openShiftPodExcerpt
@@ -86,41 +86,57 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         val consoleLinks = linkBuilder.openShiftConsoleLinks(pod.name, applicationData.namespace)
 
-        val managementResponsesResource = podDetails.managementData.let {
-            managementData ->
-                val links = toHttpResponseResource(managementData.links, podDetails)
-                val health = managementData.health?.let { toHttpResponseResource(managementData.health, podDetails) }
-                val info = managementData.info?.let { toHttpResponseResource(managementData.info, podDetails) }
-                val env = managementData.env?.let { toHttpResponseResource(managementData.env, podDetails) }
+        val managementResponsesResource = podDetails.managementData.let { managementData ->
+            val links = toHttpResponseResource(managementData.links)
+            val health = managementData.health?.let { toHttpResponseResource(managementData.health) }
+            val info = managementData.info?.let { toHttpResponseResource(managementData.info) }
+            val env = managementData.env?.let { toHttpResponseResource(managementData.env) }
 
-                ManagementResponsesResource(links, health, info, env)
-            }
+            ManagementResponsesResource(links, health, info, env)
+        }
 
         return PodResource(
-            pod.name,
-            pod.status,
-            pod.restartCount,
-            pod.ready,
-            pod.startTime,
-            managementResponsesResource
+                pod.name,
+                pod.status,
+                pod.restartCount,
+                pod.ready,
+                pod.startTime,
+                managementResponsesResource
         ).apply {
             this.add(podLinks + consoleLinks)
         }
     }
 
-    private fun <T> toHttpResponseResource(result: ManagementEndpointResult<T>, podDetails: PodDetails): HttpResponseResource {
-        return if (result.isSuccess) {
-            HttpResponseResource(hasResponse = true, textResponse = result.textResponse, createdAt = result.createdAt)
-        } else {
-            HttpResponseResource(hasResponse = false, error = ManagementEndpointErrorResource(
-                    podName = podDetails.openShiftPodExcerpt.name,
-                    message = result.textResponse,
-                    endpoint = result.endpointType,
+    private fun <T> toHttpResponseResource(result: ManagementEndpointResult<T>): HttpResponseResource {
+        return result.response?.let { response ->
+            HttpResponseResource(
+                    hasResponse = true,
+                    textResponse = response.content,
+                    httpCode = response.code,
+                    createdAt = result.createdAt,
                     url = result.url,
-                    code = result.code,
-                    rootCause = result.rootCause
-            ))
-        }
+                    error = if (! result.isSuccess) {
+                        ManagementEndpointErrorResource(
+                                message = result.errorMessage,
+                                code = result.resultCode
+                        )
+                    } else {
+                        null
+                    }
+            )
+        } ?: HttpResponseResource(
+                hasResponse = false,
+                createdAt = result.createdAt,
+                url = result.url,
+                error = if (! result.isSuccess) {
+                    ManagementEndpointErrorResource(
+                            message = result.errorMessage,
+                            code = result.resultCode
+                    )
+                } else {
+                    null
+                }
+        )
     }
 
     private fun toGitInfoResource(aPod: InfoResponse?) =

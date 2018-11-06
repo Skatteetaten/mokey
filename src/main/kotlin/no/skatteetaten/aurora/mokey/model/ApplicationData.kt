@@ -86,17 +86,22 @@ data class ManagementData(
 )
 
 data class ManagementEndpointResult<T>(
-    val deserialized: T? = null,
-    val textResponse: String,
-    val createdAt: Instant = Instant.now(),
     val endpointType: EndpointType,
-    val code: String,
-    val rootCause: String? = null,
+    val resultCode: String,
+    val createdAt: Instant = Instant.now(),
+    val deserialized: T? = null,
+    val response: HttpResponse? = null,
+    val errorMessage: String? = null,
     val url: String? = null
 ) {
     val isSuccess: Boolean
-        get() = code == "OK"
+        get() = resultCode == "OK"
 }
+
+data class HttpResponse(
+    val content: String,
+    val code: Int
+)
 
 data class OpenShiftPodExcerpt(
     val name: String,
