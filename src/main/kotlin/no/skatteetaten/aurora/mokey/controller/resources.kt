@@ -2,7 +2,6 @@ package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
@@ -116,9 +115,7 @@ data class AuroraConfigRefResource(
 data class ManagementEndpointErrorResource(
     val code: String,
     val message: String? = null
-) {
-    val type: String = ManagementEndpointError::class.simpleName!!
-}
+)
 
 fun <T : ResourceSupport> resourceClassNameToRelName(kClass: KClass<T>): String =
     kClass.simpleName!!.replace("Resource$".toRegex(), "")

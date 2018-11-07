@@ -70,14 +70,6 @@ data class PodDetails(
     val managementData: ManagementData
 )
 
-data class ManagementEndpointError(
-    val message: String,
-    val endpointType: EndpointType,
-    val code: String,
-    val rootCause: String? = null,
-    val url: String? = null
-)
-
 data class ManagementData(
     val links: ManagementEndpointResult<ManagementLinks>,
     val info: ManagementEndpointResult<InfoResponse>? = null,
