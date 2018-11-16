@@ -9,7 +9,6 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.HealthStatusDetail
 import no.skatteetaten.aurora.mokey.model.PodDetails
-import no.skatteetaten.aurora.utils.value
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
@@ -90,8 +89,8 @@ class AuroraStatusCalculator {
 
     fun findPodStatuses(pods: List<PodDetails>): List<HealthStatusDetail> {
         return pods.mapNotNull { pod ->
-            pod.managementData.value?.health?.value?.let {
-                val statusLevel = fromApplicationStatus(it.deserialized.status.name)
+            pod.managementData.health?.deserialized?.let {
+                val statusLevel = fromApplicationStatus(it.status.name)
                 val podName = pod.openShiftPodExcerpt.name
                 HealthStatusDetail(statusLevel, "POD_HEALTH_CHECK", podName)
             }

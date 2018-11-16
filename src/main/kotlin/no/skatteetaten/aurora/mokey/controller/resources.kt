@@ -2,8 +2,6 @@ package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
-import no.skatteetaten.aurora.mokey.model.Endpoint
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointError
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
@@ -61,9 +59,7 @@ class ApplicationDeploymentDetailsResource(
     val imageDetails: ImageDetailsResource?,
     val podResources: List<PodResource>,
     val dependencies: Map<String, String> = emptyMap(),
-    val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
-
-    val errors: List<ManagementEndpointErrorResource> = emptyList()
+    val applicationDeploymentCommand: ApplicationDeploymentCommandResource
 ) : IdentifiedHalResource(id)
 
 data class ImageDetailsResource(
@@ -86,13 +82,19 @@ class PodResource(
 ) : ResourceSupport()
 
 data class HttpResponseResource(
-    val textResponse: String,
-    val createdAt: Instant
+    val hasResponse: Boolean,
+    val textResponse: String? = null,
+    val httpCode: Int? = null,
+    val createdAt: Instant = Instant.now(),
+    val url: String? = null,
+    val error: ManagementEndpointErrorResource? = null
 )
 
 data class ManagementResponsesResource(
+    val links: HttpResponseResource,
     val health: HttpResponseResource?,
-    val info: HttpResponseResource?
+    val info: HttpResponseResource?,
+    val env: HttpResponseResource?
 )
 
 data class ApplicationDeploymentCommandResource(
@@ -111,15 +113,9 @@ data class AuroraConfigRefResource(
 )
 
 data class ManagementEndpointErrorResource(
-    val podName: String,
-    val message: String,
-    val endpoint: Endpoint,
-    val url: String?,
     val code: String,
-    val rootCause: String? = null
-) {
-    val type: String = ManagementEndpointError::class.simpleName!!
-}
+    val message: String? = null
+)
 
 fun <T : ResourceSupport> resourceClassNameToRelName(kClass: KClass<T>): String =
     kClass.simpleName!!.replace("Resource$".toRegex(), "")

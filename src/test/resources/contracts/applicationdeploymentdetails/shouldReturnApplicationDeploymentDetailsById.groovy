@@ -3,6 +3,7 @@ package applicationdeploymentdetails
 import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
+  ignored()
   request {
     method 'GET'
     url $(

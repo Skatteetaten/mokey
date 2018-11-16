@@ -6,9 +6,8 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.PodDetails
-import no.skatteetaten.aurora.mokey.model.PodError
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import no.skatteetaten.aurora.utils.value
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
@@ -58,18 +57,16 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
     override fun toResource(applicationData: ApplicationData): ApplicationDeploymentDetailsResource {
 
-        val errorResources = applicationData.errors.map(this::toErrorResource)
         val infoResponse = applicationData.firstInfoResponse
 
         return ApplicationDeploymentDetailsResource(
-            id = applicationData.applicationDeploymentId,
-            buildTime = infoResponse?.buildTime,
-            gitInfo = toGitInfoResource(infoResponse),
-            imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
-            podResources = applicationData.pods.map { toPodResource(applicationData, it) },
-            dependencies = infoResponse?.dependencies ?: emptyMap(),
-            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
-            errors = errorResources
+                id = applicationData.applicationDeploymentId,
+                buildTime = infoResponse?.buildTime,
+                gitInfo = toGitInfoResource(infoResponse),
+                imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
+                podResources = applicationData.pods.map { toPodResource(applicationData, it) },
+                dependencies = infoResponse?.dependencies ?: emptyMap(),
+                applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand)
         ).apply {
 
             this.add(createApplicationLinks(applicationData))
@@ -77,34 +74,69 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     }
 
     private fun toImageDetailsResource(imageDetails: ImageDetails) =
-        ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference)
+            ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference)
 
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
         val pod = podDetails.openShiftPodExcerpt
 
-        val podLinks = podDetails.managementData.value?.let { managementData ->
-            val podManagementLinks = managementData.info.value?.deserialized?.podLinks
+        val podLinks = podDetails.managementData.let { managementData ->
+            val podManagementLinks = managementData.info?.deserialized?.podLinks
             podManagementLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
         } ?: listOf()
 
         val consoleLinks = linkBuilder.openShiftConsoleLinks(pod.name, applicationData.namespace)
 
-        val managementResponsesResource = podDetails.managementData.value
-            ?.let { managementData ->
-                val health = managementData.health.value?.let { HttpResponseResource(it.textResponse, it.createdAt) }
-                val info = managementData.info.value?.let { HttpResponseResource(it.textResponse, it.createdAt) }
-                ManagementResponsesResource(health, info)
-            }
+        val managementResponsesResource = podDetails.managementData.let { managementData ->
+            val links = toHttpResponseResource(managementData.links)
+            val health = managementData.health?.let { toHttpResponseResource(managementData.health) }
+            val info = managementData.info?.let { toHttpResponseResource(managementData.info) }
+            val env = managementData.env?.let { toHttpResponseResource(managementData.env) }
+
+            ManagementResponsesResource(links, health, info, env)
+        }
+
         return PodResource(
-            pod.name,
-            pod.status,
-            pod.restartCount,
-            pod.ready,
-            pod.startTime,
-            managementResponsesResource
+                pod.name,
+                pod.status,
+                pod.restartCount,
+                pod.ready,
+                pod.startTime,
+                managementResponsesResource
         ).apply {
             this.add(podLinks + consoleLinks)
         }
+    }
+
+    private fun <T> toHttpResponseResource(result: ManagementEndpointResult<T>): HttpResponseResource {
+        return result.response?.let { response ->
+            HttpResponseResource(
+                    hasResponse = true,
+                    textResponse = response.content,
+                    httpCode = response.code,
+                    createdAt = result.createdAt,
+                    url = result.url,
+                    error = if (! result.isSuccess) {
+                        ManagementEndpointErrorResource(
+                                message = result.errorMessage,
+                                code = result.resultCode
+                        )
+                    } else {
+                        null
+                    }
+            )
+        } ?: HttpResponseResource(
+                hasResponse = false,
+                createdAt = result.createdAt,
+                url = result.url,
+                error = if (! result.isSuccess) {
+                    ManagementEndpointErrorResource(
+                            message = result.errorMessage,
+                            code = result.resultCode
+                    )
+                } else {
+                    null
+                }
+        )
     }
 
     private fun toGitInfoResource(aPod: InfoResponse?) =
@@ -123,21 +155,6 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
                 deploymentCommand.auroraConfig.resolvedRef
             )
         )
-
-    private fun toErrorResource(podError: PodError): ManagementEndpointErrorResource {
-        val podName = podError.podDetails.openShiftPodExcerpt.name
-        return podError.error
-            .let {
-                ManagementEndpointErrorResource(
-                    podName,
-                    it.message,
-                    it.endpointType,
-                    it.url,
-                    it.code,
-                    it.rootCause
-                )
-            }
-    }
 
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 
@@ -192,5 +209,5 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 private val ApplicationData.firstInfoResponse: InfoResponse?
     get() {
         val pod = this.pods.firstOrNull()
-        return pod?.managementData?.value?.info?.value?.deserialized
+        return pod?.managementData?.info?.deserialized
     }

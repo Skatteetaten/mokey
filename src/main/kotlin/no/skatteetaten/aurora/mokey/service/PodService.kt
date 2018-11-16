@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.Pod
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service
@@ -22,7 +23,7 @@ class PodService(
     }
 
     companion object {
-        fun createPodDetails(pod: Pod, managementResult: ManagementResult): PodDetails {
+        fun createPodDetails(pod: Pod, managementResult: ManagementData): PodDetails {
             val containerStatus = pod.status.containerStatuses.firstOrNull()
 
             val podStateReason = containerStatus?.state?.waiting?.reason
