@@ -17,7 +17,8 @@ class AuroraStatusCalculatorTest {
         "Complete, 1, 2, OBSERVE, TOO_MANY_PODS",
         "Complete, 0, 0, OFF, OFF",
         "Complete, 2, 1, OBSERVE, TOO_FEW_PODS",
-        "Complete, 2, 2, HEALTHY, ''"
+        "Complete, 2, 2, HEALTHY, ''",
+        "Running, 1, 2, HEALTHY, 'DEPLOYMENT_IN_PROGRESS'"
     )
     fun `Calculate status`(
         lastDeployment: String,
@@ -27,7 +28,11 @@ class AuroraStatusCalculatorTest {
         expectedComment: String
     ) {
         val deployDetails = DeployDetails(lastDeployment, availableReplicas, targetReplicas)
-        val auroraStatus = AuroraStatusCalculator().calculateStatus(deployDetails, emptyList())
+        val auroraStatus = AuroraStatusCalculator(
+            avergageRestartObserveThreshold = 20,
+            avergageRestartErrorThreshold = 100,
+            differentDeploymentHourThreshold = 2
+        ).calculateStatus(deployDetails, emptyList())
         assert(auroraStatus.level).isEqualTo(AuroraStatusLevel.valueOf(expectedLevel))
         assert(auroraStatus.comment).isEqualTo(expectedComment)
     }
