@@ -28,7 +28,11 @@ boober-api-url: "http://boober"
 metrics-hostname: "http://metrics.skead.no"
 splunk-hostname: "https://splunk.skead.no"
 
-
+management:
+    metrics:
+        enable:
+            http:
+              client: false
 ---
 spring:
     profiles: local
