@@ -97,12 +97,19 @@ data class HttpResponse(
 
 data class OpenShiftPodExcerpt(
     val name: String,
-    val status: String,
-    val restartCount: Int = 0,
-    val ready: Boolean = false,
+    val phase: String,
     val podIP: String?,
     val startTime: String?,
-    val deployment: String?
+    val deployment: String?,
+    val containers: List<OpenShiftContainerExcerpt>
+)
+
+data class OpenShiftContainerExcerpt(
+    val name: String,
+    val state: String,
+    val image: String,
+    val restartCount: Int = 0,
+    val ready: Boolean = false
 )
 
 data class ImageDetails(

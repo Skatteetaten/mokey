@@ -96,12 +96,18 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         }
 
         return PodResource(
-                pod.name,
-                pod.status,
-                pod.restartCount,
-                pod.ready,
-                pod.startTime,
-                managementResponsesResource
+            name = pod.name,
+            status = pod.phase,
+            startTime = pod.startTime,
+            managementResponses = managementResponsesResource,
+            containers = pod.containers.map{
+                ContainerResource(
+                    name=it.name,
+                    state=it.state,
+                    restartCount = it.restartCount,
+                    image=it.image,
+                    ready = it.ready)
+            }
         ).apply {
             this.add(podLinks + consoleLinks)
         }

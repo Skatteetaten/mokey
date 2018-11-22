@@ -74,12 +74,19 @@ data class GitInfoResource(
 
 class PodResource(
     val name: String,
-    val status: String,
-    val restartCount: Int,
-    val ready: Boolean,
+    val status:String,
     val startTime: String?,
-    val managementResponses: ManagementResponsesResource?
+    val managementResponses: ManagementResponsesResource?,
+    val containers: List<ContainerResource>
 ) : ResourceSupport()
+
+data class ContainerResource(
+    val name: String,
+    val state: String,
+    val image: String,
+    val restartCount: Int = 0,
+    val ready: Boolean = false
+)
 
 data class HttpResponseResource(
     val hasResponse: Boolean,

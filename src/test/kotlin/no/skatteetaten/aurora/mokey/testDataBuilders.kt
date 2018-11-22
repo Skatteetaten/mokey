@@ -216,6 +216,7 @@ data class PodDataBuilder(
                     newContainerStatus {
                         restartCount = 1
                         ready = true
+                        name= podName
                         state = newContainerState {
                             waiting {
                                 reason = "reason"
@@ -229,17 +230,19 @@ data class PodDataBuilder(
 
 data class PodDetailsDataBuilder(
     val name: String = "name",
-    val status: String = "status",
+    val status: String = "phase",
     val managementDataBuilder: ManagementDataBuilder = ManagementDataBuilder()
 ) {
     fun build(): PodDetails {
         return PodDetails(
             OpenShiftPodExcerpt(
                 name = name,
-                status = status,
+                phase = status,
                 deployment = "deployment",
                 podIP = "127.0.0.1",
-                startTime = ""
+                startTime = "",
+                containers = emptyList()
+
             ),
             managementDataBuilder.build()
         )

@@ -65,18 +65,18 @@ class ManagementDataServiceTest {
 }"""
 
     private val healthResponse = """{
-  "status": "UP",
+  "phase": "UP",
   "atsServiceHelse": {
-    "status": "UP"
+    "phase": "UP"
   },
   "diskSpace": {
-    "status": "UP",
+    "phase": "UP",
     "total": 10718543872,
     "free": 10508611584,
     "threshold": 10485760
   },
   "db": {
-    "status": "UP",
+    "phase": "UP",
     "database": "Mydb",
     "hello": "Hello"
   }

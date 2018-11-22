@@ -18,18 +18,18 @@ class HealthResponseParserTest {
     fun `parse flat spring-boot 1-X health endpoint response`() {
         @Language("JSON")
         val json = """{
-  "status": "UP",
+  "phase": "UP",
   "atsServiceHelse": {
-    "status": "UP"
+    "phase": "UP"
   },
   "diskSpace": {
-    "status": "UP",
+    "phase": "UP",
     "total": 10718543872,
     "free": 10508611584,
     "threshold": 10485760
   },
   "db": {
-    "status": "UP",
+    "phase": "UP",
     "database": "Oracle",
     "hello": "Hello"
   }
@@ -67,10 +67,10 @@ class HealthResponseParserTest {
     fun `parse nested spring-boot 2-X health endpoint response`() {
         @Language("JSON")
         val json = """{
-  "status": "UP",
+  "phase": "UP",
   "details": {
     "diskSpace": {
-      "status": "UP",
+      "phase": "UP",
       "details": {
         "total": 10718543872,
         "free": 10502053888,
@@ -78,7 +78,7 @@ class HealthResponseParserTest {
       }
     },
     "db": {
-      "status": "UP",
+      "phase": "UP",
       "details": {
         "database": "Oracle",
         "hello": "Hello"

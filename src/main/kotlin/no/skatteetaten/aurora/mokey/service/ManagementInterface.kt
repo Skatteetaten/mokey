@@ -201,7 +201,7 @@ object HealthResponseParser {
 
     enum class HealthResponseFormat { SPRING_BOOT_1X, SPRING_BOOT_2X }
 
-    private const val STATUS_PROPERTY = "status"
+    private const val STATUS_PROPERTY = "phase"
     private const val DETAILS_PROPERTY = "details"
 
     fun parse(json: JsonNode): HealthResponse = when (json.format) {
