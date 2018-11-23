@@ -100,12 +100,13 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             status = pod.phase,
             startTime = pod.startTime,
             managementResponses = managementResponsesResource,
-            containers = pod.containers.map{
+            containers = pod.containers.map {
+                // TODO: hva gir det mening å eksponere ut her?
                 ContainerResource(
-                    name=it.name,
-                    state=it.state,
+                    name = it.name,
+                    state = it.state,
                     restartCount = it.restartCount,
-                    image=it.image,
+                    image = it.image,
                     ready = it.ready)
             }
         ).apply {

@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.service
 
-import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.Pod
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ManagementData
@@ -27,10 +26,8 @@ class PodService(
 
     companion object {
         fun createPodDetails(pod: Pod, managementResult: ManagementData): PodDetails {
-            // hente ut alle typer containere og container phase for hver av dem
-
             val containers = pod.spec.containers.mapNotNull { container ->
-                crateContainerExcerpt(pod, container)
+                crateContainerExcerpt(pod, container.name)
             }
 
             return PodDetails(
@@ -48,9 +45,9 @@ class PodService(
 
         private fun crateContainerExcerpt(
             pod: Pod,
-            container: Container
+            containerName: String
         ): OpenShiftContainerExcerpt? {
-            val status = pod.status.containerStatuses.first { it.name == container.name } ?: return null
+            val status = pod.status.containerStatuses.firstOrNull { it.name == containerName } ?: return null
 
             val state = status.state.terminated?.let {
                 "terminated"
@@ -59,7 +56,7 @@ class PodService(
             } ?: "running"
 
             return OpenShiftContainerExcerpt(
-                name = container.name,
+                name = containerName,
                 image = status.imageID.substringAfterLast("sha256:"),
                 ready = status.ready,
                 restartCount = status.restartCount,

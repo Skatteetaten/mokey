@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey
 
 import com.fkorotkov.kubernetes.metadata
+import com.fkorotkov.kubernetes.newContainer
 import com.fkorotkov.kubernetes.newContainerState
 import com.fkorotkov.kubernetes.newContainerStatus
 import com.fkorotkov.kubernetes.newObjectMeta
@@ -8,7 +9,10 @@ import com.fkorotkov.kubernetes.newPod
 import com.fkorotkov.kubernetes.newRawExtension
 import com.fkorotkov.kubernetes.newReplicationController
 import com.fkorotkov.kubernetes.newService
+import com.fkorotkov.kubernetes.running
+import com.fkorotkov.kubernetes.spec
 import com.fkorotkov.kubernetes.status
+import com.fkorotkov.kubernetes.terminated
 import com.fkorotkov.kubernetes.waiting
 import com.fkorotkov.openshift.from
 import com.fkorotkov.openshift.image
@@ -23,6 +27,7 @@ import com.fkorotkov.openshift.newRouteIngress
 import com.fkorotkov.openshift.newRouteIngressCondition
 import com.fkorotkov.openshift.spec
 import com.fkorotkov.openshift.status
+import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
@@ -197,9 +202,42 @@ data class ReplicationControllerDataBuilder(val phase: String = "deploymentPhase
     fun build(): ReplicationController = newReplicationController { deploymentPhase = phase }
 }
 
+enum class ContainerStatuses {
+    RUNNING,
+    WAITING,
+    TERMINAGED
+}
+
+data class ContainerStatusBuilder(
+    val containerName: String = "name-java",
+    val containerRestart: Int = 1,
+    val contaienerReady: Boolean = true,
+    val containerStatus: ContainerStatuses = ContainerStatuses.WAITING,
+    val containerImageID: String = "docker-pullable://docker-registry.aurora.sits.no:5000/something@sha256:0c7e422b9d6c7be89a676e8f670c9292862cc06fc8b2fd656d2f6025dee411dc"
+) {
+
+    fun build() =
+        newContainerStatus {
+            restartCount = containerRestart
+            ready = contaienerReady
+            name = containerName
+            imageID = containerImageID
+            state = newContainerState {
+                when (containerStatus) {
+                    ContainerStatuses.RUNNING -> running {
+                        startedAt = "now"
+                    }
+                    ContainerStatuses.WAITING -> waiting { reason = "waiting" }
+                    ContainerStatuses.TERMINAGED -> terminated { reason = "terminated" }
+                }
+            }
+        }
+}
+
 data class PodDataBuilder(
     val podName: String = "name",
-    val ip: String = "127.0.0.1"
+    val ip: String = "127.0.0.1",
+    val containerList: List<ContainerStatus> = listOf(ContainerStatusBuilder().build())
 ) {
 
     fun build() =
@@ -208,22 +246,18 @@ data class PodDataBuilder(
                 name = podName
                 labels = mapOf("deployment" to "deployment")
             }
+            spec {
+                containers = containerList.map {
+                    newContainer {
+                        name = it.name
+                    }
+                }
+            }
             status {
                 podIP = ip
                 startTime = ""
                 phase = "phase"
-                containerStatuses = listOf(
-                    newContainerStatus {
-                        restartCount = 1
-                        ready = true
-                        name= podName
-                        state = newContainerState {
-                            waiting {
-                                reason = "reason"
-                            }
-                        }
-                    }
-                )
+                containerStatuses = containerList
             }
         }
 }
@@ -312,8 +346,8 @@ data class ApplicationDataBuilder(
                 namespace = namespace,
                 deployTag = "",
                 dockerImageRepo = null,
-                    releaseTo = "releaseTo",
-    time = Instant.EPOCH
+                releaseTo = "releaseTo",
+                time = Instant.EPOCH
             )
         )
 }

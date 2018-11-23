@@ -119,7 +119,7 @@ class AuroraStatusCalculator(
             return 0
         }
 
-        val totalRestarts = ap.sumBy { it.openShiftPodExcerpt.restartCount }
+        val totalRestarts = ap.sumBy { it.openShiftPodExcerpt.containers.sumBy { c -> c.restartCount } }
         return totalRestarts / ap.size
     }
 

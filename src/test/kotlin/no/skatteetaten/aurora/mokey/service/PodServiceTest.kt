@@ -58,6 +58,6 @@ class PodServiceTest {
 
         assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
         assert(podDetails.managementData).isEqualTo(managementData)
-        assert(podDetails.openShiftPodExcerpt.phase).isEqualTo("reason")
+        assert(podDetails.openShiftPodExcerpt.phase).isEqualTo("phase")
     }
 }
