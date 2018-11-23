@@ -74,7 +74,7 @@ data class GitInfoResource(
 
 class PodResource(
     val name: String,
-    val status: String,
+    val phase: String,
     val startTime: String?,
     val managementResponses: ManagementResponsesResource?,
     val containers: List<ContainerResource>

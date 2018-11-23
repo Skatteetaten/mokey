@@ -31,7 +31,7 @@ class ApplicationDataServiceCacheDecoratorTest {
         publicData = ApplicationPublicData(
             applicationId = app1Id,
             applicationDeploymentId = app1Id,
-            auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
+            auroraStatus = AuroraStatus(HEALTHY, "", setOf()),
             deployTag = "default",
             applicationName = "testapp",
             applicationDeploymentName = "aurora",

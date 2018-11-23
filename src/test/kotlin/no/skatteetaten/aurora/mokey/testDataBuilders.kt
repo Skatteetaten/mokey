@@ -44,6 +44,7 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ImageDetails
+import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.apache.commons.codec.digest.DigestUtils
@@ -205,14 +206,14 @@ data class ReplicationControllerDataBuilder(val phase: String = "deploymentPhase
 enum class ContainerStatuses {
     RUNNING,
     WAITING,
-    TERMINAGED
+    TERMINATED
 }
 
 data class ContainerStatusBuilder(
     val containerName: String = "name-java",
     val containerRestart: Int = 1,
     val contaienerReady: Boolean = true,
-    val containerStatus: ContainerStatuses = ContainerStatuses.WAITING,
+    val containerStatus: ContainerStatuses = ContainerStatuses.RUNNING,
     val containerImageID: String = "docker-pullable://docker-registry.aurora.sits.no:5000/something@sha256:0c7e422b9d6c7be89a676e8f670c9292862cc06fc8b2fd656d2f6025dee411dc"
 ) {
 
@@ -228,7 +229,7 @@ data class ContainerStatusBuilder(
                         startedAt = "now"
                     }
                     ContainerStatuses.WAITING -> waiting { reason = "waiting" }
-                    ContainerStatuses.TERMINAGED -> terminated { reason = "terminated" }
+                    ContainerStatuses.TERMINATED -> terminated { reason = "terminated" }
                 }
             }
         }
@@ -265,17 +266,20 @@ data class PodDataBuilder(
 data class PodDetailsDataBuilder(
     val name: String = "name",
     val status: String = "phase",
-    val managementDataBuilder: ManagementDataBuilder = ManagementDataBuilder()
+    val deployment: String = "deployment",
+    val startTime: Instant = Instant.EPOCH,
+    val managementDataBuilder: ManagementDataBuilder = ManagementDataBuilder(),
+    val containers: List<OpenShiftContainerExcerpt> = emptyList()
 ) {
     fun build(): PodDetails {
         return PodDetails(
             OpenShiftPodExcerpt(
                 name = name,
                 phase = status,
-                deployment = "deployment",
+                deployment = deployment,
                 podIP = "127.0.0.1",
-                startTime = "",
-                containers = emptyList()
+                startTime = startTime.toString(),
+                containers = containers
 
             ),
             managementDataBuilder.build()
@@ -341,7 +345,7 @@ data class ApplicationDataBuilder(
                 applicationDeploymentId = applicationDeploymentId,
                 applicationName = name,
                 applicationDeploymentName = name,
-                auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
+                auroraStatus = AuroraStatus(HEALTHY),
                 affiliation = affiliation,
                 namespace = namespace,
                 deployTag = "",

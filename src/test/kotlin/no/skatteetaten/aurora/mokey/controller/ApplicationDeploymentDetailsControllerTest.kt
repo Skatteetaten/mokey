@@ -56,7 +56,7 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
             applicationDeploymentId = "abc1234",
             applicationName = "name",
             applicationDeploymentName = "name-1",
-            auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
+            auroraStatus = AuroraStatus(HEALTHY, "", setOf()),
             affiliation = "affiliation",
             namespace = "namespace",
             deployTag = "deployTag",

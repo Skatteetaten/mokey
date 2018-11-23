@@ -97,7 +97,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         return PodResource(
             name = pod.name,
-            status = pod.phase,
+            phase = pod.phase,
             startTime = pod.startTime,
             managementResponses = managementResponsesResource,
             containers = pod.containers.map {

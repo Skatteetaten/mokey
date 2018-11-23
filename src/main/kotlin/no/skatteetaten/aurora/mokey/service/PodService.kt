@@ -57,7 +57,7 @@ class PodService(
 
             return OpenShiftContainerExcerpt(
                 name = containerName,
-                image = status.imageID.substringAfterLast("sha256:"),
+                image = status.imageID.substringAfterLast("docker-pullable://"),
                 ready = status.ready,
                 restartCount = status.restartCount,
                 state = state

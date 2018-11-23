@@ -8,6 +8,8 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
+import no.skatteetaten.aurora.mokey.ContainerStatusBuilder
+import no.skatteetaten.aurora.mokey.ContainerStatuses
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ManagementDataBuilder
 import no.skatteetaten.aurora.mokey.PodDataBuilder
@@ -59,5 +61,38 @@ class PodServiceTest {
         assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
         assert(podDetails.managementData).isEqualTo(managementData)
         assert(podDetails.openShiftPodExcerpt.phase).isEqualTo("phase")
+        assert(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("running")
+    }
+
+    @Test
+    fun `verify that waiting container is created from Pod and ManagementData`() {
+        val managementData = ManagementDataBuilder().build()
+        val podDataBuilder = PodDataBuilder(
+            containerList = listOf(
+                ContainerStatusBuilder(containerStatus = ContainerStatuses.WAITING).build()
+            )
+        )
+
+        val podDetails = PodService.createPodDetails(podDataBuilder.build(), managementData)
+
+        assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
+        assert(podDetails.managementData).isEqualTo(managementData)
+        assert(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("waiting")
+    }
+
+    @Test
+    fun `verify that terminating container is created from Pod and ManagementData`() {
+        val managementData = ManagementDataBuilder().build()
+        val podDataBuilder = PodDataBuilder(
+            containerList = listOf(
+                ContainerStatusBuilder(containerStatus = ContainerStatuses.TERMINATED).build()
+            )
+        )
+
+        val podDetails = PodService.createPodDetails(podDataBuilder.build(), managementData)
+
+        assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
+        assert(podDetails.managementData).isEqualTo(managementData)
+        assert(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("terminated")
     }
 }
