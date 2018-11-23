@@ -113,8 +113,7 @@ class AuroraStatusCalculatorTest {
                         HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "app1"),
                         HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "app2")
                     )
-                )
-                ,
+                ),
                 StatusCalculatorTestData(
                     pods = listOf(
                         PodDetailsDataBuilder(deployment = "name-1", startTime = Instant.EPOCH).build(),
