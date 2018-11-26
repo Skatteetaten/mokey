@@ -12,6 +12,7 @@ import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.DeployReplication
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.hamcrest.Matchers.`is`
 import org.junit.jupiter.api.Test
@@ -45,7 +46,15 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
 
     val applicationData = ApplicationData(
         pods = listOf(podDetailsDataBuilder.build()),
-        deployDetails = DeployDetails("Complete", 1, 1),
+        deployDetails = DeployDetails(
+            DeployReplication(
+                name = "name-1",
+                phase = "Complete",
+                availableReplicas = 1,
+                targetReplicas = 1,
+                containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
+            ), emptyList()
+        ),
         addresses = emptyList(),
         deploymentCommand = ApplicationDeploymentCommand(
             auroraConfig = AuroraConfigRef("affiliation", "master", "123"),
@@ -62,8 +71,8 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
             deployTag = "deployTag",
             auroraVersion = null,
             dockerImageRepo = null,
-                releaseTo = "releaseTo",
-    time = Instant.EPOCH
+            releaseTo = "releaseTo",
+            time = Instant.EPOCH
         )
     )
 

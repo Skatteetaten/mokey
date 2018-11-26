@@ -101,7 +101,6 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             startTime = pod.startTime,
             managementResponses = managementResponsesResource,
             containers = pod.containers.map {
-                // TODO: hva gir det mening å eksponere ut her?
                 ContainerResource(
                     name = it.name,
                     state = it.state,

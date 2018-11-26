@@ -123,4 +123,9 @@ data class ImageDetails(
         get() = dockerImageReference?.replace(Regex("@.*$"), "")
 }
 
-data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)
+data class DeployDetails(
+    val dc: DeployReplication?,
+    val deployReplications: List<DeployReplication>
+)
+
+data class DeployReplication(val name: String, val phase: String?, val availableReplicas: Int, val targetReplicas: Int, val containers: Map<String, String>)

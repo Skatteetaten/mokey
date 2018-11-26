@@ -10,6 +10,7 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OBSERVE
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.DeployReplication
 import no.skatteetaten.aurora.mokey.model.HealthStatusDetail
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
@@ -32,7 +33,15 @@ class AuroraStatusCalculatorTest {
     @MethodSource("calculatorProvider")
     fun `Calculate status`(input: StatusCalculatorTestData) {
         input.apply {
-            val deployDetails = DeployDetails(lastDeployment, availableReplicas, targetReplicas)
+            val deployDetails = DeployDetails(
+                DeployReplication(
+                    name = "name-1",
+                    phase = input.lastDeployment,
+                    availableReplicas = input.availableReplicas,
+                    targetReplicas = input.targetReplicas,
+                    containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
+                ), emptyList()
+            )
             val auroraStatus = calculator.calculateStatus(deployDetails, pods, time)
             assert(auroraStatus).isEqualTo(expected)
         }

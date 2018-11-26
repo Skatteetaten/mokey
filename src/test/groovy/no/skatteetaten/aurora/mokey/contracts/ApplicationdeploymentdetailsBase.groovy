@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.contracts
 
+import no.skatteetaten.aurora.mokey.model.DeployReplication
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 
 import java.time.Instant
@@ -80,7 +81,7 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
         '',
         [podDetails],
         new ImageDetails(dockerImageReference, Instant.parse(imageBuildTime), [:]),
-        new DeployDetails('', 1, 1), [],
+        new DeployDetails(new DeployReplication("name-1", "Complete", 1,1, ["name" : "docker-registry/group/name@sha256:hash"]), []),
         '',
         null,
         new ApplicationDeploymentCommand(

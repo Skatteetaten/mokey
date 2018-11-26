@@ -12,6 +12,7 @@ import com.fkorotkov.kubernetes.newService
 import com.fkorotkov.kubernetes.running
 import com.fkorotkov.kubernetes.spec
 import com.fkorotkov.kubernetes.status
+import com.fkorotkov.kubernetes.template
 import com.fkorotkov.kubernetes.terminated
 import com.fkorotkov.kubernetes.waiting
 import com.fkorotkov.openshift.from
@@ -43,6 +44,7 @@ import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.DeployReplication
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
@@ -198,9 +200,36 @@ data class ServiceBuilder(
         }
 }
 
-data class ReplicationControllerDataBuilder(val phase: String = "deploymentPhase") {
+data class ReplicationControllerDataBuilder(
+    val rcPhase: String = "deploymentPhase",
+    val rcReplicas: Int = 1,
+    val rcAvailableReplicas: Int = 1,
+    val rcContainers: Map<String, String> = mapOf("name-java" to "docker-registry/group/name@sha256:123hash")
+) {
 
-    fun build(): ReplicationController = newReplicationController { deploymentPhase = phase }
+    fun build(): ReplicationController =
+        newReplicationController {
+            deploymentPhase = rcPhase
+
+            spec {
+                replicas = rcReplicas
+
+                template {
+                    spec {
+                        containers = rcContainers.map {
+                            newContainer {
+                                name = it.key
+                                image = it.value
+                            }
+                        }
+                    }
+                }
+            }
+
+            status {
+                availableReplicas = rcAvailableReplicas
+            }
+        }
 }
 
 enum class ContainerStatuses {
@@ -334,7 +363,15 @@ data class ApplicationDataBuilder(
 
     fun build(): ApplicationData =
         ApplicationData(
-            deployDetails = DeployDetails(null, 1, 1),
+            deployDetails = DeployDetails(
+                DeployReplication(
+                    name = "name-1",
+                    phase = "Complete",
+                    availableReplicas = 1,
+                    targetReplicas = 1,
+                    containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
+                ), emptyList()
+            ),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(
                 applicationDeploymentRef = ApplicationDeploymentRef(DEFAULT_ENV_NAME, "name"),

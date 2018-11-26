@@ -15,6 +15,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.DeployReplication
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
@@ -199,16 +200,19 @@ class ApplicationDataServiceOpenShift(
                 )
             )
         }
-        // TODO er dette alltid den som kjører?
-        val latestVersion = dc.status.latestVersion ?: null
-        val phase = latestVersion
-            ?.let { version -> openshiftService.rc(namespace, "$openShiftName-$version")?.deploymentPhase }
-        // TODO her må vi ha med alle containerene og image fra dem.
-        val deployDetails = DeployDetails(phase, dc.spec.replicas, dc.status.availableReplicas ?: 0)
+        val latestRCName = dc.status.latestVersion ?: null
 
         val pods = podService.getPodDetails(applicationDeployment)
-        // TODO: pod sin deployment er aktiv rc version ikke den som står i dc.
-        // TODO: Hvis siste rc ikke er den som kjører. Må ha med imageId for den som feiler
+
+        val runningRCnames = pods.filter { it.openShiftPodExcerpt.containers.any { c -> c.state == "running" } }
+            .mapNotNull { it.openShiftPodExcerpt.deployment }
+
+        val deployReplications = runningRCnames.mapNotNull { findDeployReplication(namespace, it) }
+
+        val dcReplication = latestRCName?.let { version -> findDeployReplication(namespace, "$openShiftName-$version") }
+
+        val deployDetails = DeployDetails(dcReplication, deployReplications)
+
         val imageDetails = imageService.getImageDetails(dc)
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
@@ -240,5 +244,20 @@ class ApplicationDataServiceOpenShift(
                 releaseTo = applicationDeployment.spec.releaseTo
             )
         )
+    }
+
+    private fun findDeployReplication(namespace: String, rcName: String): DeployReplication? {
+        return openshiftService.rc(namespace, rcName)?.let { rc ->
+            val containers = rc.spec.template.spec.containers.associate {
+                it.name to it.image
+            }
+            DeployReplication(
+                rcName,
+                rc.deploymentPhase ?: "Unknown",
+                rc.spec.replicas,
+                rc.status.availableReplicas,
+                containers
+            )
+        }
     }
 }
