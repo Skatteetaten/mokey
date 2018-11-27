@@ -1,4 +1,4 @@
-GET {{apiUrl}}/api/permissions/paas
+GET {{apiUrl}}/api/auth/permissions/aurora-dev
 Authorization:Bearer {{token}}
 
 ###

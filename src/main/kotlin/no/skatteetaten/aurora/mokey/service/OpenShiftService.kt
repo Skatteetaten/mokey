@@ -82,8 +82,8 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
             spec = SelfSubjectAccessReviewSpec(
                 resourceAttributes = SelfSubjectAccessReviewResourceAttributes(
                     namespace = namespace,
-                    verb = "edit",
-                    resource = "services"
+                    verb = "update",
+                    resource = "deploymentconfigs"
                 )
             )
         )
