@@ -100,11 +100,11 @@ data class OpenShiftPodExcerpt(
     val phase: String,
     val podIP: String?,
     val startTime: String?,
-    val deployment: String?,
+    val replicaName: String?,
     val deployTag: String?,
     val containers: List<OpenShiftContainerExcerpt>,
     val latestDeployTag: Boolean,
-    val latestDeployment: Boolean
+    val latestReplicaName: Boolean
 )
 
 data class OpenShiftContainerExcerpt(

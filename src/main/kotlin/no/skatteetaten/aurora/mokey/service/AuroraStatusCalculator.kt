@@ -126,7 +126,7 @@ class AuroraStatusCalculator(
             return false
         }
 
-        val numberOfDifferentDeployments = ap.map { it.openShiftPodExcerpt.deployment }.distinct().count()
+        val numberOfDifferentDeployments = ap.map { it.openShiftPodExcerpt.replicaName }.distinct().count()
         if (numberOfDifferentDeployments == 1) {
             return false
         }

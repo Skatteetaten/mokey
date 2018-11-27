@@ -113,8 +113,8 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             startTime = pod.startTime,
             deployTag = pod.deployTag,
             latestDeployTag = pod.latestDeployTag,
-            deployment = pod.deployment,
-            latestDeployment = pod.latestDeployment,
+            replicaName = pod.replicaName,
+            latestReplicaName = pod.latestReplicaName,
             managementResponses = managementResponsesResource,
             containers = pod.containers.map {
                 ContainerResource(

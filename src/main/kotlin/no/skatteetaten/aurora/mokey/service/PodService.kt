@@ -48,11 +48,11 @@ class PodService(
                     name = pod.metadata.name,
                     phase = pod.status.phase,
                     podIP = pod.status.podIP,
-                    deployment = podDeployment,
+                    replicaName = podDeployment,
                     startTime = pod.status.startTime,
                     deployTag = deployTag,
                     latestDeployTag = latestDeployTag,
-                    latestDeployment = latestDeployment,
+                    latestReplicaName = latestDeployment,
                     containers = containers
                 ),
                 managementResult

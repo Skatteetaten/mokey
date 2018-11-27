@@ -273,7 +273,7 @@ data class PodDataBuilder(
         newPod {
             metadata {
                 name = podName
-                labels = mapOf("deployment" to "deployment")
+                labels = mapOf("replicaName" to "replicaName")
             }
             spec {
                 containers = containerList.map {
@@ -294,7 +294,7 @@ data class PodDataBuilder(
 data class PodDetailsDataBuilder(
     val name: String = "name",
     val status: String = "phase",
-    val deployment: String = "deployment",
+    val deployment: String = "replicaName",
     val startTime: Instant = Instant.EPOCH,
     val deployTag: String = "1",
     val managementDataBuilder: ManagementDataBuilder = ManagementDataBuilder(),
@@ -309,11 +309,11 @@ data class PodDetailsDataBuilder(
                 phase = status,
                 podIP = "127.0.0.1",
                 startTime = startTime.toString(),
-                deployment = deployment,
+                replicaName = deployment,
                 deployTag = deployTag,
                 containers = containers,
                 latestDeployTag = latestDeployTag,
-                latestDeployment = latestDeployment
+                latestReplicaName = latestDeployment
             ),
             managementDataBuilder.build()
         )
