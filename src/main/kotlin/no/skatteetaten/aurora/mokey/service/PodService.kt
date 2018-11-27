@@ -35,7 +35,7 @@ class PodService(
             deployDetails: DeployDetails
         ): PodDetails {
             val containers = pod.spec.containers.mapNotNull { container ->
-                crateContainerExcerpt(pod, container.name)
+                createContainerExcerpt(pod, container.name)
             }
 
             val podDeployment = pod.metadata.labels["deployment"]
@@ -59,7 +59,7 @@ class PodService(
             )
         }
 
-        private fun crateContainerExcerpt(
+        private fun createContainerExcerpt(
             pod: Pod,
             containerName: String
         ): OpenShiftContainerExcerpt? {
