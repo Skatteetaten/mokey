@@ -59,7 +59,8 @@ class ApplicationDeploymentDetailsResource(
     val imageDetails: ImageDetailsResource?,
     val podResources: List<PodResource>,
     val dependencies: Map<String, String> = emptyMap(),
-    val applicationDeploymentCommand: ApplicationDeploymentCommandResource
+    val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
+    val deployDetails: DeployDetailsResource?
 ) : IdentifiedHalResource(id)
 
 data class ImageDetailsResource(
@@ -77,17 +78,28 @@ class PodResource(
     val phase: String,
     val startTime: String?,
     val deployment: String?,
+    val latestDeployment: Boolean,
     val managementResponses: ManagementResponsesResource?,
     val containers: List<ContainerResource>,
-    deployTag: String?
+    val deployTag: String?,
+    val latestDeployTag: Boolean
 ) : ResourceSupport()
 
+data class DeployDetailsResource(
+    val targetReplicas: Int,
+    val availableReplicas: Int,
+    val deployment: String? = null,
+    val phase: String? = null,
+    val deployTag: String? = null,
+    val containers: Map<String, String> = emptyMap()
+)
 data class ContainerResource(
     val name: String,
     val state: String,
     val image: String,
     val restartCount: Int = 0,
-    val ready: Boolean = false
+    val ready: Boolean = false,
+    val latestImage: Boolean
 )
 
 data class HttpResponseResource(

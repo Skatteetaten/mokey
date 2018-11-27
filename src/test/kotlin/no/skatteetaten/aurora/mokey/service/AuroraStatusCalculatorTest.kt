@@ -130,7 +130,8 @@ class AuroraStatusCalculatorTest {
                     ),
                     expected = auroraStatus(
                         HealthStatusDetail(DOWN, "DIFFERENT_DEPLOYMENTS"),
-                        HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "name")
+                        HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "nam" +
+                            "e")
                     )
                 ),
                 StatusCalculatorTestData(

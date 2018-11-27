@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
+import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
@@ -64,6 +65,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             buildTime = infoResponse?.buildTime,
             gitInfo = toGitInfoResource(infoResponse),
             imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
+            deployDetails = applicationData.deployDetails?.let { toDeployDetailsResource(it) },
             podResources = applicationData.pods.map { toPodResource(applicationData, it) },
             dependencies = infoResponse?.dependencies ?: emptyMap(),
             applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand)
@@ -71,6 +73,17 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
             this.add(createApplicationLinks(applicationData))
         }
+    }
+
+    private fun toDeployDetailsResource(it: DeployDetails): DeployDetailsResource? {
+        return DeployDetailsResource(
+            it.targetReplicas,
+            it.availableReplicas,
+            it.deployment,
+            it.phase,
+            it.deployTag,
+            it.containers
+        )
     }
 
     private fun toImageDetailsResource(imageDetails: ImageDetails) =
@@ -100,7 +113,9 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             phase = pod.phase,
             startTime = pod.startTime,
             deployTag = pod.deployTag,
+            latestDeployTag = pod.latestDeployTag,
             deployment = pod.deployment,
+            latestDeployment = pod.latestDeployment,
             managementResponses = managementResponsesResource,
             containers = pod.containers.map {
                 ContainerResource(
@@ -108,6 +123,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
                     state = it.state,
                     restartCount = it.restartCount,
                     image = it.image,
+                    latestImage = it.latestImage,
                     ready = it.ready
                 )
             }
