@@ -322,10 +322,11 @@ data class PodDetailsDataBuilder(
 
 data class ImageDetailsDataBuilder(
     val dockerImageReference: String = "dockerImageReference",
+    val dockerImageTagReference: String = "dockerImageTagReference",
     val environmentVariables: Map<String, String> = emptyMap()
 ) {
 
-    fun build() = ImageDetails(dockerImageReference, Instant.now(), environmentVariables)
+    fun build() = ImageDetails(dockerImageReference, dockerImageTagReference, Instant.now(), environmentVariables)
 }
 
 data class ProjectDataBuilder(val pName: String = "affiliation-name") {
@@ -371,8 +372,7 @@ data class ApplicationDataBuilder(
                 availableReplicas = 1,
                 targetReplicas = 1,
                 phase = "Complete",
-                deployTag = "1",
-                containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
+                deployTag = "1"
             ),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(

@@ -253,10 +253,8 @@ class ApplicationDataServiceOpenShift(
 
         return details.copy(
             deployment = latestRCName,
-            containers = rc.spec.template.spec.containers.associate { it.name to it.image },
             phase = rc.deploymentPhase,
             deployTag = rc.deployTag
-
         )
     }
 }

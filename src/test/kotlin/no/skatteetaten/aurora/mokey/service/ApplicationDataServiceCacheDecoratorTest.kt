@@ -25,8 +25,7 @@ class ApplicationDataServiceCacheDecoratorTest {
             availableReplicas = 1,
             targetReplicas = 1,
             phase = "Complete",
-            deployTag = "1",
-            containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
+            deployTag = "1"
         ),
         addresses = emptyList(),
         deploymentCommand = ApplicationDeploymentCommand(

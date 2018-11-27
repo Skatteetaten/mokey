@@ -35,7 +35,7 @@ class PodService(
             deployDetails: DeployDetails
         ): PodDetails {
             val containers = pod.spec.containers.mapNotNull { container ->
-                crateContainerExcerpt(pod, container.name, deployDetails.containers[container.name])
+                crateContainerExcerpt(pod, container.name)
             }
 
             val podDeployment = pod.metadata.labels["deployment"]
@@ -61,8 +61,7 @@ class PodService(
 
         private fun crateContainerExcerpt(
             pod: Pod,
-            containerName: String,
-            latestImage: String?
+            containerName: String
         ): OpenShiftContainerExcerpt? {
             val status = pod.status.containerStatuses.firstOrNull { it.name == containerName } ?: return null
 
@@ -76,7 +75,6 @@ class PodService(
             return OpenShiftContainerExcerpt(
                 name = containerName,
                 image = image,
-                latestImage = image == latestImage,
                 ready = status.ready,
                 restartCount = status.restartCount,
                 state = state

@@ -65,7 +65,8 @@ class ApplicationDeploymentDetailsResource(
 
 data class ImageDetailsResource(
     val imageBuildTime: Instant?,
-    val dockerImageReference: String?
+    val dockerImageReference: String?,
+    val dockerImageTagReference: String?
 )
 
 data class GitInfoResource(
@@ -90,16 +91,14 @@ data class DeployDetailsResource(
     val availableReplicas: Int,
     val deployment: String? = null,
     val phase: String? = null,
-    val deployTag: String? = null,
-    val containers: Map<String, String> = emptyMap()
+    val deployTag: String? = null
 )
 data class ContainerResource(
     val name: String,
     val state: String,
     val image: String,
     val restartCount: Int = 0,
-    val ready: Boolean = false,
-    val latestImage: Boolean
+    val ready: Boolean = false
 )
 
 data class HttpResponseResource(

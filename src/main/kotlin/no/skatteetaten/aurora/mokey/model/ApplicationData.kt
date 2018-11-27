@@ -112,19 +112,19 @@ data class OpenShiftContainerExcerpt(
     val state: String,
     val image: String,
     val restartCount: Int = 0,
-    val ready: Boolean = false,
-    val latestImage: Boolean
+    val ready: Boolean = false
 )
 
 data class ImageDetails(
-    val dockerImageReference: String?,
+    val dockerImageReference: String,
+    val dockerImageTagReference: String?,
     val imageBuildTime: Instant?,
     val environmentVariables: Map<String, String>
 ) {
     val auroraVersion: String
         get() = environmentVariables["AURORA_VERSION"] ?: ""
     val dockerImageRepo: String?
-        get() = dockerImageReference?.replace(Regex("@.*$"), "")
+        get() = dockerImageReference.replace(Regex("@.*$"), "")
 }
 
 data class DeployDetails(
@@ -132,6 +132,5 @@ data class DeployDetails(
     val availableReplicas: Int,
     val deployment: String? = null,
     val phase: String? = null,
-    val deployTag: String? = null,
-    val containers: Map<String, String> = emptyMap()
+    val deployTag: String? = null
 )

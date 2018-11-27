@@ -36,8 +36,7 @@ class AuroraStatusCalculatorTest {
                 availableReplicas = input.availableReplicas,
                 targetReplicas = input.targetReplicas,
                 phase = input.lastDeployment,
-                deployTag = "1",
-                containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
+                deployTag = "1"
             )
             val auroraStatus = calculator.calculateStatus(deployDetails, pods, time)
             assert(auroraStatus).isEqualTo(expected)
@@ -143,8 +142,7 @@ class AuroraStatusCalculatorTest {
                                     state = "running",
                                     image = "docker....",
                                     restartCount = 101,
-                                    ready = true,
-                                    latestImage = true
+                                    ready = true
                                 )
                             )
                         ).build()
@@ -163,8 +161,7 @@ class AuroraStatusCalculatorTest {
                                     state = "running",
                                     image = "docker....",
                                     restartCount = 31,
-                                    ready = true,
-                                    latestImage = true
+                                    ready = true
                                 )
                             )
                         ).build()

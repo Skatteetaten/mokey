@@ -83,7 +83,7 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
         '',
         '',
         [podDetails],
-        new ImageDetails(dockerImageReference, Instant.parse(imageBuildTime), [:]),
+        new ImageDetails(dockerImageReference, "", Instant.parse(imageBuildTime), [:]),
         new DeployDetails(1, 1, "Complete", "1", ["name": "docker-registry/group/name@sha256:hash"]),
         '',
         null,

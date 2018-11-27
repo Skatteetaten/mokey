@@ -17,14 +17,18 @@ class ImageService(val openShiftService: OpenShiftService) {
         return getImageDetails(dc.metadata.namespace, dc.metadata.name, tagName)
     }
 
-    fun getImageDetails(namespace: String, name: String, tagName: String): ImageDetails {
-        val image = openShiftService.imageStreamTag(namespace, name, tagName)?.image
-        val env = image?.env ?: emptyMap()
-        val imageBuildTime = (
-            env["IMAGE_BUILD_TIME"]
-                ?: image?.dockerImageMetadata?.additionalProperties?.getOrDefault("Created", null) as String?
-            )?.let(DateParser::parseString)
-        return ImageDetails(image?.dockerImageReference, imageBuildTime, env)
+    fun getImageDetails(namespace: String, name: String, tagName: String): ImageDetails? {
+        return openShiftService.imageStreamTag(namespace, name, tagName)?.let { istag ->
+
+            val dockerTagReference = istag.tag?.from?.name
+            val image = istag.image
+            val env = image.env
+            val imageBuildTime = (
+                env["IMAGE_BUILD_TIME"]
+                    ?: image?.dockerImageMetadata?.additionalProperties?.getOrDefault("Created", null) as String?
+                )?.let(DateParser::parseString)
+            ImageDetails(image.dockerImageReference, dockerTagReference, imageBuildTime, env)
+        }
     }
 }
 
