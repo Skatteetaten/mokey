@@ -49,7 +49,7 @@ class ManagementDataBuilder(
 }""",
 
     @Language("JSON")
-    val healthResponseJson: String = """{"phase": "UP"}""",
+    val healthResponseJson: String = """{"status": "UP"}""",
 
     @Language("JSON")
     val linksResponseJson: String = """{

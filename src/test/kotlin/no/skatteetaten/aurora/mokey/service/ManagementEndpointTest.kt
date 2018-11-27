@@ -55,18 +55,18 @@ class ManagementEndpointTest : AbstractTest() {
 
         @Language("JSON")
         val json = """{
-  "phase": "UP",
+  "status": "UP",
   "atsServiceHelse": {
-    "phase": "UP"
+    "status": "UP"
   },
   "diskSpace": {
-    "phase": "UP",
+    "status": "UP",
     "total": 10718543872,
     "free": 10508611584,
     "threshold": 10485760
   },
   "db": {
-    "phase": "UP",
+    "status": "UP",
     "database": "Oracle",
     "hello": "Hello"
   }
@@ -186,8 +186,8 @@ class ManagementEndpointTest : AbstractTest() {
 
         override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
                 args("Empty response", "", MediaType.APPLICATION_JSON, "INVALID_JSON"),
-                args("Parser error", "{ \"phase\": \"observe\"}", MediaType.APPLICATION_JSON, "INVALID_FORMAT"),
-                args("Invalid Json", "{ phase: {}}", MediaType.APPLICATION_JSON, "INVALID_JSON"),
+                args("Parser error", "{ \"status\": \"observe\"}", MediaType.APPLICATION_JSON, "INVALID_FORMAT"),
+                args("Invalid Json", "{ status: {}}", MediaType.APPLICATION_JSON, "INVALID_JSON"),
                 args("404", "", MediaType.APPLICATION_JSON, "ERROR_404", HttpStatus.NOT_FOUND),
                 args("Invalid content / 200", "<html><body><h1>hello</h1></body></html>", MediaType.TEXT_HTML, "INVALID_JSON"),
                 args("Invalid content / 500", "<html><body><h1>hello</h1></body></html>", MediaType.TEXT_HTML, "INVALID_JSON", HttpStatus.INTERNAL_SERVER_ERROR),
@@ -201,7 +201,7 @@ class ManagementEndpointTest : AbstractTest() {
 
         override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
                 args("Empty Json", "{}", MediaType.APPLICATION_JSON),
-                args("Minimal Json / 200", "{ \"phase\": {}}", MediaType.APPLICATION_JSON),
+                args("Minimal Json / 200", "{ \"status\": {}}", MediaType.APPLICATION_JSON),
                 args("Empty Json / 500", "{}", MediaType.APPLICATION_JSON, HttpStatus.INTERNAL_SERVER_ERROR)
         )
     }
