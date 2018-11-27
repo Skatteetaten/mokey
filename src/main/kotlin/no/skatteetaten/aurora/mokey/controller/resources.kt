@@ -76,8 +76,10 @@ class PodResource(
     val name: String,
     val phase: String,
     val startTime: String?,
+    val deployment: String?,
     val managementResponses: ManagementResponsesResource?,
-    val containers: List<ContainerResource>
+    val containers: List<ContainerResource>,
+    deployTag: String?
 ) : ResourceSupport()
 
 data class ContainerResource(

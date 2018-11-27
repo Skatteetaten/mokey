@@ -44,7 +44,6 @@ import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.DeployReplication
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
@@ -297,19 +296,24 @@ data class PodDetailsDataBuilder(
     val status: String = "phase",
     val deployment: String = "deployment",
     val startTime: Instant = Instant.EPOCH,
+    val deployTag: String = "1",
     val managementDataBuilder: ManagementDataBuilder = ManagementDataBuilder(),
-    val containers: List<OpenShiftContainerExcerpt> = emptyList()
+    val containers: List<OpenShiftContainerExcerpt> = emptyList(),
+    val latestDeployTag: Boolean = true,
+    val latestDeployment: Boolean = true
 ) {
     fun build(): PodDetails {
         return PodDetails(
             OpenShiftPodExcerpt(
                 name = name,
                 phase = status,
-                deployment = deployment,
                 podIP = "127.0.0.1",
                 startTime = startTime.toString(),
-                containers = containers
-
+                deployment = deployment,
+                deployTag = deployTag,
+                containers = containers,
+                latestDeployTag = latestDeployTag,
+                latestDeployment = latestDeployment
             ),
             managementDataBuilder.build()
         )
@@ -364,13 +368,11 @@ data class ApplicationDataBuilder(
     fun build(): ApplicationData =
         ApplicationData(
             deployDetails = DeployDetails(
-                DeployReplication(
-                    name = "name-1",
-                    phase = "Complete",
-                    availableReplicas = 1,
-                    targetReplicas = 1,
-                    containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
-                ), emptyList()
+                availableReplicas = 1,
+                targetReplicas = 1,
+                phase = "Complete",
+                deployTag = "1",
+                containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
             ),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(

@@ -25,9 +25,9 @@ class AuroraStatusCalculator(
 
     fun calculateStatus(app: DeployDetails, pods: List<PodDetails>, time: Instant = Instant.now()): AuroraStatus {
 
-        val lastDeployment = app.dc?.phase?.toLowerCase()
-        val availableReplicas = app.dc?.availableReplicas ?: 0
-        val targetReplicas = app.dc?.targetReplicas ?: 0
+        val lastDeployment = app.phase?.toLowerCase()
+        val availableReplicas = app.availableReplicas
+        val targetReplicas = app.targetReplicas
 
         val healthStatuses = mutableSetOf<HealthStatusDetail>()
 

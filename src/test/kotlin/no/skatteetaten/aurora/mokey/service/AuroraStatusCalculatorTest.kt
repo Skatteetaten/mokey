@@ -10,7 +10,6 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OBSERVE
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
 import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.DeployReplication
 import no.skatteetaten.aurora.mokey.model.HealthStatusDetail
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
@@ -34,13 +33,11 @@ class AuroraStatusCalculatorTest {
     fun `Calculate status`(input: StatusCalculatorTestData) {
         input.apply {
             val deployDetails = DeployDetails(
-                DeployReplication(
-                    name = "name-1",
-                    phase = input.lastDeployment,
-                    availableReplicas = input.availableReplicas,
-                    targetReplicas = input.targetReplicas,
-                    containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
-                ), emptyList()
+                availableReplicas = input.availableReplicas,
+                targetReplicas = input.targetReplicas,
+                phase = input.lastDeployment,
+                deployTag = "1",
+                containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
             )
             val auroraStatus = calculator.calculateStatus(deployDetails, pods, time)
             assert(auroraStatus).isEqualTo(expected)
@@ -143,9 +140,10 @@ class AuroraStatusCalculatorTest {
                                 OpenShiftContainerExcerpt(
                                     name = "name-java",
                                     state = "running",
-                                    restartCount = 101,
                                     image = "docker....",
-                                    ready = true
+                                    restartCount = 101,
+                                    ready = true,
+                                    latestImage = true
                                 )
                             )
                         ).build()
@@ -162,9 +160,10 @@ class AuroraStatusCalculatorTest {
                                 OpenShiftContainerExcerpt(
                                     name = "name-java",
                                     state = "running",
-                                    restartCount = 31,
                                     image = "docker....",
-                                    ready = true
+                                    restartCount = 31,
+                                    ready = true,
+                                    latestImage = true
                                 )
                             )
                         ).build()

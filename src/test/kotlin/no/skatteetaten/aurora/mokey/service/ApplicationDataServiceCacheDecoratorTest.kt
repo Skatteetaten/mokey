@@ -10,7 +10,6 @@ import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.DeployReplication
 import no.skatteetaten.aurora.mokey.model.Environment
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -23,13 +22,11 @@ class ApplicationDataServiceCacheDecoratorTest {
     val app1Id = "some_id"
     val app1v1 = ApplicationData(
         deployDetails = DeployDetails(
-            DeployReplication(
-                name = "name-1",
-                phase = "Complete",
-                availableReplicas = 1,
-                targetReplicas = 1,
-                containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
-            ), emptyList()
+            availableReplicas = 1,
+            targetReplicas = 1,
+            phase = "Complete",
+            deployTag = "1",
+            containers = mapOf("name" to "docker-registry/group/name@sha256:123456hash")
         ),
         addresses = emptyList(),
         deploymentCommand = ApplicationDeploymentCommand(

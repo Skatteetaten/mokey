@@ -5,8 +5,8 @@ import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
-import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
+import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -60,13 +60,13 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         val infoResponse = applicationData.firstInfoResponse
 
         return ApplicationDeploymentDetailsResource(
-                id = applicationData.applicationDeploymentId,
-                buildTime = infoResponse?.buildTime,
-                gitInfo = toGitInfoResource(infoResponse),
-                imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
-                podResources = applicationData.pods.map { toPodResource(applicationData, it) },
-                dependencies = infoResponse?.dependencies ?: emptyMap(),
-                applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand)
+            id = applicationData.applicationDeploymentId,
+            buildTime = infoResponse?.buildTime,
+            gitInfo = toGitInfoResource(infoResponse),
+            imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
+            podResources = applicationData.pods.map { toPodResource(applicationData, it) },
+            dependencies = infoResponse?.dependencies ?: emptyMap(),
+            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand)
         ).apply {
 
             this.add(createApplicationLinks(applicationData))
@@ -74,7 +74,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     }
 
     private fun toImageDetailsResource(imageDetails: ImageDetails) =
-            ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference)
+        ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference)
 
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
         val pod = podDetails.openShiftPodExcerpt
@@ -99,6 +99,8 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             name = pod.name,
             phase = pod.phase,
             startTime = pod.startTime,
+            deployTag = pod.deployTag,
+            deployment = pod.deployment,
             managementResponses = managementResponsesResource,
             containers = pod.containers.map {
                 ContainerResource(
@@ -106,7 +108,8 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
                     state = it.state,
                     restartCount = it.restartCount,
                     image = it.image,
-                    ready = it.ready)
+                    ready = it.ready
+                )
             }
         ).apply {
             this.add(podLinks + consoleLinks)
@@ -116,32 +119,32 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     private fun <T> toHttpResponseResource(result: ManagementEndpointResult<T>): HttpResponseResource {
         return result.response?.let { response ->
             HttpResponseResource(
-                    hasResponse = true,
-                    textResponse = response.content,
-                    httpCode = response.code,
-                    createdAt = result.createdAt,
-                    url = result.url,
-                    error = if (! result.isSuccess) {
-                        ManagementEndpointErrorResource(
-                                message = result.errorMessage,
-                                code = result.resultCode
-                        )
-                    } else {
-                        null
-                    }
-            )
-        } ?: HttpResponseResource(
-                hasResponse = false,
+                hasResponse = true,
+                textResponse = response.content,
+                httpCode = response.code,
                 createdAt = result.createdAt,
                 url = result.url,
-                error = if (! result.isSuccess) {
+                error = if (!result.isSuccess) {
                     ManagementEndpointErrorResource(
-                            message = result.errorMessage,
-                            code = result.resultCode
+                        message = result.errorMessage,
+                        code = result.resultCode
                     )
                 } else {
                     null
                 }
+            )
+        } ?: HttpResponseResource(
+            hasResponse = false,
+            createdAt = result.createdAt,
+            url = result.url,
+            error = if (!result.isSuccess) {
+                ManagementEndpointErrorResource(
+                    message = result.errorMessage,
+                    code = result.resultCode
+                )
+            } else {
+                null
+            }
         )
     }
 

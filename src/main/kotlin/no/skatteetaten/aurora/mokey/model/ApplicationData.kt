@@ -101,7 +101,10 @@ data class OpenShiftPodExcerpt(
     val podIP: String?,
     val startTime: String?,
     val deployment: String?,
-    val containers: List<OpenShiftContainerExcerpt>
+    val deployTag: String?,
+    val containers: List<OpenShiftContainerExcerpt>,
+    val latestDeployTag: Boolean,
+    val latestDeployment: Boolean
 )
 
 data class OpenShiftContainerExcerpt(
@@ -109,7 +112,8 @@ data class OpenShiftContainerExcerpt(
     val state: String,
     val image: String,
     val restartCount: Int = 0,
-    val ready: Boolean = false
+    val ready: Boolean = false,
+    val latestImage: Boolean
 )
 
 data class ImageDetails(
@@ -124,8 +128,10 @@ data class ImageDetails(
 }
 
 data class DeployDetails(
-    val dc: DeployReplication?,
-    val deployReplications: List<DeployReplication>
+    val targetReplicas: Int,
+    val availableReplicas: Int,
+    val deployment: String? = null,
+    val phase: String? = null,
+    val deployTag: String? = null,
+    val containers: Map<String, String> = emptyMap()
 )
-
-data class DeployReplication(val name: String, val phase: String?, val availableReplicas: Int, val targetReplicas: Int, val containers: Map<String, String>)

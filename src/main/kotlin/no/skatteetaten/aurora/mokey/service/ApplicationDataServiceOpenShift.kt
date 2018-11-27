@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.openshift.api.model.DeploymentConfig
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.async
@@ -7,6 +8,7 @@ import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
+import no.skatteetaten.aurora.mokey.extensions.deployTag
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
@@ -15,7 +17,6 @@ import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.DeployReplication
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
@@ -200,18 +201,9 @@ class ApplicationDataServiceOpenShift(
                 )
             )
         }
-        val latestRCName = dc.status.latestVersion ?: null
 
-        val pods = podService.getPodDetails(applicationDeployment)
-
-        val runningRCnames = pods.filter { it.openShiftPodExcerpt.containers.any { c -> c.state == "running" } }
-            .mapNotNull { it.openShiftPodExcerpt.deployment }
-
-        val deployReplications = runningRCnames.mapNotNull { findDeployReplication(namespace, it) }
-
-        val dcReplication = latestRCName?.let { version -> findDeployReplication(namespace, "$openShiftName-$version") }
-
-        val deployDetails = DeployDetails(dcReplication, deployReplications)
+        val deployDetails = createDeployDetails(dc)
+        val pods = podService.getPodDetails(applicationDeployment, deployDetails)
 
         val imageDetails = imageService.getImageDetails(dc)
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
@@ -246,18 +238,25 @@ class ApplicationDataServiceOpenShift(
         )
     }
 
-    private fun findDeployReplication(namespace: String, rcName: String): DeployReplication? {
-        return openshiftService.rc(namespace, rcName)?.let { rc ->
-            val containers = rc.spec.template.spec.containers.associate {
-                it.name to it.image
-            }
-            DeployReplication(
-                rcName,
-                rc.deploymentPhase ?: "Unknown",
-                rc.spec.replicas,
-                rc.status.availableReplicas,
-                containers
-            )
+    private fun createDeployDetails(dc: DeploymentConfig): DeployDetails {
+
+        val namespace = dc.metadata.namespace
+
+        val latestRCName = dc.status.latestVersion?.let { "${dc.metadata.name}-$it" }
+
+        val rc = latestRCName?.let { openshiftService.rc(namespace, it) }
+
+        val details = DeployDetails(dc.spec.replicas, dc.status.availableReplicas ?: 0)
+        if (rc == null) {
+            return details
         }
+
+        return details.copy(
+            deployment = latestRCName,
+            containers = rc.spec.template.spec.containers.associate { it.name to it.image },
+            phase = rc.deploymentPhase,
+            deployTag = rc.deployTag
+
+        )
     }
 }

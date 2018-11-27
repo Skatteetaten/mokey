@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.Pod
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
@@ -14,29 +15,44 @@ class PodService(
     val managementDataService: ManagementDataService
 ) {
 
-    fun getPodDetails(applicationDeployment: ApplicationDeployment): List<PodDetails> {
+    fun getPodDetails(
+        applicationDeployment: ApplicationDeployment,
+        deployDetails: DeployDetails
+    ): List<PodDetails> {
 
         val pods = openShiftService.pods(applicationDeployment.metadata.namespace, applicationDeployment.spec.selector)
         return pods.map { pod: Pod ->
             val managementResult =
                 managementDataService.load(pod.status.podIP, applicationDeployment.spec.managementPath)
-            createPodDetails(pod, managementResult)
+            createPodDetails(pod, managementResult, deployDetails)
         }
     }
 
     companion object {
-        fun createPodDetails(pod: Pod, managementResult: ManagementData): PodDetails {
+        fun createPodDetails(
+            pod: Pod,
+            managementResult: ManagementData,
+            deployDetails: DeployDetails
+        ): PodDetails {
             val containers = pod.spec.containers.mapNotNull { container ->
-                crateContainerExcerpt(pod, container.name)
+                crateContainerExcerpt(pod, container.name, deployDetails.containers[container.name])
             }
 
+            val podDeployment = pod.metadata.labels["deployment"]
+            val deployTag = pod.metadata.labels["deployTag"]
+
+            val latestDeployment = podDeployment == deployDetails.deployment
+            val latestDeployTag = deployTag == deployDetails.deployTag
             return PodDetails(
                 OpenShiftPodExcerpt(
                     name = pod.metadata.name,
                     phase = pod.status.phase,
                     podIP = pod.status.podIP,
-                    deployment = pod.metadata.labels["deployment"],
+                    deployment = podDeployment,
                     startTime = pod.status.startTime,
+                    deployTag = deployTag,
+                    latestDeployTag = latestDeployTag,
+                    latestDeployment = latestDeployment,
                     containers = containers
                 ),
                 managementResult
@@ -45,7 +61,8 @@ class PodService(
 
         private fun crateContainerExcerpt(
             pod: Pod,
-            containerName: String
+            containerName: String,
+            latestImage: String?
         ): OpenShiftContainerExcerpt? {
             val status = pod.status.containerStatuses.firstOrNull { it.name == containerName } ?: return null
 
@@ -55,9 +72,11 @@ class PodService(
                 "waiting"
             } ?: "running"
 
+            val image = status.imageID.substringAfterLast("docker-pullable://")
             return OpenShiftContainerExcerpt(
                 name = containerName,
-                image = status.imageID.substringAfterLast("docker-pullable://"),
+                image = image,
+                latestImage = image == latestImage,
                 ready = status.ready,
                 restartCount = status.restartCount,
                 state = state
