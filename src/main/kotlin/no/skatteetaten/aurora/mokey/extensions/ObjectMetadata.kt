@@ -75,6 +75,9 @@ var ObjectMeta.affiliation: String?
 val DeploymentConfig.deployTag: String
     get() = safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
 
+val ReplicationController.deployTag: String
+    get() = safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
+
 val ObjectMeta.booberDeployId: String?
     get() = safeMetadataLabels()[LABEL_BOOBER_DEPLOY_ID]
 

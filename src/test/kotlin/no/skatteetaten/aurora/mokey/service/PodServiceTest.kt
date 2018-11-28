@@ -8,9 +8,12 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
+import no.skatteetaten.aurora.mokey.ContainerStatusBuilder
+import no.skatteetaten.aurora.mokey.ContainerStatuses
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ManagementDataBuilder
 import no.skatteetaten.aurora.mokey.PodDataBuilder
+import no.skatteetaten.aurora.mokey.model.DeployDetails
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -25,11 +28,13 @@ class PodServiceTest {
         clearMocks(openShiftService, managementDataService)
     }
 
+    val deployDetails = DeployDetails(1, 1)
+
     @Test
     fun `should collect pods only for current dc in current namespace`() {
         val builder = AuroraApplicationDeploymentDataBuilder()
         every { openShiftService.pods(builder.appNamespace, mapOf("name" to builder.appName)) } returns listOf()
-        val podDetails = podService.getPodDetails(builder.build())
+        val podDetails = podService.getPodDetails(builder.build(), deployDetails)
         assert(podDetails).isEmpty()
     }
 
@@ -42,7 +47,7 @@ class PodServiceTest {
         every { openShiftService.pods(dcBuilder.dcNamespace, dcBuilder.dcSelector) } returns listOf(podBuilder.build())
         every { managementDataService.load(podBuilder.ip, appBuilder.managementPath) } returns managementResult
 
-        val podDetails = podService.getPodDetails(appBuilder.build())
+        val podDetails = podService.getPodDetails(appBuilder.build(), deployDetails)
 
         assert(podDetails).hasSize(1)
         assert(podDetails[0].openShiftPodExcerpt.podIP).isEqualTo(podBuilder.ip)
@@ -54,10 +59,43 @@ class PodServiceTest {
         val managementData = ManagementDataBuilder().build()
         val podDataBuilder = PodDataBuilder()
 
-        val podDetails = PodService.createPodDetails(podDataBuilder.build(), managementData)
+        val podDetails = PodService.createPodDetails(podDataBuilder.build(), managementData, deployDetails)
 
         assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
         assert(podDetails.managementData).isEqualTo(managementData)
-        assert(podDetails.openShiftPodExcerpt.status).isEqualTo("reason")
+        assert(podDetails.openShiftPodExcerpt.phase).isEqualTo("phase")
+        assert(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("running")
+    }
+
+    @Test
+    fun `verify that waiting container is created from Pod and ManagementData`() {
+        val managementData = ManagementDataBuilder().build()
+        val podDataBuilder = PodDataBuilder(
+            containerList = listOf(
+                ContainerStatusBuilder(containerStatus = ContainerStatuses.WAITING).build()
+            )
+        )
+
+        val podDetails = PodService.createPodDetails(podDataBuilder.build(), managementData, deployDetails)
+
+        assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
+        assert(podDetails.managementData).isEqualTo(managementData)
+        assert(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("waiting")
+    }
+
+    @Test
+    fun `verify that terminating container is created from Pod and ManagementData`() {
+        val managementData = ManagementDataBuilder().build()
+        val podDataBuilder = PodDataBuilder(
+            containerList = listOf(
+                ContainerStatusBuilder(containerStatus = ContainerStatuses.TERMINATED).build()
+            )
+        )
+
+        val podDetails = PodService.createPodDetails(podDataBuilder.build(), managementData, deployDetails)
+
+        assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
+        assert(podDetails.managementData).isEqualTo(managementData)
+        assert(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("terminated")
     }
 }

@@ -1,4 +1,4 @@
-GET {{apiUrl}}/api/application?affiliation=aurora
+GET {{apiUrl}}/api/application?affiliation=demo
 #Authorization:Bearer {{token}}
 #
 ####

@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.openshift.api.model.DeploymentConfig
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.async
@@ -7,6 +8,7 @@ import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
+import no.skatteetaten.aurora.mokey.extensions.deployTag
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.model.ApplicationData
@@ -74,7 +76,10 @@ class ApplicationDataServiceOpenShift(
         }.groupBy { it.affiliation }
     }
 
-    fun findAllApplicationDataForEnv(ids: List<String>, affiliationEnvs: Map<String, List<Environment>>): List<ApplicationData> {
+    fun findAllApplicationDataForEnv(
+        ids: List<String>,
+        affiliationEnvs: Map<String, List<Environment>>
+    ): List<ApplicationData> {
         return affiliationEnvs.flatMap {
             findAllApplicationDataForEnv(it.value, ids)
         }
@@ -200,14 +205,10 @@ class ApplicationDataServiceOpenShift(
                 )
             )
         }
-        val deployDetails = dc.let {
-            val latestVersion = it.status.latestVersion ?: null
-            val phase = latestVersion
-                ?.let { version -> openshiftService.rc(namespace, "$openShiftName-$version")?.deploymentPhase }
-            DeployDetails(phase, it.spec.replicas, it.status.availableReplicas ?: 0)
-        }
 
-        val pods = podService.getPodDetails(applicationDeployment)
+        val deployDetails = createDeployDetails(dc)
+        val pods = podService.getPodDetails(applicationDeployment, deployDetails)
+
         val imageDetails = imageService.getImageDetails(dc)
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
@@ -238,6 +239,26 @@ class ApplicationDataServiceOpenShift(
                 dockerImageRepo = imageDetails?.dockerImageRepo,
                 releaseTo = applicationDeployment.spec.releaseTo
             )
+        )
+    }
+
+    private fun createDeployDetails(dc: DeploymentConfig): DeployDetails {
+
+        val namespace = dc.metadata.namespace
+
+        val latestRCName = dc.status.latestVersion?.let { "${dc.metadata.name}-$it" }
+
+        val rc = latestRCName?.let { openshiftService.rc(namespace, it) }
+
+        val details = DeployDetails(dc.spec.replicas, dc.status.availableReplicas ?: 0)
+        if (rc == null) {
+            return details
+        }
+
+        return details.copy(
+            deployment = latestRCName,
+            phase = rc.deploymentPhase,
+            deployTag = rc.deployTag
         )
     }
 }

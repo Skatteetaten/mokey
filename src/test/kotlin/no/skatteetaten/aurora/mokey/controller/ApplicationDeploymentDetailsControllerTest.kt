@@ -45,7 +45,12 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
 
     val applicationData = ApplicationData(
         pods = listOf(podDetailsDataBuilder.build()),
-        deployDetails = DeployDetails("Complete", 1, 1),
+        deployDetails = DeployDetails(
+            availableReplicas = 1,
+            targetReplicas = 1,
+            phase = "Complete",
+            deployTag = "1"
+        ),
         addresses = emptyList(),
         deploymentCommand = ApplicationDeploymentCommand(
             auroraConfig = AuroraConfigRef("affiliation", "master", "123"),
@@ -56,14 +61,14 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
             applicationDeploymentId = "abc1234",
             applicationName = "name",
             applicationDeploymentName = "name-1",
-            auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
+            auroraStatus = AuroraStatus(HEALTHY, "", setOf()),
             affiliation = "affiliation",
             namespace = "namespace",
             deployTag = "deployTag",
             auroraVersion = null,
             dockerImageRepo = null,
-                releaseTo = "releaseTo",
-    time = Instant.EPOCH
+            releaseTo = "releaseTo",
+            time = Instant.EPOCH
         )
     )
 

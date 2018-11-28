@@ -21,8 +21,12 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     val app1Id = "some_id"
     val app1v1 = ApplicationData(
-
-        deployDetails = DeployDetails("Complete", 1, 1),
+        deployDetails = DeployDetails(
+            availableReplicas = 1,
+            targetReplicas = 1,
+            phase = "Complete",
+            deployTag = "1"
+        ),
         addresses = emptyList(),
         deploymentCommand = ApplicationDeploymentCommand(
             applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name"),
@@ -31,7 +35,7 @@ class ApplicationDataServiceCacheDecoratorTest {
         publicData = ApplicationPublicData(
             applicationId = app1Id,
             applicationDeploymentId = app1Id,
-            auroraStatus = AuroraStatus(HEALTHY, "", listOf()),
+            auroraStatus = AuroraStatus(HEALTHY, "", setOf()),
             deployTag = "default",
             applicationName = "testapp",
             applicationDeploymentName = "aurora",

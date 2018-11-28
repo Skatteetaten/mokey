@@ -40,7 +40,7 @@ spring:
 mokey:
     cache:
         enabled: true
-        affiliations: aurora,paas
+        affiliations: demo
 
 
 logging:

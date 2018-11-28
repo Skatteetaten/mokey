@@ -1,7 +1,5 @@
 package no.skatteetaten.aurora.mokey.contracts
 
-import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
-
 import java.time.Instant
 
 import org.intellij.lang.annotations.Language
@@ -20,6 +18,7 @@ import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
@@ -30,7 +29,7 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
   void setup() {
     loadJsonResponses(this)
     def applicationDataService = Mock(ApplicationDataService) {
-      findAllApplicationData(_ as List, _ as  List) >> [createApplicationData()]
+      findAllApplicationData(_ as List, _ as List) >> [createApplicationData()]
       findApplicationDataByApplicationDeploymentId(_ as String) >> createApplicationData()
     }
     def assembler = new ApplicationDeploymentDetailsResourceAssembler(new LinkBuilder('http://localhost', [:]))
@@ -43,7 +42,6 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
     def dockerImageReference = response('$.imageDetails.dockerImageReference')
     def commitTime = response('$.gitInfo.commitTime')
     def buildTime = response('$.buildTime')
-
 
     def details = response('$.podResources[0]', Map)
     @Language("JSON")
@@ -59,10 +57,16 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
 }"""
     def infoResponse = ManagementEndpoint.toHttpResponse(infoResponseJson, InfoResponse)
     def podDetails = new PodDetails(
-        new OpenShiftPodExcerpt(details.name as String, details.status as String, details.restartCount as Integer,
-            details.ready as Boolean, '', details.startTime as String, ''),
+        new OpenShiftPodExcerpt(
+            details.name as String,
+            details.status as String,
+            details.restartCount as Integer,
+            details.ready as Boolean,
+            '',
+            details.startTime as String,
+            '', '', [], true, true),
         new ManagementData(
-                new ManagementEndpointResult())
+            new ManagementEndpointResult())
     )
 
     def publicData = new ApplicationPublicData(
@@ -79,8 +83,8 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
         '',
         '',
         [podDetails],
-        new ImageDetails(dockerImageReference, Instant.parse(imageBuildTime), [:]),
-        new DeployDetails('', 1, 1), [],
+        new ImageDetails(dockerImageReference, "", Instant.parse(imageBuildTime), [:]),
+        new DeployDetails(1, 1, "Complete", "1", ["name": "docker-registry/group/name@sha256:hash"]),
         '',
         null,
         new ApplicationDeploymentCommand(

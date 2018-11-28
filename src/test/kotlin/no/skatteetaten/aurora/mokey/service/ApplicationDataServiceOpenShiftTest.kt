@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
 import assertk.assert
-import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
@@ -75,11 +74,11 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.applicationDeployments(dcBuilder.dcNamespace) } returns listOf(appDeployment)
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         every { openShiftService.rc(dcBuilder.dcNamespace, "${dcBuilder.dcName}-1") } returns replicationController
-        every { podService.getPodDetails(appDeployment) } returns listOf(podDetails)
+        every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
         every { meterRegistry.gauge("aurora_status", any(), any<Int>()) } returns 1
         every { imageService.getImageDetails(dc) } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
-        every { auroraStatusCalculator.calculateStatus(any(), any()) } returns AuroraStatus(HEALTHY, "", listOf())
+        every { auroraStatusCalculator.calculateStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
 
         val applicationData =
             applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()

@@ -97,23 +97,40 @@ data class HttpResponse(
 
 data class OpenShiftPodExcerpt(
     val name: String,
-    val status: String,
-    val restartCount: Int = 0,
-    val ready: Boolean = false,
+    val phase: String,
     val podIP: String?,
     val startTime: String?,
-    val deployment: String?
+    val replicaName: String?,
+    val deployTag: String?,
+    val containers: List<OpenShiftContainerExcerpt>,
+    val latestDeployTag: Boolean,
+    val latestReplicaName: Boolean
+)
+
+data class OpenShiftContainerExcerpt(
+    val name: String,
+    val state: String,
+    val image: String,
+    val restartCount: Int = 0,
+    val ready: Boolean = false
 )
 
 data class ImageDetails(
-    val dockerImageReference: String?,
+    val dockerImageReference: String,
+    val dockerImageTagReference: String?,
     val imageBuildTime: Instant?,
     val environmentVariables: Map<String, String>
 ) {
     val auroraVersion: String
         get() = environmentVariables["AURORA_VERSION"] ?: ""
     val dockerImageRepo: String?
-        get() = dockerImageReference?.replace(Regex("@.*$"), "")
+        get() = dockerImageReference.replace(Regex("@.*$"), "")
 }
 
-data class DeployDetails(val deploymentPhase: String?, val availableReplicas: Int, val targetReplicas: Int)
+data class DeployDetails(
+    val targetReplicas: Int,
+    val availableReplicas: Int,
+    val deployment: String? = null,
+    val phase: String? = null,
+    val deployTag: String? = null
+)
