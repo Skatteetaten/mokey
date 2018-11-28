@@ -40,7 +40,8 @@ class ApplicationDataServiceOpenShiftTest {
         podService = podService,
         meterRegistry = meterRegistry,
         addressService = addressService,
-        imageService = imageService
+        imageService = imageService,
+        openshiftCluster = "utv"
     )
 
     @BeforeEach

@@ -19,6 +19,7 @@ import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 @Service
@@ -29,7 +30,8 @@ class ApplicationDataServiceOpenShift(
     val podService: PodService,
     val meterRegistry: MeterRegistry,
     val addressService: AddressService,
-    val imageService: ImageService
+    val imageService: ImageService,
+    @Value("\${openshift.cluster}") val openshiftCluster: String
 ) : ApplicationDataService {
 
     val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
@@ -157,7 +159,9 @@ class ApplicationDataServiceOpenShift(
                 Tag.of("aurora_version", imageDetails?.auroraVersion ?: ""),
                 Tag.of("aurora_namespace", namespace),
                 Tag.of("aurora_environment", deploymentCommand.applicationDeploymentRef.environment),
+                Tag.of("aurora_cluster", openshiftCluster),
                 Tag.of("aurora_deployment", applicationDeploymentName),
+                Tag.of("aurora_deployment_id", applicationDeploymentId),
                 Tag.of("aurora_affiliation", affiliation ?: ""),
                 Tag.of("aurora_version_strategy", deployTag)
             )
