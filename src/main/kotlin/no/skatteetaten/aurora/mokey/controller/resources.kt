@@ -83,7 +83,11 @@ class PodResource(
     val managementResponses: ManagementResponsesResource?,
     val containers: List<ContainerResource>,
     val deployTag: String?,
-    val latestDeployTag: Boolean
+    val latestDeployTag: Boolean,
+    // TODO: remove after AOS-3026 is deployed
+    val status: String = phase,
+    val ready: Boolean = containers.all { it.ready },
+    val restartCount: Int = containers.sumBy { it.restartCount }
 ) : ResourceSupport()
 
 data class DeployDetailsResource(
@@ -93,6 +97,7 @@ data class DeployDetailsResource(
     val phase: String? = null,
     val deployTag: String? = null
 )
+
 data class ContainerResource(
     val name: String,
     val state: String,
