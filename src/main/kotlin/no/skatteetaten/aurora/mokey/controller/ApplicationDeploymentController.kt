@@ -47,13 +47,15 @@ class ApplicationDeploymentResourceAssembler :
                 AuroraStatusResource(
                     status.level.name,
                     status.comment,
-                    applicationData.auroraStatus.statuses.map {
-                        HealthStatusDetailResource(
-                            it.level.name,
-                            it.comment,
-                            it.ref
+                    status.description,
+                    status.reports.map {
+                        StatusCheckReportResource(
+                            name = it.name,
+                            description = it.description,
+                            failLevel = it.failLevel,
+                            hasFailed = it.hasFailed
                         )
-                    }
+                    }.sortedBy { !it.hasFailed }
                 )
             },
             version = Version(applicationData.deployTag, applicationData.auroraVersion, applicationData.releaseTo),
