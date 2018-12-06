@@ -6,7 +6,7 @@
   "namespace": "paas-utv",
   "status": {
     "code": "HEALTHY",
-    "comment": ""
+    "comment": null
   },
   "version": {
     "deployTag": "master-SNAPSHOT",

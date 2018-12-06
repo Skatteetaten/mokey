@@ -33,7 +33,7 @@ class ApplicationdeploymentBase extends AbstractContractBase {
         applicationDeploymentId,
         "",
         applicationDeploymentName,
-        new AuroraStatus(AuroraStatusLevel.HEALTHY, '', [] as Set),
+        new AuroraStatus(AuroraStatusLevel.HEALTHY, '', '', []),
         affiliation,
         namespace,
         deployTag,
