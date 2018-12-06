@@ -62,7 +62,7 @@ class AuroraStatusCalculatorTest {
                 deployTag = "1"
             )
             val auroraStatus = calculator.calculateStatus(deployDetails, pods, time)
-            assert(auroraStatus.comment).isEqualTo(expected.comment)
+            assert(auroraStatus.statusCheckName).isEqualTo(expected.statusCheckName)
             assert(auroraStatus.level).isEqualTo(expected.level)
         }
     }

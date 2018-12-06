@@ -45,10 +45,10 @@ class ApplicationDeploymentResourceAssembler :
             name = applicationData.applicationDeploymentName,
             status = applicationData.auroraStatus.let { status ->
                 AuroraStatusResource(
-                    status.level.name,
-                    status.comment,
-                    status.description,
-                    status.reports.map {
+                    code = status.level.name,
+                    statusCheckName = status.statusCheckName,
+                    description = status.description,
+                    details = status.reports.map {
                         StatusCheckReportResource(
                             name = it.name,
                             description = it.description,
