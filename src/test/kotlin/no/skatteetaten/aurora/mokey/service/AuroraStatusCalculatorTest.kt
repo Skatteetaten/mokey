@@ -53,7 +53,6 @@ class AuroraStatusCalculatorTest {
     @ParameterizedTest(name = "test:{0}")
     @MethodSource("calculatorProvider")
     fun `Calculate status`(input: StatusCalculatorTestData) {
-        println(calculator.deploymentChecks)
         input.apply {
             val deployDetails = DeployDetails(
                 availableReplicas = input.availableReplicas,
