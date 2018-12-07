@@ -55,7 +55,7 @@ class ApplicationDeploymentResourceAssembler :
                             failLevel = it.failLevel,
                             hasFailed = it.hasFailed
                         )
-                    }.sortedBy { !it.hasFailed }
+                    }.sortedBy { it.name }
                 )
             },
             version = Version(applicationData.deployTag, applicationData.auroraVersion, applicationData.releaseTo),

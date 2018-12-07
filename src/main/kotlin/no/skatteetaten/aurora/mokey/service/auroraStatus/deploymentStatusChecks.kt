@@ -113,7 +113,7 @@ class OffCheck : StatusCheck("Deployment has been turned off.", OFF) {
 }
 
 @Component
-class DeploymentInProgressCheck : StatusCheck("A new deployment are in progress.", HEALTHY) {
+class DeploymentInProgressCheck : StatusCheck("A new deployment are in progress, other statuses are ignored.", HEALTHY) {
     val finalPhases = listOf("complete", "failed", null)
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
