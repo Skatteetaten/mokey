@@ -18,18 +18,16 @@ class PermissionController(val openShiftService: OpenShiftService) {
     fun checkPermissions(@PathVariable namespace: String): AuroraNamespacePermissions {
 
         return openShiftService.projectByNamespaceForUser(namespace)?.let {
-
-            logger.info("{}", it)
             AuroraNamespacePermissions(
                 namespace = namespace,
                 view = true,
                 admin = openShiftService.canViewAndAdmin(namespace)
             )
-        } ?: throw RuntimeException("Illegal project with name=$namespace")
+        } ?: AuroraNamespacePermissions(namespace = namespace)
     }
 
     data class AuroraNamespacePermissions(
-        val view: Boolean = true,
+        val view: Boolean = false,
         val admin: Boolean = false,
         val namespace: String
     )
