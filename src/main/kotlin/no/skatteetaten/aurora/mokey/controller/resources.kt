@@ -59,8 +59,6 @@ data class StatusCheckReportResource(
     val hasFailed: Boolean
 )
 
-data class HealthStatusDetailResource(val code: String, val comment: String, val ref: String?)
-
 class ApplicationDeploymentDetailsResource(
     id: String,
     val buildTime: Instant? = null,
