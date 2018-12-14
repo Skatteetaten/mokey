@@ -71,7 +71,7 @@ class AnyPodObserveCheck :
 }
 
 @Component
-class DeployFailedCheck : StatusCheck("Last deployment failed. There are available pods running.", OBSERVE) {
+class DeployFailedCheck : StatusCheck("Last deployment failed.", OBSERVE) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
         app.lastDeployment == "failed"

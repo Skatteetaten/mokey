@@ -29,7 +29,6 @@ class AuroraStatusCalculator(val deploymentChecks: List<StatusCheck>) {
         val reports = results.filterNot(this::isSpecialCheck).map(this::toReport)
         val reasons = results.filter { it.hasFailed }.map(this::toReport)
 
-
         return AuroraStatus(level, reasons, reports)
     }
 
