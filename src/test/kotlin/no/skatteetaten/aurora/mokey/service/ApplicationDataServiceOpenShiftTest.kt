@@ -78,7 +78,7 @@ class ApplicationDataServiceOpenShiftTest {
         every { meterRegistry.gauge("aurora_status", any(), any<Int>()) } returns 1
         every { imageService.getImageDetails(dc) } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
-        every { auroraStatusCalculator.calculateStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
+        every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
 
         val applicationData =
             applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()

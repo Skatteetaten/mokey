@@ -11,12 +11,13 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.model.StatusCheck
+import no.skatteetaten.aurora.mokey.model.StatusCheckReport
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodDownCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodObserveCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AverageRestartErrorCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AverageRestartObserveCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.DeployFailedCheck
-import no.skatteetaten.aurora.mokey.service.auroraStatus.DeployFailedNoPodsCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.DeploymentInProgressCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.DifferentDeploymentCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.NoAvailablePodsCheck
@@ -39,7 +40,6 @@ class AuroraStatusCalculatorTest {
             noDeployment,
             off,
             deployFailed,
-            deployFailedNoPods,
             deploymentInProgress,
             tooManyPods,
             tooFewPods,
@@ -60,9 +60,9 @@ class AuroraStatusCalculatorTest {
                 phase = input.lastDeployment,
                 deployTag = "1"
             )
-            val auroraStatus = calculator.calculateStatus(deployDetails, pods, time)
-            assert(auroraStatus.statusCheckName).isEqualTo(expected.statusCheckName)
+            val auroraStatus = calculator.calculateAuroraStatus(deployDetails, pods, time)
             assert(auroraStatus.level).isEqualTo(expected.level)
+            assert(auroraStatus.reasons.sortedBy { it.name }).isEqualTo(expected.reasons.sortedBy { it.name })
         }
     }
 
@@ -77,7 +77,6 @@ class AuroraStatusCalculatorTest {
         val noDeployment = NoDeploymentCheck()
         val off = OffCheck()
         val deployFailed = DeployFailedCheck()
-        val deployFailedNoPods = DeployFailedNoPodsCheck()
         val deploymentInProgress = DeploymentInProgressCheck()
         val tooManyPods = TooManyPodsCheck()
         val tooFewPods = TooFewPodsCheck()
@@ -91,50 +90,50 @@ class AuroraStatusCalculatorTest {
                 StatusCalculatorTestData(
                     lastDeployment = "Failed",
                     availableReplicas = 0,
-                    targetReplicas = 0,
-                    expected = AuroraStatus(DOWN, deployFailedNoPods.name)
+                    targetReplicas = 1,
+                    expected = AuroraStatus(DOWN, toReport(deployFailed, noAvailablePods))
                 ),
                 StatusCalculatorTestData(
                     lastDeployment = "Failed",
                     availableReplicas = 1,
                     targetReplicas = 1,
-                    expected = AuroraStatus(OBSERVE, deployFailed.name)
+                    expected = AuroraStatus(OBSERVE, toReport(deployFailed))
                 ),
                 StatusCalculatorTestData(
                     availableReplicas = 0,
                     targetReplicas = 1,
-                    expected = AuroraStatus(DOWN, noAvailablePods.name)
+                    expected = AuroraStatus(DOWN, toReport(noAvailablePods))
                 ),
                 StatusCalculatorTestData(
                     availableReplicas = 1,
-                    expected = AuroraStatus(OBSERVE, tooFewPods.name)
+                    expected = AuroraStatus(OBSERVE, toReport(tooFewPods))
                 ),
                 StatusCalculatorTestData(
                     availableReplicas = 0,
                     targetReplicas = 0,
-                    expected = AuroraStatus(OFF, off.name)
+                    expected = AuroraStatus(OFF, toReport(off))
                 ),
                 StatusCalculatorTestData(
                     targetReplicas = 1,
-                    expected = AuroraStatus(OBSERVE, tooManyPods.name)
+                    expected = AuroraStatus(OBSERVE, toReport(tooManyPods))
                 ),
                 StatusCalculatorTestData(
-                    expected = AuroraStatus(HEALTHY, "")
+                    expected = AuroraStatus(HEALTHY)
                 ),
                 StatusCalculatorTestData(
                     lastDeployment = "Running",
                     availableReplicas = 1,
-                    expected = AuroraStatus(HEALTHY, deploymentInProgress.name)
+                    expected = AuroraStatus(HEALTHY, toReport(deploymentInProgress, tooFewPods))
                 ),
                 StatusCalculatorTestData(
                     lastDeployment = null,
-                    expected = AuroraStatus(OFF, noDeployment.name)
+                    expected = AuroraStatus(OFF, toReport(noDeployment))
                 ),
                 StatusCalculatorTestData(
                     pods = listOf(
                         PodDetailsDataBuilder().build()
                     ),
-                    expected = AuroraStatus(HEALTHY, "")
+                    expected = AuroraStatus(HEALTHY)
                 ),
                 StatusCalculatorTestData(
                     pods = listOf(
@@ -144,7 +143,7 @@ class AuroraStatusCalculatorTest {
                             startTime = Instant.EPOCH - Duration.ofDays(2)
                         ).build()
                     ),
-                    expected = AuroraStatus(DOWN, differentDeployment.name)
+                    expected = AuroraStatus(DOWN, toReport(differentDeployment))
                 ),
                 StatusCalculatorTestData(
                     pods = listOf(
@@ -160,7 +159,7 @@ class AuroraStatusCalculatorTest {
                             )
                         ).build()
                     ),
-                    expected = AuroraStatus(DOWN, averageRestartError.name)
+                    expected = AuroraStatus(DOWN, toReport(averageRestartError, averageRestartObserve))
                 ),
                 StatusCalculatorTestData(
                     pods = listOf(
@@ -176,9 +175,20 @@ class AuroraStatusCalculatorTest {
                             )
                         ).build()
                     ),
-                    expected = AuroraStatus(OBSERVE, averageRestartObserve.name)
+                    expected = AuroraStatus(OBSERVE, toReport(averageRestartObserve))
                 )
             )
+        }
+
+        private fun toReport(vararg statusChecks: StatusCheck): List<StatusCheckReport> {
+            return statusChecks.map {
+                StatusCheckReport(
+                    name = it.name,
+                    description = it.description,
+                    hasFailed = true,
+                    failLevel = it.failLevel
+                )
+            }
         }
     }
 

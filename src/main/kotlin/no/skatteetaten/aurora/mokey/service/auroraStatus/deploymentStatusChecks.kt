@@ -40,13 +40,6 @@ class NoAvailablePodsCheck : StatusCheck("Expected running pods, but there are n
 }
 
 @Component
-class DeployFailedNoPodsCheck : StatusCheck("Last deployment failed and there are none available pods.", DOWN) {
-
-    override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
-        app.lastDeployment == "failed" && app.availableReplicas < 1
-}
-
-@Component
 class DifferentDeploymentCheck(@Value("\${mokey.status.differentdeployment.hour:20}") val hourThreshold: Long) :
     StatusCheck("There has been different deployments for more than $hourThreshold hours.", DOWN) {
 
@@ -81,7 +74,7 @@ class AnyPodObserveCheck :
 class DeployFailedCheck : StatusCheck("Last deployment failed. There are available pods running.", OBSERVE) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
-        app.lastDeployment == "failed" && app.availableReplicas > 0
+        app.lastDeployment == "failed"
 }
 
 @Component

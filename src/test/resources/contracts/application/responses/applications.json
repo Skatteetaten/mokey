@@ -12,7 +12,9 @@
         "namespace": "paas-utv",
         "status": {
           "code": "HEALTHY",
-          "comment": null
+          "comment": null,
+          "reasons": [],
+          "reports": []
         },
         "version": {
           "deployTag": ""

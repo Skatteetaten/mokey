@@ -4,8 +4,7 @@ import java.time.Instant
 
 data class AuroraStatus(
     val level: AuroraStatusLevel,
-    val statusCheckName: String = "",
-    val description: String = "",
+    val reasons: List<StatusCheckReport> = listOf(),
     val reports: List<StatusCheckReport> = listOf()
 )
 

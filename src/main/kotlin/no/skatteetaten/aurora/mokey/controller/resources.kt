@@ -48,13 +48,9 @@ data class Version(val deployTag: String?, val auroraVersion: String?, val relea
 data class AuroraStatusResource(
     val code: String,
     val comment: String? = null,
-    val statusCheckName: String,
-    val description: String? = null,
-    val details: List<StatusCheckReportResource> = listOf()
-) {
-    val status: String
-        get() = this.code
-}
+    val reasons: List<StatusCheckReportResource> = listOf(),
+    val reports: List<StatusCheckReportResource> = listOf()
+)
 
 data class StatusCheckReportResource(
     val name: String,

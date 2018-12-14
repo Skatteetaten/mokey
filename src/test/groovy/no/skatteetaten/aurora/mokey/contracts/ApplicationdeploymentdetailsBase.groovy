@@ -71,7 +71,7 @@ class ApplicationdeploymentdetailsBase extends AbstractContractBase {
 
     def publicData = new ApplicationPublicData(
         "", "appDeploymentId", "", "",
-        new AuroraStatus(AuroraStatusLevel.HEALTHY, '', "", []),
+        new AuroraStatus(AuroraStatusLevel.HEALTHY, [], []),
         "", "",
         "master-SNAPSHOT",
         "",
