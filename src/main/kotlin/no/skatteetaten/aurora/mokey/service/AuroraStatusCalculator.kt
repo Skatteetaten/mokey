@@ -59,7 +59,7 @@ class AuroraStatusCalculator(val deploymentChecks: List<StatusCheck>) {
     private fun toReport(result: StatusCheckResult): StatusCheckReport {
         return StatusCheckReport(
             name = result.statusCheck.name,
-            description = result.statusCheck.description,
+            description = result.description,
             failLevel = result.statusCheck.failLevel,
             hasFailed = result.hasFailed
         )

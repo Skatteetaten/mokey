@@ -15,13 +15,18 @@ enum class AuroraStatusLevel(val level: Int) {
     HEALTHY(0)
 }
 
-abstract class StatusCheck(val description: String, val failLevel: AuroraStatusLevel) {
+data class StatusDescription(val ok: String, val failed: String)
+
+abstract class StatusCheck(val description: StatusDescription, val failLevel: AuroraStatusLevel) {
     abstract fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean
     val name
         get() = this::class.simpleName ?: ""
 }
 
-data class StatusCheckResult(val statusCheck: StatusCheck, val hasFailed: Boolean)
+data class StatusCheckResult(val statusCheck: StatusCheck, val hasFailed: Boolean) {
+    val description: String
+        get() = if (hasFailed) statusCheck.description.failed else statusCheck.description.ok
+}
 
 data class StatusCheckReport(
     val name: String,

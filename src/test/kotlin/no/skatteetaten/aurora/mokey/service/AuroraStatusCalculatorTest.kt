@@ -184,7 +184,7 @@ class AuroraStatusCalculatorTest {
             return statusChecks.map {
                 StatusCheckReport(
                     name = it.name,
-                    description = it.description,
+                    description = it.description.failed,
                     hasFailed = true,
                     failLevel = it.failLevel
                 )
