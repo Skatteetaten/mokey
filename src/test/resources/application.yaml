@@ -11,3 +11,15 @@ logging:
   pattern:
     console: "%d [%thread] %-5level %logger:%L %X - %msg %n%rEx{full}"
 
+
+openshift:
+  cluster: utv
+
+boober-api-url: http://localhost
+metrics-hostname: http://localhost
+splunk-hostname: http://localhost
+openshift-cluster: utv
+
+mokey:
+    cache:
+        enabled: false
