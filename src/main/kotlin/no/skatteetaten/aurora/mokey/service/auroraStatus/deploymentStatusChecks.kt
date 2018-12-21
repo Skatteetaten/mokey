@@ -124,7 +124,7 @@ class TooManyPodsCheck : StatusCheck(
 ) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
-        app.targetReplicas < app.availableReplicas
+        app.targetReplicas < pods.size
 }
 
 @Component
@@ -136,7 +136,7 @@ class TooFewPodsCheck : StatusCheck(
 ) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
-        app.targetReplicas > app.availableReplicas
+        app.targetReplicas > pods.size
 }
 
 @Component
