@@ -21,8 +21,8 @@ const val upStatus = "UP"
 class AverageRestartErrorCheck(@Value("\${mokey.status.restart.error:100}") val averageRestartErrorThreshold: Int) :
     StatusCheck(
         StatusDescription(
-            ok = "Average pods restarts are not above $averageRestartErrorThreshold.",
-            failed = "Average pods restarts are above $averageRestartErrorThreshold."
+            ok = "Average restarts for pods is below $averageRestartErrorThreshold.",
+            failed = "Average restarts for pods is above $averageRestartErrorThreshold."
         ),
         DOWN
     ) {
@@ -48,7 +48,7 @@ class AnyPodDownCheck :
 @Component
 class NoAvailablePodsCheck : StatusCheck(
     StatusDescription(
-        ok = "There are right amount of available pods.",
+        ok = "There is the right amount of available pods.",
         failed = "Expected running pods, but there are none."
     ), DOWN
 ) {
@@ -61,9 +61,10 @@ class NoAvailablePodsCheck : StatusCheck(
 class DifferentDeploymentCheck(@Value("\${mokey.status.differentdeployment.hour:20}") val hourThreshold: Long) :
     StatusCheck(
         StatusDescription(
-            ok = "There are none different deployments.",
-            failed = "There has been different deployments for more than $hourThreshold hours."
-        ), DOWN) {
+            ok = "All pods have the same DeploymentConfig.",
+            failed = "There have been pods with different DeploymentConfigs for more than $hourThreshold hours."
+        ), DOWN
+    ) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean {
         val threshold = time.minus(Duration.ofHours(hourThreshold))
@@ -80,9 +81,10 @@ class DifferentDeploymentCheck(@Value("\${mokey.status.differentdeployment.hour:
 class AverageRestartObserveCheck(@Value("\${mokey.status.restart.observe:20}") val averageRestartObserveThreshold: Int) :
     StatusCheck(
         StatusDescription(
-            ok = "Average pods restarts are not above $averageRestartObserveThreshold.",
-            failed = "Average pods restarts are above $averageRestartObserveThreshold."
-        ), OBSERVE) {
+            ok = "Average restarts for pods is below $averageRestartObserveThreshold.",
+            failed = "Average restarts for pods is above $averageRestartObserveThreshold."
+        ), OBSERVE
+    ) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
         pods.isRestartsAboveThreshold(averageRestartObserveThreshold)
@@ -92,9 +94,10 @@ class AverageRestartObserveCheck(@Value("\${mokey.status.restart.observe:20}") v
 class AnyPodObserveCheck :
     StatusCheck(
         StatusDescription(
-            ok ="No pods responded with OBSERVE status from management health endpoint.",
-            failed ="One or more pods responded with OBSERVE status from management health endpoint."
-        ), OBSERVE) {
+            ok = "No pods responded with OBSERVE status from management health endpoint.",
+            failed = "One or more pods responded with OBSERVE status from management health endpoint."
+        ), OBSERVE
+    ) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant) =
         pods.validateStatus { !downStatuses.contains(it) && it != upStatus }
@@ -103,9 +106,10 @@ class AnyPodObserveCheck :
 @Component
 class DeployFailedCheck : StatusCheck(
     StatusDescription(
-        ok = "Last deployment was successful",
+        ok = "Last deployment was successful.",
         failed = "Last deployment failed."
-    ), OBSERVE) {
+    ), OBSERVE
+) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
         app.lastDeployment == "failed"
@@ -114,9 +118,10 @@ class DeployFailedCheck : StatusCheck(
 @Component
 class TooManyPodsCheck : StatusCheck(
     StatusDescription(
-        ok = "There are right amount of pods",
-        failed = "There are more pods then expected."
-    ), OBSERVE) {
+        ok = "There are not too many pods.",
+        failed = "There are more pods than expected."
+    ), OBSERVE
+) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
         app.targetReplicas < app.availableReplicas
@@ -125,20 +130,22 @@ class TooManyPodsCheck : StatusCheck(
 @Component
 class TooFewPodsCheck : StatusCheck(
     StatusDescription(
-        ok = "There are right amount of pods",
-        failed = "There are less pods then expected."
-    ), OBSERVE) {
+        ok = "There are not too few pods.",
+        failed = "There are less pods than expected."
+    ), OBSERVE
+) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
-        app.targetReplicas > app.availableReplicas && app.availableReplicas != 0
+        app.targetReplicas > app.availableReplicas
 }
 
 @Component
 class NoDeploymentCheck : StatusCheck(
     StatusDescription(
-        ok = "",
-        failed = "There has not been any deploys yet."
-    ), OFF) {
+        ok = "At least one deployment has been made.",
+        failed = "There have not been any deployments yet."
+    ), OFF
+) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
         app.lastDeployment == null
@@ -147,9 +154,10 @@ class NoDeploymentCheck : StatusCheck(
 @Component
 class OffCheck : StatusCheck(
     StatusDescription(
-        ok = "",
+        ok = "Deployment has not been turned off.",
         failed = "Deployment has been turned off."
-    ), OFF) {
+    ), OFF
+) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
         app.targetReplicas == 0 && app.availableReplicas == 0
@@ -159,9 +167,10 @@ class OffCheck : StatusCheck(
 class DeploymentInProgressCheck :
     StatusCheck(
         StatusDescription(
-            ok = "",
-            failed = "A new deployment are in progress, other statuses are ignored."
-        ), HEALTHY) {
+            ok = "No new deployment is in progress.",
+            failed = "A new deployment is in progress, other statuses are ignored."
+        ), HEALTHY
+    ) {
     val finalPhases = listOf("complete", "failed", null)
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =

@@ -91,7 +91,7 @@ class AuroraStatusCalculatorTest {
                     lastDeployment = "Failed",
                     availableReplicas = 0,
                     targetReplicas = 1,
-                    expected = AuroraStatus(DOWN, toReport(deployFailed, noAvailablePods))
+                    expected = AuroraStatus(DOWN, toReport(deployFailed, noAvailablePods, tooFewPods))
                 ),
                 StatusCalculatorTestData(
                     lastDeployment = "Failed",
@@ -102,7 +102,7 @@ class AuroraStatusCalculatorTest {
                 StatusCalculatorTestData(
                     availableReplicas = 0,
                     targetReplicas = 1,
-                    expected = AuroraStatus(DOWN, toReport(noAvailablePods))
+                    expected = AuroraStatus(DOWN, toReport(noAvailablePods, tooFewPods))
                 ),
                 StatusCalculatorTestData(
                     availableReplicas = 1,
