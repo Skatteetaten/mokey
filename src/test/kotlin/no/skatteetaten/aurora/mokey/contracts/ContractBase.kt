@@ -10,11 +10,11 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.web.context.WebApplicationContext
 import java.io.File
 
-class ContractResponses(val jsonResponses: Map<String, DocumentContext>) {
+class ContractResponses(val objectMapper: ObjectMapper, val jsonResponses: Map<String, DocumentContext>) {
     inline fun <reified T : Any> response(responseName: String = jsonResponses.keys.first()): T {
         val json = jsonResponses[responseName]?.jsonString()
             ?: throw IllegalArgumentException("Invalid response name,  $responseName")
-        return ObjectMapper().readValue(json)
+        return objectMapper.readValue(json)
     }
 }
 
@@ -23,6 +23,9 @@ abstract class ContractBase {
 
     @Autowired
     private lateinit var context: WebApplicationContext
+
+    @Autowired
+    private lateinit var objectMapper: ObjectMapper
 
     fun withContractResponses(baseTestObject: Any, fn: (responses: ContractResponses) -> Unit) {
         val responses = readJsonFiles(baseTestObject)
@@ -38,6 +41,6 @@ abstract class ContractBase {
 
         val files = File(content.toURI()).walk().filter { it.name.endsWith(".json") }.toList()
         val jsonResponses = files.associateBy({ it.name.removeSuffix(".json") }, { JsonPath.parse(it) })
-        return ContractResponses(jsonResponses)
+        return ContractResponses(objectMapper, jsonResponses)
     }
 }

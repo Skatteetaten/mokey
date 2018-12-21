@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
+import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -16,11 +17,12 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @ExposesResourceFor(ApplicationResource::class)
 @RequestMapping("/api/application")
-class ApplicationController(val applicationDataService: ApplicationDataService) {
+class ApplicationController(
+    private val applicationDataService: ApplicationDataService,
+    private val assembler: ApplicationResourceAssembler
+) {
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationController::class.java)
-
-    val assembler = ApplicationResourceAssembler()
 
     @GetMapping("/{applicationId}")
     fun getApplication(@PathVariable applicationId: String): ApplicationResource? =
@@ -37,6 +39,7 @@ class ApplicationController(val applicationDataService: ApplicationDataService) 
     }
 }
 
+@Component
 class ApplicationResourceAssembler :
     ResourceAssemblerSupport<GroupedApplicationData, ApplicationResource>(
         ApplicationController::class.java,

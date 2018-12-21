@@ -1,58 +1,154 @@
 {
-  "buildTime": "2018-07-02T07:04:16.541Z",
-  "gitInfo": {
-    "commitId": "",
-    "commitTime": "2018-07-02T07:04:16.541Z"
+  "buildTime" : "2018-12-07T13:43:43.137Z",
+  "gitInfo" : {
+    "commitId" : null,
+    "commitTime" : null
   },
-  "imageDetails": {
-    "imageBuildTime": "2018-04-05T07:52:14Z",
-    "dockerImageReference": "docker/image/test@sha256:12339544fa78d3ee134d181330c986b7434b802719c9bcb7e5905a116248251"
+  "imageDetails" : {
+    "imageBuildTime" : "2018-12-07T13:44:38Z",
+    "dockerImageReference" : "docker-registry",
+    "dockerImageTagReference" : null
   },
-  "podResources": [
-    {
-      "name": "test-pod",
-      "status": "Running",
-      "restartCount": 0,
-      "ready": true,
-      "startTime": "2018-06-19T04:43:08Z",
-      "_links": {
-        "metrics": {
-          "href": "http://metrics"
-        }
+  "podResources" : [ {
+    "name" : "pod-name",
+    "phase" : "Running",
+    "startTime" : "2018-12-11T12:25:47Z",
+    "replicaName" : "replica-name",
+    "latestReplicaName" : true,
+    "managementResponses" : {
+      "links" : {
+        "hasResponse" : true,
+        "textResponse" : "text",
+        "httpCode" : 200,
+        "createdAt" : "2018-12-21T08:52:11.889Z",
+        "url" : "http://localhost/actuator",
+        "error" : null
+      },
+      "health" : {
+        "hasResponse" : true,
+        "textResponse" : "text",
+        "httpCode" : 200,
+        "createdAt" : "2018-12-21T08:52:11.902Z",
+        "url" : "http://localhost/actuator/health",
+        "error" : null
+      },
+      "info" : {
+        "hasResponse" : true,
+        "textResponse" : "text",
+        "httpCode" : 200,
+        "createdAt" : "2018-12-21T08:52:11.893Z",
+        "url" : "http://localhost/actuator/info",
+        "error" : null
+      },
+      "env" : {
+        "hasResponse" : true,
+        "textResponse" : "text",
+        "httpCode" : 200,
+        "createdAt" : "2018-12-21T08:52:11.898Z",
+        "url" : "http://localhost/actuator/env",
+        "error" : null
+      }
+    },
+    "containers" : [ {
+      "name" : "argus-java",
+      "state" : "running",
+      "image" : "docker-registry",
+      "restartCount" : 0,
+      "ready" : true
+    } ],
+    "deployTag" : "1-SNAPSHOT",
+    "latestDeployTag" : true,
+    "status" : "Running",
+    "ready" : true,
+    "restartCount" : 0,
+    "_links" : {
+      "metrics" : {
+        "href" : "http://localhost/metrics"
+      },
+      "ocp_console_details" : {
+        "href" : "http://localhost/ocp_console_details"
+      },
+      "ocp_console_environment" : {
+        "href" : "http://localhost/ocp_console_environment"
+      },
+      "ocp_console_terminal" : {
+        "href" : "http://localhost/ocp_console_terminal"
+      },
+      "ocp_console_events" : {
+        "href" : "http://localhost/ocp_console_events"
+      },
+      "ocp_console_log" : {
+        "href" : "http://localhost/ocp_console_log"
       }
     }
-  ],
-  "dependencies": [],
-  "applicationDeploymentCommand": {
-    "applicationDeploymentRef": {
-      "environment": "utv",
-      "application": "test"
+  } ],
+  "dependencies" : {
+    "skatteetaten" : "skatteetaten"
+  },
+  "applicationDeploymentCommand" : {
+    "applicationDeploymentRef" : {
+      "environment" : "utv",
+      "application" : "app"
     },
-    "auroraConfig": {
-      "name": "paas",
-      "refName": "master",
-      "resolvedRef": "123"
+    "auroraConfig" : {
+      "name" : "aurora",
+      "refName" : "master",
+      "resolvedRef" : "abc123"
     }
   },
-  "errors": [],
-  "_links": {
-    "ApplyResult": {
-      "href": "http://localhost/v1/apply-result/paas/"
+  "deployDetails" : {
+    "targetReplicas" : 1,
+    "availableReplicas" : 1,
+    "deployment" : "deployment-4",
+    "phase" : "Complete",
+    "deployTag" : "1-SNAPSHOT"
+  },
+  "identifier" : "abc123",
+  "_links" : {
+    "api-doc" : {
+      "href" : "localhost/docs/index.html"
     },
-    "DeploymentSpecCurrent": {
-      "href": "http://localhost/v1/auroradeployspec/paas/utv/test?reference=master"
+    "metrics" : {
+      "href" : "http://localhost/metrics"
     },
-    "DeploymentSpecDeployed": {
-      "href": "http://localhost/v1/auroradeployspec/paas/utv/test?reference=123"
+    "ServiceAddress" : {
+      "href" : "http://localhost"
     },
-    "FilesCurrent": {
-      "href": "http://localhost/v1/auroraconfig/paas?environment=utv&application=test&reference=master"
+    "RouteAddress" : {
+      "href" : "http://localhost"
     },
-    "FilesDeployed": {
-      "href": "http://localhost/v1/auroraconfig/paas?environment=utv&application=test&reference=123"
+    "ApplyResult" : {
+      "href" : "http://localhost/apply"
     },
-    "self": {
-      "href": "http://localhost/api/auth/applicationdeploymentdetails/appDeploymentId"
+    "DeploymentSpecCurrent" : {
+      "href" : "http://localhost/deploymentSpecCurrent"
+    },
+    "DeploymentSpecDeployed" : {
+      "href" : "http://localhost/deploymentSpecDeployed"
+    },
+    "FilesCurrent" : {
+      "href" : "http://localhost/filesCurrent"
+    },
+    "FilesDeployed" : {
+      "href" : "http://localhost/filesDeployed"
+    },
+    "Apply" : {
+      "href" : "http://localhost/apply"
+    },
+    "AuroraConfigFileCurrent" : {
+      "href" : "http://localhost/auroraConfigFileCurrent"
+    },
+    "AuroraConfigFileDeployed" : {
+      "href" : "http://localhost/auroraConfigFileDeployed"
+    },
+    "ApplicationDeployment" : {
+      "href" : "http://localhost/applicationDeployment"
+    },
+    "Application" : {
+      "href" : "http://localhost/application"
+    },
+    "self" : {
+      "href" : "http://localhost"
     }
   }
 }
