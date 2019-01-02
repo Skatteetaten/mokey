@@ -195,7 +195,7 @@ class ApplicationDataServiceOpenShift(
                 publicData = ApplicationPublicData(
                     applicationId = applicationDeployment.spec.applicationId,
                     applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-                    auroraStatus = AuroraStatus(AuroraStatusLevel.OFF, "No Deployment Config found"),
+                    auroraStatus = AuroraStatus(AuroraStatusLevel.OFF),
                     applicationName = applicationName,
                     applicationDeploymentName = applicationDeploymentName,
                     namespace = namespace,
@@ -212,7 +212,7 @@ class ApplicationDataServiceOpenShift(
         val imageDetails = imageService.getImageDetails(dc)
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
-        val auroraStatus = auroraStatusCalculator.calculateStatus(deployDetails, pods)
+        val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
