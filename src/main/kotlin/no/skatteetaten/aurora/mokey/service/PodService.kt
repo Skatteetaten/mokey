@@ -17,10 +17,11 @@ class PodService(
 
     fun getPodDetails(
         applicationDeployment: ApplicationDeployment,
-        deployDetails: DeployDetails
+        deployDetails: DeployDetails,
+        selector: Map<String, String> = applicationDeployment.spec.selector
     ): List<PodDetails> {
 
-        val pods = openShiftService.pods(applicationDeployment.metadata.namespace, applicationDeployment.spec.selector)
+        val pods = openShiftService.pods(applicationDeployment.metadata.namespace, selector)
         return pods.map { pod: Pod ->
             val managementResult =
                 managementDataService.load(pod.status.podIP, applicationDeployment.spec.managementPath)
