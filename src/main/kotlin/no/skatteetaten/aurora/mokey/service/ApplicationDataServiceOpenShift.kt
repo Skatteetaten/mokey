@@ -207,7 +207,9 @@ class ApplicationDataServiceOpenShift(
         }
 
         val deployDetails = createDeployDetails(dc)
-        val pods = podService.getPodDetails(applicationDeployment, deployDetails)
+        // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
+        // every pods has a name label we have to use selector from DeploymentConfig.
+        val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
 
         val imageDetails = imageService.getImageDetails(dc)
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
