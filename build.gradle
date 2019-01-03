@@ -32,7 +32,8 @@ plugins {
 
 ext.aurora = [
     requireStaging: false,
-    applySpockSupport: false
+    applySpockSupport: false,
+    applyCheckstylePlugin: false
 ]
 
 apply plugin: 'io.spring.dependency-management'
