@@ -133,4 +133,7 @@ data class DeployDetails(
     val deployment: String? = null,
     val phase: String? = null,
     val deployTag: String? = null
-)
+) {
+    val lastDeployment: String?
+        get() = this.phase?.toLowerCase()
+}

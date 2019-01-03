@@ -4,15 +4,27 @@ import assertk.assert
 import assertk.assertions.isEqualTo
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.DOWN
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OBSERVE
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
 import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.HealthStatusDetail
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.model.StatusCheck
+import no.skatteetaten.aurora.mokey.model.StatusCheckReport
+import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodDownCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodObserveCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.AverageRestartErrorCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.AverageRestartObserveCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.DeployFailedCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.DeploymentInProgressCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.DifferentDeploymentCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.NoAvailablePodsCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.NoDeploymentCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.OffCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.TooFewPodsCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.TooManyPodsCheck
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Duration
@@ -21,11 +33,21 @@ import java.time.Instant
 class AuroraStatusCalculatorTest {
 
     val calculator = AuroraStatusCalculator(
-        avergageRestartObserveThreshold = 20,
-        avergageRestartErrorThreshold = 100,
-        differentDeploymentHourThreshold = 2
+        listOf(
+            anyPodDown,
+            anyPodObserve,
+            noAvailablePods,
+            noDeployment,
+            off,
+            deployFailed,
+            deploymentInProgress,
+            tooManyPods,
+            tooFewPods,
+            averageRestartError,
+            averageRestartObserve,
+            differentDeployment
+        )
     )
-
     val time = Instant.EPOCH
 
     @ParameterizedTest(name = "test:{0}")
@@ -38,22 +60,29 @@ class AuroraStatusCalculatorTest {
                 phase = input.lastDeployment,
                 deployTag = "1"
             )
-            val auroraStatus = calculator.calculateStatus(deployDetails, pods, time)
-            assert(auroraStatus).isEqualTo(expected)
+            val auroraStatus = calculator.calculateAuroraStatus(deployDetails, pods, time)
+            assert(auroraStatus.level).isEqualTo(expected.level)
+            assert(auroraStatus.reasons.sortedBy { it.name }).isEqualTo(expected.reasons.sortedBy { it.name })
         }
     }
 
     companion object {
-        fun auroraStatus(main: HealthStatusDetail, vararg extra: HealthStatusDetail) =
-            AuroraStatus(main.level, main.comment, statuses = extra.toSet() + main)
+        val averageRestartErrorThreshold = 100
+        val averageRestartObserveThreshold = 20
+        val hourThreshold = 20L
 
-        fun auroraStatus(main: Pair<AuroraStatusLevel, String>, vararg extra: Pair<AuroraStatusLevel, String>) =
-            AuroraStatus(main.first, main.second, statuses = extra.map {
-                HealthStatusDetail(
-                    it.first,
-                    it.second
-                )
-            }.toSet() + HealthStatusDetail(main.first, main.second))
+        val anyPodDown = AnyPodDownCheck()
+        val anyPodObserve = AnyPodObserveCheck()
+        val noAvailablePods = NoAvailablePodsCheck()
+        val noDeployment = NoDeploymentCheck()
+        val off = OffCheck()
+        val deployFailed = DeployFailedCheck()
+        val deploymentInProgress = DeploymentInProgressCheck()
+        val tooManyPods = TooManyPodsCheck()
+        val tooFewPods = TooFewPodsCheck()
+        val averageRestartError = AverageRestartErrorCheck(averageRestartErrorThreshold)
+        val averageRestartObserve = AverageRestartObserveCheck(averageRestartObserveThreshold)
+        val differentDeployment = DifferentDeploymentCheck(hourThreshold)
 
         @JvmStatic
         fun calculatorProvider(): List<StatusCalculatorTestData> {
@@ -61,63 +90,51 @@ class AuroraStatusCalculatorTest {
                 StatusCalculatorTestData(
                     lastDeployment = "Failed",
                     availableReplicas = 0,
-                    targetReplicas = 0,
-                    expected = auroraStatus(
-                        DOWN to "DEPLOY_FAILED_NO_PODS",
-                        OFF to "OFF"
-                    )
+                    targetReplicas = 1,
+                    pods = listOf(),
+                    expected = AuroraStatus(DOWN, toReport(deployFailed, noAvailablePods, tooFewPods))
                 ),
                 StatusCalculatorTestData(
                     lastDeployment = "Failed",
-                    availableReplicas = 1,
-                    targetReplicas = 1,
-                    expected = auroraStatus(OBSERVE to "DEPLOY_FAILED")
+                    expected = AuroraStatus(OBSERVE, toReport(deployFailed))
                 ),
                 StatusCalculatorTestData(
                     availableReplicas = 0,
                     targetReplicas = 1,
-                    expected = auroraStatus(DOWN to "NO_AVAILABLE_PODS")
+                    pods = listOf(),
+                    expected = AuroraStatus(DOWN, toReport(noAvailablePods, tooFewPods))
                 ),
                 StatusCalculatorTestData(
                     availableReplicas = 1,
-                    expected = auroraStatus(OBSERVE to "TOO_FEW_PODS")
+                    pods = listOf(
+                        PodDetailsDataBuilder(deployment = "name-1", startTime = Instant.EPOCH).build()
+                    ),
+                    expected = AuroraStatus(OBSERVE, toReport(tooFewPods))
                 ),
                 StatusCalculatorTestData(
                     availableReplicas = 0,
                     targetReplicas = 0,
-                    expected = auroraStatus(OFF to "OFF")
+                    pods = listOf(),
+                    expected = AuroraStatus(OFF, toReport(off))
                 ),
                 StatusCalculatorTestData(
                     targetReplicas = 1,
-                    expected = auroraStatus(OBSERVE to "TOO_MANY_PODS")
+                    expected = AuroraStatus(OBSERVE, toReport(tooManyPods))
                 ),
                 StatusCalculatorTestData(
-                    expected = auroraStatus(HEALTHY to "")
+                    expected = AuroraStatus(HEALTHY)
                 ),
                 StatusCalculatorTestData(
                     lastDeployment = "Running",
                     availableReplicas = 1,
-                    expected = auroraStatus(HEALTHY to "DEPLOYMENT_IN_PROGRESS", OBSERVE to "TOO_FEW_PODS")
+                    pods = listOf(
+                        PodDetailsDataBuilder(deployment = "name-1", startTime = Instant.EPOCH).build()
+                    ),
+                    expected = AuroraStatus(HEALTHY, toReport(deploymentInProgress, tooFewPods))
                 ),
                 StatusCalculatorTestData(
                     lastDeployment = null,
-                    expected = auroraStatus(OFF to "NO_DEPLOYMENT")
-                ),
-                StatusCalculatorTestData(
-                    pods = listOf(
-                        PodDetailsDataBuilder().build()
-                    ),
-                    expected = auroraStatus(HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "name"))
-                ),
-                StatusCalculatorTestData(
-                    pods = listOf(
-                        PodDetailsDataBuilder(name = "app1").build(),
-                        PodDetailsDataBuilder(name = "app2").build()
-                    ),
-                    expected = auroraStatus(
-                        HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "app1"),
-                        HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "app2")
-                    )
+                    expected = AuroraStatus(OFF, toReport(noDeployment))
                 ),
                 StatusCalculatorTestData(
                     pods = listOf(
@@ -127,13 +144,11 @@ class AuroraStatusCalculatorTest {
                             startTime = Instant.EPOCH - Duration.ofDays(2)
                         ).build()
                     ),
-                    expected = auroraStatus(
-                        HealthStatusDetail(DOWN, "DIFFERENT_DEPLOYMENTS"),
-                        HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "nam" +
-                            "e")
-                    )
+                    expected = AuroraStatus(DOWN, toReport(differentDeployment))
                 ),
                 StatusCalculatorTestData(
+                    availableReplicas = 1,
+                    targetReplicas = 1,
                     pods = listOf(
                         PodDetailsDataBuilder(
                             containers = listOf(
@@ -141,18 +156,17 @@ class AuroraStatusCalculatorTest {
                                     name = "name-java",
                                     state = "running",
                                     image = "docker....",
-                                    restartCount = 101,
+                                    restartCount = averageRestartErrorThreshold + 10,
                                     ready = true
                                 )
                             )
                         ).build()
                     ),
-                    expected = auroraStatus(
-                        HealthStatusDetail(DOWN, "AVERAGE_RESTART_ABOVE_THRESHOLD"),
-                        HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "name")
-                    )
+                    expected = AuroraStatus(DOWN, toReport(averageRestartError, averageRestartObserve))
                 ),
                 StatusCalculatorTestData(
+                    availableReplicas = 1,
+                    targetReplicas = 1,
                     pods = listOf(
                         PodDetailsDataBuilder(
                             containers = listOf(
@@ -160,18 +174,26 @@ class AuroraStatusCalculatorTest {
                                     name = "name-java",
                                     state = "running",
                                     image = "docker....",
-                                    restartCount = 31,
+                                    restartCount = averageRestartObserveThreshold + 10,
                                     ready = true
                                 )
                             )
                         ).build()
                     ),
-                    expected = auroraStatus(
-                        HealthStatusDetail(OBSERVE, "AVERAGE_RESTART_ABOVE_THRESHOLD"),
-                        HealthStatusDetail(HEALTHY, "POD_HEALTH_CHECK", "name")
-                    )
+                    expected = AuroraStatus(OBSERVE, toReport(averageRestartObserve))
                 )
             )
+        }
+
+        private fun toReport(vararg statusChecks: StatusCheck): List<StatusCheckReport> {
+            return statusChecks.map {
+                StatusCheckReport(
+                    name = it.name,
+                    description = it.description.failed,
+                    hasFailed = true,
+                    failLevel = it.failLevel
+                )
+            }
         }
     }
 
@@ -179,7 +201,10 @@ class AuroraStatusCalculatorTest {
         val lastDeployment: String? = "Complete",
         val availableReplicas: Int = 2,
         val targetReplicas: Int = 2,
-        val pods: List<PodDetails> = listOf(),
+        val pods: List<PodDetails> = listOf(
+            PodDetailsDataBuilder(deployment = "name-1", startTime = Instant.EPOCH).build(),
+            PodDetailsDataBuilder(deployment = "name-2", startTime = Instant.EPOCH).build()
+        ),
         val expected: AuroraStatus
     )
 }

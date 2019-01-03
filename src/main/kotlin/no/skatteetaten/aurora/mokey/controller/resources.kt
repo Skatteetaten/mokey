@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
@@ -47,10 +48,16 @@ data class Version(val deployTag: String?, val auroraVersion: String?, val relea
 data class AuroraStatusResource(
     val code: String,
     val comment: String? = null,
-    val details: List<HealthStatusDetailResource>? = null
+    val reasons: List<StatusCheckReportResource> = listOf(),
+    val reports: List<StatusCheckReportResource> = listOf()
 )
 
-data class HealthStatusDetailResource(val code: String, val comment: String, val ref: String?)
+data class StatusCheckReportResource(
+    val name: String,
+    val description: String,
+    val failLevel: AuroraStatusLevel,
+    val hasFailed: Boolean
+)
 
 class ApplicationDeploymentDetailsResource(
     id: String?,

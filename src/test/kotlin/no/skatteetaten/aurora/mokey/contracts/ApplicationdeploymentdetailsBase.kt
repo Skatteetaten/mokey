@@ -2,15 +2,12 @@ package no.skatteetaten.aurora.mokey.contracts
 
 import com.nhaarman.mockito_kotlin.any
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
-import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentDetailsResource
 import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentDetailsResourceAssembler
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.junit.jupiter.api.BeforeEach
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.BDDMockito.given
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.security.test.context.support.WithAnonymousUser
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.security.test.context.support.WithUserDetails
 
 @WithUserDetails

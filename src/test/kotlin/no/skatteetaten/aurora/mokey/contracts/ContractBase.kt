@@ -5,8 +5,10 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
 import io.restassured.module.mockmvc.RestAssuredMockMvc
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.web.context.WebApplicationContext
 import java.io.File
 
@@ -18,6 +20,7 @@ class ContractResponses(val objectMapper: ObjectMapper, val jsonResponses: Map<S
     }
 }
 
+@ExtendWith(SpringExtension::class)
 @SpringBootTest
 abstract class ContractBase {
 

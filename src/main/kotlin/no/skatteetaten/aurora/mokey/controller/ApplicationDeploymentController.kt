@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.model.StatusCheckReport
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
@@ -46,15 +47,9 @@ class ApplicationDeploymentResourceAssembler :
             name = applicationData.applicationDeploymentName,
             status = applicationData.auroraStatus.let { status ->
                 AuroraStatusResource(
-                    status.level.name,
-                    status.comment,
-                    applicationData.auroraStatus.statuses.map {
-                        HealthStatusDetailResource(
-                            it.level.name,
-                            it.comment,
-                            it.ref
-                        )
-                    }
+                    code = status.level.name,
+                    reasons = toStatusCheckReportResource(status.reasons),
+                    reports = toStatusCheckReportResource(status.reports)
                 )
             },
             version = Version(applicationData.deployTag, applicationData.auroraVersion, applicationData.releaseTo),
@@ -73,5 +68,14 @@ class ApplicationDeploymentResourceAssembler :
                     .withRel(resourceClassNameToRelName(ApplicationResource::class))
             )
         }
+    }
+
+    private fun toStatusCheckReportResource(list: List<StatusCheckReport>) = list.map {
+        StatusCheckReportResource(
+            name = it.name,
+            description = it.description,
+            failLevel = it.failLevel,
+            hasFailed = it.hasFailed
+        )
     }
 }

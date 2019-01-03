@@ -18,7 +18,7 @@ buildscript {
   dependencies {
     classpath(
         'no.skatteetaten.aurora.gradle.plugins:aurora-gradle-plugin:1.2.1',
-        'org.springframework.cloud:spring-cloud-contract-gradle-plugin:2.1.0.RC2'
+        'org.springframework.cloud:spring-cloud-contract-gradle-plugin:2.1.0.RC3'
     )
   }
 }
@@ -50,7 +50,7 @@ group = 'no.skatteetaten.aurora'
 
 dependencyManagement {
   imports {
-    mavenBom "org.springframework.cloud:spring-cloud-contract-dependencies:2.1.0.RC2"
+    mavenBom "org.springframework.cloud:spring-cloud-contract-dependencies:2.1.0.RC3"
   }
 }
 

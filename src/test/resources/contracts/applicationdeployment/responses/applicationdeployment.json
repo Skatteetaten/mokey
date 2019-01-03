@@ -6,12 +6,9 @@
   "namespace": "paas-utv",
   "status": {
     "code": "HEALTHY",
-    "comment": "POD_HEALTH_CHECK",
-    "details": [{
-      "code": "HEALTHY",
-      "comment": "POD_HEALTH_CHECK",
-      "ref": ""
-    }]
+    "comment": null,
+    "reasons": [],
+    "reports": []
   },
   "version": {
     "deployTag": "master-SNAPSHOT",

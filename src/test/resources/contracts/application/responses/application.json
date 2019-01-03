@@ -10,12 +10,9 @@
       "namespace": "paas-utv",
       "status": {
         "code": "HEALTHY",
-        "comment": "",
-        "details": [{
-          "code": "HEALTHY",
-          "comment": "",
-          "ref": null
-        }]
+        "comment": null,
+        "reasons": [],
+        "reports": []
       },
       "version": {
         "deployTag": "latest",
