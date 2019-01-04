@@ -60,7 +60,7 @@ data class StatusCheckReportResource(
 )
 
 class ApplicationDeploymentDetailsResource(
-    id: String,
+    id: String?,
     val buildTime: Instant? = null,
     val gitInfo: GitInfoResource?,
     val imageDetails: ImageDetailsResource?,

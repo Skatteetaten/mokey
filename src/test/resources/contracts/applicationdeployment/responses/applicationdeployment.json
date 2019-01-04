@@ -14,12 +14,17 @@
     "deployTag": "master-SNAPSHOT",
     "auroraVersion": ""
   },
+  "dockerImageRepo": "docker-registry",
+  "time": "2018-12-21T08:30:10.918Z",
   "_links": {
     "self": {
       "href": "http://localhost/api/applicationdeployment/appDeploymentId"
     },
     "ApplicationDeploymentDetails": {
       "href": "http://localhost/api/auth/applicationdeploymentdetails/appDeploymentId"
+    },
+    "Application":{
+      "href": "http://localhost/api/application/appId"
     }
   }
 }

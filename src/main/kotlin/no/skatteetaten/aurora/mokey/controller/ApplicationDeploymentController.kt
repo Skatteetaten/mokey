@@ -7,6 +7,7 @@ import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
+import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -16,10 +17,9 @@ import org.springframework.web.bind.annotation.RestController
 @ExposesResourceFor(ApplicationDeploymentResource::class)
 @RequestMapping("/api/applicationdeployment")
 class ApplicationDeploymentController(
-    val applicationDataService: ApplicationDataService
+    private val applicationDataService: ApplicationDataService,
+    private val assembler: ApplicationDeploymentResourceAssembler
 ) {
-
-    val assembler = ApplicationDeploymentResourceAssembler()
 
     @GetMapping("/{id}")
     fun get(@PathVariable id: String): ApplicationDeploymentResource {
@@ -30,6 +30,7 @@ class ApplicationDeploymentController(
     }
 }
 
+@Component
 class ApplicationDeploymentResourceAssembler :
     ResourceAssemblerSupport<ApplicationPublicData, ApplicationDeploymentResource>(
         ApplicationDeploymentController::class.java,

@@ -1,7 +1,5 @@
 package no.skatteetaten.aurora.mokey.controller
 
-// import org.springframework.test.web.servlet.match.MockRestRequestMatchers.jsonPath
-
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationData
