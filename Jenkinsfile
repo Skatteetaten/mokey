@@ -1,17 +1,12 @@
-def jenkinsfile
-
-
 def overrides = [
-    scriptVersion  : 'feature/AOS-2708',
+    scriptVersion  : 'v6',
     pipelineScript: 'https://git.aurora.skead.no/scm/ao/aurora-pipeline-scripts.git',
-    openShiftBaseImage: 'yeaster',
-    openShiftBaseImageVersion: '1',
-    piTests: false,
-    checkstyle: false,
-    docs: false,
     credentialsId: "github",
-    suggestVersionAndTagReleases: [
-      [branch: 'master', versionHint: '2']
+    checkstyle : false,
+    sonarQube: false,
+    jiraFiksetIKomponentversjon: true,
+    versionStrategy: [
+      [ branch: 'master', versionHint: '1' ]
     ]
 ]
 

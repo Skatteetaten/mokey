@@ -7,7 +7,7 @@ data class Environment(val name: String, val affiliation: String) {
     companion object {
         fun fromNamespace(namespace: String, affiliation: String? = null): Environment {
             val theAffiliation = affiliation ?: namespace.substringBefore("-")
-            val name = namespace.replace("$theAffiliation-", "")
+            val name = namespace.replaceFirst("$theAffiliation-", "")
             return Environment(name, theAffiliation)
         }
     }
