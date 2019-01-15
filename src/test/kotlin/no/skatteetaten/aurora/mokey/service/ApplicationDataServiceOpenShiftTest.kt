@@ -59,6 +59,40 @@ class ApplicationDataServiceOpenShiftTest {
     }
 
     @Test
+    fun `find paused application data by id`() {
+        val dcBuilder = DeploymentConfigDataBuilder(pause = true)
+        val appDeployment = AuroraApplicationDeploymentDataBuilder().build()
+        val dc = dcBuilder.build()
+        val replicationController = ReplicationControllerDataBuilder().build()
+        val podDetails = PodDetailsDataBuilder().build()
+        val imageDetails = ImageDetailsDataBuilder().build()
+        val addresses = listOf(ServiceAddress(URI.create("http://app-name"), Instant.EPOCH))
+
+        every { openShiftService.projects() } returns listOf(
+            Project("1", "Project", ObjectMeta().apply { name = dcBuilder.dcNamespace }, null, null)
+        )
+        every { openShiftService.applicationDeployments(dcBuilder.dcNamespace) } returns listOf(appDeployment)
+        every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
+        every { openShiftService.rc(dcBuilder.dcNamespace, "${dcBuilder.dcName}-1") } returns replicationController
+        every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
+        every { meterRegistry.gauge("aurora_status", any(), any<Int>()) } returns 1
+        every { imageService.getImageDetails(dc) } returns imageDetails
+        every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
+        every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
+
+        val applicationData =
+            applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
+
+        assert(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
+        assert(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
+        assert(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
+        assert(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
+        assert(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
+        assert(applicationData.publicData.message).isEqualTo("message")
+        assert(applicationData.deployDetails?.paused).isEqualTo(true)
+    }
+
+    @Test
     fun `find application data by id`() {
         val dcBuilder = DeploymentConfigDataBuilder()
         val appDeployment = AuroraApplicationDeploymentDataBuilder().build()
@@ -88,6 +122,8 @@ class ApplicationDataServiceOpenShiftTest {
         assert(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
         assert(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
         assert(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
+        assert(applicationData.publicData.message).isEqualTo("message")
+        assert(applicationData.deployDetails?.paused).isEqualTo(false)
     }
 
     @Test

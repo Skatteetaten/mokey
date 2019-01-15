@@ -40,15 +40,18 @@ spring:
 mokey:
     cache:
         enabled: true
-        affiliations: demo
-
+        affiliations: part
 
 logging:
     pattern:
         console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
+    level:
+        no.skatteetaten.aurora:
+            mokey: DEBUG
 
 openshift-cluster: utv
+openshift.cluster: utv
 
 ---
 spring:
