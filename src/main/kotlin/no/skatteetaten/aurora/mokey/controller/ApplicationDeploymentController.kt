@@ -55,7 +55,7 @@ class ApplicationDeploymentResourceAssembler :
             version = Version(applicationData.deployTag, applicationData.auroraVersion, applicationData.releaseTo),
             time = applicationData.time,
             dockerImageRepo = applicationData.dockerImageRepo,
-            message=applicationData.message
+            message = applicationData.message
         ).apply {
             add(linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId).withSelfRel())
             add(
