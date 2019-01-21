@@ -66,7 +66,8 @@ data class AuroraApplicationDeploymentDataBuilder(
     val releaseTo: String? = null,
     val exactGitRef: String = "abcd",
     val overrides: Map<String, String> = emptyMap(),
-    val auroraConfigRefBranch: String = "master"
+    val auroraConfigRefBranch: String = "master",
+    val msg: String = "message"
 ) {
 
     val appNamespace: String get() = "$affiliation-$envName"
@@ -97,7 +98,8 @@ data class AuroraApplicationDeploymentDataBuilder(
                 managementPath = managementPath,
                 releaseTo = releaseTo,
                 deployTag = deployTag,
-                selector = selector
+                selector = selector,
+                message = msg
             )
         )
     }
@@ -108,7 +110,8 @@ data class DeploymentConfigDataBuilder(
     val dcAffiliation: String = DEFAULT_AFFILIATION,
     val dcEnvName: String = DEFAULT_ENV_NAME,
     val dcDeployTag: String = "name:tag",
-    val dcSelector: Map<String, String> = mapOf("name" to dcName)
+    val dcSelector: Map<String, String> = mapOf("name" to dcName),
+    val pause: Boolean = false
 ) {
 
     val dcNamespace: String get() = "$dcAffiliation-$dcEnvName"
@@ -124,6 +127,9 @@ data class DeploymentConfigDataBuilder(
                 latestVersion = 1
             }
             spec {
+                if (pause) {
+                    paused = true
+                }
                 replicas = 1
                 selector = dcSelector
                 triggers = listOf(

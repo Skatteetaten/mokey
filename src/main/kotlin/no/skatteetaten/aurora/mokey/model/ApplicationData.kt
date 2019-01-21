@@ -39,7 +39,9 @@ data class ApplicationPublicData(
     val auroraVersion: String? = null,
     val dockerImageRepo: String? = null,
     val releaseTo: String?,
-    val time: Instant = Instant.now()
+    val time: Instant = Instant.now(),
+    val paused: Boolean = false,
+    val message: String? = null
 )
 
 data class ApplicationData(
@@ -132,7 +134,8 @@ data class DeployDetails(
     val availableReplicas: Int,
     val deployment: String? = null,
     val phase: String? = null,
-    val deployTag: String? = null
+    val deployTag: String? = null,
+    val paused: Boolean = false
 ) {
     val lastDeployment: String?
         get() = this.phase?.toLowerCase()

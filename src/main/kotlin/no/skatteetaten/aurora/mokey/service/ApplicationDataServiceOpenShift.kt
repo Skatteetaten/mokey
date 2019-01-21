@@ -201,7 +201,8 @@ class ApplicationDataServiceOpenShift(
                     namespace = namespace,
                     affiliation = affiliation,
                     deployTag = applicationDeployment.spec.deployTag ?: "",
-                    releaseTo = applicationDeployment.spec.releaseTo
+                    releaseTo = applicationDeployment.spec.releaseTo,
+                    message = applicationDeployment.spec.message
                 )
             )
         }
@@ -239,7 +240,8 @@ class ApplicationDataServiceOpenShift(
                 auroraVersion = imageDetails?.auroraVersion,
                 deployTag = applicationDeployment.spec.deployTag ?: "",
                 dockerImageRepo = imageDetails?.dockerImageRepo,
-                releaseTo = applicationDeployment.spec.releaseTo
+                releaseTo = applicationDeployment.spec.releaseTo,
+                message = applicationDeployment.spec.message
             )
         )
     }
@@ -252,7 +254,11 @@ class ApplicationDataServiceOpenShift(
 
         val rc = latestRCName?.let { openshiftService.rc(namespace, it) }
 
-        val details = DeployDetails(dc.spec.replicas, dc.status.availableReplicas ?: 0)
+        val details = DeployDetails(
+            targetReplicas = dc.spec.replicas,
+            availableReplicas = dc.status.availableReplicas ?: 0,
+            paused = dc.spec.paused ?: false
+        )
         if (rc == null) {
             return details
         }

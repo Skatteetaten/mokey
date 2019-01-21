@@ -8,6 +8,7 @@
       "affiliation": "paas",
       "environment": "utv",
       "namespace": "paas-utv",
+      "message": "message",
       "status": {
         "code": "HEALTHY",
         "comment": null,

@@ -76,11 +76,12 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
     private fun toDeployDetailsResource(it: DeployDetails): DeployDetailsResource? {
         return DeployDetailsResource(
-            it.targetReplicas,
-            it.availableReplicas,
-            it.deployment,
-            it.phase,
-            it.deployTag
+            targetReplicas = it.targetReplicas,
+            availableReplicas = it.availableReplicas,
+            deployment = it.deployment,
+            phase = it.phase,
+            deployTag = it.deployTag,
+            paused = it.paused
         )
     }
 

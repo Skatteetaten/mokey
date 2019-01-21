@@ -40,7 +40,8 @@ class ApplicationDeploymentResource(
     val status: AuroraStatusResource,
     val version: Version,
     val dockerImageRepo: String?,
-    val time: Instant
+    val time: Instant,
+    val message: String?
 ) : IdentifiedHalResource(id)
 
 data class Version(val deployTag: String?, val auroraVersion: String?, val releaseTo: String?)
@@ -102,7 +103,8 @@ data class DeployDetailsResource(
     val availableReplicas: Int,
     val deployment: String? = null,
     val phase: String? = null,
-    val deployTag: String? = null
+    val deployTag: String? = null,
+    val paused: Boolean
 )
 
 data class ContainerResource(
