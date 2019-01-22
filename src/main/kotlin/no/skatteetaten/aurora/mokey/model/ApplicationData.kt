@@ -48,6 +48,7 @@ data class ApplicationData(
     val booberDeployId: String? = null,
     val managementPath: String? = null,
     val pods: List<PodDetails> = emptyList(),
+    val databaseDetails: DatabaseDetails? = null,
     val imageDetails: ImageDetails? = null,
     val deployDetails: DeployDetails? = null,
     val addresses: List<Address> = emptyList(),
@@ -66,6 +67,8 @@ data class ApplicationData(
     val namespace get() = publicData.namespace
     val deployTag get() = publicData.deployTag
 }
+
+data class DatabaseDetails(val id: String)
 
 data class PodDetails(
     val openShiftPodExcerpt: OpenShiftPodExcerpt,

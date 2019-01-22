@@ -65,6 +65,7 @@ class ApplicationDeploymentDetailsResource(
     val buildTime: Instant? = null,
     val gitInfo: GitInfoResource?,
     val imageDetails: ImageDetailsResource?,
+    val databaseDetails: DatabaseDetailsResource?,
     val podResources: List<PodResource>,
     val dependencies: Map<String, String> = emptyMap(),
     val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
@@ -81,6 +82,8 @@ data class GitInfoResource(
     val commitId: String? = null,
     val commitTime: Instant? = null
 )
+
+data class DatabaseDetailsResource(val id: String)
 
 class PodResource(
     val name: String,

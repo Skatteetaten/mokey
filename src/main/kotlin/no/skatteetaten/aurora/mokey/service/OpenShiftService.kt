@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.service
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
+import io.fabric8.kubernetes.api.model.Secret
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.DeploymentConfig
@@ -47,6 +48,10 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
     fun services(namespace: String, labelMap: Map<String, String>): List<io.fabric8.kubernetes.api.model.Service> {
         return openShiftClient.services().inNamespace(namespace).withLabels(labelMap).list().items
+    }
+
+    fun secret(namespace: String, name: String): Secret? {
+        return openShiftClient.secrets().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun pods(namespace: String, labelMap: Map<String, String>): List<Pod> {

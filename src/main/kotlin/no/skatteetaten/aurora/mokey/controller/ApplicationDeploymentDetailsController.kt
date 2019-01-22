@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
+import no.skatteetaten.aurora.mokey.model.DatabaseDetails
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
@@ -63,6 +64,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             id = applicationData.applicationDeploymentId,
             buildTime = infoResponse?.buildTime,
             gitInfo = toGitInfoResource(infoResponse),
+            databaseDetails = applicationData.databaseDetails?.let { toDatabaseDetailsResource(it) },
             imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
             deployDetails = applicationData.deployDetails?.let { toDeployDetailsResource(it) },
             podResources = applicationData.pods.map { toPodResource(applicationData, it) },
@@ -85,8 +87,15 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         )
     }
 
+    private fun toDatabaseDetailsResource(databaseDetails: DatabaseDetails) =
+        DatabaseDetailsResource(databaseDetails.id)
+
     private fun toImageDetailsResource(imageDetails: ImageDetails) =
-        ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference, imageDetails.dockerImageTagReference)
+        ImageDetailsResource(
+            imageDetails.imageBuildTime,
+            imageDetails.dockerImageReference,
+            imageDetails.dockerImageTagReference
+        )
 
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
         val pod = podDetails.openShiftPodExcerpt

@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
@@ -16,6 +17,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import no.skatteetaten.aurora.mokey.model.DatabaseDetails
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
@@ -23,6 +25,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import org.springframework.util.Base64Utils
 
 @Service
 @ApplicationDataSource(CLUSTER)
@@ -207,7 +210,11 @@ class ApplicationDataServiceOpenShift(
             )
         }
 
-        val deployDetails = createDeployDetails(dc)
+        val latestRCName = dc.status.latestVersion?.let { "${dc.metadata.name}-$it" }
+        val rc = latestRCName?.let { openshiftService.rc(namespace, it) }
+
+        val databaseDetails = rc?.let { createDatabaseDetails(it) }
+        val deployDetails = createDeployDetails(dc, rc)
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
         // every pods has a name label we have to use selector from DeploymentConfig.
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
@@ -223,6 +230,7 @@ class ApplicationDataServiceOpenShift(
             booberDeployId = applicationDeployment.metadata.booberDeployId,
             managementPath = applicationDeployment.spec.managementPath,
             pods = pods,
+            databaseDetails = databaseDetails,
             imageDetails = imageDetails,
             deployDetails = deployDetails,
             addresses = applicationAddresses,
@@ -246,27 +254,36 @@ class ApplicationDataServiceOpenShift(
         )
     }
 
-    private fun createDeployDetails(dc: DeploymentConfig): DeployDetails {
-
-        val namespace = dc.metadata.namespace
-
-        val latestRCName = dc.status.latestVersion?.let { "${dc.metadata.name}-$it" }
-
-        val rc = latestRCName?.let { openshiftService.rc(namespace, it) }
+    private fun createDeployDetails(dc: DeploymentConfig, rc: ReplicationController?): DeployDetails {
 
         val details = DeployDetails(
             targetReplicas = dc.spec.replicas,
             availableReplicas = dc.status.availableReplicas ?: 0,
             paused = dc.spec.paused ?: false
         )
+
         if (rc == null) {
             return details
         }
 
         return details.copy(
-            deployment = latestRCName,
+            deployment = rc.metadata.name,
             phase = rc.deploymentPhase,
             deployTag = rc.deployTag
         )
+    }
+
+    private fun createDatabaseDetails(rc: ReplicationController): DatabaseDetails? {
+        val volumes = rc.spec.template.spec.volumes
+        val dbVolume = volumes.find { it.name.endsWith("-db") }
+
+        return dbVolume?.let { volume ->
+            val secret = openshiftService.secret(rc.metadata.namespace, volume.secret.secretName)
+            val encryptedId: String? = secret?.data?.get("id")
+            encryptedId?.let {
+                val id = String(Base64Utils.decodeFromString(it))
+                DatabaseDetails(id)
+            }
+        }
     }
 }
