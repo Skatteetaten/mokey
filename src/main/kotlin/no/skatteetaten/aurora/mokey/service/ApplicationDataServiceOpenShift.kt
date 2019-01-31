@@ -232,6 +232,7 @@ class ApplicationDataServiceOpenShift(
             sprocketDone = dc.sprocketDone,
             splunkIndex = splunkIndex,
             deploymentCommand = applicationDeployment.spec.command,
+            databases = databases,
             publicData = ApplicationPublicData(
                 applicationId = applicationDeployment.spec.applicationId,
                 applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
