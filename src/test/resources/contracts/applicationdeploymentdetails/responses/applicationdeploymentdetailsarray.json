@@ -86,6 +86,7 @@
     "dependencies" : {
       "skatteetaten" : "skatteetaten"
     },
+    "databases": ["123-456-789"],
     "applicationDeploymentCommand" : {
       "applicationDeploymentRef" : {
         "environment" : "utv",
