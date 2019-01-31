@@ -67,7 +67,8 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             deployDetails = applicationData.deployDetails?.let { toDeployDetailsResource(it) },
             podResources = applicationData.pods.map { toPodResource(applicationData, it) },
             dependencies = infoResponse?.dependencies ?: emptyMap(),
-            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand)
+            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
+            databases = applicationData.databases
         ).apply {
 
             this.add(createApplicationLinks(applicationData))

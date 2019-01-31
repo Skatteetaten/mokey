@@ -185,6 +185,8 @@ class ApplicationDataServiceOpenShift(
         val applicationName = applicationDeployment.spec.applicationName
             ?: throw OpenShiftObjectException("applicationName was not set for deployment $namespace/$openShiftName")
 
+        val databases = applicationDeployment.spec.databases ?: listOf()
+
         val dc = openshiftService.dc(namespace, openShiftName)
 
         if (dc == null) {
@@ -192,6 +194,7 @@ class ApplicationDataServiceOpenShift(
                 booberDeployId = applicationDeployment.metadata.booberDeployId,
                 managementPath = applicationDeployment.spec.managementPath,
                 deploymentCommand = applicationDeployment.spec.command,
+                databases = databases,
                 publicData = ApplicationPublicData(
                     applicationId = applicationDeployment.spec.applicationId,
                     applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,

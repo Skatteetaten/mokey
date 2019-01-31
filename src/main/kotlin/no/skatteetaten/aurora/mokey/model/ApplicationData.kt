@@ -51,6 +51,7 @@ data class ApplicationData(
     val imageDetails: ImageDetails? = null,
     val deployDetails: DeployDetails? = null,
     val addresses: List<Address> = emptyList(),
+    val databases: List<String> = emptyList(),
     val sprocketDone: String? = null,
     val splunkIndex: String? = null,
     val deploymentCommand: ApplicationDeploymentCommand,
