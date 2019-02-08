@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import assertk.assert
+import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
@@ -95,7 +96,7 @@ class ApplicationDataServiceOpenShiftTest {
     @Test
     fun `find application data by id`() {
         val dcBuilder = DeploymentConfigDataBuilder()
-        val appDeployment = AuroraApplicationDeploymentDataBuilder().build()
+        val appDeployment = AuroraApplicationDeploymentDataBuilder(databases = listOf("123-456-789")).build()
         val dc = dcBuilder.build()
         val replicationController = ReplicationControllerDataBuilder().build()
         val podDetails = PodDetailsDataBuilder().build()
@@ -124,6 +125,7 @@ class ApplicationDataServiceOpenShiftTest {
         assert(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
         assert(applicationData.publicData.message).isEqualTo("message")
         assert(applicationData.deployDetails?.paused).isEqualTo(false)
+        assert(applicationData.databases).contains("123-456-789")
     }
 
     @Test

@@ -66,6 +66,7 @@ class ApplicationDeploymentDetailsResource(
     val gitInfo: GitInfoResource?,
     val imageDetails: ImageDetailsResource?,
     val podResources: List<PodResource>,
+    val databases: List<String>,
     val dependencies: Map<String, String> = emptyMap(),
     val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
     val deployDetails: DeployDetailsResource?

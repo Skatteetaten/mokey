@@ -67,7 +67,8 @@ data class AuroraApplicationDeploymentDataBuilder(
     val exactGitRef: String = "abcd",
     val overrides: Map<String, String> = emptyMap(),
     val auroraConfigRefBranch: String = "master",
-    val msg: String = "message"
+    val msg: String = "message",
+    val databases: List<String> = emptyList()
 ) {
 
     val appNamespace: String get() = "$affiliation-$envName"
@@ -94,6 +95,7 @@ data class AuroraApplicationDeploymentDataBuilder(
                 applicationName = appName,
                 applicationDeploymentId = DigestUtils.sha1Hex(appName + appNamespace),
                 applicationDeploymentName = appName,
+                databases = databases,
                 splunkIndex = splunkIndex,
                 managementPath = managementPath,
                 releaseTo = releaseTo,
