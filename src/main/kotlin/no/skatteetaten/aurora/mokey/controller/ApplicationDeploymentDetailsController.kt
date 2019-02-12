@@ -46,6 +46,21 @@ class ApplicationDeploymentDetailsController(
         @RequestParam(required = false, defaultValue = "", name = "id") id: List<String>
     ): List<ApplicationDeploymentDetailsResource> =
         assembler.toResources(applicationDataService.findAllApplicationData(affiliation, id))
+
+    @GetMapping("/database/{id}")
+    fun getApplicationForDatabaseID(@PathVariable id: String): List<ApplicationDeploymentResource> {
+        val applications = assembler.toResources(applicationDataService.findAllApplicationData(applicationDataService.findAllAffiliations(), listOf()))
+
+        return applications.filter {
+            it.databases.contains(id)
+        }.mapNotNull {
+            it.identifier?.let { appId ->
+                applicationDataService.findPublicApplicationDataByApplicationDeploymentId(appId)
+            }?.let { app ->
+                ApplicationDeploymentResourceAssembler().toResource(app)
+            }
+         }
+    }
 }
 
 @Component
