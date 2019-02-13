@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @ExposesResourceFor(ApplicationDeployment::class)
 @RequestMapping("/api/auth/applicationdeploymentbyresource")
-class ApplicationDeploymentByResource(
+class ApplicationDeploymentByResourceController(
     val applicationDataService: ApplicationDataServiceCacheDecorator,
     val applicationDeploymentResourceAssembler: ApplicationDeploymentResourceAssembler
 ) {
-    val logger: Logger = LoggerFactory.getLogger(ApplicationDeploymentByResource::class.java)
+    val logger: Logger = LoggerFactory.getLogger(ApplicationDeploymentByResourceController::class.java)
 
     @PostMapping("/database")
     fun getApplicationDeploymentsByDatabaseIds(@RequestBody payload: DatabaseResourcePayload): List<ApplicationDeploymentsWithDbResource> {
