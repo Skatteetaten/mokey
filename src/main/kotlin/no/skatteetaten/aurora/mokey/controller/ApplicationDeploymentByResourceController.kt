@@ -19,7 +19,7 @@ class ApplicationDeploymentByResourceController(
 ) {
     val logger: Logger = LoggerFactory.getLogger(ApplicationDeploymentByResourceController::class.java)
 
-    @PostMapping("/database")
+    @PostMapping("/databases")
     fun getApplicationDeploymentsForDatabases(@RequestBody payload: DatabaseResourcePayload): List<ApplicationDeploymentsWithDbResource> {
         val allApplicationData = applicationDataService.getAllApplicationDataFromCache().filter {
             it.databases.isNotEmpty()
