@@ -73,6 +73,8 @@ class ApplicationDataServiceCacheDecorator(
     )
     fun cache() = refreshCache(affiliations)
 
+    fun getAllApplicationDataFromCache() = cache.map { it.value }
+
     fun refreshItem(applicationId: String) =
         findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
             val data = applicationDataService.createSingleItem(current.namespace, current.applicationDeploymentName)
