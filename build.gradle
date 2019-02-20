@@ -17,6 +17,7 @@ buildscript {
 
   dependencies {
     classpath(
+        "org.springframework.boot:spring-boot-gradle-plugin:2.0.6.RELEASE",
         'no.skatteetaten.aurora.gradle.plugins:aurora-gradle-plugin:1.2.1',
         'org.springframework.cloud:spring-cloud-contract-gradle-plugin:2.1.0.RELEASE'
     )
