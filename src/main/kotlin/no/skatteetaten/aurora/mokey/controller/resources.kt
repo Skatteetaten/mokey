@@ -44,6 +44,11 @@ class ApplicationDeploymentResource(
     val message: String?
 ) : IdentifiedHalResource(id)
 
+class ApplicationDeploymentsWithDbResource(
+    val databaseId: String,
+    val applicationDeployments: List<ApplicationDeploymentResource>
+) : IdentifiedHalResource(databaseId)
+
 data class Version(val deployTag: String?, val auroraVersion: String?, val releaseTo: String?)
 
 data class AuroraStatusResource(

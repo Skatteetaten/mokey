@@ -1,43 +1,56 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.hateoas.mvc.ResourceAssemblerSupport
+import org.springframework.stereotype.Component
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@ExposesResourceFor(ApplicationDeployment::class)
+@ExposesResourceFor(ApplicationDeploymentsWithDbResource::class)
 @RequestMapping("/api/auth/applicationdeploymentbyresource")
 class ApplicationDeploymentByResourceController(
     val applicationDataService: ApplicationDataServiceCacheDecorator,
-    val applicationDeploymentResourceAssembler: ApplicationDeploymentResourceAssembler
+    val applicationDeploymentsWithDbResourceAssembler: ApplicationDeploymentsWithDbResourceAssembler
 ) {
     val logger: Logger = LoggerFactory.getLogger(ApplicationDeploymentByResourceController::class.java)
 
-    @PostMapping("/databases")
-    fun getApplicationDeploymentsForDatabases(@RequestBody payload: DatabaseResourcePayload): List<ApplicationDeploymentsWithDbResource> {
+    @GetMapping("/databases")
+    fun getApplicationDeploymentsForDatabases(@RequestParam(required = true, defaultValue = "", name = "databaseids") databaseIds: List<String>): List<ApplicationDeploymentsWithDbResource> {
         val allApplicationData = applicationDataService.getAllApplicationDataFromCache().filter {
             it.databases.isNotEmpty()
         }
 
-        return payload.databaseIds.map { id ->
-            val applicationDeployments = allApplicationData.filter { it.databases.contains(id) }.map {
-                applicationDeploymentResourceAssembler.toResource(it.publicData)
-            }
-
-            ApplicationDeploymentsWithDbResource(id, applicationDeployments)
+        val idAndDeployments =  databaseIds.map { id ->
+            val applicationDeployments = allApplicationData.filter { it.databases.contains(id) }.map { it.publicData }
+            id to applicationDeployments
         }
+
+        return applicationDeploymentsWithDbResourceAssembler.toResources(idAndDeployments)
     }
 }
 
-data class DatabaseResourcePayload(val databaseIds: List<String>)
+@Component
+class ApplicationDeploymentsWithDbResourceAssembler :
+    ResourceAssemblerSupport<Pair<String, List<ApplicationPublicData>>, ApplicationDeploymentsWithDbResource>(
+        Pair::class.java,
+        ApplicationDeploymentsWithDbResource::class.java
+    ) {
 
-data class ApplicationDeploymentsWithDbResource(
-    val databaseId: String,
-    val applicationDeployments: List<ApplicationDeploymentResource>
-)
+    private val applicationDeploymentAssembler = ApplicationDeploymentResourceAssembler()
+
+    override fun toResource(entity: Pair<String, List<ApplicationPublicData>>): ApplicationDeploymentsWithDbResource {
+
+        val applicationDeploymentsResources = entity.second.map {
+            applicationDeploymentAssembler.toResource(it)
+        }
+
+        return ApplicationDeploymentsWithDbResource(entity.first, applicationDeploymentsResources)
+    }
+}
