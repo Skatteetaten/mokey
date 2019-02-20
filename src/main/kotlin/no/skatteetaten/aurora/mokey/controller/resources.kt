@@ -45,7 +45,7 @@ class ApplicationDeploymentResource(
 ) : IdentifiedHalResource(id)
 
 class ApplicationDeploymentsWithDbResource(
-    val databaseId: String,
+    databaseId: String,
     val applicationDeployments: List<ApplicationDeploymentResource>
 ) : IdentifiedHalResource(databaseId)
 

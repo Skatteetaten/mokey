@@ -22,12 +22,18 @@ class ApplicationDeploymentByResourceController(
     val logger: Logger = LoggerFactory.getLogger(ApplicationDeploymentByResourceController::class.java)
 
     @GetMapping("/databases")
-    fun getApplicationDeploymentsForDatabases(@RequestParam(required = true, defaultValue = "", name = "databaseids") databaseIds: List<String>): List<ApplicationDeploymentsWithDbResource> {
+    fun getApplicationDeploymentsForDatabases(
+        @RequestParam(
+            required = true,
+            defaultValue = "",
+            name = "databaseids"
+        ) databaseIds: List<String>
+    ): List<ApplicationDeploymentsWithDbResource> {
         val allApplicationData = applicationDataService.getAllApplicationDataFromCache().filter {
             it.databases.isNotEmpty()
         }
 
-        val idAndDeployments =  databaseIds.map { id ->
+        val idAndDeployments = databaseIds.map { id ->
             val applicationDeployments = allApplicationData.filter { it.databases.contains(id) }.map { it.publicData }
             id to applicationDeployments
         }
