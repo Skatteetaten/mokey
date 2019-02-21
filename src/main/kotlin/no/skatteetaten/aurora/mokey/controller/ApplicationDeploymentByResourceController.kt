@@ -4,6 +4,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.stereotype.Component
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @ExposesResourceFor(ApplicationDeploymentsWithDbResource::class)
 @RequestMapping("/api/auth/applicationdeploymentbyresource")
+@ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 class ApplicationDeploymentByResourceController(
     val applicationDataService: ApplicationDataServiceCacheDecorator,
     val applicationDeploymentsWithDbResourceAssembler: ApplicationDeploymentsWithDbResourceAssembler

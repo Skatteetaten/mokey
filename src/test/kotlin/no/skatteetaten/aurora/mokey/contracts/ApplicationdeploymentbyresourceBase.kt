@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.contracts
 
 import com.nhaarman.mockito_kotlin.any
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
+import no.skatteetaten.aurora.mokey.CacheWarmup
 import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentsWithDbResourceAssembler
 import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
 import org.junit.jupiter.api.BeforeEach
@@ -19,6 +20,9 @@ open class ApplicationdeploymentbyresourceBase : ContractBase() {
 
     @MockBean
     private lateinit var assembler: ApplicationDeploymentsWithDbResourceAssembler
+
+    @MockBean
+    private lateinit var cacheWarmup: CacheWarmup
 
     @BeforeEach
     fun setUp() {
