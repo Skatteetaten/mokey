@@ -1,6 +1,6 @@
 [
   {
-    "databaseId": "123",
+    "identifier": "123",
     "applicationDeployments": [
       {
         "identifier": "appDeploymentId",
@@ -36,7 +36,7 @@
     ]
   },
   {
-    "databaseId": "456",
+    "identifier": "456",
     "applicationDeployments": [
       {
         "identifier": "appDeploymentId",
