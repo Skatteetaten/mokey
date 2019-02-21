@@ -8,9 +8,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.stereotype.Component
-import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -23,14 +23,8 @@ class ApplicationDeploymentByResourceController(
 ) {
     val logger: Logger = LoggerFactory.getLogger(ApplicationDeploymentByResourceController::class.java)
 
-    @GetMapping("/databases")
-    fun getApplicationDeploymentsForDatabases(
-        @RequestParam(
-            required = true,
-            defaultValue = "",
-            name = "databaseids"
-        ) databaseIds: List<String>
-    ): List<ApplicationDeploymentsWithDbResource> {
+    @PostMapping("/databases")
+    fun getApplicationDeploymentsForDatabases(@RequestBody databaseIds: List<String>): List<ApplicationDeploymentsWithDbResource> {
         val allApplicationData = applicationDataService.getAllApplicationDataFromCache().filter {
             it.databases.isNotEmpty()
         }

@@ -4,11 +4,12 @@ import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
   request {
-    method 'GET'
-    url $(
-        stub(~/\/api\/auth\/applicationdeploymentbyresource\/databases.+/),
-        test('/api/auth/applicationdeploymentbyresource/databases?databaseids=123,456')
-    )
+    method 'POST'
+    url "/api/auth/applicationdeploymentbyresource/databases"
+    headers {
+      header 'Content-Type': 'application/json'
+    }
+    body """["123", "456"]"""
   }
   response {
     status 200
