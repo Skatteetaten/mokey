@@ -9,7 +9,13 @@ Contract.make {
     headers {
       header 'Content-Type': 'application/json'
     }
-    body """["123", "456"]"""
+    body(
+        """["123", "456"]"""
+    )
+    bodyMatchers {
+      jsonPath('$[*]', byRegex(nonEmpty()))
+    }
+
   }
   response {
     status 200
