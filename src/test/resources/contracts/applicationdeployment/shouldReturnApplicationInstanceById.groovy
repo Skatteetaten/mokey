@@ -1,4 +1,4 @@
-package applicationdeploymentdetails
+package applicationdeployment
 
 import org.springframework.cloud.contract.spec.Contract
 

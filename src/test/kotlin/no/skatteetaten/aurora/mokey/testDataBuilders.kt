@@ -382,6 +382,7 @@ data class ApplicationDataBuilder(
                 phase = "Complete",
                 deployTag = "1"
             ),
+            databases = listOf("123"),
             addresses = emptyList(),
             deploymentCommand = ApplicationDeploymentCommand(
                 applicationDeploymentRef = ApplicationDeploymentRef(DEFAULT_ENV_NAME, "name"),
