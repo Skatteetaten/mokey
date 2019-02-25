@@ -7,15 +7,14 @@ Contract.make {
     method 'POST'
     url "/api/auth/applicationdeploymentbyresource/databases"
     headers {
-      header 'Content-Type': 'application/json'
+      contentType(applicationJson())
     }
     body(
-        """["123", "456"]"""
+        '''["123", "456"]'''
     )
     bodyMatchers {
-      jsonPath('$[*]', byRegex(nonEmpty()))
+      jsonPath('$.[*]', byRegex(nonEmpty()))
     }
-
   }
   response {
     status 200
