@@ -12,6 +12,9 @@ Contract.make {
     body(
         '''["123", "456"]'''
     )
+    bodyMatchers {
+      jsonPath('$[*].', byRegex(nonEmpty()))
+    }
   }
   response {
     status 200
