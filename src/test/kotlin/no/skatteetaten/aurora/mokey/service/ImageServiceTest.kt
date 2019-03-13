@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
-import assertk.assert
+import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.mockk.clearMocks
 import io.mockk.every
@@ -33,6 +33,6 @@ class ImageServiceTest {
         } returns istBuilder.build()
 
         val imageDetails = imageService.getImageDetails(dcBuilder.build())
-        assert(imageDetails?.dockerImageReference).isEqualTo(istBuilder.reference)
+        assertThat(imageDetails?.dockerImageReference).isEqualTo(istBuilder.reference)
     }
 }

@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
-import assertk.assert
+import assertk.assertThat
 import assertk.assertions.isEqualTo
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
@@ -61,8 +61,8 @@ class AuroraStatusCalculatorTest {
                 deployTag = "1"
             )
             val auroraStatus = calculator.calculateAuroraStatus(deployDetails, pods, time)
-            assert(auroraStatus.level).isEqualTo(expected.level)
-            assert(auroraStatus.reasons.sortedBy { it.name }).isEqualTo(expected.reasons.sortedBy { it.name })
+            assertThat(auroraStatus.level).isEqualTo(expected.level)
+            assertThat(auroraStatus.reasons.sortedBy { it.name }).isEqualTo(expected.reasons.sortedBy { it.name })
         }
     }
 

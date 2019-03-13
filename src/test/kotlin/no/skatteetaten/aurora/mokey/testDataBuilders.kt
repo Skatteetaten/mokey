@@ -6,10 +6,10 @@ import com.fkorotkov.kubernetes.newContainerState
 import com.fkorotkov.kubernetes.newContainerStatus
 import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
-import com.fkorotkov.kubernetes.newRawExtension
 import com.fkorotkov.kubernetes.newReplicationController
 import com.fkorotkov.kubernetes.newService
 import com.fkorotkov.kubernetes.running
+import com.fkorotkov.kubernetes.runtime.newRawExtension
 import com.fkorotkov.kubernetes.spec
 import com.fkorotkov.kubernetes.status
 import com.fkorotkov.kubernetes.template

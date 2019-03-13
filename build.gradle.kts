@@ -12,7 +12,6 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "7.1.0"
 
     id("org.springframework.boot") version "2.1.3.RELEASE"
-    id("org.asciidoctor.convert") version "1.6.0"
 
     id("com.gorylenko.gradle-git-properties") version "2.0.0"
     id("com.github.ben-manes.versions") version "0.21.0"

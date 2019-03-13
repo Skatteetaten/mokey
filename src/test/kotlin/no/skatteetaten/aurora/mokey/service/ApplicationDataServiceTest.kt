@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
-import assertk.assert
+import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
@@ -16,7 +16,10 @@ class ApplicationDataServiceTest {
             override fun findAllVisibleAffiliations(): List<String> = emptyList()
 
             override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? = null
-            override fun findAllPublicApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationPublicData> =
+            override fun findAllPublicApplicationData(
+                affiliations: List<String>,
+                ids: List<String>
+            ): List<ApplicationPublicData> =
                 findAllApplicationData(affiliations).map { it.publicData }
 
             override fun findAllAffiliations(): List<String> = emptyList()
@@ -30,6 +33,6 @@ class ApplicationDataServiceTest {
         }
 
         val applicationData = service.findAllPublicApplicationDataByApplicationId("234")
-        assert(applicationData.first().applicationDeploymentName).isNotNull { it.isEqualTo("app2") }
+        assertThat(applicationData.first().applicationDeploymentName).isNotNull().let { it.isEqualTo("app2") }
     }
 }
