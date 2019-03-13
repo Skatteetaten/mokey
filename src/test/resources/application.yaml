@@ -15,9 +15,15 @@ logging:
 openshift:
   cluster: utv
 
-boober-api-url: http://localhost
-metrics-hostname: http://localhost
-splunk-hostname: http://localhost
+
+integrations:
+    boober:
+        url: "http://localhost"
+    splunk:
+        url: "https://localhost"
+    metrics:
+        url: "http://localhost"
+
 openshift-cluster: utv
 
 mokey:

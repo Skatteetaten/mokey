@@ -8,11 +8,6 @@ spring:
     profiles:
         active: local
 
-aurora:
-    starter:
-        headerfilter:
-            enabled: false
-
 logging:
     level:
         no.skatteetaten.aurora:
@@ -24,15 +19,19 @@ logging:
                 catalina: WARN
                 velocity: WARN
 
-boober-api-url: "http://boober"
-metrics-hostname: "http://metrics.skead.no"
-splunk-hostname: "https://splunk.skead.no"
+integrations:
+    boober:
+        url: "http://boober"
+    splunk:
+        url: "https://splunk.skead.no"
+    metrics:
+        url: "http://metrics.skead.no"
 
 management:
     metrics:
         enable:
             http:
-              client: false
+                client: false
 ---
 spring:
     profiles: local
