@@ -18,7 +18,6 @@ plugins {
     id("se.patrikerdes.use-latest-versions") version "0.2.9"
 
     id("no.skatteetaten.gradle.aurora") version "2.0.2"
-
 }
 
 apply(plugin = "spring-cloud-contract")
@@ -29,7 +28,7 @@ dependencies {
     implementation("io.fabric8:openshift-client:4.1.3")
     testImplementation("io.fabric8:openshift-server-mock:4.1.3")
     testImplementation("com.fkorotkov:kubernetes-dsl:2.0.1")
-    testImplementation("com.squareup.okhttp3:mockwebserver:3.13.1")
+    testImplementation("com.squareup.okhttp3:mockwebserver:3.14.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.1.1")
