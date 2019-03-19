@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
-import assertk.assert
+import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
@@ -35,7 +35,7 @@ class PodServiceTest {
         val builder = AuroraApplicationDeploymentDataBuilder()
         every { openShiftService.pods(builder.appNamespace, mapOf("name" to builder.appName)) } returns listOf()
         val podDetails = podService.getPodDetails(builder.build(), deployDetails)
-        assert(podDetails).isEmpty()
+        assertThat(podDetails).isEmpty()
     }
 
     @Test
@@ -49,9 +49,9 @@ class PodServiceTest {
 
         val podDetails = podService.getPodDetails(appBuilder.build(), deployDetails)
 
-        assert(podDetails).hasSize(1)
-        assert(podDetails[0].openShiftPodExcerpt.podIP).isEqualTo(podBuilder.ip)
-        assert(podDetails[0].managementData).isEqualTo(managementResult)
+        assertThat(podDetails).hasSize(1)
+        assertThat(podDetails[0].openShiftPodExcerpt.podIP).isEqualTo(podBuilder.ip)
+        assertThat(podDetails[0].managementData).isEqualTo(managementResult)
     }
 
     @Test
@@ -61,10 +61,10 @@ class PodServiceTest {
 
         val podDetails = PodService.createPodDetails(podDataBuilder.build(), managementData, deployDetails)
 
-        assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
-        assert(podDetails.managementData).isEqualTo(managementData)
-        assert(podDetails.openShiftPodExcerpt.phase).isEqualTo("phase")
-        assert(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("running")
+        assertThat(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
+        assertThat(podDetails.managementData).isEqualTo(managementData)
+        assertThat(podDetails.openShiftPodExcerpt.phase).isEqualTo("phase")
+        assertThat(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("running")
     }
 
     @Test
@@ -78,9 +78,9 @@ class PodServiceTest {
 
         val podDetails = PodService.createPodDetails(podDataBuilder.build(), managementData, deployDetails)
 
-        assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
-        assert(podDetails.managementData).isEqualTo(managementData)
-        assert(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("waiting")
+        assertThat(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
+        assertThat(podDetails.managementData).isEqualTo(managementData)
+        assertThat(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("waiting")
     }
 
     @Test
@@ -94,8 +94,8 @@ class PodServiceTest {
 
         val podDetails = PodService.createPodDetails(podDataBuilder.build(), managementData, deployDetails)
 
-        assert(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
-        assert(podDetails.managementData).isEqualTo(managementData)
-        assert(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("terminated")
+        assertThat(podDetails.openShiftPodExcerpt.name).isEqualTo(podDataBuilder.podName)
+        assertThat(podDetails.managementData).isEqualTo(managementData)
+        assertThat(podDetails.openShiftPodExcerpt.containers.first().state).isEqualTo("terminated")
     }
 }

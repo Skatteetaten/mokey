@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import assertk.assert
+import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -23,7 +23,7 @@ class LinkBuilderTest {
             "ServiceMetrics",
             mapOf("namespace" to "aurora", "name" to "mokey", "podName" to "mokey-1-acbea")
         )
-        assert(link.href).isEqualTo("http://metrics.skead.no/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-utv-ose&var-namespace=aurora&var-app=mokey&var-instance=mokey-1-acbea")
+        assertThat(link.href).isEqualTo("http://metrics.skead.no/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-utv-ose&var-namespace=aurora&var-app=mokey&var-instance=mokey-1-acbea")
     }
 
     @Test
@@ -39,7 +39,7 @@ class LinkBuilderTest {
                 "splunkIndex" to "openshift-test"
             )
         )
-        assert(link.href).isEqualTo("https://splunk.skead.no/en-GB/app/search/search?q=search%20index%3openshift-test%20application%3Dmokey")
+        assertThat(link.href).isEqualTo("https://splunk.skead.no/en-GB/app/search/search?q=search%20index%3openshift-test%20application%3Dmokey")
     }
 
     @Test
@@ -61,8 +61,8 @@ class LinkBuilderTest {
             )
         )
 
-        assert(current.href).isEqualTo("https://boober/v1/auroraconfig/jedi?environment=foo&application=bar&reference=master")
-        assert(deployed.href).isEqualTo("https://boober/v1/auroraconfig/jedi?environment=foo&application=bar&reference=123")
+        assertThat(current.href).isEqualTo("https://boober/v1/auroraconfig/jedi?environment=foo&application=bar&reference=master")
+        assertThat(deployed.href).isEqualTo("https://boober/v1/auroraconfig/jedi?environment=foo&application=bar&reference=123")
     }
 
     @Test
@@ -84,8 +84,8 @@ class LinkBuilderTest {
             )
         )
 
-        assert(current.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?reference=master")
-        assert(deployed.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?reference=123")
+        assertThat(current.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?reference=master")
+        assertThat(deployed.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?reference=123")
     }
 
     @Test
@@ -109,12 +109,12 @@ class LinkBuilderTest {
         )
 
         val overrideValue = "%7B%22foo/bar.json%22:%22version%3D1%22%7D"
-        assert(current.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?overrides=$overrideValue&reference=master")
-        assert(deployed.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?overrides=$overrideValue&reference=123")
+        assertThat(current.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?overrides=$overrideValue&reference=master")
+        assertThat(deployed.href).isEqualTo("https://boober/v1/auroradeployspec/jedi/foo/bar?overrides=$overrideValue&reference=123")
 
         val files: Map<String, String> = jacksonObjectMapper()
             .readValue(UriUtils.decode(overrideValue, Charset.defaultCharset().toString()))
-        assert(files["foo/bar.json"] == "version=1")
+        assertThat(files["foo/bar.json"] == "version=1")
     }
 
     @Test
@@ -123,10 +123,10 @@ class LinkBuilderTest {
 
         val links = linkBuilder.openShiftConsoleLinks("noodlenose-8981", "paas-test")
 
-        assert(links.find { it.rel == "ocp_console_details" }).isNotNull()
-        assert(links.find { it.rel == "ocp_console_environment" }).isNotNull()
-        assert(links.find { it.rel == "ocp_console_terminal" }).isNotNull()
-        assert(links.find { it.rel == "ocp_console_events" }).isNotNull()
-        assert(links.find { it.rel == "ocp_console_log" }).isNotNull()
+        assertThat(links.find { it.rel == "ocp_console_details" }).isNotNull()
+        assertThat(links.find { it.rel == "ocp_console_environment" }).isNotNull()
+        assertThat(links.find { it.rel == "ocp_console_terminal" }).isNotNull()
+        assertThat(links.find { it.rel == "ocp_console_events" }).isNotNull()
+        assertThat(links.find { it.rel == "ocp_console_log" }).isNotNull()
     }
 }

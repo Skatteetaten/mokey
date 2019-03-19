@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
-import assertk.assert
+import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
@@ -55,8 +55,8 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.projects() } returns listOf(project)
         val affiliations = applicationDataServiceOpenShift.findAndGroupAffiliations()
 
-        assert(affiliations.size).isEqualTo(1)
-        assert(affiliations.containsKey("affiliation")).isTrue()
+        assertThat(affiliations.size).isEqualTo(1)
+        assertThat(affiliations.containsKey("affiliation")).isTrue()
     }
 
     @Test
@@ -84,13 +84,13 @@ class ApplicationDataServiceOpenShiftTest {
         val applicationData =
             applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
 
-        assert(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
-        assert(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
-        assert(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
-        assert(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
-        assert(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
-        assert(applicationData.publicData.message).isEqualTo("message")
-        assert(applicationData.deployDetails?.paused).isEqualTo(true)
+        assertThat(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
+        assertThat(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
+        assertThat(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
+        assertThat(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
+        assertThat(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
+        assertThat(applicationData.publicData.message).isEqualTo("message")
+        assertThat(applicationData.deployDetails?.paused).isEqualTo(true)
     }
 
     @Test
@@ -118,14 +118,14 @@ class ApplicationDataServiceOpenShiftTest {
         val applicationData =
             applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
 
-        assert(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
-        assert(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
-        assert(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
-        assert(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
-        assert(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
-        assert(applicationData.publicData.message).isEqualTo("message")
-        assert(applicationData.deployDetails?.paused).isEqualTo(false)
-        assert(applicationData.databases).contains("123-456-789")
+        assertThat(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
+        assertThat(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
+        assertThat(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
+        assertThat(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
+        assertThat(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
+        assertThat(applicationData.publicData.message).isEqualTo("message")
+        assertThat(applicationData.deployDetails?.paused).isEqualTo(false)
+        assertThat(applicationData.databases).contains("123-456-789")
     }
 
     @Test
@@ -143,11 +143,11 @@ class ApplicationDataServiceOpenShiftTest {
 
         val applicationData =
             applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
-        assert(applicationData.deployDetails).isNull()
-        assert(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
-        assert(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
-        assert(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
-        assert(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
-        assert(applicationData.auroraStatus.level).isEqualTo(expected = AuroraStatusLevel.OFF)
+        assertThat(applicationData.deployDetails).isNull()
+        assertThat(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
+        assertThat(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
+        assertThat(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
+        assertThat(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
+        assertThat(applicationData.auroraStatus.level).isEqualTo(expected = AuroraStatusLevel.OFF)
     }
 }

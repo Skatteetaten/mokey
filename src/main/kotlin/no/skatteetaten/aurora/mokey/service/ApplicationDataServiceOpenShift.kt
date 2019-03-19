@@ -6,6 +6,7 @@ import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.async
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.slf4j.MDCContext
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deployTag
@@ -100,7 +101,7 @@ class ApplicationDataServiceOpenShift(
     private fun findAllApplicationDataByEnvironments(environments: List<Environment>): List<ApplicationData> {
 
         logger.debug("finding all applications in environments=$environments")
-        return runBlocking(mtContext) {
+        return runBlocking(MDCContext()) {
             val applicationDeployments = environments.flatMap { environment ->
                 logger.debug("Finding ApplicationDeployments in namespace={}", environment)
                 openshiftService.applicationDeployments(environment.namespace)

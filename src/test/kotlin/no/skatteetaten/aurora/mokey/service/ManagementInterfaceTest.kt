@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
-import assertk.assert
+import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.fail
@@ -17,7 +17,7 @@ import org.springframework.test.web.client.response.MockRestResponseCreators
 
 class ManagementInterfaceTest : AbstractTest() {
 
-    private val restTemplate = ApplicationConfig().restTemplate(RestTemplateBuilder())
+    private val restTemplate = ApplicationConfig().restTemplate(RestTemplateBuilder(), "mokey")
     private val server = MockRestServiceServer.createServer(restTemplate)
 
     val discoveryHost = "localhost:8081"
@@ -32,15 +32,15 @@ class ManagementInterfaceTest : AbstractTest() {
     @Test
     fun `Fail to create management interface when host address is empty`() {
         val p = ManagementInterface.create(restTemplate, "", "/test")
-        assert(p.first).isNull()
-        assert(p.second.errorMessage).isEqualTo("Host address is missing")
+        assertThat(p.first).isNull()
+        assertThat(p.second.errorMessage).isEqualTo("Host address is missing")
     }
 
     @Test
     fun `Fail to create management interface when path is empty`() {
         val p = ManagementInterface.create(restTemplate, "localhost:8081", "")
-        assert(p.first).isNull()
-        assert(p.second.errorMessage).isEqualTo("Management path is missing")
+        assertThat(p.first).isNull()
+        assertThat(p.second.errorMessage).isEqualTo("Management path is missing")
     }
 
     @Test
@@ -53,7 +53,12 @@ class ManagementInterfaceTest : AbstractTest() {
         }
 
         server.apply {
-            expect(MockRestRequestMatchers.requestTo(discoveryLink)).andRespond(MockRestResponseCreators.withSuccess(resource, MediaType.APPLICATION_JSON))
+            expect(MockRestRequestMatchers.requestTo(discoveryLink)).andRespond(
+                MockRestResponseCreators.withSuccess(
+                    resource,
+                    MediaType.APPLICATION_JSON
+                )
+            )
             expect(MockRestRequestMatchers.requestTo(healthLink)).andRespond(withJsonFromFile("health.json"))
             expect(MockRestRequestMatchers.requestTo(infoLink)).andRespond(withJsonFromFile("info.json"))
         }
@@ -67,5 +72,5 @@ class ManagementInterfaceTest : AbstractTest() {
     }
 
     private fun withJsonFromFile(resourceName: String) =
-            MockRestResponseCreators.withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
+        MockRestResponseCreators.withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
 }

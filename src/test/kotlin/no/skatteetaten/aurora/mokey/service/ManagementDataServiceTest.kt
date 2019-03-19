@@ -1,8 +1,8 @@
 package no.skatteetaten.aurora.mokey.service
 
-import assertk.assert
-import assertk.assertions.isNull
+import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNull
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.mockk.clearMocks
@@ -123,42 +123,57 @@ class ManagementDataServiceTest {
     @Test
     fun `Return discovery result if unable to create management interface`() {
         val discoveryResult = ManagementEndpointResultDataBuilder<ManagementLinks>(
-                textResponse = """{"foo" : "bar" }""",
-                endpointType = EndpointType.INFO)
-                .build()
+            textResponse = """{"foo" : "bar" }""",
+            endpointType = EndpointType.INFO
+        )
+            .build()
 
         every { managementInterfaceFactory.create(any(), any()) } returns Pair(null, discoveryResult)
 
         val result = managementDataService.load("http://foo", "/bar")
 
         verify { managementInterfaceFactory.create(any(), any()) }
-        assert(result.links).isEqualTo(discoveryResult)
-        assert(result.health).isNull()
-        assert(result.info).isNull()
-        assert(result.env).isNull()
+        assertThat(result.links).isEqualTo(discoveryResult)
+        assertThat(result.health).isNull()
+        assertThat(result.info).isNull()
+        assertThat(result.env).isNull()
     }
 
     @Test
     fun `Return aggregated result object on happy day`() {
         val infoResult = ManagementEndpointResultDataBuilder(
-                deserialized = jacksonObjectMapper().readValue(infoResponse, InfoResponse::class.java),
-                endpointType = EndpointType.INFO)
-                .build()
+            deserialized = jacksonObjectMapper().readValue(infoResponse, InfoResponse::class.java),
+            endpointType = EndpointType.INFO
+        )
+            .build()
 
         val healthResult = ManagementEndpointResultDataBuilder(
-                deserialized = HealthResponseParser.parse(jacksonObjectMapper().readValue(healthResponse, JsonNode::class.java)),
-                endpointType = EndpointType.HEALTH)
-                .build()
+            deserialized = HealthResponseParser.parse(
+                jacksonObjectMapper().readValue(
+                    healthResponse,
+                    JsonNode::class.java
+                )
+            ),
+            endpointType = EndpointType.HEALTH
+        )
+            .build()
 
         val discoveryResult = ManagementEndpointResultDataBuilder(
-                deserialized = ManagementLinks.parseManagementResponse(jacksonObjectMapper().readValue(discoveryResponse, JsonNode::class.java)),
-                endpointType = EndpointType.DISCOVERY)
-                .build()
+            deserialized = ManagementLinks.parseManagementResponse(
+                jacksonObjectMapper().readValue(
+                    discoveryResponse,
+                    JsonNode::class.java
+                )
+            ),
+            endpointType = EndpointType.DISCOVERY
+        )
+            .build()
 
         val envResult = ManagementEndpointResultDataBuilder(
-                deserialized = jacksonObjectMapper().readValue(envResponse, JsonNode::class.java),
-                endpointType = EndpointType.ENV)
-                .build()
+            deserialized = jacksonObjectMapper().readValue(envResponse, JsonNode::class.java),
+            endpointType = EndpointType.ENV
+        )
+            .build()
 
         every { managementInterface.getInfoEndpointResult() } returns infoResult
         every { managementInterface.getEnvEndpointResult() } returns envResult
@@ -172,9 +187,9 @@ class ManagementDataServiceTest {
         verify { managementInterface.getEnvEndpointResult() }
         verify { managementInterface.getHealthEndpointResult() }
 
-        assert(data.links.endpointType).isEqualTo(EndpointType.DISCOVERY)
-        assert(data.info!!.endpointType).isEqualTo(EndpointType.INFO)
-        assert(data.env!!.endpointType).isEqualTo(EndpointType.ENV)
-        assert(data.health!!.endpointType).isEqualTo(EndpointType.HEALTH)
+        assertThat(data.links.endpointType).isEqualTo(EndpointType.DISCOVERY)
+        assertThat(data.info!!.endpointType).isEqualTo(EndpointType.INFO)
+        assertThat(data.env!!.endpointType).isEqualTo(EndpointType.ENV)
+        assertThat(data.health!!.endpointType).isEqualTo(EndpointType.HEALTH)
     }
 }

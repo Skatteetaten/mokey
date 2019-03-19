@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
-import assertk.assert
+import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.fasterxml.jackson.databind.node.IntNode
 import com.fasterxml.jackson.databind.node.LongNode
@@ -60,7 +60,7 @@ class HealthResponseParserTest {
                 )
             )
         )
-        assert(response).isEqualTo(expected)
+        assertThat(response).isEqualTo(expected)
     }
 
     @Test
@@ -108,7 +108,7 @@ class HealthResponseParserTest {
                 )
             )
         )
-        assert(response).isEqualTo(expected)
+        assertThat(response).isEqualTo(expected)
     }
 
     private fun String.node() = TextNode.valueOf(this)!!
