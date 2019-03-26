@@ -1,97 +1,54 @@
 package no.skatteetaten.aurora.mokey.controller
 
-// TODO: Fix
-/*
+import com.nhaarman.mockito_kotlin.any
+import no.skatteetaten.aurora.mockmvc.extensions.Path
+import no.skatteetaten.aurora.mockmvc.extensions.get
+import no.skatteetaten.aurora.mockmvc.extensions.mock.withContractResponse
+import no.skatteetaten.aurora.mockmvc.extensions.responseJsonPath
+import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
-import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
-import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
-import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
-import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
-import no.skatteetaten.aurora.mokey.model.AuroraStatus
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
-import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import org.hamcrest.Matchers.`is`
-import org.junit.Ignore
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers
 import org.mockito.BDDMockito.given
-import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.security.test.context.support.WithUserDetails
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.time.Instant
 
-@WebMvcTest(
-    ApplicationDeploymentDetailsController::class,
-    ApplicationDeploymentDetailsResourceAssembler::class,
-    LinkBuilderFactory::class
-)
-@AutoConfigureWebClient
-@Ignore("Will not start")
+@WithUserDetails
 class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTest() {
 
-    private val ID = "123"
+    @MockBean
+    private lateinit var applicationDataService: ApplicationDataService
 
     @MockBean
-    lateinit var applicationDataService: ApplicationDataService
-
-    val podDetailsDataBuilder = PodDetailsDataBuilder()
-    val managementDataBuilder = podDetailsDataBuilder.managementDataBuilder
-
-    val applicationData = ApplicationData(
-        pods = listOf(podDetailsDataBuilder.build()),
-        deployDetails = DeployDetails(
-            availableReplicas = 1,
-            targetReplicas = 1,
-            phase = "Complete",
-            deployTag = "1"
-        ),
-        addresses = emptyList(),
-        deploymentCommand = ApplicationDeploymentCommand(
-            auroraConfig = AuroraConfigRef("affiliation", "master", "123"),
-            applicationDeploymentRef = ApplicationDeploymentRef("namespace", "name")
-        ),
-        publicData = ApplicationPublicData(
-            applicationId = "abc123",
-            applicationDeploymentId = "abc1234",
-            applicationName = "name",
-            applicationDeploymentName = "name-1",
-            auroraStatus = AuroraStatus(HEALTHY),
-            affiliation = "affiliation",
-            namespace = "namespace",
-            deployTag = "deployTag",
-            auroraVersion = null,
-            dockerImageRepo = null,
-            releaseTo = "releaseTo",
-            time = Instant.EPOCH
-        )
-    )
+    private lateinit var assembler: ApplicationDeploymentDetailsResourceAssembler
 
     @Test
-    @WithUserDetails
-    fun `should get applicationdetails given user with access`() {
+    fun `Return application deployment details by id`() {
+        given(applicationDataService.findApplicationDataByApplicationDeploymentId(ArgumentMatchers.anyString()))
+            .willReturn(ApplicationDataBuilder().build())
 
-        given(applicationDataService.findApplicationDataByApplicationDeploymentId(ID)).willReturn(applicationData)
+        val applicationDeploymentDetails = given(assembler.toResource(any()))
+            .withContractResponse("applicationdeploymentdetails/applicationdeploymentdetails") { willReturn(content) }
+            .mockResponse
 
-        mockMvc.perform(get("/api/auth/applicationdeploymentdetails/{id}", "123"))
-            .andExpect(status().isOk)
-            .andExpect(
-                jsonPath(
-                    "$.podResources[0].managementResponses.health.textResponse",
-                    `is`(managementDataBuilder.healthResponseJson)
-                )
-            )
-            .andExpect(
-                jsonPath(
-                    "$.podResources[0].managementResponses.info.textResponse",
-                    `is`(managementDataBuilder.infoResponseJson)
-                )
-            )
+        mockMvc.get(Path("/api/auth/applicationdeploymentdetails/{id}", "123")) {
+            statusIsOk().responseJsonPath("$").equalsObject(applicationDeploymentDetails)
+        }
+    }
+
+    @Test
+    fun `Return application deployment details by affiliation`() {
+        given(applicationDataService.findAllApplicationData(any(), any()))
+            .willReturn(listOf(ApplicationDataBuilder().build()))
+
+        val applicationDeploymentDetails = given(assembler.toResources((any())))
+            .withContractResponse("applicationdeploymentdetails/applicationdeploymentdetailsarray") { willReturn(content) }
+            .mockResponse
+
+        mockMvc.get(Path("/api/auth/applicationdeploymentdetails?affiliation=paas")) {
+            statusIsOk().responseJsonPath("$[0]").equalsObject(applicationDeploymentDetails.first())
+        }
     }
 }
-    */
