@@ -91,7 +91,7 @@ class ApplicationDataServiceCacheDecorator(
     private fun addCacheEntry(applicationId: String, data: ApplicationData) {
         cache[applicationId]?.let { old ->
             if (old.metric != data.metric) {
-                logger.info("Remove old meter with id={}", old.metric)
+                logger.info("Remove old meter={}", old.metric)
                 meterRegistry.remove(old.metric)
             }
         }
@@ -100,7 +100,7 @@ class ApplicationDataServiceCacheDecorator(
 
     private fun removeCacheEntry(applicationId: String) {
         cache[applicationId]?.let { app ->
-            logger.info("Deleting entry so remove old meter with id={}", app.metric)
+            logger.info("Appliction is gone deleting meter={}", app.metric)
             meterRegistry.remove(app.metric)
         }
         cache.remove(applicationId)
