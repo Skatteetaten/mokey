@@ -2,6 +2,11 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.openshift.api.model.Project
+import io.micrometer.core.instrument.Meter.Id
+import io.micrometer.core.instrument.Meter.Type
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
+import io.micrometer.core.instrument.Tags
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
@@ -44,14 +49,16 @@ class ApplicationDataServiceCacheDecoratorTest {
             dockerImageRepo = null,
             releaseTo = "releaseTo",
             time = Instant.EPOCH
-        )
+        ),
+        metric = Id("application_status", Tags.of(Tag.of("foo", "bar")), null, null, Type.GAUGE)
     )
     val app1v2 = app1v1.copy(publicData = app1v1.publicData.copy(deployTag = "prod"))
 
     val sourceApplicationDataService = mock(ApplicationDataServiceOpenShift::class.java)
     val openshiftService = mock(OpenShiftService::class.java)
+    val meterRegisy = mock(MeterRegistry::class.java)
     val applicationDataService =
-        ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService, "aurora", 1L)
+        ApplicationDataServiceCacheDecorator(sourceApplicationDataService, openshiftService, "aurora", 1L, meterRegisy)
 
     val affiliation = "aurora"
     val envs = listOf(Environment("aurora-1", affiliation))

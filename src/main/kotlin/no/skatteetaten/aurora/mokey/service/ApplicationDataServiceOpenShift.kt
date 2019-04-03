@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
+import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.async
@@ -144,7 +145,7 @@ class ApplicationDataServiceOpenShift(
             MaybeApplicationData(
                 applicationDeployment = it,
                 applicationData = createApplicationData(it)
-            ).also { it.applicationData?.registerAuroraStatusMetrics() }
+            )
         } catch (e: Exception) {
             logger.error(
                 "Failed getting deployment name={}, namespace={} message={}", it.metadata.name,
@@ -154,26 +155,26 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
-    /**
-     * TODO: The call to registerAuroraStatusMetrics is very awkwardly done. Metrics are correctly registered now, but
-     * only accidentally because the tryCreateApplicationData method is regularly called. Metrics registration should
-     * be done in a more deterministic way.
-     */
-    private fun ApplicationData.registerAuroraStatusMetrics() {
-        this.apply {
-            val commonTags = listOf(
-                Tag.of("aurora_version", imageDetails?.auroraVersion ?: ""),
-                Tag.of("aurora_namespace", namespace),
-                Tag.of("aurora_environment", deploymentCommand.applicationDeploymentRef.environment),
-                Tag.of("aurora_cluster", openshiftCluster),
-                Tag.of("aurora_deployment", applicationDeploymentName),
-                Tag.of("aurora_deployment_id", applicationDeploymentId),
-                Tag.of("aurora_affiliation", affiliation ?: ""),
-                Tag.of("aurora_version_strategy", deployTag)
-            )
+    private fun createStatusGauge(
+        applicationDeployment: ApplicationDeployment,
+        auroraStatus: AuroraStatus,
+        version: String
+    ): Gauge {
+        val commonTags = listOf(
+            Tag.of("app_version", version),
+            Tag.of("app_namespace", applicationDeployment.metadata.namespace),
+            Tag.of("app_environment", applicationDeployment.spec.command.applicationDeploymentRef.environment),
+            Tag.of("app_cluster", openshiftCluster),
+            Tag.of("app_name", applicationDeployment.spec.applicationDeploymentName!!),
+            Tag.of("app_id", applicationDeployment.spec.applicationDeploymentId),
+            Tag.of("app_source", openshiftCluster),
+            Tag.of("app_type", "aurora-plattform"),
+            Tag.of("app_businessgroup", applicationDeployment.metadata.affiliation ?: ""),
+            Tag.of("app_version_strategy", applicationDeployment.spec.deployTag ?: "")
+        )
 
-            meterRegistry.gauge("aurora_status", commonTags, auroraStatus.level.level)
-        }
+        return Gauge.builder("application_status", auroraStatus.level.level) { it.toDouble() }.tags(commonTags)
+            .register(meterRegistry)
     }
 
     private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
@@ -189,8 +190,9 @@ class ApplicationDataServiceOpenShift(
         val databases = applicationDeployment.spec.databases ?: listOf()
 
         val dc = openshiftService.dc(namespace, openShiftName)
-
         if (dc == null) {
+            val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
+            val gauge = createStatusGauge(applicationDeployment, auroraStatus, "")
             return ApplicationData(
                 booberDeployId = applicationDeployment.metadata.booberDeployId,
                 managementPath = applicationDeployment.spec.managementPath,
@@ -199,7 +201,7 @@ class ApplicationDataServiceOpenShift(
                 publicData = ApplicationPublicData(
                     applicationId = applicationDeployment.spec.applicationId,
                     applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-                    auroraStatus = AuroraStatus(AuroraStatusLevel.OFF),
+                    auroraStatus = auroraStatus,
                     applicationName = applicationName,
                     applicationDeploymentName = applicationDeploymentName,
                     namespace = namespace,
@@ -207,7 +209,8 @@ class ApplicationDataServiceOpenShift(
                     deployTag = applicationDeployment.spec.deployTag ?: "",
                     releaseTo = applicationDeployment.spec.releaseTo,
                     message = applicationDeployment.spec.message
-                )
+                ),
+                metric = gauge.id
             )
         }
 
@@ -223,6 +226,8 @@ class ApplicationDataServiceOpenShift(
 
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
+        val gauge = createStatusGauge(applicationDeployment, auroraStatus, imageDetails?.auroraVersion ?: "")
+
         return ApplicationData(
             booberDeployId = applicationDeployment.metadata.booberDeployId,
             managementPath = applicationDeployment.spec.managementPath,
@@ -230,10 +235,10 @@ class ApplicationDataServiceOpenShift(
             imageDetails = imageDetails,
             deployDetails = deployDetails,
             addresses = applicationAddresses,
+            databases = databases,
             sprocketDone = dc.sprocketDone,
             splunkIndex = splunkIndex,
             deploymentCommand = applicationDeployment.spec.command,
-            databases = databases,
             publicData = ApplicationPublicData(
                 applicationId = applicationDeployment.spec.applicationId,
                 applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
@@ -247,7 +252,8 @@ class ApplicationDataServiceOpenShift(
                 dockerImageRepo = imageDetails?.dockerImageRepo,
                 releaseTo = applicationDeployment.spec.releaseTo,
                 message = applicationDeployment.spec.message
-            )
+            ),
+            metric = gauge.id
         )
     }
 
