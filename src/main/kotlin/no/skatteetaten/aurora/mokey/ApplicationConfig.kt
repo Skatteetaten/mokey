@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
-import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
-import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
@@ -59,7 +57,6 @@ class ApplicationConfig : BeanPostProcessor {
             .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
                 request.headers.apply {
                     accept = mutableListOf(MediaType.APPLICATION_JSON)
-                    set(AuroraHeaderFilter.KORRELASJONS_ID, RequestKorrelasjon.getId())
                     set("KlientID", applicationName)
                 }
 
