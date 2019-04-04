@@ -6,8 +6,9 @@ import java.time.format.DateTimeParseException
 
 object DateParser {
     val formatters = listOf(
-            DateTimeFormatter.ISO_DATE_TIME, // Ex: 2018-03-23T10:53:31Z
-            DateTimeFormatter.ofPattern("dd.MM.yyyy '@' HH:mm:ss z") // Ex: 26.03.2018 @ 13:31:39 CEST
+        DateTimeFormatter.ISO_DATE_TIME, // Ex: 2018-03-23T10:53:31Z
+        DateTimeFormatter.ofPattern("dd.MM.yyyy '@' HH:mm:ss z"), // Ex: 26.03.2018 @ 13:31:39 CEST
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z") // Ex: 2019-03-28 13:26:58 +0100
     )
 
     fun parseString(dateString: String): Instant? {

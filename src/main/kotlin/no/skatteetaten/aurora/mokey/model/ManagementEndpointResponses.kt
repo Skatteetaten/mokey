@@ -25,7 +25,7 @@ data class ManagementLinks(private val links: Map<String, String>) {
         fun parseManagementResponse(response: JsonNode): ManagementLinks {
             val asMap = response[EndpointType.DISCOVERY.key].asMap()
             val links = asMap
-                    .mapValues { it.value["href"].asText()!! }
+                .mapValues { it.value["href"].asText()!! }
             return ManagementLinks(links)
         }
     }
@@ -56,8 +56,8 @@ data class InfoResponse(
     @JsonAnySetter(enabled = true)
     private fun setAny(name: String, value: JsonNode) {
         if (name == "git") {
-            commitId = value.extract("/commit.id.abbrev", "/commit/id")?.textValue()
-            commitTime = extractInstant(value, "/commit.time", "/commit/time")
+            commitId = value.extract("/commit.id.abbrev", "/commit/id", "/commit.id.short")?.textValue()
+            commitTime = extractInstant(value, "/commit/time", "/commit.time/v1", "/commit.time")
             buildTime = buildTime ?: extractInstant(value, "/build.time")
         }
         if (name == "build") {
