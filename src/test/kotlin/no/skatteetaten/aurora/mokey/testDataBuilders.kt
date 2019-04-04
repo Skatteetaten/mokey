@@ -303,12 +303,13 @@ data class PodDetailsDataBuilder(
     val name: String = "name",
     val status: String = "phase",
     val deployment: String = "replicaName",
-    val startTime: Instant = Instant.EPOCH,
+    val startTime: Instant? = Instant.EPOCH,
     val deployTag: String = "1",
     val managementDataBuilder: ManagementDataBuilder = ManagementDataBuilder(),
     val containers: List<OpenShiftContainerExcerpt> = emptyList(),
     val latestDeployTag: Boolean = true,
-    val latestDeployment: Boolean = true
+    val latestDeployment: Boolean = true,
+    val startTimeString: String? = null
 ) {
     fun build(): PodDetails {
         return PodDetails(
@@ -316,7 +317,7 @@ data class PodDetailsDataBuilder(
                 name = name,
                 phase = status,
                 podIP = "127.0.0.1",
-                startTime = startTime.toString(),
+                startTime = startTime?.let { it.toString() } ?: startTimeString,
                 replicaName = deployment,
                 deployTag = deployTag,
                 containers = containers,

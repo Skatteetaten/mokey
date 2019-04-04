@@ -1,10 +1,12 @@
 package no.skatteetaten.aurora.mokey.service.auroraStatus
 
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.DOWN
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OBSERVE
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.OFF
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.StatusCheck
 import no.skatteetaten.aurora.mokey.model.StatusDescription
@@ -13,9 +15,45 @@ import org.springframework.stereotype.Component
 import java.time.Duration
 import java.time.Instant
 import java.time.Instant.parse
+import java.time.format.DateTimeParseException
+
+private val logger = KotlinLogging.logger {}
 
 val downStatuses = listOf("OUT_OF_SERVICE", "DOWN")
 const val upStatus = "UP"
+
+@Component
+class PodNotReadyCheck(@Value("\${mokey.status.notready.duration:10m}") val notReadyDuration: Duration) : StatusCheck(
+    StatusDescription(
+        ok = "All containers in pod are ready.",
+        failed = "One or more container in pod is not ready for more then $notReadyDuration"
+    ),
+    OBSERVE
+) {
+    override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean {
+
+        fun notReadyOverThreshold(pod: OpenShiftPodExcerpt): Boolean {
+            if (pod.startTime == null) {
+                return false
+            }
+            try {
+                val started = Instant.parse(pod.startTime)
+                val duration = Duration.between(started, time)
+                if (duration < notReadyDuration) {
+                    return false
+                }
+            } catch (e: DateTimeParseException) {
+                logger.warn("Kunne ikke parse startTime fra pod=${pod.name} value=${pod.startTime} message=${e.localizedMessage}")
+                return false
+            }
+
+            return pod.containers.any { !it.ready }
+        }
+
+        val result = pods.any { notReadyOverThreshold(it.openShiftPodExcerpt) }
+        return result
+    }
+}
 
 @Component
 class AverageRestartErrorCheck(@Value("\${mokey.status.restart.error:100}") val averageRestartErrorThreshold: Int) :
