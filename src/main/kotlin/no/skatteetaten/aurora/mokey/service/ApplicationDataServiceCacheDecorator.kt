@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.micrometer.core.instrument.MeterRegistry
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
@@ -22,7 +23,8 @@ class ApplicationDataServiceCacheDecorator(
     val applicationDataService: ApplicationDataServiceOpenShift,
     val openShiftService: OpenShiftService,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
-    @Value("\${mokey.crawler.sleepSeconds:1}") val sleep: Long
+    @Value("\${mokey.crawler.sleepSeconds:1}") val sleep: Long,
+    val meterRegistry: MeterRegistry
 
 ) : ApplicationDataService {
 
@@ -78,12 +80,30 @@ class ApplicationDataServiceCacheDecorator(
     fun refreshItem(applicationId: String) =
         findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
             val data = applicationDataService.createSingleItem(current.namespace, current.applicationDeploymentName)
-            cache[applicationId] = data
+            addCacheEntry(applicationId, data)
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
 
     fun cacheAtStartup() {
         applicationDataService.findAndGroupAffiliations(affiliations)
             .forEach { refreshAffiliation(it.key, it.value) }
+    }
+
+    private fun addCacheEntry(applicationId: String, data: ApplicationData) {
+        cache[applicationId]?.let { old ->
+            if (old.metric != data.metric) {
+                logger.info("Remove old meter={}", old.metric)
+                meterRegistry.remove(old.metric)
+            }
+        }
+        cache[applicationId] = data
+    }
+
+    private fun removeCacheEntry(applicationId: String) {
+        cache[applicationId]?.let { app ->
+            logger.info("Appliction is gone deleting meter={}", app.metric)
+            meterRegistry.remove(app.metric)
+        }
+        cache.remove(applicationId)
     }
 
     fun refreshCache(affiliationInput: List<String> = emptyList()) {
@@ -121,7 +141,7 @@ class ApplicationDataServiceCacheDecorator(
 
         (previousKeys - newKeys).forEach {
             logger.info("Remove application since it does not exist anymore applicationDeploymentId={}", it)
-            cache.remove(it)
+            removeCacheEntry(it)
         }
     }
 
@@ -136,7 +156,7 @@ class ApplicationDataServiceCacheDecorator(
 
         applications.forEach {
             logger.debug("Added cache for deploymentId=${it.applicationDeploymentId} name=${it.applicationDeploymentName} namespace=${it.namespace}")
-            cache[it.applicationDeploymentId] = it
+            addCacheEntry(it.applicationDeploymentId, it)
         }
 
         if (applications.isNotEmpty()) {

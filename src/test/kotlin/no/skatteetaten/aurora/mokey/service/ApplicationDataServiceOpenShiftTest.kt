@@ -3,11 +3,12 @@ package no.skatteetaten.aurora.mokey.service
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.openshift.api.model.Project
-import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -33,7 +34,7 @@ class ApplicationDataServiceOpenShiftTest {
     private val podService = mockk<PodService>()
     private val imageService = mockk<ImageService>()
     private val addressService = mockk<AddressService>()
-    private val meterRegistry = mockk<MeterRegistry>()
+    private val meterRegistry = SimpleMeterRegistry()
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
         openshiftService = openShiftService,
         auroraStatusCalculator = auroraStatusCalculator,
@@ -76,7 +77,6 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         every { openShiftService.rc(dcBuilder.dcNamespace, "${dcBuilder.dcName}-1") } returns replicationController
         every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
-        every { meterRegistry.gauge("aurora_status", any(), any<Int>()) } returns 1
         every { imageService.getImageDetails(dc) } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
         every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
@@ -91,6 +91,7 @@ class ApplicationDataServiceOpenShiftTest {
         assertThat(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
         assertThat(applicationData.publicData.message).isEqualTo("message")
         assertThat(applicationData.deployDetails?.paused).isEqualTo(true)
+        assertThat(meterRegistry.get("application_status").gauge()).isNotNull()
     }
 
     @Test
@@ -110,7 +111,6 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         every { openShiftService.rc(dcBuilder.dcNamespace, "${dcBuilder.dcName}-1") } returns replicationController
         every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
-        every { meterRegistry.gauge("aurora_status", any(), any<Int>()) } returns 1
         every { imageService.getImageDetails(dc) } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
         every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
@@ -126,6 +126,7 @@ class ApplicationDataServiceOpenShiftTest {
         assertThat(applicationData.publicData.message).isEqualTo("message")
         assertThat(applicationData.deployDetails?.paused).isEqualTo(false)
         assertThat(applicationData.databases).contains("123-456-789")
+        assertThat(meterRegistry.get("application_status").gauge()).isNotNull()
     }
 
     @Test
@@ -137,7 +138,6 @@ class ApplicationDataServiceOpenShiftTest {
             Project("1", "Project", ObjectMeta().apply { name = dcBuilder.dcNamespace }, null, null)
         )
 
-        every { meterRegistry.gauge("aurora_status", any(), any<Int>()) } returns 1
         every { openShiftService.applicationDeployments(dcBuilder.dcNamespace) } returns listOf(appDeployment)
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns null
 
@@ -149,5 +149,6 @@ class ApplicationDataServiceOpenShiftTest {
         assertThat(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
         assertThat(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
         assertThat(applicationData.auroraStatus.level).isEqualTo(expected = AuroraStatusLevel.OFF)
+        assertThat(meterRegistry.get("application_status").gauge()).isNotNull()
     }
 }

@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
+import io.micrometer.core.instrument.Meter
 import java.time.Instant
 
 data class GroupedApplicationData(
@@ -55,7 +56,8 @@ data class ApplicationData(
     val sprocketDone: String? = null,
     val splunkIndex: String? = null,
     val deploymentCommand: ApplicationDeploymentCommand,
-    val publicData: ApplicationPublicData
+    val publicData: ApplicationPublicData,
+    val metric: Meter.Id
 
 ) {
     val applicationId get() = publicData.applicationId
