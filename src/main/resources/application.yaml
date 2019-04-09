@@ -55,3 +55,8 @@ openshift.cluster: utv
 ---
 spring:
     profiles: openshift
+
+mokey:
+    cache:
+        enabled: true
+        affiliations: folk, aurora
