@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.controller
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
+import org.springframework.hateoas.Link
 import org.springframework.hateoas.ResourceSupport
 import java.time.Instant
 import java.util.HashMap
@@ -75,7 +76,7 @@ class ApplicationDeploymentDetailsResource(
     val dependencies: Map<String, String> = emptyMap(),
     val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
     val deployDetails: DeployDetailsResource?,
-    val serviceLinks: Map<String, String>
+    val serviceLinks: Map<String, Link>
 ) : IdentifiedHalResource(id)
 
 data class ImageDetailsResource(

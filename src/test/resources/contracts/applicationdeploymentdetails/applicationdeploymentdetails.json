@@ -106,8 +106,12 @@
     "paused" : false
   },
   "serviceLinks": {
-    "api-doc" : "localhost/docs/index.html",
-    "metrics" : "http://localhost/metrics"
+    "api-doc" : {
+      "href" : "localhost/docs/index.html"
+    },
+    "metrics" : {
+      "href" : "http://localhost/metrics"
+    }
   },
   "identifier" : "abc123",
   "_links" : {

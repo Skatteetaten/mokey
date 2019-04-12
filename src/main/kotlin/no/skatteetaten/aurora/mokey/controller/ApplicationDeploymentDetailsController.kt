@@ -72,7 +72,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             dependencies = infoResponse?.dependencies ?: emptyMap(),
             applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
             databases = applicationData.databases,
-            serviceLinks = serviceLinks.associate { it.rel to it.href }
+            serviceLinks = serviceLinks.associate { it.rel to it }
         ).apply {
 
             this.add(createApplicationLinks(applicationData))
