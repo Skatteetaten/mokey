@@ -58,6 +58,9 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     override fun toResource(applicationData: ApplicationData): ApplicationDeploymentDetailsResource {
 
         val infoResponse = applicationData.firstInfoResponse
+        val serviceLinks = applicationData.firstInfoResponse?.serviceLinks
+            ?.map { createServiceLink(applicationData, it.value, it.key) }
+            ?: emptyList()
 
         return ApplicationDeploymentDetailsResource(
             id = applicationData.applicationDeploymentId,
@@ -68,7 +71,8 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             podResources = applicationData.pods.map { toPodResource(applicationData, it) },
             dependencies = infoResponse?.dependencies ?: emptyMap(),
             applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
-            databases = applicationData.databases
+            databases = applicationData.databases,
+            serviceLinks = serviceLinks.associate { it.rel to it.href }
         ).apply {
 
             this.add(createApplicationLinks(applicationData))
@@ -192,10 +196,6 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
                 .withSelfRel()
         val addressLinks =
             applicationData.addresses.map { linkBuilder.createLink(it.url.toString(), it::class.simpleName!!) }
-        val serviceLinks = applicationData.firstInfoResponse?.serviceLinks
-            ?.map { createServiceLink(applicationData, it.value, it.key) }
-            ?: emptyList()
-
         val deploymentSpecLinks = linkBuilder.deploymentSpec(applicationData.deploymentCommand)
 
         val filesLinks = linkBuilder.files(applicationData.deploymentCommand)
@@ -215,7 +215,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         val applicationRel = linkTo(ApplicationController::class.java).slash(applicationData.applicationId)
             .withRel("Application")
-        return (serviceLinks + addressLinks + applyResultLink + deploymentSpecLinks + filesLinks + applyLink +
+        return (addressLinks + applyResultLink + deploymentSpecLinks + filesLinks + applyLink +
             auroraConfigFileLinks + applicationDeploymentRel + applicationRel + selfLink).filterNotNull()
     }
 

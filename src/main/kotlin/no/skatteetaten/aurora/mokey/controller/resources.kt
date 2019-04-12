@@ -74,7 +74,8 @@ class ApplicationDeploymentDetailsResource(
     val databases: List<String>,
     val dependencies: Map<String, String> = emptyMap(),
     val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
-    val deployDetails: DeployDetailsResource?
+    val deployDetails: DeployDetailsResource?,
+    val serviceLinks: Map<String, String>
 ) : IdentifiedHalResource(id)
 
 data class ImageDetailsResource(

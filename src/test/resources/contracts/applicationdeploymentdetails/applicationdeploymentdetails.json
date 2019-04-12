@@ -105,14 +105,12 @@
     "deployTag" : "1-SNAPSHOT",
     "paused" : false
   },
+  "serviceLinks": {
+    "api-doc" : "localhost/docs/index.html",
+    "metrics" : "http://localhost/metrics"
+  },
   "identifier" : "abc123",
   "_links" : {
-    "api-doc" : {
-      "href" : "localhost/docs/index.html"
-    },
-    "metrics" : {
-      "href" : "http://localhost/metrics"
-    },
     "ServiceAddress" : {
       "href" : "http://localhost"
     },
