@@ -66,7 +66,6 @@ data class ApplicationData(
     val affiliation get() = publicData.affiliation
     val namespace get() = publicData.namespace
     val deployTag get() = publicData.deployTag
-
 }
 
 data class PodDetails(

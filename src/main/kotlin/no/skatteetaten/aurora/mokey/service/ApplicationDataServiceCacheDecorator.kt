@@ -87,7 +87,6 @@ class ApplicationDataServiceCacheDecorator(
             .forEach { refreshAffiliation(it.key, it.value) }
     }
 
-
     private fun addCacheEntry(applicationId: String, data: ApplicationData) {
         cache[applicationId]?.let { old ->
             statusRegistry.update(old, data)
@@ -100,7 +99,6 @@ class ApplicationDataServiceCacheDecorator(
         cache[applicationId]?.let { app ->
             statusRegistry.remove(app)
             cache.remove(applicationId)
-
         }
     }
 

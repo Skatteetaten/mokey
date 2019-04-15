@@ -81,4 +81,3 @@ class ApplicationStatusRegistry(
     private fun createMeterId(data: ApplicationData) =
         Meter.Id("application_status", Tags.of(createMetricsTags(data)), null, null, Meter.Type.GAUGE)
 }
-
