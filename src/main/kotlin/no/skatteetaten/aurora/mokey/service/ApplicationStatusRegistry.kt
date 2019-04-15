@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.micrometer.core.instrument.Meter
+import io.micrometer.core.instrument.Meter.Id
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Tags
@@ -20,7 +21,7 @@ class ApplicationStatusRegistry(
     @Value("\${openshift.cluster}") val openshiftCluster: String
 ) {
 
-    val meterCache = ConcurrentHashMap<Meter.Id, AtomicInteger>()
+    val meterCache = ConcurrentHashMap<Id, AtomicInteger>()
 
     /*
      * Micrometer relies on the value if the gauge function to hold an AtomicInteger
@@ -43,10 +44,7 @@ class ApplicationStatusRegistry(
         }
     }
 
-    fun add(data: ApplicationData) {
-        val meterId = createMeterId(data)
-        addToRegistry(meterId, data.auroraStatus)
-    }
+    fun add(data: ApplicationData) = addToRegistry(createMeterId(data), data.auroraStatus)
 
     fun remove(data: ApplicationData) {
         val meterId = createMeterId(data)
@@ -55,7 +53,7 @@ class ApplicationStatusRegistry(
         meterCache.remove(meterId)
     }
 
-    private fun addToRegistry(meterId: Meter.Id, status: AuroraStatus) {
+    private fun addToRegistry(meterId: Id, status: AuroraStatus) {
 
         meterRegistry.gauge(meterId.name, meterId.tags, AtomicInteger(status.level.level))
             ?.let {
@@ -79,5 +77,11 @@ class ApplicationStatusRegistry(
     }
 
     private fun createMeterId(data: ApplicationData) =
-        Meter.Id("application_status", Tags.of(createMetricsTags(data)), null, null, Meter.Type.GAUGE)
+        Id(
+            "application_status",
+            Tags.of(createMetricsTags(data)),
+            null,
+            "Status metric for applications. 0 = OK, 1=OFF, 2=OBSERVE, 3=DOWN",
+            Meter.Type.GAUGE
+        )
 }
