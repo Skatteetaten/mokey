@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
-import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.async
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
@@ -21,7 +20,6 @@ import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 @Service
@@ -31,8 +29,7 @@ class ApplicationDataServiceOpenShift(
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
     val addressService: AddressService,
-    val imageService: ImageService,
-    @Value("\${openshift.cluster}") val openshiftCluster: String
+    val imageService: ImageService
 ) : ApplicationDataService {
 
     val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
@@ -152,25 +149,6 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
-    private fun createMetricsTags(
-        applicationDeployment: ApplicationDeployment,
-        version: String = ""
-    ): List<Tag> {
-        return listOf(
-            Tag.of("app_version", version),
-            Tag.of("app_namespace", applicationDeployment.metadata.namespace),
-            Tag.of("app_environment", applicationDeployment.spec.command.applicationDeploymentRef.environment),
-            Tag.of("app_cluster", openshiftCluster),
-            Tag.of("app_name", applicationDeployment.spec.applicationDeploymentName!!),
-            Tag.of("app_id", applicationDeployment.spec.applicationDeploymentId),
-            Tag.of("app_source", openshiftCluster),
-            Tag.of("app_type", "aurora-plattform"),
-            Tag.of("app_businessgroup", applicationDeployment.metadata.affiliation ?: ""),
-            Tag.of("app_version_strategy", applicationDeployment.spec.deployTag ?: "")
-        )
-
-    }
-
     private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
         logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
         val affiliation = applicationDeployment.metadata.affiliation
@@ -186,7 +164,6 @@ class ApplicationDataServiceOpenShift(
         val dc = openshiftService.dc(namespace, openShiftName)
         if (dc == null) {
             val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
-            val tags = createMetricsTags(applicationDeployment, "")
             return ApplicationData(
                 booberDeployId = applicationDeployment.metadata.booberDeployId,
                 managementPath = applicationDeployment.spec.managementPath,
@@ -202,9 +179,9 @@ class ApplicationDataServiceOpenShift(
                     affiliation = affiliation,
                     deployTag = applicationDeployment.spec.deployTag ?: "",
                     releaseTo = applicationDeployment.spec.releaseTo,
-                    message = applicationDeployment.spec.message
-                ),
-                metricTags = tags
+                    message = applicationDeployment.spec.message,
+                    environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
+                )
             )
         }
 
@@ -219,8 +196,6 @@ class ApplicationDataServiceOpenShift(
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
         val splunkIndex = applicationDeployment.spec.splunkIndex
-
-        val tags = createMetricsTags(applicationDeployment, imageDetails?.auroraVersion ?: "")
 
         return ApplicationData(
             booberDeployId = applicationDeployment.metadata.booberDeployId,
@@ -245,9 +220,9 @@ class ApplicationDataServiceOpenShift(
                 deployTag = applicationDeployment.spec.deployTag ?: "",
                 dockerImageRepo = imageDetails?.dockerImageRepo,
                 releaseTo = applicationDeployment.spec.releaseTo,
-                message = applicationDeployment.spec.message
-            ),
-            metricTags = tags
+                message = applicationDeployment.spec.message,
+                environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
+            )
         )
     }
 

@@ -37,8 +37,7 @@ class ApplicationDataServiceOpenShiftTest {
         auroraStatusCalculator = auroraStatusCalculator,
         podService = podService,
         addressService = addressService,
-        imageService = imageService,
-        openshiftCluster = "utv"
+        imageService = imageService
     )
 
     @BeforeEach
