@@ -1,8 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
-import io.micrometer.core.instrument.Gauge
-import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.async
 import kotlinx.coroutines.newFixedThreadPoolContext
@@ -32,7 +30,6 @@ class ApplicationDataServiceOpenShift(
     val openshiftService: OpenShiftService,
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
-    val meterRegistry: MeterRegistry,
     val addressService: AddressService,
     val imageService: ImageService,
     @Value("\${openshift.cluster}") val openshiftCluster: String
@@ -155,12 +152,11 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
-    private fun createStatusGauge(
+    private fun createMetricsTags(
         applicationDeployment: ApplicationDeployment,
-        auroraStatus: AuroraStatus,
-        version: String
-    ): Gauge {
-        val commonTags = listOf(
+        version: String = ""
+    ): List<Tag> {
+        return listOf(
             Tag.of("app_version", version),
             Tag.of("app_namespace", applicationDeployment.metadata.namespace),
             Tag.of("app_environment", applicationDeployment.spec.command.applicationDeploymentRef.environment),
@@ -173,8 +169,6 @@ class ApplicationDataServiceOpenShift(
             Tag.of("app_version_strategy", applicationDeployment.spec.deployTag ?: "")
         )
 
-        return Gauge.builder("application_status", auroraStatus.level.level) { it.toDouble() }.tags(commonTags)
-            .register(meterRegistry)
     }
 
     private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
@@ -192,7 +186,7 @@ class ApplicationDataServiceOpenShift(
         val dc = openshiftService.dc(namespace, openShiftName)
         if (dc == null) {
             val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
-            val gauge = createStatusGauge(applicationDeployment, auroraStatus, "")
+            val tags = createMetricsTags(applicationDeployment, "")
             return ApplicationData(
                 booberDeployId = applicationDeployment.metadata.booberDeployId,
                 managementPath = applicationDeployment.spec.managementPath,
@@ -210,7 +204,7 @@ class ApplicationDataServiceOpenShift(
                     releaseTo = applicationDeployment.spec.releaseTo,
                     message = applicationDeployment.spec.message
                 ),
-                metric = gauge.id
+                metricTags = tags
             )
         }
 
@@ -226,7 +220,7 @@ class ApplicationDataServiceOpenShift(
 
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
-        val gauge = createStatusGauge(applicationDeployment, auroraStatus, imageDetails?.auroraVersion ?: "")
+        val tags = createMetricsTags(applicationDeployment, imageDetails?.auroraVersion ?: "")
 
         return ApplicationData(
             booberDeployId = applicationDeployment.metadata.booberDeployId,
@@ -253,7 +247,7 @@ class ApplicationDataServiceOpenShift(
                 releaseTo = applicationDeployment.spec.releaseTo,
                 message = applicationDeployment.spec.message
             ),
-            metric = gauge.id
+            metricTags = tags
         )
     }
 

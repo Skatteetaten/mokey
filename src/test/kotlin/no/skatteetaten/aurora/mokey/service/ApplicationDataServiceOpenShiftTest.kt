@@ -3,12 +3,10 @@ package no.skatteetaten.aurora.mokey.service
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.openshift.api.model.Project
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -34,12 +32,10 @@ class ApplicationDataServiceOpenShiftTest {
     private val podService = mockk<PodService>()
     private val imageService = mockk<ImageService>()
     private val addressService = mockk<AddressService>()
-    private val meterRegistry = SimpleMeterRegistry()
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
         openshiftService = openShiftService,
         auroraStatusCalculator = auroraStatusCalculator,
         podService = podService,
-        meterRegistry = meterRegistry,
         addressService = addressService,
         imageService = imageService,
         openshiftCluster = "utv"
@@ -91,7 +87,6 @@ class ApplicationDataServiceOpenShiftTest {
         assertThat(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
         assertThat(applicationData.publicData.message).isEqualTo("message")
         assertThat(applicationData.deployDetails?.paused).isEqualTo(true)
-        assertThat(meterRegistry.get("application_status").gauge()).isNotNull()
     }
 
     @Test
@@ -126,7 +121,6 @@ class ApplicationDataServiceOpenShiftTest {
         assertThat(applicationData.publicData.message).isEqualTo("message")
         assertThat(applicationData.deployDetails?.paused).isEqualTo(false)
         assertThat(applicationData.databases).contains("123-456-789")
-        assertThat(meterRegistry.get("application_status").gauge()).isNotNull()
     }
 
     @Test
@@ -149,6 +143,5 @@ class ApplicationDataServiceOpenShiftTest {
         assertThat(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
         assertThat(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
         assertThat(applicationData.auroraStatus.level).isEqualTo(expected = AuroraStatusLevel.OFF)
-        assertThat(meterRegistry.get("application_status").gauge()).isNotNull()
     }
 }

@@ -2,11 +2,8 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.openshift.api.model.Project
-import io.micrometer.core.instrument.Meter.Id
-import io.micrometer.core.instrument.Meter.Type
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
-import io.micrometer.core.instrument.Tags
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
@@ -50,7 +47,7 @@ class ApplicationDataServiceCacheDecoratorTest {
             releaseTo = "releaseTo",
             time = Instant.EPOCH
         ),
-        metric = Id("application_status", Tags.of(Tag.of("foo", "bar")), null, null, Type.GAUGE)
+        metricTags = listOf(Tag.of("foo", "bar"))
     )
     val app1v2 = app1v1.copy(publicData = app1v1.publicData.copy(deployTag = "prod"))
 
@@ -66,6 +63,7 @@ class ApplicationDataServiceCacheDecoratorTest {
 
     val affiliations = listOf(affiliation)
 
+    // TODO: Test metric value here.
     @Test
     fun `should update cache from OpenShiftApplicationDataService`() {
 

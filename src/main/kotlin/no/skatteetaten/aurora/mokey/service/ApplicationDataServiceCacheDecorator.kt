@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
@@ -14,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 @Service
 @Primary
@@ -33,6 +35,7 @@ class ApplicationDataServiceCacheDecorator(
         else affiliationsConfig.split(",").map { it.trim() }
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
+    val meterCache = ConcurrentHashMap<Meter.Id, AtomicInteger>()
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceCacheDecorator::class.java)
 
@@ -88,22 +91,41 @@ class ApplicationDataServiceCacheDecorator(
             .forEach { refreshAffiliation(it.key, it.value) }
     }
 
+    /*
+     * Micrometer relies on the value if the gauge function to hold an AtomicInteger
+     * That you can set to update the value.
+     *
+     * Since ApplicationData is immutable we have a separate meterCache that holds Meter.Id -> Value outside of the
+     * meter registry.
+     */
     private fun addCacheEntry(applicationId: String, data: ApplicationData) {
         cache[applicationId]?.let { old ->
-            if (old.metric != data.metric) {
-                logger.info("Remove old meter={}", old.metric)
-                meterRegistry.remove(old.metric)
+            if (old.meterId == data.meterId) {
+                meterCache[data.meterId]?.set(data.auroraStatus.level.level)
+            } else {
+                meterCache.remove(old.meterId)
+                meterRegistry.remove(old.meterId)
+                registerGauge(data)
             }
-        }
+        } ?: registerGauge(data)
+
         cache[applicationId] = data
+    }
+
+    private fun registerGauge(data: ApplicationData) {
+        meterRegistry.gauge("application_status", data.metricTags, AtomicInteger(data.auroraStatus.level.level))
+            ?.let {
+                meterCache[data.meterId] = it
+            }
     }
 
     private fun removeCacheEntry(applicationId: String) {
         cache[applicationId]?.let { app ->
-            logger.info("Appliction is gone deleting meter={}", app.metric)
-            meterRegistry.remove(app.metric)
+            logger.info("Application is gone deleting meter={}", app.meterId)
+            meterRegistry.remove(app.meterId)
+            cache.remove(applicationId)
+            meterCache.remove(app.meterId)
         }
-        cache.remove(applicationId)
     }
 
     fun refreshCache(affiliationInput: List<String> = emptyList()) {
@@ -129,6 +151,12 @@ class ApplicationDataServiceCacheDecorator(
             it.totalTimeSeconds
         }
         logger.info("Crawler done total cached=${cache.keys.size} timeSeconds=$time")
+        /*
+        meterRegistry.forEachMeter {
+            if (it is Gauge && it.id.name == "application_status") {
+                logger.info("gauge.id=${it.id} value=${it.value()}")
+            }
+        }*/
     }
 
     private fun refreshAffiliation(
