@@ -87,7 +87,11 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     }
 
     private fun toImageDetailsResource(imageDetails: ImageDetails) =
-        ImageDetailsResource(imageDetails.imageBuildTime, imageDetails.dockerImageReference, imageDetails.dockerImageTagReference)
+        ImageDetailsResource(
+            imageDetails.imageBuildTime,
+            imageDetails.dockerImageReference,
+            imageDetails.dockerImageTagReference
+        )
 
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
         val pod = podDetails.openShiftPodExcerpt
