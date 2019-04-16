@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
-import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
+import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
@@ -15,17 +15,17 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @ExposesResourceFor(ApplicationDeploymentsWithDbResource::class)
-@ConditionalOnBean(ApplicationDataServiceCacheDecorator::class)
+@ConditionalOnBean(ApplicationDataService::class)
 @RequestMapping("/api/auth/applicationdeploymentbyresource")
 class ApplicationDeploymentByResourceController(
-    val applicationDataService: ApplicationDataServiceCacheDecorator,
+    val applicationDataService: ApplicationDataService,
     val applicationDeploymentsWithDbResourceAssembler: ApplicationDeploymentsWithDbResourceAssembler
 ) {
     val logger: Logger = LoggerFactory.getLogger(ApplicationDeploymentByResourceController::class.java)
 
     @PostMapping("/databases")
     fun getApplicationDeploymentsForDatabases(@RequestBody databaseIds: List<String>): List<ApplicationDeploymentsWithDbResource> {
-        val allApplicationData = applicationDataService.getAllApplicationDataFromCache().filter {
+        val allApplicationData = applicationDataService.getFromCacheForUser().filter {
             it.databases.isNotEmpty()
         }
 

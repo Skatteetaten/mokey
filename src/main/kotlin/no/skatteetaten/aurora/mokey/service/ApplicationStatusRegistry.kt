@@ -54,7 +54,6 @@ class ApplicationStatusRegistry(
     }
 
     private fun addToRegistry(meterId: Id, status: AuroraStatus) {
-
         meterRegistry.gauge(meterId.name, meterId.tags, AtomicInteger(status.level.level))
             ?.let {
                 meterCache[meterId] = it
@@ -81,7 +80,7 @@ class ApplicationStatusRegistry(
             "application_status",
             Tags.of(createMetricsTags(data)),
             null,
-            "Status metric for applications. 0 = OK, 1=OFF, 2=OBSERVE, 3=DOWN",
+            "Status metric for applications. 0=OK, 1=OFF, 2=OBSERVE, 3=DOWN",
             Meter.Type.GAUGE
         )
 }

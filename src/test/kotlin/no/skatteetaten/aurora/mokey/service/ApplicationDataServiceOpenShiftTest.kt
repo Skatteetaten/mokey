@@ -16,6 +16,7 @@ import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
+import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
@@ -76,8 +77,7 @@ class ApplicationDataServiceOpenShiftTest {
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
         every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
 
-        val applicationData =
-            applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
+        val applicationData = findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
 
         assertThat(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
         assertThat(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
@@ -109,8 +109,7 @@ class ApplicationDataServiceOpenShiftTest {
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
         every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
 
-        val applicationData =
-            applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
+        val applicationData = findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
 
         assertThat(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
         assertThat(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
@@ -134,13 +133,22 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.applicationDeployments(dcBuilder.dcNamespace) } returns listOf(appDeployment)
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns null
 
-        val applicationData =
-            applicationDataServiceOpenShift.findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
+        val applicationData = findAllApplicationData(listOf(dcBuilder.dcAffiliation)).first()
         assertThat(applicationData.deployDetails).isNull()
         assertThat(applicationData.applicationDeploymentId).isEqualTo(appDeployment.spec.applicationDeploymentId)
         assertThat(applicationData.applicationDeploymentName).isEqualTo(appDeployment.spec.applicationDeploymentName)
         assertThat(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
         assertThat(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
         assertThat(applicationData.auroraStatus.level).isEqualTo(expected = AuroraStatusLevel.OFF)
+    }
+
+    fun findAllApplicationData(
+        affiliations: List<String> = emptyList(),
+        ids: List<String> = emptyList()
+    ): List<ApplicationData> {
+        val affiliationGroups = applicationDataServiceOpenShift.findAndGroupAffiliations(affiliations)
+        return affiliationGroups.flatMap {
+            applicationDataServiceOpenShift.findAllApplicationDataForEnv(it.value, ids)
+        }
     }
 }

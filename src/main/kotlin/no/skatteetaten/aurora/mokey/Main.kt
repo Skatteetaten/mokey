@@ -1,11 +1,10 @@
 package no.skatteetaten.aurora.mokey
 
-import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
+import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 @SpringBootApplication
@@ -16,9 +15,8 @@ fun main(args: Array<String>) {
 }
 
 @Component
-@ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
 class CacheWarmup(
-    val applicationDataService: ApplicationDataServiceCacheDecorator
+    val applicationDataService: ApplicationDataService
 ) : InitializingBean {
 
     private val logger = LoggerFactory.getLogger(CacheWarmup::class.java)

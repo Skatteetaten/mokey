@@ -17,54 +17,26 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
-import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-@ApplicationDataSource(CLUSTER)
 class ApplicationDataServiceOpenShift(
     val openshiftService: OpenShiftService,
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
     val addressService: AddressService,
     val imageService: ImageService
-) : ApplicationDataService {
-
+) {
     val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 
-    override fun findAllAffiliations(): List<String> {
-        return findAndGroupAffiliations().keys.toList()
-    }
-
-    override fun findAllApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationData> {
-        val affiliationGroups = findAndGroupAffiliations(affiliations)
-        return findAllApplicationDataForEnv(ids, affiliationGroups)
-    }
-
-    override fun findAllVisibleAffiliations(): List<String> {
-        throw NotImplementedError("findAllVisibleAffiliations is not supported")
-    }
-
-    override fun findAllPublicApplicationData(
-        affiliations: List<String>,
-        ids: List<String>
-    ): List<ApplicationPublicData> {
-        throw NotImplementedError("findAllPublicApplicationDataByApplicationDeploymentId is not supported")
-    }
-
-    override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? {
-        throw NotImplementedError("findPublicApplicationDataByApplicationDeploymentId is not supported")
-    }
-
-    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
-        throw NotImplementedError("findApplicationDataByApplicationDeploymentId is not supported")
-    }
-
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
+        fun findAllEnvironments(): List<Environment> {
+            return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
+        }
         return findAllEnvironments().filter {
             if (affiliations.isNotEmpty()) {
                 affiliations.contains(it.affiliation)
@@ -73,24 +45,11 @@ class ApplicationDataServiceOpenShift(
     }
 
     fun findAllApplicationDataForEnv(
-        ids: List<String>,
-        affiliationEnvs: Map<String, List<Environment>>
-    ): List<ApplicationData> {
-        return affiliationEnvs.flatMap {
-            findAllApplicationDataForEnv(it.value, ids)
-        }
-    }
-
-    fun findAllApplicationDataForEnv(
         environments: List<Environment>,
         ids: List<String> = emptyList()
     ): List<ApplicationData> {
         return findAllApplicationDataByEnvironments(environments)
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
-    }
-
-    fun findAllEnvironments(): List<Environment> {
-        return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
     }
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment>): List<ApplicationData> {

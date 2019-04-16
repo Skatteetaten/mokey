@@ -53,7 +53,7 @@ class ApplicationDataServiceCacheDecoratorTest {
     val openshiftService = mock(OpenShiftService::class.java)
     val statusRegistry = mock(ApplicationStatusRegistry::class.java)
     val applicationDataService =
-        ApplicationDataServiceCacheDecorator(
+        ApplicationDataService(
             sourceApplicationDataService,
             openshiftService,
             "aurora",
