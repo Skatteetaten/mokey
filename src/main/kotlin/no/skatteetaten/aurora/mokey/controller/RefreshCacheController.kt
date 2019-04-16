@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -11,8 +10,7 @@ data class RefreshParams(val applicationDeploymentId: String?, val affiliations:
 
 @RestController
 @RequestMapping("/api/auth/refresh")
-@ConditionalOnProperty(name = ["mokey.cache.enabled"], matchIfMissing = true)
-class RefreshCacheController(val crawlService: ApplicationDataServiceCacheDecorator) {
+class RefreshCacheController(val crawlService: ApplicationDataService) {
 
     @PostMapping
     fun refreshCache(@RequestBody params: RefreshParams) {

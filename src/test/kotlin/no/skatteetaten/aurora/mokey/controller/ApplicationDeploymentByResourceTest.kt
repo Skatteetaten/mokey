@@ -10,20 +10,18 @@ import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
 import no.skatteetaten.aurora.mokey.CacheWarmup
-import no.skatteetaten.aurora.mokey.service.ApplicationDataServiceCacheDecorator
+import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpHeaders
 import org.springframework.security.test.context.support.WithUserDetails
-import org.springframework.test.context.TestPropertySource
 
 @WithUserDetails
-@TestPropertySource(properties = ["mokey.cache.enabled=true"])
 class ApplicationDeploymentByResourceTest : AbstractSecurityControllerTest() {
 
-    @MockBean(name = "ApplicationDataServiceCacheDecorator")
-    private lateinit var applicationDataService: ApplicationDataServiceCacheDecorator
+    @MockBean
+    private lateinit var applicationDataService: ApplicationDataService
 
     @MockBean
     private lateinit var assembler: ApplicationDeploymentsWithDbResourceAssembler
@@ -33,7 +31,7 @@ class ApplicationDeploymentByResourceTest : AbstractSecurityControllerTest() {
 
     @Test
     fun `Return application deployment by resource`() {
-        given(applicationDataService.getAllApplicationDataFromCache()).willReturn(
+        given(applicationDataService.getFromCacheForUser()).willReturn(
             listOf(ApplicationDataBuilder().build())
         )
 

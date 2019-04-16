@@ -31,9 +31,6 @@ import com.fkorotkov.openshift.status
 import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
-import io.micrometer.core.instrument.Meter
-import io.micrometer.core.instrument.Tag
-import io.micrometer.core.instrument.Tags
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
@@ -403,8 +400,8 @@ data class ApplicationDataBuilder(
                 deployTag = "",
                 dockerImageRepo = null,
                 releaseTo = "releaseTo",
-                time = Instant.EPOCH
-            ),
-            metric = Meter.Id("application_status", Tags.of(Tag.of("foo", "bar")), null, null, Meter.Type.GAUGE)
+                time = Instant.EPOCH,
+                environment = envName
+            )
         )
 }

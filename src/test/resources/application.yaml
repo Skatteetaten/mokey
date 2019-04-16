@@ -25,7 +25,3 @@ integrations:
         url: "http://localhost"
 
 openshift-cluster: utv
-
-mokey:
-    cache:
-        enabled: false

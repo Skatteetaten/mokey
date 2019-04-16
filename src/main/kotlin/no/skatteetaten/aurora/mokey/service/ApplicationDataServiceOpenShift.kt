@@ -1,9 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
-import io.micrometer.core.instrument.Gauge
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.async
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
@@ -20,57 +17,26 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
-import no.skatteetaten.aurora.mokey.service.DataSources.CLUSTER
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 @Service
-@ApplicationDataSource(CLUSTER)
 class ApplicationDataServiceOpenShift(
     val openshiftService: OpenShiftService,
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
-    val meterRegistry: MeterRegistry,
     val addressService: AddressService,
-    val imageService: ImageService,
-    @Value("\${openshift.cluster}") val openshiftCluster: String
-) : ApplicationDataService {
-
+    val imageService: ImageService
+) {
     val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 
-    override fun findAllAffiliations(): List<String> {
-        return findAndGroupAffiliations().keys.toList()
-    }
-
-    override fun findAllApplicationData(affiliations: List<String>, ids: List<String>): List<ApplicationData> {
-        val affiliationGroups = findAndGroupAffiliations(affiliations)
-        return findAllApplicationDataForEnv(ids, affiliationGroups)
-    }
-
-    override fun findAllVisibleAffiliations(): List<String> {
-        throw NotImplementedError("findAllVisibleAffiliations is not supported")
-    }
-
-    override fun findAllPublicApplicationData(
-        affiliations: List<String>,
-        ids: List<String>
-    ): List<ApplicationPublicData> {
-        throw NotImplementedError("findAllPublicApplicationDataByApplicationDeploymentId is not supported")
-    }
-
-    override fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? {
-        throw NotImplementedError("findPublicApplicationDataByApplicationDeploymentId is not supported")
-    }
-
-    override fun findApplicationDataByApplicationDeploymentId(id: String): ApplicationData? {
-        throw NotImplementedError("findApplicationDataByApplicationDeploymentId is not supported")
-    }
-
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
+        fun findAllEnvironments(): List<Environment> {
+            return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
+        }
         return findAllEnvironments().filter {
             if (affiliations.isNotEmpty()) {
                 affiliations.contains(it.affiliation)
@@ -79,24 +45,11 @@ class ApplicationDataServiceOpenShift(
     }
 
     fun findAllApplicationDataForEnv(
-        ids: List<String>,
-        affiliationEnvs: Map<String, List<Environment>>
-    ): List<ApplicationData> {
-        return affiliationEnvs.flatMap {
-            findAllApplicationDataForEnv(it.value, ids)
-        }
-    }
-
-    fun findAllApplicationDataForEnv(
         environments: List<Environment>,
         ids: List<String> = emptyList()
     ): List<ApplicationData> {
         return findAllApplicationDataByEnvironments(environments)
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
-    }
-
-    fun findAllEnvironments(): List<Environment> {
-        return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
     }
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment>): List<ApplicationData> {
@@ -155,28 +108,6 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
-    private fun createStatusGauge(
-        applicationDeployment: ApplicationDeployment,
-        auroraStatus: AuroraStatus,
-        version: String
-    ): Gauge {
-        val commonTags = listOf(
-            Tag.of("app_version", version),
-            Tag.of("app_namespace", applicationDeployment.metadata.namespace),
-            Tag.of("app_environment", applicationDeployment.spec.command.applicationDeploymentRef.environment),
-            Tag.of("app_cluster", openshiftCluster),
-            Tag.of("app_name", applicationDeployment.spec.applicationDeploymentName!!),
-            Tag.of("app_id", applicationDeployment.spec.applicationDeploymentId),
-            Tag.of("app_source", openshiftCluster),
-            Tag.of("app_type", "aurora-plattform"),
-            Tag.of("app_businessgroup", applicationDeployment.metadata.affiliation ?: ""),
-            Tag.of("app_version_strategy", applicationDeployment.spec.deployTag ?: "")
-        )
-
-        return Gauge.builder("application_status", auroraStatus.level.level) { it.toDouble() }.tags(commonTags)
-            .register(meterRegistry)
-    }
-
     private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
         logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
         val affiliation = applicationDeployment.metadata.affiliation
@@ -192,7 +123,6 @@ class ApplicationDataServiceOpenShift(
         val dc = openshiftService.dc(namespace, openShiftName)
         if (dc == null) {
             val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
-            val gauge = createStatusGauge(applicationDeployment, auroraStatus, "")
             return ApplicationData(
                 booberDeployId = applicationDeployment.metadata.booberDeployId,
                 managementPath = applicationDeployment.spec.managementPath,
@@ -208,9 +138,9 @@ class ApplicationDataServiceOpenShift(
                     affiliation = affiliation,
                     deployTag = applicationDeployment.spec.deployTag ?: "",
                     releaseTo = applicationDeployment.spec.releaseTo,
-                    message = applicationDeployment.spec.message
-                ),
-                metric = gauge.id
+                    message = applicationDeployment.spec.message,
+                    environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
+                )
             )
         }
 
@@ -225,8 +155,6 @@ class ApplicationDataServiceOpenShift(
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
         val splunkIndex = applicationDeployment.spec.splunkIndex
-
-        val gauge = createStatusGauge(applicationDeployment, auroraStatus, imageDetails?.auroraVersion ?: "")
 
         return ApplicationData(
             booberDeployId = applicationDeployment.metadata.booberDeployId,
@@ -251,9 +179,9 @@ class ApplicationDataServiceOpenShift(
                 deployTag = applicationDeployment.spec.deployTag ?: "",
                 dockerImageRepo = imageDetails?.dockerImageRepo,
                 releaseTo = applicationDeployment.spec.releaseTo,
-                message = applicationDeployment.spec.message
-            ),
-            metric = gauge.id
+                message = applicationDeployment.spec.message,
+                environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
+            )
         )
     }
 
