@@ -16,6 +16,7 @@ logging:
             hibernate: WARN
             springframework: WARN
             apache:
+                coyote: WARN
                 catalina: WARN
                 velocity: WARN
 
