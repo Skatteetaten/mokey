@@ -89,15 +89,15 @@ class ApplicationDataServiceCacheDecorator(
 
     private fun addCacheEntry(applicationId: String, data: ApplicationData) {
         cache[applicationId]?.let { old ->
-            statusRegistry.update(old, data)
-        } ?: statusRegistry.add(data)
+            statusRegistry.update(old.publicData, data.publicData)
+        } ?: statusRegistry.add(data.publicData)
 
         cache[applicationId] = data
     }
 
     private fun removeCacheEntry(applicationId: String) {
         cache[applicationId]?.let { app ->
-            statusRegistry.remove(app)
+            statusRegistry.remove(app.publicData)
             cache.remove(applicationId)
         }
     }

@@ -6,7 +6,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Tags
 import mu.KotlinLogging
-import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -30,7 +30,7 @@ class ApplicationStatusRegistry(
      * Since ApplicationData is immutable we have a separate meterCache that holds Meter.Id -> Value outside of the
      * meter registry.
      */
-    fun update(old: ApplicationData, data: ApplicationData) {
+    fun update(old: ApplicationPublicData, data: ApplicationPublicData) {
 
         val oldMeter = createMeterId(old)
         val newMeter = createMeterId(data)
@@ -44,9 +44,9 @@ class ApplicationStatusRegistry(
         }
     }
 
-    fun add(data: ApplicationData) = addToRegistry(createMeterId(data), data.auroraStatus)
+    fun add(data: ApplicationPublicData) = addToRegistry(createMeterId(data), data.auroraStatus)
 
-    fun remove(data: ApplicationData) {
+    fun remove(data: ApplicationPublicData) {
         val meterId = createMeterId(data)
         logger.info("Application is gone deleting meter={}", meterId)
         meterRegistry.remove(meterId)
@@ -61,22 +61,22 @@ class ApplicationStatusRegistry(
             }
     }
 
-    private fun createMetricsTags(data: ApplicationData): List<Tag> {
+    private fun createMetricsTags(data: ApplicationPublicData): List<Tag> {
         return listOf(
-            Tag.of("app_version", data.publicData.auroraVersion ?: ""),
-            Tag.of("app_namespace", data.publicData.namespace),
-            Tag.of("app_environment", data.publicData.environment),
+            Tag.of("app_version", data.auroraVersion ?: ""),
+            Tag.of("app_namespace", data.namespace),
+            Tag.of("app_environment", data.environment),
             Tag.of("app_cluster", openshiftCluster),
-            Tag.of("app_name", data.publicData.applicationDeploymentName),
-            Tag.of("app_id", data.publicData.applicationDeploymentId),
+            Tag.of("app_name", data.applicationDeploymentName),
+            Tag.of("app_id", data.applicationDeploymentId),
             Tag.of("app_source", openshiftCluster),
             Tag.of("app_type", "aurora-plattform"),
-            Tag.of("app_businessgroup", data.publicData.affiliation ?: ""),
-            Tag.of("app_version_strategy", data.publicData.deployTag)
+            Tag.of("app_businessgroup", data.affiliation ?: ""),
+            Tag.of("app_version_strategy", data.deployTag)
         )
     }
 
-    private fun createMeterId(data: ApplicationData) =
+    private fun createMeterId(data: ApplicationPublicData) =
         Id(
             "application_status",
             Tags.of(createMetricsTags(data)),
