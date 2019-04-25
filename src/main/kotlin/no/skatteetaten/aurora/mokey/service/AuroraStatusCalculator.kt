@@ -15,14 +15,14 @@ import java.time.Instant
 import java.time.Instant.now
 
 @Service
-class AuroraStatusCalculator(val deploymentChecks: List<StatusCheck>) {
+class AuroraStatusCalculator(val statusChecks: List<StatusCheck>) {
 
     fun calculateAuroraStatus(app: DeployDetails, pods: List<PodDetails>, time: Instant = now()): AuroraStatus {
 
         val hasManagementHealthData = pods.any { it.managementData.health != null }
 
         // Removes AnyPodObserveCheck and AnyPodDownCheck when health data is missing.
-        val checks = deploymentChecks.filter {
+        val checks = statusChecks.filter {
             when (it) {
                 is AnyPodObserveCheck -> hasManagementHealthData
                 is AnyPodDownCheck -> hasManagementHealthData
@@ -30,7 +30,7 @@ class AuroraStatusCalculator(val deploymentChecks: List<StatusCheck>) {
             }
         }
 
-        val results = (checks).map {
+        val results = checks.map {
             val result = it.isFailing(app, pods, time)
             StatusCheckResult(it, result)
         }
