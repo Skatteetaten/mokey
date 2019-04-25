@@ -21,6 +21,9 @@ abstract class StatusCheck(val description: StatusDescription, val failLevel: Au
     abstract fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean
     val name
         get() = this::class.simpleName ?: ""
+
+    open val isSpecialCheck
+        get() = true
 }
 
 data class StatusCheckResult(val statusCheck: StatusCheck, val hasFailed: Boolean) {
