@@ -5,6 +5,20 @@ Mokey is a crawler that crawls an OpenShift cluster caching information about al
 
 The component is named after the Mokey Fraggle (http://muppet.wikia.com/wiki/Mokey_Fraggle). 
 
+ ## Setup
+ 
+ In order to use this project you must set repositories in your `~/.gradle/init.gradle` file
+ 
+     allprojects {
+         ext.repos= {
+             mavenCentral()
+             jcenter()
+         }
+         repositories repos
+         buildscript {
+          repositories repos
+         }
+     }
 
 ## How to run locally
  - Log into your OpenShift cluster with `oc`
