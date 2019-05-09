@@ -18,7 +18,7 @@ enum class AuroraStatusLevel(val level: Int) {
 data class StatusDescription(val ok: String, val failed: String)
 
 abstract class StatusCheck(val description: StatusDescription, val failLevel: AuroraStatusLevel) {
-    open val isSpecialCheck = false
+    open val isOverridingAuroraStatus = false
     abstract fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean
     val name
         get() = this::class.simpleName ?: ""

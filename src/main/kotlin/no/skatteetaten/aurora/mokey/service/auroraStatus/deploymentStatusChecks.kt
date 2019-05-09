@@ -183,7 +183,7 @@ class NoDeploymentCheck : StatusCheck(
         failed = "There have not been any deployments yet."
     ), OFF
 ) {
-    override val isSpecialCheck = true
+    override val isOverridingAuroraStatus = true
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
         app.lastDeployment == null
@@ -196,7 +196,7 @@ class OffCheck : StatusCheck(
         failed = "Deployment has been turned off."
     ), OFF
 ) {
-    override val isSpecialCheck = true
+    override val isOverridingAuroraStatus = true
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
         app.targetReplicas == 0 && app.availableReplicas == 0
@@ -210,7 +210,7 @@ class DeploymentInProgressCheck :
             failed = "A new deployment is in progress, other statuses are ignored."
         ), HEALTHY
     ) {
-    override val isSpecialCheck = true
+    override val isOverridingAuroraStatus = true
 
     val finalPhases = listOf("complete", "failed", null)
 

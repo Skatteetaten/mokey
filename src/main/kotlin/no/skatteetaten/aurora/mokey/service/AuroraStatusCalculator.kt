@@ -19,9 +19,10 @@ class AuroraStatusCalculator(val statusChecks: List<StatusCheck>) {
 
     fun calculateAuroraStatus(app: DeployDetails, pods: List<PodDetails>, time: Instant = now()): AuroraStatus {
 
-        val hasManagementHealthData = pods.any { it.managementData.health != null }
+        val hasManagementHealthData =
+            pods.any { it.managementData.health != null && !it.managementData.health.isSuccess }
 
-        // Removes AnyPodObserveCheck and AnyPodDownCheck when health data is missing.
+        // Removes AnyPodObserveCheck and AnyPodDownCheck when health data is missing or has failed.
         val checks = statusChecks.filter {
             when (it) {
                 is AnyPodObserveCheck -> hasManagementHealthData
@@ -36,7 +37,7 @@ class AuroraStatusCalculator(val statusChecks: List<StatusCheck>) {
         }
 
         val level = calculateAuroraStatusLevel(results)
-        val reports = results.filterNot { it.statusCheck.isSpecialCheck }.map(this::toReport)
+        val reports = results.filterNot { it.statusCheck.isOverridingAuroraStatus }.map(this::toReport)
         val reasons = results.filter { it.hasFailed }.map(this::toReport)
 
         return AuroraStatus(level, reasons, reports)
@@ -49,7 +50,7 @@ class AuroraStatusCalculator(val statusChecks: List<StatusCheck>) {
         }
 
         statusCheckResults.filter { it.hasFailed }
-            .firstOrNull { it.statusCheck.isSpecialCheck }
+            .firstOrNull { it.statusCheck.isOverridingAuroraStatus }
             ?.let {
                 return it.statusCheck.failLevel
             }
