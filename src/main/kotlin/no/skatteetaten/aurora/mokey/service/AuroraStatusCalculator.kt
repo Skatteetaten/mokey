@@ -20,7 +20,7 @@ class AuroraStatusCalculator(val statusChecks: List<StatusCheck>) {
     fun calculateAuroraStatus(app: DeployDetails, pods: List<PodDetails>, time: Instant = now()): AuroraStatus {
 
         val hasManagementHealthData =
-            pods.any { it.managementData.health != null && !it.managementData.health.isSuccess }
+            pods.any { it.managementData.health != null && it.managementData.health.isSuccess }
 
         // Removes AnyPodObserveCheck and AnyPodDownCheck when health data is missing or has failed.
         val checks = statusChecks.filter {
