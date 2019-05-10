@@ -20,6 +20,8 @@ The component is named after the Mokey Fraggle (http://muppet.wikia.com/wiki/Mok
          }
      }
 
+In addition to this, we use a local repository for the gradlewrapper, so in order to use the gradlew command you need to change the distributionUrl in gradle-wrapper.properties to a public repo with the corresponding gradle version.
+
 ## How to run locally
  - Log into your OpenShift cluster with `oc`
  - Start the Main class
