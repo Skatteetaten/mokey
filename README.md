@@ -7,7 +7,7 @@ The component is named after the Mokey Fraggle (http://muppet.wikia.com/wiki/Mok
 
  ## Setup
  
- In order to use this project you must set repositories in your `~/.gradle/init.gradle` file
+ In order to use this project you must set repositories in your `~/.gradle/init.gradle` file.
  
      allprojects {
          ext.repos= {
@@ -20,7 +20,11 @@ The component is named after the Mokey Fraggle (http://muppet.wikia.com/wiki/Mok
          }
      }
 
-In addition to this, we use a local repository for the gradlewrapper, so in order to use the gradlew command you need to change the distributionUrl in gradle-wrapper.properties to a public repo with the corresponding gradle version.
+We use a local repository for distributionUrl in our gradle-wrapper.properties, you need to change it to a public repo in order to use the gradlew command. `../gradle/wrapper/gradle-wrapper.properties`
+
+    <...>
+    distributionUrl=https\://services.gradle.org/distributions/gradle-<version>-bin.zip
+    <...>
 
 ## How to run locally
  - Log into your OpenShift cluster with `oc`
