@@ -53,6 +53,8 @@ Run the http commands from Intellij
 
 ## OpenShift
 
-Mokey must be run as a clust-admin user; example oc command to grant the privileges:
+Mokey must be run as a serviceaccount user; example oc command to grant the privileges:
 
-    oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:paas-mokey:mokey
+    oc get sa
+    <list of serviceaccounts>
+    oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:<serviceaccountname>:mokey
