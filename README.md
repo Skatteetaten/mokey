@@ -7,7 +7,7 @@ The component is named after the Mokey Fraggle (http://muppet.wikia.com/wiki/Mok
 
  ## Setup
  
- In order to use this project you must set repositories in your `~/.gradle/init.gradle` file
+ In order to use this project you must set repositories in your `~/.gradle/init.gradle` file.
  
      allprojects {
          ext.repos= {
@@ -19,6 +19,12 @@ The component is named after the Mokey Fraggle (http://muppet.wikia.com/wiki/Mok
           repositories repos
          }
      }
+
+We use a local repository for distributionUrl in our gradle-wrapper.properties, you need to change it to a public repo in order to use the gradlew command. `../gradle/wrapper/gradle-wrapper.properties`
+
+    <...>
+    distributionUrl=https\://services.gradle.org/distributions/gradle-<version>-bin.zip
+    <...>
 
 ## How to run locally
  - Log into your OpenShift cluster with `oc`
@@ -47,6 +53,8 @@ Run the http commands from Intellij
 
 ## OpenShift
 
-Mokey must be run as a clust-admin user; example oc command to grant the privileges:
+Mokey must be run as a serviceaccount user; example oc command to grant the privileges:
 
-    oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:paas-mokey:mokey
+    oc get sa
+    <list of serviceaccounts>
+    oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:<serviceaccountname>:mokey
