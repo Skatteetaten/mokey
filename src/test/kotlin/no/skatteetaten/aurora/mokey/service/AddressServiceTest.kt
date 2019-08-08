@@ -55,6 +55,24 @@ class AddressServiceTest {
     }
 
     @Test
+    fun `should collect service and route address for secured route`() {
+        val serviceBuilder = ServiceBuilder()
+        val routeBuilder = RouteBuilder(tlsEnabled = true)
+        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
+            serviceBuilder.build()
+        )
+        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
+            routeBuilder.build()
+        )
+        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
+        assertThat(addresses).hasSize(2)
+        assertThat(addresses[1]).isEqualTo(
+            url = "https://${routeBuilder.routeHost}",
+            time = Instant.EPOCH
+        )
+    }
+
+    @Test
     fun `should collect service and route address`() {
         val serviceBuilder = ServiceBuilder()
         val routeBuilder = RouteBuilder()

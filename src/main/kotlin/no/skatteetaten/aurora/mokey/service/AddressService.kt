@@ -35,8 +35,13 @@ class AddressService(val openShiftService: OpenShiftService) {
             } ?: ""
             val status = it.status.ingress.first().conditions.first()
             val success = status.type == "Admitted" && status.status == "True"
+            val protocol = if (it.spec.tls != null) {
+                "https"
+            } else {
+                "http"
+            }
 
-            val route = RouteAddress(URI.create("http://${it.spec.host}$path"), it.created, success, status.reason)
+            val route = RouteAddress(URI.create("$protocol://${it.spec.host}$path"), it.created, success, status.reason)
 
             val bigIpRoute = it.wembleyHost?.let { host ->
                 val service = it.wembleyService
@@ -62,11 +67,13 @@ class AddressService(val openShiftService: OpenShiftService) {
                 val status = it.status.ingress.first().conditions.first()
                 val success = status.success() && it.marjoryOpen
 
-                WebSealAddress(URI.create("https://${it.spec.host}"),
-                        it.marjoryDone,
-                        success,
-                        status.reason,
-                        it.marjoryRoles)
+                WebSealAddress(
+                    URI.create("https://${it.spec.host}"),
+                    it.marjoryDone,
+                    success,
+                    status.reason,
+                    it.marjoryRoles
+                )
             }
         }.filterNotNull()
     }
