@@ -25,7 +25,7 @@ apply(plugin = "spring-cloud-contract")
 extra["spring-hateoas.version"] = "0.24.0.RELEASE"
 
 dependencies {
-    implementation("io.fabric8:openshift-client:4.2.1")
+    implementation("io.fabric8:openshift-client:4.3.1")
     testImplementation("io.fabric8:openshift-server-mock:4.2.1")
     testImplementation("com.fkorotkov:kubernetes-dsl:2.0.1")
     testImplementation("com.squareup.okhttp3:mockwebserver:3.14.1")
