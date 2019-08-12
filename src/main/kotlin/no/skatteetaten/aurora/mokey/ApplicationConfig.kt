@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
+import io.fabric8.openshift.client.OpenShiftConfigBuilder
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import org.springframework.beans.factory.annotation.Value
@@ -46,7 +47,10 @@ class ApplicationConfig : BeanPostProcessor {
 
     @Bean
     fun client(): OpenShiftClient {
-        return DefaultOpenShiftClient()
+        val httpClientBuilder = OkHttpClient.Builder().apply {
+            protocols(listOf(Protocol.HTTP_1_1))
+        }
+        return DefaultOpenShiftClient(httpClientBuilder.build(), OpenShiftConfigBuilder().build())
     }
 
     @Bean
@@ -69,7 +73,6 @@ class ApplicationConfig : BeanPostProcessor {
     private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
 
         val okHttpClientBuilder = OkHttpClient().newBuilder()
-            .protocols(listOf(Protocol.HTTP_1_1))
             .readTimeout(readTimeout, TimeUnit.SECONDS)
             .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
 
