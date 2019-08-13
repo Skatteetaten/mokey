@@ -6,9 +6,10 @@ import java.util.concurrent.TimeUnit
 
 fun createOpenShiftHttpClient() = OkHttpClient.Builder(
     HttpClientUtils.createHttpClient(
-        ConfigBuilder().withConnectionTimeout(60_000).withRequestTimeout(60_000).build()
+        ConfigBuilder().withConnectionTimeout(3_000).withRequestTimeout(3_000).build()
     )
 )
     .protocols(listOf(Protocol.HTTP_1_1))
     .connectionPool(ConnectionPool(1, 30, TimeUnit.SECONDS))
+    .retryOnConnectionFailure(true)
     .build()
