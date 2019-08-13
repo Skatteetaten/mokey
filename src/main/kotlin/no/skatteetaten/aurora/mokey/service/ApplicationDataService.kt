@@ -71,7 +71,7 @@ class ApplicationDataService(
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
     @Scheduled(
-        fixedRateString = "\${mokey.crawler.rateSeconds:120000}",
+        fixedDelayString = "\${mokey.crawler.rateSeconds:120000}",
         initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
     )
     fun cache() = refreshCache(affiliations)
