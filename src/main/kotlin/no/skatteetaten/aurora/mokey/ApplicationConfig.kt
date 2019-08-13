@@ -27,8 +27,6 @@ import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
 
-
-
 @Configuration
 @EnableScheduling
 @EnableHypermediaSupport(type = [HAL])
