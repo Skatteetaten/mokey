@@ -34,6 +34,7 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
     val logger: Logger = LoggerFactory.getLogger(OpenShiftService::class.java)
     fun dc(namespace: String, name: String): DeploymentConfig? {
+        logger.info("OpenShiftClient instance: ${openShiftClient}")
         return openShiftClient.deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
     }
 
