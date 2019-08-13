@@ -8,8 +8,6 @@ import io.fabric8.openshift.client.OpenShiftClient
 import io.fabric8.openshift.client.OpenShiftConfigBuilder
 import okhttp3.OkHttpClient
 import okhttp3.createOpenShiftHttpClient
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -32,8 +30,6 @@ import java.util.concurrent.TimeUnit
 @EnableHypermediaSupport(type = [HAL])
 class ApplicationConfig : BeanPostProcessor {
 
-    val logger: Logger = LoggerFactory.getLogger(ApplicationConfig::class.java)
-
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
         if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
             configureObjectMapper(bean)
@@ -51,7 +47,6 @@ class ApplicationConfig : BeanPostProcessor {
 
     @Bean
     fun client(): OpenShiftClient {
-        logger.info("Creating new OpenShiftClient")
         return DefaultOpenShiftClient(createOpenShiftHttpClient(), OpenShiftConfigBuilder().build())
     }
 
