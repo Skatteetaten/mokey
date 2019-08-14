@@ -12,6 +12,7 @@ import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
+import io.fabric8.openshift.client.OpenShiftConfig
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
@@ -20,6 +21,7 @@ import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewResourceAttributes
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
 import okhttp3.MediaType
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import org.slf4j.Logger
@@ -31,46 +33,46 @@ import org.springframework.stereotype.Service
 
 @Service
 @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
-class OpenShiftService(val openShiftClient: OpenShiftClient, val config: Config) {
+class OpenShiftService(val openShiftClient: OpenShiftClient, val config: Config, val client: OkHttpClient) {
 
     val logger: Logger = LoggerFactory.getLogger(OpenShiftService::class.java)
     fun dc(namespace: String, name: String): DeploymentConfig? {
-        return DefaultOpenShiftClient(config).deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
+        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun route(namespace: String, name: String): Route? {
-        return DefaultOpenShiftClient(config).routes().inNamespace(namespace).withName(name).getOrNull()
+        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).routes().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun routes(namespace: String, labelMap: Map<String, String>): List<Route> {
-        return DefaultOpenShiftClient(config).routes().inNamespace(namespace).withLabels(labelMap).list().items
+        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).routes().inNamespace(namespace).withLabels(labelMap).list().items
     }
 
     fun services(namespace: String, labelMap: Map<String, String>): List<io.fabric8.kubernetes.api.model.Service> {
-        return DefaultOpenShiftClient(config).services().inNamespace(namespace).withLabels(labelMap).list().items
+        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).services().inNamespace(namespace).withLabels(labelMap).list().items
     }
 
     fun pods(namespace: String, labelMap: Map<String, String>): List<Pod> {
-        return DefaultOpenShiftClient(config).pods().inNamespace(namespace).withLabels(labelMap).list().items
+        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).pods().inNamespace(namespace).withLabels(labelMap).list().items
     }
 
     fun rc(namespace: String, name: String): ReplicationController? {
-        return DefaultOpenShiftClient(config).replicationControllers().inNamespace(namespace).withName(name).getOrNull()
+        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).replicationControllers().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun imageStreamTag(namespace: String, name: String, tag: String): ImageStreamTag? {
-        return DefaultOpenShiftClient(config).imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
+        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
     }
 
     fun applicationDeployments(namespace: String): List<ApplicationDeployment> {
-        return (DefaultOpenShiftClient(config) as DefaultOpenShiftClient).applicationDeployments(namespace)
+        return (DefaultOpenShiftClient(client, OpenShiftConfig(config)) as DefaultOpenShiftClient).applicationDeployments(namespace)
     }
 
     fun applicationDeployment(namespace: String, name: String): ApplicationDeployment {
-        return (DefaultOpenShiftClient(config) as DefaultOpenShiftClient).applicationDeployment(namespace, name)
+        return (DefaultOpenShiftClient(client, OpenShiftConfig(config)) as DefaultOpenShiftClient).applicationDeployment(namespace, name)
     }
 
-    fun projects(): List<Project> = DefaultOpenShiftClient(config).projects().list().items
+    fun projects(): List<Project> = DefaultOpenShiftClient(client, OpenShiftConfig(config)).projects().list().items
 
     fun projectByNamespaceForUser(namespace: String): Project? =
         createUserClient().projects().withName(namespace).getOrNull()
