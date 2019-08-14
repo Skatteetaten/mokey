@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.service
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
+import io.fabric8.kubernetes.client.Config
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.DeploymentConfig
@@ -30,46 +31,46 @@ import org.springframework.stereotype.Service
 
 @Service
 @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
-class OpenShiftService(val openShiftClient: OpenShiftClient) {
+class OpenShiftService(val openShiftClient: OpenShiftClient, val config: Config) {
 
     val logger: Logger = LoggerFactory.getLogger(OpenShiftService::class.java)
     fun dc(namespace: String, name: String): DeploymentConfig? {
-        return openShiftClient.deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
+        return DefaultOpenShiftClient(config).deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun route(namespace: String, name: String): Route? {
-        return openShiftClient.routes().inNamespace(namespace).withName(name).getOrNull()
+        return DefaultOpenShiftClient(config).routes().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun routes(namespace: String, labelMap: Map<String, String>): List<Route> {
-        return openShiftClient.routes().inNamespace(namespace).withLabels(labelMap).list().items
+        return DefaultOpenShiftClient(config).routes().inNamespace(namespace).withLabels(labelMap).list().items
     }
 
     fun services(namespace: String, labelMap: Map<String, String>): List<io.fabric8.kubernetes.api.model.Service> {
-        return openShiftClient.services().inNamespace(namespace).withLabels(labelMap).list().items
+        return DefaultOpenShiftClient(config).services().inNamespace(namespace).withLabels(labelMap).list().items
     }
 
     fun pods(namespace: String, labelMap: Map<String, String>): List<Pod> {
-        return openShiftClient.pods().inNamespace(namespace).withLabels(labelMap).list().items
+        return DefaultOpenShiftClient(config).pods().inNamespace(namespace).withLabels(labelMap).list().items
     }
 
     fun rc(namespace: String, name: String): ReplicationController? {
-        return openShiftClient.replicationControllers().inNamespace(namespace).withName(name).getOrNull()
+        return DefaultOpenShiftClient(config).replicationControllers().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun imageStreamTag(namespace: String, name: String, tag: String): ImageStreamTag? {
-        return openShiftClient.imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
+        return DefaultOpenShiftClient(config).imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
     }
 
     fun applicationDeployments(namespace: String): List<ApplicationDeployment> {
-        return (openShiftClient as DefaultOpenShiftClient).applicationDeployments(namespace)
+        return (DefaultOpenShiftClient(config) as DefaultOpenShiftClient).applicationDeployments(namespace)
     }
 
     fun applicationDeployment(namespace: String, name: String): ApplicationDeployment {
-        return (openShiftClient as DefaultOpenShiftClient).applicationDeployment(namespace, name)
+        return (DefaultOpenShiftClient(config) as DefaultOpenShiftClient).applicationDeployment(namespace, name)
     }
 
-    fun projects(): List<Project> = openShiftClient.projects().list().items
+    fun projects(): List<Project> = DefaultOpenShiftClient(config).projects().list().items
 
     fun projectByNamespaceForUser(namespace: String): Project? =
         createUserClient().projects().withName(namespace).getOrNull()
