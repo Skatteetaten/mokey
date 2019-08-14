@@ -52,7 +52,7 @@ class ApplicationConfig : BeanPostProcessor {
                 .withHttp2Disable(true)
                 .build()
         )
-        //return DefaultOpenShiftClient(createOpenShiftHttpClient(), OpenShiftConfigBuilder().build())
+        // return DefaultOpenShiftClient(createOpenShiftHttpClient(), OpenShiftConfigBuilder().build())
     }
 
     @Bean
