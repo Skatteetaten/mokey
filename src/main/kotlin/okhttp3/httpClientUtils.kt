@@ -8,6 +8,5 @@ fun createOpenShiftHttpClient() = OkHttpClient.Builder(
         ConfigBuilder().withConnectionTimeout(3_000).withRequestTimeout(3_000).build()
     )
 )
-    .protocols(listOf(Protocol.HTTP_1_1))
     .retryOnConnectionFailure(true)
     .build()
