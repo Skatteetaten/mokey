@@ -62,9 +62,7 @@ class ApplicationDataServiceOpenShift(
             }
 
             val results = applicationDeployments.map {
-                async(mtContext) { tryCreateApplicationData(it) }
-            }.map {
-                it.await()
+                tryCreateApplicationData(it)
             }
 
             val errors = results.mapNotNull { it.error }

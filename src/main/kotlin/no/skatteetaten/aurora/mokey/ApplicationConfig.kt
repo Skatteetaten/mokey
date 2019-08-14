@@ -48,8 +48,8 @@ class ApplicationConfig : BeanPostProcessor {
     fun client(): OpenShiftClient {
         return DefaultOpenShiftClient(
             ConfigBuilder()
-                .withConnectionTimeout(30_000)
-                .withRequestTimeout(30_000)
+                .withConnectionTimeout(3_000)
+                .withRequestTimeout(3_000)
                 .withHttp2Disable(true)
                 .build()
         )
