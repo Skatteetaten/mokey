@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.service
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
-import io.fabric8.kubernetes.client.Config
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.DeploymentConfig
@@ -12,7 +11,6 @@ import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
-import io.fabric8.openshift.client.OpenShiftConfig
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
@@ -20,8 +18,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentList
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewResourceAttributes
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
-import okhttp3.MediaType
-import okhttp3.OkHttpClient
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Request
 import okhttp3.RequestBody
 import org.slf4j.Logger
@@ -33,46 +30,46 @@ import org.springframework.stereotype.Service
 
 @Service
 @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
-class OpenShiftService(val openShiftClient: OpenShiftClient, val config: Config, val client: OkHttpClient) {
+class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
     val logger: Logger = LoggerFactory.getLogger(OpenShiftService::class.java)
     fun dc(namespace: String, name: String): DeploymentConfig? {
-        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
+        return openShiftClient.deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun route(namespace: String, name: String): Route? {
-        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).routes().inNamespace(namespace).withName(name).getOrNull()
+        return openShiftClient.routes().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun routes(namespace: String, labelMap: Map<String, String>): List<Route> {
-        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).routes().inNamespace(namespace).withLabels(labelMap).list().items
+        return openShiftClient.routes().inNamespace(namespace).withLabels(labelMap).list().items
     }
 
     fun services(namespace: String, labelMap: Map<String, String>): List<io.fabric8.kubernetes.api.model.Service> {
-        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).services().inNamespace(namespace).withLabels(labelMap).list().items
+        return openShiftClient.services().inNamespace(namespace).withLabels(labelMap).list().items
     }
 
     fun pods(namespace: String, labelMap: Map<String, String>): List<Pod> {
-        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).pods().inNamespace(namespace).withLabels(labelMap).list().items
+        return openShiftClient.pods().inNamespace(namespace).withLabels(labelMap).list().items
     }
 
     fun rc(namespace: String, name: String): ReplicationController? {
-        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).replicationControllers().inNamespace(namespace).withName(name).getOrNull()
+        return openShiftClient.replicationControllers().inNamespace(namespace).withName(name).getOrNull()
     }
 
     fun imageStreamTag(namespace: String, name: String, tag: String): ImageStreamTag? {
-        return DefaultOpenShiftClient(client, OpenShiftConfig(config)).imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
+        return openShiftClient.imageStreamTags().inNamespace(namespace).withName("$name:$tag").getOrNull()
     }
 
     fun applicationDeployments(namespace: String): List<ApplicationDeployment> {
-        return (DefaultOpenShiftClient(client, OpenShiftConfig(config)) as DefaultOpenShiftClient).applicationDeployments(namespace)
+        return (openShiftClient as DefaultOpenShiftClient).applicationDeployments(namespace)
     }
 
     fun applicationDeployment(namespace: String, name: String): ApplicationDeployment {
-        return (DefaultOpenShiftClient(client, OpenShiftConfig(config)) as DefaultOpenShiftClient).applicationDeployment(namespace, name)
+        return (openShiftClient as DefaultOpenShiftClient).applicationDeployment(namespace, name)
     }
 
-    fun projects(): List<Project> = DefaultOpenShiftClient(client, OpenShiftConfig(config)).projects().list().items
+    fun projects(): List<Project> = openShiftClient.projects().list().items
 
     fun projectByNamespaceForUser(namespace: String): Project? =
         createUserClient().projects().withName(namespace).getOrNull()
@@ -110,13 +107,13 @@ fun DefaultOpenShiftClient.selfSubjectAccessView(review: SelfSubjectAccessReview
             .url(url.toString())
             .post(
                 RequestBody.create(
-                    MediaType.parse("application/json; charset=utf-8"),
+                    "application/json; charset=utf-8".toMediaTypeOrNull(),
                     jacksonObjectMapper().writeValueAsString(review)
                 )
             )
             .build()
         val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), SelfSubjectAccessReview::class.java)
+        jacksonObjectMapper().readValue(response.body?.bytes(), SelfSubjectAccessReview::class.java)
             ?: throw KubernetesClientException("Error occurred while SelfSubjectAccessReview")
     } catch (e: Exception) {
         throw KubernetesClientException("Error occurred while posting SelfSubjectAccessReview", e)
@@ -130,7 +127,7 @@ fun DefaultOpenShiftClient.applicationDeployment(namespace: String, name: String
     return try {
         val request = Request.Builder().url(url.toString()).build()
         val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeployment::class.java)
+        jacksonObjectMapper().readValue(response.body?.bytes(), ApplicationDeployment::class.java)
             ?: throw KubernetesClientException("Error occurred while fetching application in namespace=$namespace with name=$name")
     } catch (e: Exception) {
         throw KubernetesClientException(
@@ -147,7 +144,7 @@ fun DefaultOpenShiftClient.applicationDeployments(namespace: String): List<Appli
     return try {
         val request = Request.Builder().url(url.toString()).build()
         val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeploymentList::class.java)
+        jacksonObjectMapper().readValue(response.body?.bytes(), ApplicationDeploymentList::class.java)
             ?.items
             ?: throw KubernetesClientException("Error occurred while fetching list of applications in namespace=$namespace")
     } catch (e: Exception) {
