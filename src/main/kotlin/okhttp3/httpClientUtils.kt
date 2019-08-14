@@ -5,7 +5,11 @@ import io.fabric8.kubernetes.client.utils.HttpClientUtils
 
 fun createOpenShiftHttpClient() = OkHttpClient.Builder(
     HttpClientUtils.createHttpClient(
-        ConfigBuilder().withConnectionTimeout(3_000).withRequestTimeout(3_000).build()
+        ConfigBuilder()
+            .withConnectionTimeout(3_000)
+            .withRequestTimeout(3_000)
+            .withHttp2Disable(true)
+            .build()
     )
 )
     .retryOnConnectionFailure(true)

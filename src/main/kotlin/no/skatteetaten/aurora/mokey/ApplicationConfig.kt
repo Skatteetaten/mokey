@@ -3,11 +3,10 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
-import io.fabric8.openshift.client.OpenShiftConfigBuilder
 import okhttp3.OkHttpClient
-import okhttp3.createOpenShiftHttpClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -47,7 +46,13 @@ class ApplicationConfig : BeanPostProcessor {
 
     @Bean
     fun client(): OpenShiftClient {
-        return DefaultOpenShiftClient(createOpenShiftHttpClient(), OpenShiftConfigBuilder().build())
+        return DefaultOpenShiftClient(
+            ConfigBuilder().withConnectionTimeout(3_000)
+                .withRequestTimeout(3_000)
+                .withHttp2Disable(true)
+                .build()
+        )
+        //return DefaultOpenShiftClient(createOpenShiftHttpClient(), OpenShiftConfigBuilder().build())
     }
 
     @Bean
