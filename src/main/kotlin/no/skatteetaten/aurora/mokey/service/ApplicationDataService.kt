@@ -72,7 +72,7 @@ class ApplicationDataService(
 
     @Scheduled(
         fixedDelayString = "\${mokey.crawler.rateSeconds:60000}",
-        initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
+        initialDelayString = "\${mokey.crawler.delaySeconds:20000}"
     )
     fun cache() = refreshCache(affiliations)
 
