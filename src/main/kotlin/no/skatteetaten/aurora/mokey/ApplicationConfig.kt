@@ -3,6 +3,8 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import io.fabric8.kubernetes.client.ConfigBuilder
+import io.fabric8.kubernetes.client.internal.SSLUtils
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import io.fabric8.openshift.client.OpenShiftConfigBuilder
@@ -24,6 +26,8 @@ import org.springframework.web.client.RestTemplate
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.X509TrustManager
 
 @Configuration
 @EnableScheduling
@@ -47,11 +51,17 @@ class ApplicationConfig : BeanPostProcessor {
 
     @Bean
     fun client(): OpenShiftClient {
+        val context = SSLContext.getInstance("TLSv1.2")
+        val trustManagers = SSLUtils.trustManagers(ConfigBuilder().build())
+        val keyManagers = SSLUtils.keyManagers(ConfigBuilder().build())
+        context.init(keyManagers, trustManagers, null)
+
         val httpClient = OkHttpClient().newBuilder()
             .connectTimeout(3, TimeUnit.SECONDS)
             .readTimeout(3, TimeUnit.SECONDS)
             .protocols(listOf(Protocol.HTTP_1_1))
             .retryOnConnectionFailure(true)
+            .sslSocketFactory(context.socketFactory, trustManagers[0] as X509TrustManager)
             .build()
 
         return DefaultOpenShiftClient(httpClient, OpenShiftConfigBuilder().build())
