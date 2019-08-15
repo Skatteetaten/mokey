@@ -52,8 +52,10 @@ class ApplicationConfig : BeanPostProcessor {
     @Bean
     fun client(): OpenShiftClient {
         val context = SSLContext.getInstance("TLSv1.2")
-        val trustManagers = SSLUtils.trustManagers(ConfigBuilder().build())
-        val keyManagers = SSLUtils.keyManagers(ConfigBuilder().build())
+        val config = ConfigBuilder().withTrustCerts(true).build()
+
+        val trustManagers = SSLUtils.trustManagers(config)
+        val keyManagers = SSLUtils.keyManagers(config)
         context.init(keyManagers, trustManagers, null)
 
         val httpClient = OkHttpClient().newBuilder()
