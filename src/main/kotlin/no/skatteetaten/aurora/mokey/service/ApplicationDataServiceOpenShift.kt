@@ -34,7 +34,7 @@ class ApplicationDataServiceOpenShift(
 ) {
     val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
 
-    val workerThreads = Executors.newFixedThreadPool(6t works)
+    val workerThreads = Executors.newFixedThreadPool(6)
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 
