@@ -1,8 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import no.skatteetaten.aurora.mokey.extensions.affiliation
@@ -60,9 +58,7 @@ class ApplicationDataServiceOpenShift(
             }
 
             val results = applicationDeployments.map {
-                async(Dispatchers.IO) { tryCreateApplicationData(it) }
-            }.map {
-                it.await()
+                tryCreateApplicationData(it)
             }
 
             val errors = results.mapNotNull { it.error }
