@@ -21,6 +21,8 @@ import no.skatteetaten.aurora.mokey.model.Environment
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 
 @Service
 class ApplicationDataServiceOpenShift(
@@ -31,6 +33,8 @@ class ApplicationDataServiceOpenShift(
     val imageService: ImageService
 ) {
     val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
+
+    val workerThreads = Executors.newFixedThreadPool(6t works)
 
     val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 
@@ -62,9 +66,10 @@ class ApplicationDataServiceOpenShift(
                 openshiftService.applicationDeployments(environment.namespace)
             }
 
-            val results = applicationDeployments.map {
-                async(mtContext) { tryCreateApplicationData(it) }
-            }.awaitAll()
+            val results2 = applicationDeployments.map {
+                Callable<MaybeApplicationData> { tryCreateApplicationData(it) }
+            }
+            val results = workerThreads.invokeAll(results2).map { it.get() }
 
             val errors = results.mapNotNull { it.error }
 
