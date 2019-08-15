@@ -51,8 +51,6 @@ class ApplicationConfig : BeanPostProcessor {
                 .withConnectionTimeout(3_000)
                 .withRequestTimeout(3_000)
                 .withHttp2Disable(true)
-                .withMaxConcurrentRequests(50)
-                .withMaxConcurrentRequestsPerHost(50)
                 .build()
         )
     }
