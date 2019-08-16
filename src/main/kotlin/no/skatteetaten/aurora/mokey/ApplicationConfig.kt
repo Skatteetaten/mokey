@@ -3,8 +3,6 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import io.fabric8.kubernetes.client.ConfigBuilder
-import io.fabric8.kubernetes.client.internal.SSLUtils
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import io.fabric8.openshift.client.OpenShiftConfigBuilder
@@ -26,7 +24,9 @@ import org.springframework.web.client.RestTemplate
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
 @Configuration
@@ -51,19 +51,25 @@ class ApplicationConfig : BeanPostProcessor {
 
     @Bean
     fun client(): OpenShiftClient {
-        val context = SSLContext.getInstance("TLSv1.2")
-        val config = ConfigBuilder().withTrustCerts(true).build()
+        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+            override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+            override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> {
+                return arrayOf()
+            }
+        })
 
-        val trustManagers = SSLUtils.trustManagers(config)
-        val keyManagers = SSLUtils.keyManagers(config)
-        context.init(keyManagers, trustManagers, null)
+        val sslContext = SSLContext.getInstance("SSL")
+        sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+        val sslSocketFactory = sslContext.socketFactory
 
         val httpClient = OkHttpClient().newBuilder()
             .connectTimeout(3, TimeUnit.SECONDS)
             .readTimeout(3, TimeUnit.SECONDS)
             .protocols(listOf(Protocol.HTTP_1_1))
             .retryOnConnectionFailure(true)
-            .sslSocketFactory(context.socketFactory, trustManagers[0] as X509TrustManager)
+            .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
+            .hostnameVerifier(HostnameVerifier { _, _ -> true })
             .build()
 
         return DefaultOpenShiftClient(httpClient, OpenShiftConfigBuilder().build())
