@@ -8,10 +8,6 @@ spring:
     profiles:
         active: local
 
-mokey:
-    openshift:
-        tokenLocation: file:/tmp/boober-token
-
 logging:
     level:
         no.skatteetaten.aurora:
@@ -45,6 +41,8 @@ spring:
 mokey:
     cache:
         affiliations: paas, aurora
+    openshift:
+        tokenLocation: file:/tmp/boober-token
 
 logging:
     pattern:
