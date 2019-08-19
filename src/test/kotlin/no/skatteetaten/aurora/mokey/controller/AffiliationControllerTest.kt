@@ -7,11 +7,13 @@ import no.skatteetaten.aurora.mockmvc.extensions.responseJsonPath
 import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.security.test.context.support.WithUserDetails
 
+@Disabled
 class AffiliationControllerTest : AbstractSecurityControllerTest() {
 
     @MockBean

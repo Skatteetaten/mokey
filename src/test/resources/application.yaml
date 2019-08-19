@@ -25,3 +25,7 @@ integrations:
         url: "http://localhost"
 
 openshift-cluster: utv
+
+mokey:
+    openshift:
+        tokenLocation: "classpath:testToken.txt"
