@@ -179,7 +179,7 @@ class OpenShiftService(val openShiftClient: OpenShiftClient, val webClient: WebC
             .retrieve()
             .bodyToMono<ProjectList>()
             .block()?.items ?: emptyList()
-    } catch(e: Throwable) {
+    } catch (e: Throwable) {
         emptyList<Project>()
     }
 
