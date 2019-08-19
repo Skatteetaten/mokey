@@ -87,7 +87,7 @@ class ApplicationConfig : BeanPostProcessor {
     fun webClient(
         builder: WebClient.Builder,
         tcpClient: TcpClient,
-        @Value("\${mokey.openshift.tokenLocation:/var/run/secrets/kubernetes.io/serviceaccount/token}") token: Resource
+        @Value("\${mokey.openshift.tokenLocation:file:/var/run/secrets/kubernetes.io/serviceaccount/token}") token: Resource
     ) = builder
         .baseUrl("https://utv-master.paas.skead.no:8443")
         .defaultHeader("Authorization", "Bearer ${StreamUtils.copyToString(token.inputStream, StandardCharsets.UTF_8)}")
