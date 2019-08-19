@@ -162,11 +162,21 @@ class OpenShiftService(val openShiftClient: OpenShiftClient, val webClient: WebC
     }
 
     fun applicationDeployments(namespace: String): List<ApplicationDeployment> {
-        return (openShiftClient as DefaultOpenShiftClient).applicationDeployments(namespace)
+        return webClient
+            .get()
+            .uri("/apis/skatteetaten.no/v1/namespaces/$namespace/applicationdeployments")
+            .retrieve()
+            .bodyToMono<ApplicationDeploymentList>()
+            .block()?.items ?: emptyList()
     }
 
     fun applicationDeployment(namespace: String, name: String): ApplicationDeployment {
-        return (openShiftClient as DefaultOpenShiftClient).applicationDeployment(namespace, name)
+        return webClient
+            .get()
+            .uri("/apis/skatteetaten.no/v1/namespaces/$namespace/applicationdeployments/$name")
+            .retrieve()
+            .bodyToMono<ApplicationDeployment>()
+            .block()!!
     }
 
     // https://utv-master.paas.skead.no:8443/apis/project.openshift.io/v1/projects
