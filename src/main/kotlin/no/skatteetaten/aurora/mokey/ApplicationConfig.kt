@@ -74,7 +74,7 @@ class ApplicationConfig : BeanPostProcessor {
     @Bean
     fun webClient(builder: WebClient.Builder, tcpClient: TcpClient) = builder
         .baseUrl("https://utv-master.paas.skead.no:8443")
-        .defaultHeader("Authorization", "Bearer CTU1TC6OddG5q0C_Azmk4ItWRmIovDV6bRn51ezRLFA")
+        .defaultHeader("Authorization", "Bearer")
         .clientConnector(ReactorClientHttpConnector(HttpClient.from(tcpClient).compress(true))).build()
 
     @Bean
