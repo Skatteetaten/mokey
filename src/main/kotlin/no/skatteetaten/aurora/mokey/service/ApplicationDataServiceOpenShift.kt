@@ -119,7 +119,7 @@ class ApplicationDataServiceOpenShift(
 
         val databases = applicationDeployment.spec.databases ?: listOf()
 
-        val dc = openshiftService.dc(namespace, openShiftName)
+        val dc = openshiftService.dcWebClient(namespace, openShiftName)
         if (dc == null) {
             val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
             return ApplicationData(
@@ -190,7 +190,7 @@ class ApplicationDataServiceOpenShift(
 
         val latestRCName = dc.status.latestVersion?.let { "${dc.metadata.name}-$it" }
 
-        val rc = latestRCName?.let { openshiftService.rc(namespace, it) }
+        val rc = latestRCName?.let { openshiftService.rcWebClient(namespace, it) }
 
         val details = DeployDetails(
             targetReplicas = dc.spec.replicas,

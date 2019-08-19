@@ -6,8 +6,14 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import io.fabric8.openshift.client.OpenShiftConfigBuilder
+import io.netty.channel.ChannelOption
+import io.netty.handler.ssl.SslContextBuilder
+import io.netty.handler.timeout.ReadTimeoutHandler
+import io.netty.handler.timeout.WriteTimeoutHandler
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
+import okhttp3.Response
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -18,16 +24,19 @@ import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
+import reactor.netty.http.client.HttpClient
+import reactor.netty.tcp.SslProvider
+import reactor.netty.tcp.TcpClient
 import java.security.KeyManagementException
+import java.security.KeyStore
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
-import javax.net.ssl.HostnameVerifier
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
+import javax.net.ssl.TrustManagerFactory
 
 @Configuration
 @EnableScheduling
@@ -51,28 +60,47 @@ class ApplicationConfig : BeanPostProcessor {
 
     @Bean
     fun client(): OpenShiftClient {
-        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-            override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
-            override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
-            override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> {
-                return arrayOf()
-            }
-        })
-
-        val sslContext = SSLContext.getInstance("SSL")
-        sslContext.init(null, trustAllCerts, java.security.SecureRandom())
-        val sslSocketFactory = sslContext.socketFactory
-
         val httpClient = OkHttpClient().newBuilder()
             .connectTimeout(3, TimeUnit.SECONDS)
             .readTimeout(3, TimeUnit.SECONDS)
             .protocols(listOf(Protocol.HTTP_1_1))
             .retryOnConnectionFailure(true)
-            .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
-            .hostnameVerifier(HostnameVerifier { _, _ -> true })
+            .addInterceptor(LoggingInterceptor())
             .build()
 
         return DefaultOpenShiftClient(httpClient, OpenShiftConfigBuilder().build())
+    }
+
+    @Bean
+    fun webClient(builder: WebClient.Builder, tcpClient: TcpClient) = builder
+        .baseUrl("https://utv-master.paas.skead.no:8443")
+        .defaultHeader("Authorization", "Bearer CTU1TC6OddG5q0C_Azmk4ItWRmIovDV6bRn51ezRLFA")
+        .clientConnector(ReactorClientHttpConnector(HttpClient.from(tcpClient).compress(true))).build()
+
+    @Bean
+    fun tcpClient(
+        @Value("\${cantus.httpclient.readTimeout:5000}") readTimeout: Long,
+        @Value("\${cantus.httpclient.writeTimeout:5000}") writeTimeout: Long,
+        @Value("\${cantus.httpclient.connectTimeout:5000}") connectTimeout: Int,
+        trustStore: KeyStore?
+    ): TcpClient {
+        val trustFactory = TrustManagerFactory.getInstance("X509")
+        trustFactory.init(trustStore)
+
+        val sslProvider = SslProvider.builder().sslContext(
+            SslContextBuilder
+                .forClient()
+                .trustManager(trustFactory)
+                .build()
+        ).build()
+        return TcpClient.create()
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
+            .secure(sslProvider)
+            .doOnConnected { connection ->
+                connection
+                    .addHandlerLast(ReadTimeoutHandler(readTimeout, TimeUnit.MILLISECONDS))
+                    .addHandlerLast(WriteTimeoutHandler(writeTimeout, TimeUnit.MILLISECONDS))
+            }
     }
 
     @Bean
@@ -99,5 +127,13 @@ class ApplicationConfig : BeanPostProcessor {
             .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
 
         return OkHttp3ClientHttpRequestFactory(okHttpClientBuilder.build())
+    }
+}
+
+class LoggingInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        println(request.url)
+        return chain.proceed(request)
     }
 }

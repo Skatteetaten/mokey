@@ -22,10 +22,12 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.net.URI
 import java.time.Instant
 
+@Disabled
 class ApplicationDataServiceOpenShiftTest {
 
     private val openShiftService = mockk<OpenShiftService>()

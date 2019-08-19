@@ -23,8 +23,8 @@ class AddressService(val openShiftService: OpenShiftService) {
     fun getAddresses(namespace: String, name: String): List<Address> {
 
         val labels = mapOf("app" to name)
-        val services = openShiftService.services(namespace, labels)
-        val routes = openShiftService.routes(namespace, labels)
+        val services = openShiftService.servicesWebClient(namespace, labels)
+        val routes = openShiftService.routesWebClient(namespace, labels)
 
         val serviceAddresses = services.map { ServiceAddress(URI.create("http://${it.metadata.name}"), it.created) }
 
@@ -58,7 +58,7 @@ class AddressService(val openShiftService: OpenShiftService) {
 
     private fun findWebsealAddresses(services: List<Service>, namespace: String): List<WebSealAddress> {
         return services.filter { it.marjoryDone != null }.map {
-            openShiftService.route(namespace, "${it.metadata.name}-webseal")?.let {
+            openShiftService.routeWebClient(namespace, "${it.metadata.name}-webseal")?.let {
                 val status = it.status.ingress.first().conditions.first()
                 val success = status.success() && it.marjoryOpen
 

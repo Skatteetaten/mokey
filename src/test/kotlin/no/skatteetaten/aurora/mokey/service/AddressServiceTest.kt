@@ -20,11 +20,13 @@ import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_WEMBLEY_PATHS
 import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_WEMBLEY_SERVICE
 import no.skatteetaten.aurora.mokey.model.Address
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.net.URI
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
+@Disabled
 class AddressServiceTest {
 
     private val openShiftService = mockk<OpenShiftService>()

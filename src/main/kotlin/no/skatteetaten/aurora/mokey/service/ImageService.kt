@@ -18,7 +18,7 @@ class ImageService(val openShiftService: OpenShiftService) {
     }
 
     fun getImageDetails(namespace: String, name: String, tagName: String): ImageDetails? {
-        return openShiftService.imageStreamTag(namespace, name, tagName)?.let { istag ->
+        return openShiftService.imageStreamTagWebClient(namespace, name, tagName)?.let { istag ->
 
             val dockerTagReference = istag.tag?.from?.name
             val image = istag.image

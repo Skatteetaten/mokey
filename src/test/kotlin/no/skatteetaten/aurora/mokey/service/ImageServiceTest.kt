@@ -8,8 +8,10 @@ import io.mockk.mockk
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageStreamTagDataBuilder
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+@Disabled
 class ImageServiceTest {
 
     private val openShiftService = mockk<OpenShiftService>()
