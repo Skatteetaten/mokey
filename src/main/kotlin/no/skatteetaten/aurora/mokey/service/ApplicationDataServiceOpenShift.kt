@@ -36,7 +36,7 @@ class ApplicationDataServiceOpenShift(
 
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         fun findAllEnvironments(): List<Environment> {
-            return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
+            return openshiftService.projectsWebClient().map { Environment.fromNamespace(it.metadata.name) }
         }
         return findAllEnvironments().filter {
             if (affiliations.isNotEmpty()) {

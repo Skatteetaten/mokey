@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.ImageStreamTag
 import io.fabric8.openshift.api.model.Project
+import io.fabric8.openshift.api.model.ProjectList
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.api.model.RouteList
 import io.fabric8.openshift.client.DefaultOpenShiftClient
@@ -168,7 +169,19 @@ class OpenShiftService(val openShiftClient: OpenShiftClient, val webClient: WebC
         return (openShiftClient as DefaultOpenShiftClient).applicationDeployment(namespace, name)
     }
 
+    // https://utv-master.paas.skead.no:8443/apis/project.openshift.io/v1/projects
     fun projects(): List<Project> = openShiftClient.projects().list().items
+
+    fun projectsWebClient() = try {
+        webClient
+            .get()
+            .uri("/apis/project.openshift.io/v1/projects")
+            .retrieve()
+            .bodyToMono<ProjectList>()
+            .block()?.items ?: emptyList()
+    } catch(e: Throwable) {
+        emptyList<Project>()
+    }
 
     fun projectByNamespaceForUser(namespace: String): Project? =
         createUserClient().projects().withName(namespace).getOrNull()

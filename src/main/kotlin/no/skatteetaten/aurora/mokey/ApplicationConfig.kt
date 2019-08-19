@@ -83,7 +83,7 @@ class ApplicationConfig : BeanPostProcessor {
         tcpClient: TcpClient,
         @Value("\${mokey.openshift.tokenLocation:file:/var/run/secrets/kubernetes.io/serviceaccount/token}") token: Resource
     ) = builder
-        .baseUrl("http://kubernetes.svc.cluster.local")
+        .baseUrl("https://utv-master.paas.skead.no:8443")
         .defaultHeader("Authorization", "Bearer ${StreamUtils.copyToString(token.inputStream, StandardCharsets.UTF_8)}")
         .clientConnector(ReactorClientHttpConnector(HttpClient.from(tcpClient).compress(true))).build()
 

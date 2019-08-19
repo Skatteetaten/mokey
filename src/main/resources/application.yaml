@@ -8,11 +8,16 @@ spring:
     profiles:
         active: local
 
+mokey:
+    openshift:
+        tokenLocation: file:/tmp/boober-token
+
 logging:
     level:
         no.skatteetaten.aurora:
             mokey: INFO
         org:
+
             hibernate: WARN
             springframework: WARN
             apache:
