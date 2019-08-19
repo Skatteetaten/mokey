@@ -10,11 +10,8 @@ import io.netty.channel.ChannelOption
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.timeout.ReadTimeoutHandler
 import io.netty.handler.timeout.WriteTimeoutHandler
-import mu.KotlinLogging
-import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
-import okhttp3.Response
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -48,8 +45,6 @@ import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.TrustManagerFactory
 
-private val logger = KotlinLogging.logger {}
-
 @Configuration
 @EnableScheduling
 @EnableHypermediaSupport(type = [HAL])
@@ -77,7 +72,6 @@ class ApplicationConfig : BeanPostProcessor {
             .readTimeout(3, TimeUnit.SECONDS)
             .protocols(listOf(Protocol.HTTP_1_1))
             .retryOnConnectionFailure(true)
-            .addInterceptor(LoggingInterceptor())
             .build()
 
         return DefaultOpenShiftClient(httpClient, OpenShiftConfigBuilder().build())
@@ -137,7 +131,6 @@ class ApplicationConfig : BeanPostProcessor {
 
     @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)
     private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
-
         val okHttpClientBuilder = OkHttpClient().newBuilder()
             .readTimeout(readTimeout, TimeUnit.SECONDS)
             .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
@@ -154,25 +147,11 @@ class ApplicationConfig : BeanPostProcessor {
     @Bean
     fun openshiftSSLContext(@Value("\${trust.store}") trustStoreLocation: String): KeyStore? =
         KeyStore.getInstance(KeyStore.getDefaultType())?.let { ks ->
-            try {
-                ks.load(FileInputStream(trustStoreLocation), "changeit".toCharArray())
-                val fis = FileInputStream("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-                CertificateFactory.getInstance("X509").generateCertificates(fis).forEach {
-                    ks.setCertificateEntry((it as X509Certificate).subjectX500Principal.name, it)
-                }
-                logger.debug("SSLContext successfully loaded")
-            } catch (e: Exception) {
-                logger.debug(e) { "SSLContext failed to load" }
-                throw e
+            ks.load(FileInputStream(trustStoreLocation), "changeit".toCharArray())
+            val fis = FileInputStream("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+            CertificateFactory.getInstance("X509").generateCertificates(fis).forEach {
+                ks.setCertificateEntry((it as X509Certificate).subjectX500Principal.name, it)
             }
             ks
         }
-}
-
-class LoggingInterceptor : Interceptor {
-    override fun intercept(chain: Interceptor.Chain): Response {
-        val request = chain.request()
-        println(request.url)
-        return chain.proceed(request)
-    }
 }
