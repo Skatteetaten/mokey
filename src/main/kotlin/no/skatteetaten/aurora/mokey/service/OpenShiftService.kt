@@ -18,7 +18,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentList
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewResourceAttributes
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
-import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Request
 import okhttp3.RequestBody
 import org.slf4j.Logger
@@ -107,13 +107,13 @@ fun DefaultOpenShiftClient.selfSubjectAccessView(review: SelfSubjectAccessReview
             .url(url.toString())
             .post(
                 RequestBody.create(
-                    MediaType.parse("application/json; charset=utf-8"),
+                    "application/json; charset=utf-8".toMediaTypeOrNull(),
                     jacksonObjectMapper().writeValueAsString(review)
                 )
             )
             .build()
         val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), SelfSubjectAccessReview::class.java)
+        jacksonObjectMapper().readValue(response.body?.bytes(), SelfSubjectAccessReview::class.java)
             ?: throw KubernetesClientException("Error occurred while SelfSubjectAccessReview")
     } catch (e: Exception) {
         throw KubernetesClientException("Error occurred while posting SelfSubjectAccessReview", e)
@@ -127,7 +127,7 @@ fun DefaultOpenShiftClient.applicationDeployment(namespace: String, name: String
     return try {
         val request = Request.Builder().url(url.toString()).build()
         val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeployment::class.java)
+        jacksonObjectMapper().readValue(response.body?.bytes(), ApplicationDeployment::class.java)
             ?: throw KubernetesClientException("Error occurred while fetching application in namespace=$namespace with name=$name")
     } catch (e: Exception) {
         throw KubernetesClientException(
@@ -144,7 +144,7 @@ fun DefaultOpenShiftClient.applicationDeployments(namespace: String): List<Appli
     return try {
         val request = Request.Builder().url(url.toString()).build()
         val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body()?.bytes(), ApplicationDeploymentList::class.java)
+        jacksonObjectMapper().readValue(response.body?.bytes(), ApplicationDeploymentList::class.java)
             ?.items
             ?: throw KubernetesClientException("Error occurred while fetching list of applications in namespace=$namespace")
     } catch (e: Exception) {
