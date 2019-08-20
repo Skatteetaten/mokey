@@ -3,8 +3,6 @@ package no.skatteetaten.aurora.mokey.controller.security
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.client.DefaultOpenShiftClient
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
@@ -14,8 +12,6 @@ import java.util.regex.Pattern
 
 @Component
 class BearerAuthenticationManager : AuthenticationManager {
-
-    val logger: Logger = LoggerFactory.getLogger(BearerAuthenticationManager::class.java)
 
     companion object {
         private val headerPattern: Pattern = Pattern.compile("Bearer\\s+(.*)", Pattern.CASE_INSENSITIVE)

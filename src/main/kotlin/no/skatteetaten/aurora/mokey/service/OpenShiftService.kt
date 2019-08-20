@@ -11,6 +11,7 @@ import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.extensions.getOrNull
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
@@ -21,18 +22,17 @@ import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Request
 import okhttp3.RequestBody
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 
+private val logger = KotlinLogging.logger {}
+
 @Service
 @Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
 class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
-    val logger: Logger = LoggerFactory.getLogger(OpenShiftService::class.java)
     fun dc(namespace: String, name: String): DeploymentConfig? {
         return openShiftClient.deploymentConfigs().inNamespace(namespace).withName(name).getOrNull()
     }
@@ -96,8 +96,6 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
     }
 }
-
-private val logger = LoggerFactory.getLogger(OpenShiftService::class.java)
 
 fun DefaultOpenShiftClient.selfSubjectAccessView(review: SelfSubjectAccessReview): SelfSubjectAccessReview {
 

@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey
 
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -14,12 +14,12 @@ fun main(args: Array<String>) {
     SpringApplication.run(Main::class.java, *args)
 }
 
+private val logger = KotlinLogging.logger {}
+
 @Component
 class CacheWarmup(
     val applicationDataService: ApplicationDataService
 ) : InitializingBean {
-
-    private val logger = LoggerFactory.getLogger(CacheWarmup::class.java)
 
     override fun afterPropertiesSet() {
         try {

@@ -1,15 +1,16 @@
 package no.skatteetaten.aurora.mokey.service
 
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
 import java.util.concurrent.ConcurrentHashMap
+
+private val logger = KotlinLogging.logger {}
 
 @Service
 class ApplicationDataService(
@@ -25,8 +26,6 @@ class ApplicationDataService(
         else affiliationsConfig.split(",").map { it.trim() }
 
     val cache = ConcurrentHashMap<String, ApplicationData>()
-
-    val logger: Logger = LoggerFactory.getLogger(ApplicationDataService::class.java)
 
     /*
      * These methods work on public
