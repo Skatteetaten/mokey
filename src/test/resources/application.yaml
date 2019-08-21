@@ -24,8 +24,6 @@ integrations:
     metrics:
         url: "http://localhost"
 
-openshift-cluster: utv
-
 mokey:
     openshift:
         tokenLocation: classpath:test-token.txt

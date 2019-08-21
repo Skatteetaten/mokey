@@ -40,6 +40,8 @@ spring:
 mokey:
     cache:
         affiliations: paas, aurora
+    openshift:
+        tokenLocation: file:/tmp/boober-token
 
 logging:
     pattern:
@@ -49,7 +51,6 @@ logging:
         no.skatteetaten.aurora:
             mokey: DEBUG
 
-openshift-cluster: utv
 openshift.cluster: utv
 
 ---

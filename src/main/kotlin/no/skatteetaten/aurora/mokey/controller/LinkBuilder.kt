@@ -13,7 +13,7 @@ class LinkBuilderFactory(
     @Value("\${integrations.boober.url}") val booberApiUrl: String,
     @Value("\${integrations.metrics.url}") val metricsHostname: String,
     @Value("\${integrations.splunk.url}") val splunkHostname: String,
-    @Value("\${openshift-cluster}") val cluster: String
+    @Value("\${openshift.cluster}") val cluster: String
 ) {
     @Bean
     fun linkBuilder(): LinkBuilder = LinkBuilder(booberApiUrl, expandParams)
