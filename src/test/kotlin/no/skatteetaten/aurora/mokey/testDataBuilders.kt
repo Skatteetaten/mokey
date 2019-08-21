@@ -28,6 +28,7 @@ import com.fkorotkov.openshift.newRouteIngress
 import com.fkorotkov.openshift.newRouteIngressCondition
 import com.fkorotkov.openshift.spec
 import com.fkorotkov.openshift.status
+import com.fkorotkov.openshift.tls
 import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
@@ -153,6 +154,7 @@ data class RouteBuilder(
     val routeName: String = DEFAULT_NAME,
     val routeHost: String = "affiliation-namespace-app-name",
     val routePath: String? = null,
+    val tlsEnabled: Boolean = false,
     val statusDone: String = "True",
     val statusType: String = "Admitted",
     val statusReason: String? = null,
@@ -171,6 +173,11 @@ data class RouteBuilder(
                 host = routeHost
                 routePath?.let {
                     path = it
+                }
+                if (tlsEnabled) {
+                    tls {
+                        termination = "edge"
+                    }
                 }
             }
             status {
