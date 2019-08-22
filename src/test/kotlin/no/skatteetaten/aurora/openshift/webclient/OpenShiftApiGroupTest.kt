@@ -29,6 +29,12 @@ class OpenShiftApiGroupTest {
     }
 
     @Test
+    fun `Create path for OpenShift api group with namespace and name`() {
+        val path = OpenShiftApiGroup.APPLICATIONDEPLOYMENT.path("aurora", "app")
+        assertThat(path).isEqualTo("/apis/skatteetaten.no/v1/namespaces/aurora/applicationdeployments/app")
+    }
+
+    @Test
     fun `Create label selector query param from Map`() {
         val labels = mapOf("1" to "a", "2" to "b", "3" to "c")
         val queryParams = OpenShiftApiGroup.APPLICATIONDEPLOYMENT.labelSelector(labels)

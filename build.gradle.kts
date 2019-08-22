@@ -1,3 +1,5 @@
+import com.adarshr.gradle.testlogger.theme.ThemeType
+
 plugins {
     id("org.springframework.cloud.contract")
     id("org.jetbrains.kotlin.jvm") version "1.3.41"
@@ -9,6 +11,7 @@ plugins {
     id("com.gorylenko.gradle-git-properties") version "2.0.0"
     id("com.github.ben-manes.versions") version "0.22.0"
     id("se.patrikerdes.use-latest-versions") version "0.2.12"
+    id("com.adarshr.test-logger") version "1.7.0"
 
     id("no.skatteetaten.gradle.aurora") version "2.4.2"
 }
@@ -36,4 +39,8 @@ dependencies {
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.13")
     testImplementation("com.nhaarman:mockito-kotlin:1.6.0")
     testImplementation("no.skatteetaten.aurora:mockmvc-extensions-kotlin:0.6.5")
+}
+
+testlogger {
+    theme = ThemeType.PLAIN
 }
