@@ -5,7 +5,9 @@ import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.api.model.ServiceList
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.ImageStreamTag
+import io.fabric8.openshift.api.model.ProjectList
 import io.fabric8.openshift.api.model.Route
+import io.fabric8.openshift.api.model.RouteList
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentList
 import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.POD
@@ -14,6 +16,7 @@ import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.SERVICE
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.APPLICATIONDEPLOYMENT
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.DEPLOYMENTCONFIG
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.IMAGESTREAMTAG
+import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.PROJECT
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.ROUTE
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
@@ -53,6 +56,14 @@ class OpenShiftClient(val webClient: WebClient) {
             .bodyToMono()
     }
 
+    fun routes(namespace: String, labelMap: Map<String, String>): Mono<RouteList> {
+        return webClient
+            .get()
+            .openShiftResource(apiGroup = ROUTE, namespace = namespace, labels = labelMap)
+            .retrieve()
+            .bodyToMono()
+    }
+
     fun services(namespace: String?, labelMap: Map<String, String>): Mono<ServiceList> {
         return webClient
             .get()
@@ -81,6 +92,14 @@ class OpenShiftClient(val webClient: WebClient) {
         return webClient
             .get()
             .openShiftResource(IMAGESTREAMTAG, namespace, "$name:$tag")
+            .retrieve()
+            .bodyToMono()
+    }
+
+    fun projects(): Mono<ProjectList> {
+        return webClient
+            .get()
+            .openShiftResource(PROJECT)
             .retrieve()
             .bodyToMono()
     }

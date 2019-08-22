@@ -41,6 +41,12 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
     }
 
     @Test
+    fun `Get routes`() {
+        val routes = openShiftClient.routes("aurora", mapOf("app" to "argus")).block()
+        assertThat(routes).isNotNull()
+    }
+
+    @Test
     fun `Get services`() {
         val services = openShiftClient.services("aurora", mapOf("app" to "console")).block()
         assertThat(services).isNotNull()
@@ -62,5 +68,11 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
     fun `Get imagestream tag`() {
         val imageStreamTag = openShiftClient.imageStreamTag("aurora", "console", "default").block()
         assertThat(imageStreamTag).isNotNull()
+    }
+
+    @Test
+    fun `Get projects`() {
+        val projects = openShiftClient.projects().block()
+        assertThat(projects).isNotNull()
     }
 }
