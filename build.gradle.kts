@@ -28,7 +28,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.2.2")
     implementation("org.springframework.boot:spring-boot-starter-hateoas")
-    implementation("org.springframework.retry:spring-retry")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")

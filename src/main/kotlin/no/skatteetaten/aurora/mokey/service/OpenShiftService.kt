@@ -15,8 +15,6 @@ import no.skatteetaten.aurora.openshift.webclient.OpenShiftClient
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Request
 import okhttp3.RequestBody
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
@@ -26,7 +24,6 @@ import java.time.Duration
 private val logger = KotlinLogging.logger {}
 
 @Service
-@Retryable(value = [(KubernetesClientException::class)], maxAttempts = 3, backoff = Backoff(delay = 500))
 class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
     fun dc(namespace: String, name: String) =
