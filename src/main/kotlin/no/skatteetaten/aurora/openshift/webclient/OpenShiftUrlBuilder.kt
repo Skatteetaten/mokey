@@ -64,7 +64,7 @@ enum class OpenShiftApiGroup(private val label: String, private val suffix: Stri
 
 enum class KubernetesApiGroup(private val label: String) : ApiGroup {
     SERVICE("services"),
-    PODS("pods"),
+    POD("pods"),
     REPLICATIONCONTROLLER("replicationcontrollers"),
     IMAGESTREAMTAG("imagestreamtags"),
     APPLICATIONDEPLOYMENT("applicationdeployments");
@@ -74,6 +74,6 @@ enum class KubernetesApiGroup(private val label: String) : ApiGroup {
             throw IllegalArgumentException("Namespace must be included for Kubernetes api groups")
         }
 
-        return "/api/v1${ns(namespace)}$label${n(name)}"
+        return "/api/v1${ns(namespace)}/$label${n(name)}"
     }
 }
