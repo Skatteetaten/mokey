@@ -34,13 +34,15 @@ enum class KubernetesApiGroup(private val label: String) : ApiGroup {
     POD("pods"),
     REPLICATIONCONTROLLER("replicationcontrollers"),
     IMAGESTREAMTAG("imagestreamtags"),
-    APPLICATIONDEPLOYMENT("applicationdeployments");
+    SELFSUBJECTACCESSREVIEW("authorization.k8s.io");
 
     override fun path(namespace: String?, name: String?): String {
-        if (namespace == null) {
-            throw IllegalArgumentException("Namespace must be included for Kubernetes api groups")
+        val path = if (label.contains(".")) {
+            "/apis/$label/v1"
+        } else {
+            "/api/v1"
         }
 
-        return "/api/v1${ns(namespace)}/$label${n(name)}"
+        return "$path${ns(namespace)}/${this.name.toLowerCase()}s"
     }
 }

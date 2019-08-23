@@ -22,6 +22,19 @@ class OpenShiftApiGroupTest {
         assertThat(path).isEqualTo(expectedPath)
     }
 
+    @ParameterizedTest
+    @CsvSource(
+        "SERVICE, /api/v1/services",
+        "POD, /api/v1/pods",
+        "REPLICATIONCONTROLLER, /api/v1/replicationcontrollers",
+        "IMAGESTREAMTAG, /api/v1/imagestreamtags",
+        "SELFSUBJECTACCESSREVIEW, /apis/authorization.k8s.io/v1/selfsubjectaccessreviews"
+    )
+    internal fun `Create path for Kubernetes api group`(apiGroup: String, expectedPath: String) {
+        val path = KubernetesApiGroup.valueOf(apiGroup).path()
+        assertThat(path).isEqualTo(expectedPath)
+    }
+
     @Test
     fun `Create path for OpenShift api group with namespace`() {
         val path = OpenShiftApiGroup.APPLICATIONDEPLOYMENT.path("aurora")

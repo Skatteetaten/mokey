@@ -5,19 +5,21 @@ import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.api.model.ServiceList
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.ImageStreamTag
+import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.ProjectList
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.api.model.RouteList
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentList
-import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.POD
-import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.REPLICATIONCONTROLLER
-import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.SERVICE
+import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
+import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.*
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.APPLICATIONDEPLOYMENT
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.DEPLOYMENTCONFIG
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.IMAGESTREAMTAG
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.PROJECT
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.ROUTE
+import org.springframework.http.HttpHeaders
+import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Mono
@@ -96,10 +98,35 @@ class OpenShiftClient(val webClient: WebClient) {
             .bodyToMono()
     }
 
-    fun projects(): Mono<ProjectList> {
-        return webClient
-            .get()
+    fun project(name: String, token: String? = null): Mono<Project> {
+        val request = webClient.get()
+        token?.let {
+            request.header(HttpHeaders.AUTHORIZATION, "Bearer $it")
+        }
+
+        return request
+            .openShiftResource(apiGroup = PROJECT, name = name)
+            .retrieve()
+            .bodyToMono()
+    }
+
+    fun projects(token: String? = null): Mono<ProjectList> {
+        val request = webClient.get()
+        token?.let {
+            request.header(HttpHeaders.AUTHORIZATION, "Bearer $it")
+        }
+
+        return request
             .openShiftResource(PROJECT)
+            .retrieve()
+            .bodyToMono()
+    }
+
+    fun selfSubjectAccessView(review: SelfSubjectAccessReview): Mono<SelfSubjectAccessReview> {
+        return webClient
+            .post()
+            .uri(SELFSUBJECTACCESSREVIEW.path())
+            .body(BodyInserters.fromObject(review))
             .retrieve()
             .bodyToMono()
     }
@@ -112,7 +139,6 @@ fun WebClient.RequestHeadersUriSpec<*>.openShiftResource(
     labels: Map<String, String> = emptyMap()
 ): WebClient.RequestHeadersSpec<*> {
     val path = apiGroup.path(namespace, name)
-
     return if (labels.isEmpty()) {
         this.uri(path)
     } else {

@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.core.io.Resource
+import org.springframework.http.HttpHeaders
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.util.StreamUtils
 import org.springframework.web.reactive.function.client.WebClient
@@ -47,10 +48,7 @@ class WebClientConfig {
 
         try {
             val tokenString = StreamUtils.copyToString(token.inputStream, StandardCharsets.UTF_8)
-            b.defaultHeader(
-                "Authorization",
-                "Bearer $tokenString"
-            )
+            b.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer $tokenString")
         } catch (e: IOException) {
             logger.info("No token file found, will not add Authorization header to WebClient")
         }

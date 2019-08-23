@@ -1,12 +1,19 @@
 package no.skatteetaten.aurora.openshift.webclient
 
 import assertk.assertThat
+import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import assertk.catch
+import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
+import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewResourceAttributes
+import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.HttpStatus
+import org.springframework.web.reactive.function.client.WebClientResponseException
 
 @EnabledIfSystemProperty(named = "test.include-openshift-tests", matches = "true")
 @AutoConfigureWebClient
@@ -74,5 +81,33 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
     fun `Get projects`() {
         val projects = openShiftClient.projects().block()
         assertThat(projects).isNotNull()
+    }
+
+    @Test
+    fun `Get projects with invalid token`() {
+        val exception = catch { openShiftClient.projects(token = "abc123").block() }
+        assertThat((exception as WebClientResponseException).statusCode).isEqualTo(HttpStatus.UNAUTHORIZED)
+    }
+
+    @Test
+    fun `Get project`() {
+        val project = openShiftClient.project("aurora").block()
+        assertThat(project).isNotNull()
+    }
+
+    @Test
+    fun `Post self subject review access`() {
+        val review = SelfSubjectAccessReview(
+            spec = SelfSubjectAccessReviewSpec(
+                resourceAttributes = SelfSubjectAccessReviewResourceAttributes(
+                    namespace = "aurora",
+                    verb = "update",
+                    resource = "deploymentconfigs"
+                )
+            )
+        )
+
+        val selfSubjectAccessReview = openShiftClient.selfSubjectAccessView(review).block()
+        assertThat(selfSubjectAccessReview).isNotNull()
     }
 }

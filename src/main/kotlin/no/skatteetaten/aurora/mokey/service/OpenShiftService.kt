@@ -1,20 +1,14 @@
 package no.skatteetaten.aurora.mokey.service
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.fabric8.kubernetes.client.ConfigBuilder
-import io.fabric8.kubernetes.client.KubernetesClientException
+import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.openshift.api.model.Project
-import io.fabric8.openshift.client.DefaultOpenShiftClient
+import io.fabric8.openshift.api.model.Route
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.controller.security.User
-import no.skatteetaten.aurora.mokey.extensions.getOrNull
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewResourceAttributes
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftClient
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.Request
-import okhttp3.RequestBody
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
@@ -27,42 +21,42 @@ private val logger = KotlinLogging.logger {}
 class OpenShiftService(val openShiftClient: OpenShiftClient) {
 
     fun dc(namespace: String, name: String) =
-        openShiftClient.deploymentConfig(namespace, name).blockWithRetryAndTimeout()
+        openShiftClient.deploymentConfig(namespace, name).blockWithRetry()
 
     fun route(namespace: String, name: String) =
-        openShiftClient.route(namespace, name).blockWithRetryAndTimeout()
+        openShiftClient.route(namespace, name).blockWithRetry()
 
-    fun routes(namespace: String, labelMap: Map<String, String>) =
-        openShiftClient.routes(namespace, labelMap).blockWithRetryAndTimeout()?.items ?: emptyList()
+    fun routes(namespace: String, labelMap: Map<String, String>): List<Route> =
+        openShiftClient.routes(namespace, labelMap).blockWithRetry()?.items ?: emptyList()
 
-    fun services(namespace: String, labelMap: Map<String, String>) =
-        openShiftClient.services(namespace, labelMap).blockWithRetryAndTimeout()?.items ?: emptyList()
+    fun services(namespace: String, labelMap: Map<String, String>): List<io.fabric8.kubernetes.api.model.Service> =
+        openShiftClient.services(namespace, labelMap).blockWithRetry()?.items ?: emptyList()
 
-    fun pods(namespace: String, labelMap: Map<String, String>) =
-        openShiftClient.pods(namespace, labelMap).blockWithRetryAndTimeout()?.items ?: emptyList()
+    fun pods(namespace: String, labelMap: Map<String, String>): List<Pod> =
+        openShiftClient.pods(namespace, labelMap).blockWithRetry()?.items ?: emptyList()
 
     fun rc(namespace: String, name: String) =
-        openShiftClient.replicationController(namespace, name).blockWithRetryAndTimeout()
+        openShiftClient.replicationController(namespace, name).blockWithRetry()
 
     fun imageStreamTag(namespace: String, name: String, tag: String) =
-        openShiftClient.imageStreamTag(namespace, name, tag).blockWithRetryAndTimeout()
+        openShiftClient.imageStreamTag(namespace, name, tag).blockWithRetry()
 
     fun applicationDeployments(namespace: String) =
-        openShiftClient.applicationDeployments(namespace).blockWithRetryAndTimeout()?.items ?: emptyList()
+        openShiftClient.applicationDeployments(namespace).blockWithRetry()?.items ?: emptyList()
 
     fun applicationDeployment(namespace: String, name: String) =
-        openShiftClient.applicationDeployment(namespace, name).blockWithRetryAndTimeout()
+        openShiftClient.applicationDeployment(namespace, name).blockWithRetry()
             ?: throw IllegalArgumentException("No application deployment found")
 
-    fun projects(): List<Project> = openShiftClient.projects().blockWithRetryAndTimeout()?.items ?: emptyList()
+    fun projects(): List<Project> = openShiftClient.projects().blockWithRetry()?.items ?: emptyList()
 
-    fun projectByNamespaceForUser(namespace: String): Project? =
-        createUserClient().projects().withName(namespace).getOrNull()
+    fun projectByNamespaceForUser(namespace: String) =
+        openShiftClient.project(name = namespace, token = getUserToken()).blockWithRetry()
 
-    fun projectsForUser(): Set<Project> = createUserClient().projects().list().items.toSet()
+    fun projectsForUser(): Set<Project> =
+        openShiftClient.projects(getUserToken()).blockWithRetry()?.items?.toSet() ?: emptySet()
 
     fun canViewAndAdmin(namespace: String): Boolean {
-
         val review = SelfSubjectAccessReview(
             spec = SelfSubjectAccessReviewSpec(
                 resourceAttributes = SelfSubjectAccessReviewResourceAttributes(
@@ -72,38 +66,13 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
                 )
             )
         )
-        val result = createUserClient().selfSubjectAccessView(review)
-        return result.status.allowed
+        return openShiftClient.selfSubjectAccessView(review).block()?.status?.allowed ?: false
     }
 
-    private fun createUserClient(): DefaultOpenShiftClient {
-        val user = SecurityContextHolder.getContext().authentication.principal as User
-        return DefaultOpenShiftClient(ConfigBuilder().withOauthToken(user.token).build())
-    }
+    private fun getUserToken() = (SecurityContextHolder.getContext().authentication.principal as User).token
 }
 
-fun DefaultOpenShiftClient.selfSubjectAccessView(review: SelfSubjectAccessReview): SelfSubjectAccessReview {
-
-    val url = this.openshiftUrl.toURI().resolve("/apis/authorization.k8s.io/v1/selfsubjectaccessreviews")
-    return try {
-        val request = Request.Builder()
-            .url(url.toString())
-            .post(
-                RequestBody.create(
-                    "application/json; charset=utf-8".toMediaTypeOrNull(),
-                    jacksonObjectMapper().writeValueAsString(review)
-                )
-            )
-            .build()
-        val response = this.httpClient.newCall(request).execute()
-        jacksonObjectMapper().readValue(response.body?.bytes(), SelfSubjectAccessReview::class.java)
-            ?: throw KubernetesClientException("Error occurred while SelfSubjectAccessReview")
-    } catch (e: Exception) {
-        throw KubernetesClientException("Error occurred while posting SelfSubjectAccessReview", e)
-    }
-}
-
-private fun <T> Mono<T>.blockWithRetryAndTimeout() =
+private fun <T> Mono<T>.blockWithRetry() =
     this.retryExponentialBackoff(3, Duration.ofMillis(10)) {
         logger.info("Retrying failed request, ${it.exception().message}")
-    }.block(Duration.ofSeconds(5))
+    }.block()
