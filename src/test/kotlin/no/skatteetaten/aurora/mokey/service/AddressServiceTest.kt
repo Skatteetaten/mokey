@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
+import assertk.assertions.prop
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -151,8 +152,7 @@ class AddressServiceTest {
 }
 
 fun Assert<Address>.isEqualTo(url: String, time: Instant) {
-    // TODO: fix this
-    assertThat(actual.available).isTrue()
-    assertThat(actual.url).isEqualTo(URI.create(url))
-    assertThat(actual.time).isEqualTo(time)
+    prop("available", Address::available).isTrue()
+    prop("url", Address::url).isEqualTo(URI.create(url))
+    prop("time", Address::time).isEqualTo(time)
 }

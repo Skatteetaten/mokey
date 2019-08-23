@@ -1,7 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
+import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import io.micrometer.core.instrument.MeterRegistry
@@ -95,7 +97,7 @@ class ApplicationStatusRegistryTest {
         registry.remove(data)
         assertThat {
             meterRegistry.get("application_status").tag("app_id", "1337").gauges()
-        }.thrownError {
+        }.isFailure().all {
             isInstanceOf(MeterNotFoundException::class)
         }
     }
