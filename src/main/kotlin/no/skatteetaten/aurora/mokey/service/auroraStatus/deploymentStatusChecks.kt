@@ -20,7 +20,7 @@ import java.time.format.DateTimeParseException
 private val logger = KotlinLogging.logger {}
 
 val downStatuses = listOf("OUT_OF_SERVICE", "DOWN")
-const val upStatus = "UP"
+val upStatus = listOf("UP", "COMMENT")
 
 @Component
 class PodNotReadyCheck(@Value("\${mokey.status.notready.duration:10m}") val notReadyDuration: Duration) : StatusCheck(
@@ -137,7 +137,7 @@ class AnyPodObserveCheck :
     ) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant) =
-        pods.validateStatus { !downStatuses.contains(it) && it != upStatus }
+        pods.validateStatus { !downStatuses.contains(it) && !upStatus.contains(it) }
 }
 
 @Component
