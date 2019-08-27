@@ -11,10 +11,10 @@ logging:
   pattern:
     console: "%d [%thread] %-5level %logger:%L %X - %msg %n%rEx{full}"
 
-
 openshift:
-  cluster: utv
-
+    cluster: utv
+    port: 8443
+    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
 
 integrations:
     boober:

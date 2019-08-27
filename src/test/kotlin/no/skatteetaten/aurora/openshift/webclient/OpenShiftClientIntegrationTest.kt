@@ -7,6 +7,8 @@ import assertk.catch
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewResourceAttributes
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
+import no.skatteetaten.aurora.mokey.service.blockWithErrorHandlingAndRetry
+import no.skatteetaten.aurora.mokey.service.handleError
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,7 +27,7 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
 
     @Test
     fun `Get deployment config`() {
-        val deploymentConfig = openShiftClient.deploymentConfig("aurora", "boober").block()
+        val deploymentConfig = openShiftClient.deploymentConfig("paas-st-refapp-f2b5d15", "referanse").block()
         assertThat(deploymentConfig).isNotNull()
     }
 
@@ -75,6 +77,13 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
     fun `Get imagestream tag`() {
         val imageStreamTag = openShiftClient.imageStreamTag("aurora", "console", "default").block()
         assertThat(imageStreamTag).isNotNull()
+    }
+
+    @Test
+    fun `Get imagestream tag not found`() {
+        val response = openShiftClient.imageStreamTag("paas-st-refapp-f2b5d15", "referanse", "default")
+            .handleError().block()
+        println(response)
     }
 
     @Test

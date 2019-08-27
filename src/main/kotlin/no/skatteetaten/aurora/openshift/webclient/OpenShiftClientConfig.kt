@@ -40,10 +40,11 @@ class WebClientConfig {
     fun webClient(
         builder: WebClient.Builder,
         tcpClient: TcpClient,
+        @Value("\${openshift.url}") openshiftUrl: String,
         @Value("\${mokey.openshift.tokenLocation:file:/var/run/secrets/kubernetes.io/serviceaccount/token}") token: Resource
     ): WebClient {
         val b = builder
-            .baseUrl("https://utv-master.paas.skead.no:8443")
+            .baseUrl(openshiftUrl)
             .clientConnector(ReactorClientHttpConnector(HttpClient.from(tcpClient).compress(true)))
 
         try {

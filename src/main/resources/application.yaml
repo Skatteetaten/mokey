@@ -51,7 +51,10 @@ logging:
         no.skatteetaten.aurora:
             mokey: DEBUG
 
-openshift.cluster: utv
+openshift:
+    cluster: utv
+    port: 8443
+    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
 
 ---
 spring:
