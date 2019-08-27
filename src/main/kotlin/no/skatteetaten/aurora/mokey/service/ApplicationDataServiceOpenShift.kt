@@ -1,8 +1,8 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
@@ -30,6 +30,8 @@ class ApplicationDataServiceOpenShift(
     val addressService: AddressService,
     val imageService: ImageService
 ) {
+
+    val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
 
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         fun findAllEnvironments(): List<Environment> {
@@ -60,7 +62,7 @@ class ApplicationDataServiceOpenShift(
             }
 
             val results = applicationDeployments.map {
-                async(Dispatchers.IO) { tryCreateApplicationData(it) }
+                async(mtContext) { tryCreateApplicationData(it) }
             }.map {
                 it.await()
             }
