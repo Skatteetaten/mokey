@@ -1,5 +1,7 @@
 package no.skatteetaten.aurora.openshift.webclient
 
+import io.fabric8.kubernetes.api.model.HasMetadata
+import io.fabric8.kubernetes.api.model.KubernetesResourceList
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.api.model.ServiceList
@@ -9,10 +11,14 @@ import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.ProjectList
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.api.model.RouteList
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentList
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
-import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.*
+import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.POD
+import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.REPLICATIONCONTROLLER
+import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.SELFSUBJECTACCESSREVIEW
+import no.skatteetaten.aurora.openshift.webclient.KubernetesApiGroup.SERVICE
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.APPLICATIONDEPLOYMENT
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.DEPLOYMENTCONFIG
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.IMAGESTREAMTAG
@@ -21,8 +27,13 @@ import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.ROUTE
 import org.springframework.http.HttpHeaders
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Mono
+import reactor.retry.retryExponentialBackoff
+import java.time.Duration
+
+private val logger = KotlinLogging.logger {}
 
 class OpenShiftClient(val webClient: WebClient) {
 
@@ -147,3 +158,30 @@ fun WebClient.RequestHeadersUriSpec<*>.openShiftResource(
         }
     }
 }
+
+fun <T> Mono<T>.handleError() = this.onErrorResume {
+    when (it) {
+        is WebClientResponseException.NotFound -> {
+            logger.info { "Resource not found: ${it.request?.uri}" }
+            Mono.empty()
+        }
+        else -> Mono.error(it)
+    }
+}
+
+fun <T> Mono<T>.retryWithLog() = this.retryExponentialBackoff(3, Duration.ofMillis(10)) {
+    logger.debug {
+        val e = it.exception()
+        val msg = "Retrying failed request, ${e.message}"
+        if (e is WebClientResponseException) {
+            "$msg, url: ${e.request?.uri}"
+        } else {
+            msg
+        }
+    }
+}
+
+fun <T> Mono<T>.blockForResource() = this.handleError().retryWithLog().block()
+
+fun <T : HasMetadata?> Mono<out KubernetesResourceList<T>>.blockForList(): List<T> =
+    this.blockForResource()?.items ?: emptyList()
