@@ -70,8 +70,8 @@ class ApplicationDataService(
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
     @Scheduled(
-        fixedRateString = "\${mokey.crawler.rateSeconds:120000}",
-        initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
+        fixedDelayString = "\${mokey.crawler.rateSeconds:120000}",
+        initialDelayString = "\${mokey.crawler.delaySeconds:5000}"
     )
     fun cache() = refreshCache(affiliations)
 
@@ -80,11 +80,6 @@ class ApplicationDataService(
             val data = applicationDataService.createSingleItem(current.namespace, current.applicationDeploymentName)
             addCacheEntry(applicationId, data)
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
-
-    fun cacheAtStartup() {
-        applicationDataService.findAndGroupAffiliations(affiliations)
-            .forEach { refreshAffiliation(it.key, it.value) }
-    }
 
     private fun addCacheEntry(applicationId: String, data: ApplicationData) {
         cache[applicationId]?.let { old ->
