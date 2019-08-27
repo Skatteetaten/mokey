@@ -175,14 +175,20 @@ fun <T> Mono<T>.notFoundAsEmpty() = this.onErrorResume {
     }
 }
 
-fun <T> Mono<T>.retryWithLog() = this.retryExponentialBackoff(3, Duration.ofMillis(10)) {
-    logger.info {
-        val e = it.exception()
-        val msg = "Retrying failed request, ${e.message}"
-        if (e is WebClientResponseException) {
-            "$msg, ${e.request?.method} ${e.request?.uri}"
-        } else {
-            msg
+fun <T> Mono<T>.retryWithLog() = this.retryExponentialBackoff(
+    times = 3,
+    first = Duration.ofMillis(10),
+    max = Duration.ofMillis(50)
+) {
+    if (it.iteration() == 3L) {
+        logger.info {
+            val e = it.exception()
+            val msg = "Retrying failed request, ${e.message}"
+            if (e is WebClientResponseException) {
+                "$msg, ${e.request?.method} ${e.request?.uri}"
+            } else {
+                msg
+            }
         }
     }
 }
