@@ -176,7 +176,7 @@ fun <T> Mono<T>.notFoundAsEmpty() = this.onErrorResume {
 }
 
 fun <T> Mono<T>.retryWithLog() = this.retryExponentialBackoff(3, Duration.ofMillis(10)) {
-    logger.debug {
+    logger.info {
         val e = it.exception()
         val msg = "Retrying failed request, ${e.message}"
         if (e is WebClientResponseException) {
