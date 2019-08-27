@@ -2,7 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class DataParserTest {
 

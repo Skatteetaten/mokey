@@ -3,7 +3,7 @@ package no.skatteetaten.aurora.mokey.extensions
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class JsonNodeTest {
     private val mapper = jacksonObjectMapper()

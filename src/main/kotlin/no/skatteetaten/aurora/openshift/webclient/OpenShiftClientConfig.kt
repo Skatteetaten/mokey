@@ -5,6 +5,9 @@ import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.timeout.ReadTimeoutHandler
 import io.netty.handler.timeout.WriteTimeoutHandler
 import mu.KotlinLogging
+import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
+import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
@@ -13,6 +16,7 @@ import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.core.io.Resource
 import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.util.StreamUtils
 import org.springframework.web.reactive.function.client.WebClient
@@ -28,16 +32,42 @@ import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.TrustManagerFactory
 
+enum class Token {
+    SERVICE_ACCOUNT, USER
+}
+
+@Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+@Qualifier
+annotation class WebClientType(val token: Token)
+
 private val logger = KotlinLogging.logger {}
 
 @Configuration
-class WebClientConfig {
+class WebClientConfig(@Value("\${spring.application.name}") val applicationName: String) {
 
     @Bean
-    fun openShiftClient(webClient: WebClient) = OpenShiftClient(webClient)
+    fun openShiftClient(
+        @WebClientType(Token.SERVICE_ACCOUNT) serviceAccountWebClient: WebClient,
+        @WebClientType(Token.USER) userWebClient: WebClient
+    ) = OpenShiftClient(serviceAccountWebClient, userWebClient)
 
     @Bean
-    fun webClient(
+    @WebClientType(Token.USER)
+    fun serviceAccountWebClient(
+        builder: WebClient.Builder,
+        tcpClient: TcpClient,
+        @Value("\${openshift.url}") openshiftUrl: String
+    ) = builder
+        .baseUrl(openshiftUrl)
+        .defaultHeaders(applicationName)
+        .clientConnector(ReactorClientHttpConnector(HttpClient.from(tcpClient).compress(true)))
+        .build()
+
+    @Bean
+    @Primary
+    @WebClientType(Token.SERVICE_ACCOUNT)
+    fun userWebClient(
         builder: WebClient.Builder,
         tcpClient: TcpClient,
         @Value("\${openshift.url}") openshiftUrl: String,
@@ -45,6 +75,7 @@ class WebClientConfig {
     ): WebClient {
         val b = builder
             .baseUrl(openshiftUrl)
+            .defaultHeaders(applicationName)
             .clientConnector(ReactorClientHttpConnector(HttpClient.from(tcpClient).compress(true)))
 
         try {
@@ -100,3 +131,8 @@ class WebClientConfig {
             ks
         }
 }
+
+private fun WebClient.Builder.defaultHeaders(applicationName: String) = this
+    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+    .defaultHeader("KlientID", applicationName)
+    .defaultHeader(AuroraHeaderFilter.KORRELASJONS_ID, RequestKorrelasjon.getId())
