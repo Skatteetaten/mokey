@@ -79,8 +79,7 @@ class WebClientConfig(@Value("\${spring.application.name}") val applicationName:
             .clientConnector(ReactorClientHttpConnector(HttpClient.from(tcpClient).compress(true)))
 
         try {
-            val tokenString = StreamUtils.copyToString(token.inputStream, StandardCharsets.UTF_8)
-            b.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer $tokenString")
+            b.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer ${token.readContent()}")
         } catch (e: IOException) {
             logger.info("No token file found, will not add Authorization header to WebClient")
         }
@@ -136,3 +135,5 @@ private fun WebClient.Builder.defaultHeaders(applicationName: String) = this
     .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
     .defaultHeader("KlientID", applicationName)
     .defaultHeader(AuroraHeaderFilter.KORRELASJONS_ID, RequestKorrelasjon.getId())
+
+fun Resource.readContent() = StreamUtils.copyToString(this.inputStream, StandardCharsets.UTF_8)

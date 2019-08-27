@@ -11,8 +11,10 @@ import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.core.io.Resource
 import org.springframework.http.HttpStatus
 import org.springframework.web.reactive.function.client.WebClientResponseException
 
@@ -23,6 +25,9 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
     properties = ["mokey.openshift.tokenLocation=file:/tmp/boober-token"]
 )
 class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient: OpenShiftClient) {
+
+    @Value("\${mokey.openshift.tokenLocation}")
+    private lateinit var token: Resource
 
     @Test
     fun `Get deployment config`() {
@@ -92,6 +97,12 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
     }
 
     @Test
+    fun `Get projects with token`() {
+        val projects = openShiftClient.projects(token.readContent()).block()
+        assertThat(projects).isNotNull()
+    }
+
+    @Test
     fun `Get projects with invalid token`() {
         val exception = catch { openShiftClient.projects(token = "abc123").block() }
         assertThat((exception as WebClientResponseException).statusCode).isEqualTo(HttpStatus.UNAUTHORIZED)
@@ -117,5 +128,11 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
 
         val selfSubjectAccessReview = openShiftClient.selfSubjectAccessView(review).block()
         assertThat(selfSubjectAccessReview).isNotNull()
+    }
+
+    @Test
+    fun `Get user`() {
+        val user = openShiftClient.user(token.readContent()).block()
+        assertThat(user).isNotNull()
     }
 }

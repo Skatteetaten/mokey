@@ -65,5 +65,7 @@ class OpenShiftService(val openShiftClient: OpenShiftClient) {
         return openShiftClient.selfSubjectAccessView(review).block()?.status?.allowed ?: false
     }
 
+    fun user(token: String) = openShiftClient.user(token).blockForResource()
+
     private fun getUserToken() = (SecurityContextHolder.getContext().authentication.principal as User).token
 }

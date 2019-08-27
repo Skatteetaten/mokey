@@ -11,6 +11,7 @@ import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.ProjectList
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.api.model.RouteList
+import io.fabric8.openshift.api.model.User
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentList
@@ -24,6 +25,7 @@ import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.DEPLOYMENTCO
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.IMAGESTREAMTAG
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.PROJECT
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.ROUTE
+import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.USER
 import org.springframework.http.HttpHeaders
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
@@ -38,103 +40,84 @@ private val logger = KotlinLogging.logger {}
 class OpenShiftClient(private val serviceAccountWebClient: WebClient, private val userWebClient: WebClient) {
 
     fun deploymentConfig(namespace: String, name: String): Mono<DeploymentConfig> {
-        return client()
-            .get()
+        return get()
             .openShiftResource(DEPLOYMENTCONFIG, namespace, name)
             .retrieve()
             .bodyToMono()
     }
 
     fun applicationDeployment(namespace: String, name: String): Mono<ApplicationDeployment> {
-        return client()
-            .get()
+        return get()
             .openShiftResource(APPLICATIONDEPLOYMENT, namespace, name)
             .retrieve()
             .bodyToMono()
     }
 
     fun applicationDeployments(namespace: String): Mono<ApplicationDeploymentList> {
-        return client()
-            .get()
+        return get()
             .openShiftResource(APPLICATIONDEPLOYMENT, namespace)
             .retrieve()
             .bodyToMono()
     }
 
     fun route(namespace: String, name: String): Mono<Route> {
-        return client()
-            .get()
+        return get()
             .openShiftResource(ROUTE, namespace, name)
             .retrieve()
             .bodyToMono()
     }
 
     fun routes(namespace: String, labelMap: Map<String, String>): Mono<RouteList> {
-        return client()
-            .get()
+        return get()
             .openShiftResource(apiGroup = ROUTE, namespace = namespace, labels = labelMap)
             .retrieve()
             .bodyToMono()
     }
 
     fun services(namespace: String?, labelMap: Map<String, String>): Mono<ServiceList> {
-        return serviceAccountWebClient
-            .get()
+        return get()
             .openShiftResource(apiGroup = SERVICE, namespace = namespace, labels = labelMap)
             .retrieve()
             .bodyToMono()
     }
 
     fun pods(namespace: String, labelMap: Map<String, String>): Mono<PodList> {
-        return client()
-            .get()
+        return get()
             .openShiftResource(apiGroup = POD, namespace = namespace, labels = labelMap)
             .retrieve()
             .bodyToMono()
     }
 
     fun replicationController(namespace: String, name: String): Mono<ReplicationController> {
-        return client()
-            .get()
+        return get()
             .openShiftResource(REPLICATIONCONTROLLER, namespace, name)
             .retrieve()
             .bodyToMono()
     }
 
     fun imageStreamTag(namespace: String, name: String, tag: String): Mono<ImageStreamTag> {
-        return client()
-            .get()
+        return get()
             .openShiftResource(IMAGESTREAMTAG, namespace, "$name:$tag")
             .retrieve()
             .bodyToMono()
     }
 
     fun project(name: String, token: String? = null): Mono<Project> {
-        val request = client(token).get()
-        token?.let {
-            request.header(HttpHeaders.AUTHORIZATION, "Bearer $it")
-        }
-
-        return request
+        return get(token)
             .openShiftResource(apiGroup = PROJECT, name = name)
             .retrieve()
             .bodyToMono()
     }
 
     fun projects(token: String? = null): Mono<ProjectList> {
-        val request = client(token).get()
-        token?.let {
-            request.header(HttpHeaders.AUTHORIZATION, "Bearer $it")
-        }
-
-        return request
+        return get(token)
             .openShiftResource(PROJECT)
             .retrieve()
             .bodyToMono()
     }
 
     fun selfSubjectAccessView(review: SelfSubjectAccessReview): Mono<SelfSubjectAccessReview> {
-        return client()
+        return serviceAccountWebClient
             .post()
             .uri(SELFSUBJECTACCESSREVIEW.path())
             .body(BodyInserters.fromObject(review))
@@ -142,11 +125,19 @@ class OpenShiftClient(private val serviceAccountWebClient: WebClient, private va
             .bodyToMono()
     }
 
-    private fun client(token: String? = null) = if (token == null) {
-        serviceAccountWebClient
-    } else {
-        userWebClient
+    fun user(token: String): Mono<User> {
+        return get(token)
+            .uri(USER.path())
+            .retrieve()
+            .bodyToMono()
     }
+
+    private fun get(token: String? = null) =
+        token?.let {
+            userWebClient.get().apply {
+                this.header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }
+        } ?: serviceAccountWebClient.get()
 }
 
 fun WebClient.RequestHeadersUriSpec<*>.openShiftResource(

@@ -3,8 +3,6 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import io.fabric8.openshift.client.DefaultOpenShiftClient
-import io.fabric8.openshift.client.OpenShiftClient
 import no.skatteetaten.aurora.openshift.webclient.WebClientConfig
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Value
@@ -44,11 +42,6 @@ class ApplicationConfig : BeanPostProcessor {
         serializationInclusion(JsonInclude.Include.NON_NULL)
         featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         featuresToEnable(SerializationFeature.INDENT_OUTPUT)
-    }
-
-    @Bean
-    fun client(): OpenShiftClient {
-        return DefaultOpenShiftClient()
     }
 
     @Bean
