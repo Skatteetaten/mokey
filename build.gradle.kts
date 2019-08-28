@@ -22,7 +22,6 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.1.0")
     implementation("com.fkorotkov:kubernetes-dsl:2.2")
     testImplementation("io.fabric8:openshift-server-mock:4.4.1")
-    testImplementation("com.fkorotkov:kubernetes-dsl:2.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.2.2")
