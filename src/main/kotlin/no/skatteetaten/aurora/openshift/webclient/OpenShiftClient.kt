@@ -27,6 +27,7 @@ import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.PROJECT
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.ROUTE
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.USER
 import org.springframework.http.HttpHeaders
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
@@ -161,6 +162,9 @@ fun <T> Mono<T>.notFoundAsEmpty() = this.onErrorResume {
         is WebClientResponseException.NotFound -> {
             logger.info { "Resource not found: ${it.request?.method} ${it.request?.uri}" }
             Mono.empty()
+        }
+        is WebClientResponseException.Unauthorized -> {
+            Mono.error(BadCredentialsException(it.localizedMessage, it))
         }
         else -> Mono.error(it)
     }
