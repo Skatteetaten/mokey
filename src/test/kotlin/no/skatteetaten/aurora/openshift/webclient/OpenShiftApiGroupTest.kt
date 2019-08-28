@@ -18,7 +18,7 @@ class OpenShiftApiGroupTest {
         "IMAGESTREAMTAG, /apis/image.openshift.io/v1/imagestreamtags"
     )
     fun `Create path for OpenShift api group`(apiGroup: String, expectedPath: String) {
-        val path = OpenShiftApiGroup.valueOf(apiGroup).path()
+        val path = OpenShiftApiGroup.valueOf(apiGroup).uri().expand()
         assertThat(path).isEqualTo(expectedPath)
     }
 
@@ -31,19 +31,19 @@ class OpenShiftApiGroupTest {
         "SELFSUBJECTACCESSREVIEW, /apis/authorization.k8s.io/v1/selfsubjectaccessreviews"
     )
     internal fun `Create path for Kubernetes api group`(apiGroup: String, expectedPath: String) {
-        val path = KubernetesApiGroup.valueOf(apiGroup).path()
+        val path = KubernetesApiGroup.valueOf(apiGroup).uri().expand()
         assertThat(path).isEqualTo(expectedPath)
     }
 
     @Test
     fun `Create path for OpenShift api group with namespace`() {
-        val path = OpenShiftApiGroup.APPLICATIONDEPLOYMENT.path("aurora")
+        val path = OpenShiftApiGroup.APPLICATIONDEPLOYMENT.uri("aurora").expand()
         assertThat(path).isEqualTo("/apis/skatteetaten.no/v1/namespaces/aurora/applicationdeployments")
     }
 
     @Test
     fun `Create path for OpenShift api group with namespace and name`() {
-        val path = OpenShiftApiGroup.APPLICATIONDEPLOYMENT.path("aurora", "app")
+        val path = OpenShiftApiGroup.APPLICATIONDEPLOYMENT.uri("aurora", "app").expand()
         assertThat(path).isEqualTo("/apis/skatteetaten.no/v1/namespaces/aurora/applicationdeployments/app")
     }
 

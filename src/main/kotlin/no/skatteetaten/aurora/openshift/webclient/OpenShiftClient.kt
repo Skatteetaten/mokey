@@ -119,7 +119,7 @@ class OpenShiftClient(private val serviceAccountWebClient: WebClient, private va
     fun selfSubjectAccessView(review: SelfSubjectAccessReview): Mono<SelfSubjectAccessReview> {
         return serviceAccountWebClient
             .post()
-            .uri(SELFSUBJECTACCESSREVIEW.path())
+            .uri(SELFSUBJECTACCESSREVIEW.uri().expand())
             .body(BodyInserters.fromObject(review))
             .retrieve()
             .bodyToMono()
@@ -127,7 +127,7 @@ class OpenShiftClient(private val serviceAccountWebClient: WebClient, private va
 
     fun user(token: String): Mono<User> {
         return get(token)
-            .uri(USER.path())
+            .uri(USER.uri().expand())
             .retrieve()
             .bodyToMono()
     }
@@ -146,12 +146,12 @@ fun WebClient.RequestHeadersUriSpec<*>.openShiftResource(
     name: String? = null,
     labels: Map<String, String> = emptyMap()
 ): WebClient.RequestHeadersSpec<*> {
-    val path = apiGroup.path(namespace, name)
+    val uri = apiGroup.uri(namespace, name)
     return if (labels.isEmpty()) {
-        this.uri(path)
+        this.uri(uri.template, uri.variables)
     } else {
         this.uri {
-            it.path(path).queryParam("labelSelector", apiGroup.labelSelector(labels)).build()
+            it.path(uri.template).queryParam("labelSelector", apiGroup.labelSelector(labels)).build(uri.variables)
         }
     }
 }
