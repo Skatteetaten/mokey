@@ -6,6 +6,7 @@ import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken
 import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.util.regex.Pattern
 
 @Component
@@ -25,8 +26,12 @@ class BearerAuthenticationManager(private val openShiftService: OpenShiftService
     }
 
     override fun authenticate(authentication: Authentication?): Authentication {
-        val token = getBearerTokenFromAuthentication(authentication)
-        val user = openShiftService.user(token)
-        return PreAuthenticatedAuthenticationToken(user, token)
+        try {
+            val token = getBearerTokenFromAuthentication(authentication)
+            val user = openShiftService.user(token)
+            return PreAuthenticatedAuthenticationToken(user, token)
+        } catch (e: WebClientResponseException.Unauthorized) {
+            throw BadCredentialsException(e.localizedMessage, e)
+        }
     }
 }
