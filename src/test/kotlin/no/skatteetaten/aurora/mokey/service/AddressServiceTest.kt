@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
+import assertk.assertions.prop
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -50,6 +51,24 @@ class AddressServiceTest {
         assertThat(addresses).hasSize(1)
         assertThat(addresses[0]).isEqualTo(
             url = "http://${serviceBuilder.serviceName}",
+            time = Instant.EPOCH
+        )
+    }
+
+    @Test
+    fun `should collect service and route address for secured route`() {
+        val serviceBuilder = ServiceBuilder()
+        val routeBuilder = RouteBuilder(tlsEnabled = true)
+        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
+            serviceBuilder.build()
+        )
+        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
+            routeBuilder.build()
+        )
+        val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
+        assertThat(addresses).hasSize(2)
+        assertThat(addresses[1]).isEqualTo(
+            url = "https://${routeBuilder.routeHost}",
             time = Instant.EPOCH
         )
     }
@@ -151,8 +170,7 @@ class AddressServiceTest {
 }
 
 fun Assert<Address>.isEqualTo(url: String, time: Instant) {
-    // TODO: fix this
-    assertThat(actual.available).isTrue()
-    assertThat(actual.url).isEqualTo(URI.create(url))
-    assertThat(actual.time).isEqualTo(time)
+    prop("available", Address::available).isTrue()
+    prop("url", Address::url).isEqualTo(URI.create(url))
+    prop("time", Address::time).isEqualTo(time)
 }

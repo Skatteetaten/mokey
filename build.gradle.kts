@@ -22,7 +22,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.1.0")
     implementation("com.fkorotkov:kubernetes-dsl:2.2")
     testImplementation("io.fabric8:openshift-server-mock:4.4.1")
-    testImplementation("com.squareup.okhttp3:mockwebserver:3.14.1")
+    testImplementation("com.fkorotkov:kubernetes-dsl:2.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.2.2")
@@ -35,9 +35,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
     testImplementation("io.mockk:mockk:1.9.3")
-    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.13")
+    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.19")
     testImplementation("com.nhaarman:mockito-kotlin:1.6.0")
-    testImplementation("no.skatteetaten.aurora:mockmvc-extensions-kotlin:0.6.5")
+    testImplementation("no.skatteetaten.aurora:mockmvc-extensions-kotlin:1.0.0")
 }
 
 testlogger {
