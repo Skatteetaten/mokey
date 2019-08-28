@@ -104,7 +104,7 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
 
     @Test
     fun `Get projects with invalid token`() {
-        val exception = catch { openShiftClient.projects(token = "abc123").block() }
+        val exception = catch { openShiftClient.projects(token = "abc123").retryWithLog().block() }
         assertThat((exception as WebClientResponseException).statusCode).isEqualTo(HttpStatus.UNAUTHORIZED)
     }
 
