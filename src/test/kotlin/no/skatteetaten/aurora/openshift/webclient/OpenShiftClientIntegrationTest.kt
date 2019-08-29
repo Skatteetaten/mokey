@@ -21,7 +21,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 @EnabledIfSystemProperty(named = "test.include-openshift-tests", matches = "true")
 @AutoConfigureWebClient
 @SpringBootTest(
-    classes = [WebClientConfig::class],
+    classes = [OpenShiftClientConfig::class],
     properties = ["mokey.openshift.tokenLocation=file:/tmp/boober-token"]
 )
 class OpenShiftClientIntegrationTest @Autowired constructor(private val client: OpenShiftClient) {

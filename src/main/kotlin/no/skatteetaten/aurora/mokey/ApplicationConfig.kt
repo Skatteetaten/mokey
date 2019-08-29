@@ -3,7 +3,7 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import no.skatteetaten.aurora.openshift.webclient.WebClientConfig
+import no.skatteetaten.aurora.openshift.webclient.OpenShiftClientConfig
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
 @Configuration
 @EnableScheduling
 @EnableHypermediaSupport(type = [HAL])
-@Import(WebClientConfig::class)
+@Import(OpenShiftClientConfig::class)
 class ApplicationConfig : BeanPostProcessor {
 
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {

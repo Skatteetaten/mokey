@@ -34,7 +34,7 @@ import javax.net.ssl.TrustManagerFactory
 private val logger = KotlinLogging.logger {}
 
 @Configuration
-class WebClientConfig(@Value("\${spring.application.name}") val applicationName: String) {
+class OpenShiftClientConfig(@Value("\${spring.application.name}") val applicationName: String) {
 
     @Bean
     fun openShiftClient(webClient: WebClient) = OpenShiftClient(webClient)
