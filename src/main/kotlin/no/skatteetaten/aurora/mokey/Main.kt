@@ -5,6 +5,7 @@ import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 @SpringBootApplication
@@ -16,6 +17,7 @@ fun main(args: Array<String>) {
 
 private val logger = KotlinLogging.logger {}
 
+@ConditionalOnProperty(name = ["mokey.cachewarmup.enabled"], havingValue = "true", matchIfMissing = true)
 @Component
 class CacheWarmup(
     val applicationDataService: ApplicationDataService
