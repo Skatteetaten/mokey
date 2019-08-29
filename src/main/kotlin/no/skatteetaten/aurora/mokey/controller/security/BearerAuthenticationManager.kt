@@ -30,13 +30,8 @@ class BearerAuthenticationManager(private val openShiftService: OpenShiftService
             val token = getBearerTokenFromAuthentication(authentication)
             val user = openShiftService.user(token)
             return PreAuthenticatedAuthenticationToken(user, token)
-        } catch (t: Throwable) {
-            val cause = t.cause
-            if(cause is WebClientResponseException.Unauthorized) {
-                throw BadCredentialsException(cause.localizedMessage, cause)
-            } else {
-                throw t
-            }
+        } catch (e: WebClientResponseException.Unauthorized) {
+            throw BadCredentialsException(e.localizedMessage, e)
         }
     }
 }

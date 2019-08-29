@@ -32,7 +32,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Mono
-import reactor.retry.retryExponentialBackoff
+import reactor.retry.Retry
 import java.time.Duration
 
 private val logger = KotlinLogging.logger {}
@@ -166,11 +166,7 @@ fun <T> Mono<T>.notFoundAsEmpty() = this.onErrorResume {
     }
 }
 
-fun <T> Mono<T>.retryWithLog() = this.retryExponentialBackoff(
-    times = 3,
-    first = Duration.ofMillis(10),
-    max = Duration.ofMillis(50)
-) {
+fun <T> Mono<T>.retryWithLog() = this.retryWhen(Retry.onlyIf<Mono<T>> {
     if (it.iteration() == 3L) {
         logger.info {
             val e = it.exception()
@@ -182,7 +178,9 @@ fun <T> Mono<T>.retryWithLog() = this.retryExponentialBackoff(
             }
         }
     }
-}
+
+    it.exception() !is WebClientResponseException.Unauthorized
+}.exponentialBackoff(Duration.ofMillis(10), Duration.ofMillis(50)).retryMax(3))
 
 fun <T> Mono<T>.blockForResource() = this.notFoundAsEmpty().retryWithLog().block()
 
