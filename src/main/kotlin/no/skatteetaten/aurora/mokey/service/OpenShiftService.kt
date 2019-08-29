@@ -5,7 +5,6 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
-import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewResourceAttributes
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
@@ -13,7 +12,6 @@ import no.skatteetaten.aurora.openshift.webclient.OpenShiftClient
 import no.skatteetaten.aurora.openshift.webclient.blockForList
 import no.skatteetaten.aurora.openshift.webclient.blockForResource
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 
@@ -46,7 +44,8 @@ class OpenShiftService(
         openShiftClient.serviceAccount().imageStreamTag(namespace, name, tag).blockForResourceWithTimeout()
 
     fun applicationDeployments(namespace: String) =
-        openShiftClient.serviceAccount().applicationDeployments(namespace).blockForResourceWithTimeout()?.items ?: emptyList()
+        openShiftClient.serviceAccount().applicationDeployments(namespace).blockForResourceWithTimeout()?.items
+            ?: emptyList()
 
     fun applicationDeployment(namespace: String, name: String) =
         openShiftClient.serviceAccount().applicationDeployment(namespace, name).blockForResourceWithTimeout()
@@ -55,10 +54,10 @@ class OpenShiftService(
     fun projects(): List<Project> = openShiftClient.serviceAccount().projects().blockForListWithTimeout()
 
     fun projectByNamespaceForUser(namespace: String) =
-        openShiftClient.userToken(getUserToken()).project(namespace).blockForResourceWithTimeout()
+        openShiftClient.userToken().project(namespace).blockForResourceWithTimeout()
 
     fun projectsForUser(): Set<Project> =
-        openShiftClient.userToken(getUserToken()).projects().blockForListWithTimeout().toSet()
+        openShiftClient.userToken().projects().blockForListWithTimeout().toSet()
 
     fun canViewAndAdmin(namespace: String): Boolean {
         val review = SelfSubjectAccessReview(
@@ -74,8 +73,6 @@ class OpenShiftService(
     }
 
     fun user(token: String) = openShiftClient.userToken(token).user().blockForResourceWithTimeout()
-
-    private fun getUserToken() = (SecurityContextHolder.getContext().authentication.principal as User).token
 
     private fun <T> Mono<T>.blockForResourceWithTimeout() = this.blockForResource(firstRetry, maxRetry)
     private fun <T : HasMetadata?> Mono<out KubernetesResourceList<T>>.blockForListWithTimeout() =

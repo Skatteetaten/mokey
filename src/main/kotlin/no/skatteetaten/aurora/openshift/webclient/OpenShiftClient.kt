@@ -27,6 +27,7 @@ import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.PROJECT
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.ROUTE
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftApiGroup.USER
 import org.springframework.http.HttpHeaders
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
@@ -186,7 +187,10 @@ class OpenShiftClient(private val webClient: WebClient) {
     private val openShiftServiceAccountClient = OpenShiftServiceAccountClient(webClient)
     fun serviceAccount() = openShiftServiceAccountClient
 
-    fun userToken(token: String) = OpenShiftUserTokenClient(token, webClient)
+    fun userToken(token: String = getUserToken()) = OpenShiftUserTokenClient(token, webClient)
+
+    private fun getUserToken() =
+        (SecurityContextHolder.getContext().authentication.principal as no.skatteetaten.aurora.mokey.controller.security.User).token
 }
 
 fun <T> Mono<T>.retryWithLog(retryFirstInMs: Long, retryMaxInMs: Long) =
