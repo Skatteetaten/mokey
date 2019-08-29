@@ -7,7 +7,6 @@ import io.netty.handler.timeout.WriteTimeoutHandler
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
@@ -32,42 +31,16 @@ import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.TrustManagerFactory
 
-enum class Token {
-    SERVICE_ACCOUNT, USER
-}
-
-@Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
-@Retention(AnnotationRetention.RUNTIME)
-@Qualifier
-annotation class WebClientType(val token: Token)
-
 private val logger = KotlinLogging.logger {}
 
 @Configuration
 class WebClientConfig(@Value("\${spring.application.name}") val applicationName: String) {
 
     @Bean
-    fun openShiftClient(
-        @WebClientType(Token.SERVICE_ACCOUNT) serviceAccountWebClient: WebClient,
-        @WebClientType(Token.USER) userWebClient: WebClient
-    ) = OpenShiftClient(serviceAccountWebClient, userWebClient)
+    fun openShiftClient(webClient: WebClient) = OpenShiftClient(webClient)
 
     @Bean
-    @WebClientType(Token.USER)
-    fun serviceAccountWebClient(
-        builder: WebClient.Builder,
-        tcpClient: TcpClient,
-        @Value("\${openshift.url}") openshiftUrl: String
-    ) = builder
-        .baseUrl(openshiftUrl)
-        .defaultHeaders(applicationName)
-        .clientConnector(ReactorClientHttpConnector(HttpClient.from(tcpClient).compress(true)))
-        .build()
-
-    @Bean
-    @Primary
-    @WebClientType(Token.SERVICE_ACCOUNT)
-    fun userWebClient(
+    fun webClient(
         builder: WebClient.Builder,
         tcpClient: TcpClient,
         @Value("\${openshift.url}") openshiftUrl: String,

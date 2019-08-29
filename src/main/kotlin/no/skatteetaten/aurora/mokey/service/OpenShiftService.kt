@@ -25,40 +25,40 @@ class OpenShiftService(
 ) {
 
     fun dc(namespace: String, name: String) =
-        openShiftClient.deploymentConfig(namespace, name).blockForResourceWithTimeout()
+        openShiftClient.serviceAccount().deploymentConfig(namespace, name).blockForResourceWithTimeout()
 
     fun route(namespace: String, name: String) =
-        openShiftClient.route(namespace, name).blockForResourceWithTimeout()
+        openShiftClient.serviceAccount().route(namespace, name).blockForResourceWithTimeout()
 
     fun routes(namespace: String, labelMap: Map<String, String>): List<Route> =
-        openShiftClient.routes(namespace, labelMap).blockForListWithTimeout()
+        openShiftClient.serviceAccount().routes(namespace, labelMap).blockForListWithTimeout()
 
     fun services(namespace: String, labelMap: Map<String, String>): List<io.fabric8.kubernetes.api.model.Service> =
-        openShiftClient.services(namespace, labelMap).blockForListWithTimeout()
+        openShiftClient.serviceAccount().services(namespace, labelMap).blockForListWithTimeout()
 
     fun pods(namespace: String, labelMap: Map<String, String>): List<Pod> =
-        openShiftClient.pods(namespace, labelMap).blockForListWithTimeout()
+        openShiftClient.serviceAccount().pods(namespace, labelMap).blockForListWithTimeout()
 
     fun rc(namespace: String, name: String) =
-        openShiftClient.replicationController(namespace, name).blockForResourceWithTimeout()
+        openShiftClient.serviceAccount().replicationController(namespace, name).blockForResourceWithTimeout()
 
     fun imageStreamTag(namespace: String, name: String, tag: String) =
-        openShiftClient.imageStreamTag(namespace, name, tag).blockForResourceWithTimeout()
+        openShiftClient.serviceAccount().imageStreamTag(namespace, name, tag).blockForResourceWithTimeout()
 
     fun applicationDeployments(namespace: String) =
-        openShiftClient.applicationDeployments(namespace).blockForResourceWithTimeout()?.items ?: emptyList()
+        openShiftClient.serviceAccount().applicationDeployments(namespace).blockForResourceWithTimeout()?.items ?: emptyList()
 
     fun applicationDeployment(namespace: String, name: String) =
-        openShiftClient.applicationDeployment(namespace, name).blockForResourceWithTimeout()
+        openShiftClient.serviceAccount().applicationDeployment(namespace, name).blockForResourceWithTimeout()
             ?: throw IllegalArgumentException("No application deployment found")
 
-    fun projects(): List<Project> = openShiftClient.projects().blockForListWithTimeout()
+    fun projects(): List<Project> = openShiftClient.serviceAccount().projects().blockForListWithTimeout()
 
     fun projectByNamespaceForUser(namespace: String) =
-        openShiftClient.project(name = namespace, token = getUserToken()).blockForResourceWithTimeout()
+        openShiftClient.userToken(getUserToken()).project(namespace).blockForResourceWithTimeout()
 
     fun projectsForUser(): Set<Project> =
-        openShiftClient.projects(getUserToken()).blockForListWithTimeout().toSet()
+        openShiftClient.userToken(getUserToken()).projects().blockForListWithTimeout().toSet()
 
     fun canViewAndAdmin(namespace: String): Boolean {
         val review = SelfSubjectAccessReview(
@@ -70,10 +70,10 @@ class OpenShiftService(
                 )
             )
         )
-        return openShiftClient.selfSubjectAccessView(review).block()?.status?.allowed ?: false
+        return openShiftClient.serviceAccount().selfSubjectAccessView(review).block()?.status?.allowed ?: false
     }
 
-    fun user(token: String) = openShiftClient.user(token).blockForResourceWithTimeout()
+    fun user(token: String) = openShiftClient.userToken(token).user().blockForResourceWithTimeout()
 
     private fun getUserToken() = (SecurityContextHolder.getContext().authentication.principal as User).token
 

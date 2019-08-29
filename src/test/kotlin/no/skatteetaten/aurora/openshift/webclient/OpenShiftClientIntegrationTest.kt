@@ -24,93 +24,93 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
     classes = [WebClientConfig::class],
     properties = ["mokey.openshift.tokenLocation=file:/tmp/boober-token"]
 )
-class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient: OpenShiftClient) {
+class OpenShiftClientIntegrationTest @Autowired constructor(private val client: OpenShiftClient) {
 
     @Value("\${mokey.openshift.tokenLocation}")
     private lateinit var token: Resource
 
     @Test
     fun `Get deployment config`() {
-        val deploymentConfig = openShiftClient.deploymentConfig("aurora", "boober").block()
+        val deploymentConfig = client.serviceAccount().deploymentConfig("aurora", "boober").block()
         assertThat(deploymentConfig).isNotNull()
     }
 
     @Test
     fun `Get application deployment`() {
-        val applicationDeployment = openShiftClient.applicationDeployment("aurora", "boober").block()
+        val applicationDeployment = client.serviceAccount().applicationDeployment("aurora", "boober").block()
         assertThat(applicationDeployment).isNotNull()
     }
 
     @Test
     fun `Get application deployments`() {
-        val applicationDeployments = openShiftClient.applicationDeployments("aurora").block()
+        val applicationDeployments = client.serviceAccount().applicationDeployments("aurora").block()
         assertThat(applicationDeployments).isNotNull()
     }
 
     @Test
     fun `Get route`() {
-        val route = openShiftClient.route("aurora", "boober").block()
+        val route = client.serviceAccount().route("aurora", "boober").block()
         assertThat(route).isNotNull()
     }
 
     @Test
     fun `Get routes`() {
-        val routes = openShiftClient.routes("aurora", mapOf("app" to "argus")).block()
+        val routes = client.serviceAccount().routes("aurora", mapOf("app" to "argus")).block()
         assertThat(routes).isNotNull()
     }
 
     @Test
     fun `Get services`() {
-        val services = openShiftClient.services("aurora", mapOf("app" to "console")).block()
+        val services = client.serviceAccount().services("aurora", mapOf("app" to "console")).block()
         assertThat(services).isNotNull()
     }
 
     @Test
     fun `Get pods`() {
-        val pods = openShiftClient.pods("aurora", mapOf("name" to "cantus")).block()
+        val pods = client.serviceAccount().pods("aurora", mapOf("name" to "cantus")).block()
         assertThat(pods).isNotNull()
     }
 
     @Test
     fun `Get replication controller`() {
-        val replicationController = openShiftClient.replicationController("aurora", "cantus-55").block()
+        val replicationController = client.serviceAccount().replicationController("aurora", "cantus-55").block()
         assertThat(replicationController).isNotNull()
     }
 
     @Test
     fun `Get imagestream tag`() {
-        val imageStreamTag = openShiftClient.imageStreamTag("aurora", "console", "default").block()
+        val imageStreamTag = client.serviceAccount().imageStreamTag("aurora", "console", "default").block()
         assertThat(imageStreamTag).isNotNull()
     }
 
     @Test
     fun `Get imagestream tag not found`() {
-        val imageStreamTag = openShiftClient.imageStreamTag("aurora", "referanse", "default")
+        val imageStreamTag = client.serviceAccount().imageStreamTag("aurora", "referanse", "default")
             .blockForResource()
         assertThat(imageStreamTag).isNull()
     }
 
     @Test
     fun `Get projects`() {
-        val projects = openShiftClient.projects().block()
+        val projects = client.serviceAccount().projects().block()
         assertThat(projects).isNotNull()
     }
 
     @Test
     fun `Get projects with token`() {
-        val projects = openShiftClient.projects(token.readContent()).block()
+        val projects = client.userToken(token.readContent()).projects().block()
         assertThat(projects).isNotNull()
     }
 
     @Test
     fun `Get projects with invalid token`() {
-        val exception = catch { openShiftClient.projects(token = "abc123").blockForResource() }
+        val exception = catch { client.userToken("abc123").projects().blockForResource() }
         assertThat((exception as WebClientResponseException).statusCode).isEqualTo(HttpStatus.UNAUTHORIZED)
     }
 
     @Test
     fun `Get project`() {
-        val project = openShiftClient.project("aurora").block()
+        val project = client.serviceAccount().project("aurora").block()
         assertThat(project).isNotNull()
     }
 
@@ -126,13 +126,13 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
             )
         )
 
-        val selfSubjectAccessReview = openShiftClient.selfSubjectAccessView(review).block()
+        val selfSubjectAccessReview = client.serviceAccount().selfSubjectAccessView(review).block()
         assertThat(selfSubjectAccessReview).isNotNull()
     }
 
     @Test
     fun `Get user`() {
-        val user = openShiftClient.user(token.readContent()).block()
+        val user = client.userToken(token.readContent()).user().block()
         assertThat(user).isNotNull()
     }
 }
