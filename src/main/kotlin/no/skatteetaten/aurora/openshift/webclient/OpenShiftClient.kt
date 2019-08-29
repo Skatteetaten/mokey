@@ -156,6 +156,23 @@ fun WebClient.RequestHeadersUriSpec<*>.openShiftResource(
     }
 }
 
+fun <T> Mono<T>.retryWithLog(retryFirstInMs: Long, retryMaxInMs: Long) =
+    this.retryWhen(Retry.onlyIf<Mono<T>> {
+        if (it.iteration() == 3L) {
+            logger.info {
+                val e = it.exception()
+                val msg = "Retrying failed request, ${e.message}"
+                if (e is WebClientResponseException) {
+                    "$msg, ${e.request?.method} ${e.request?.uri}"
+                } else {
+                    msg
+                }
+            }
+        }
+
+        it.exception() !is WebClientResponseException.Unauthorized
+    }.exponentialBackoff(Duration.ofMillis(retryFirstInMs), Duration.ofMillis(retryMaxInMs)).retryMax(3))
+
 fun <T> Mono<T>.notFoundAsEmpty() = this.onErrorResume {
     when (it) {
         is WebClientResponseException.NotFound -> {
@@ -166,23 +183,16 @@ fun <T> Mono<T>.notFoundAsEmpty() = this.onErrorResume {
     }
 }
 
-fun <T> Mono<T>.retryWithLog() = this.retryWhen(Retry.onlyIf<Mono<T>> {
-    if (it.iteration() == 3L) {
-        logger.info {
-            val e = it.exception()
-            val msg = "Retrying failed request, ${e.message}"
-            if (e is WebClientResponseException) {
-                "$msg, ${e.request?.method} ${e.request?.uri}"
-            } else {
-                msg
-            }
-        }
-    }
+private const val defaultFirstRetryInMs: Long = 100
+private const val defaultMaxRetryInMs: Long = 2000
 
-    it.exception() !is WebClientResponseException.Unauthorized
-}.exponentialBackoff(Duration.ofMillis(10), Duration.ofMillis(50)).retryMax(3))
+fun <T> Mono<T>.blockForResource(
+    retryFirstInMs: Long = defaultFirstRetryInMs,
+    retryMaxInMs: Long = defaultMaxRetryInMs
+) =
+    this.notFoundAsEmpty().retryWithLog(retryFirstInMs, retryMaxInMs).block()
 
-fun <T> Mono<T>.blockForResource() = this.notFoundAsEmpty().retryWithLog().block()
-
-fun <T : HasMetadata?> Mono<out KubernetesResourceList<T>>.blockForList(): List<T> =
-    this.blockForResource()?.items ?: emptyList()
+fun <T : HasMetadata?> Mono<out KubernetesResourceList<T>>.blockForList(
+    retryFirstInMs: Long = defaultFirstRetryInMs,
+    retryMaxInMs: Long = defaultMaxRetryInMs
+): List<T> = this.blockForResource(retryFirstInMs, retryMaxInMs)?.items ?: emptyList()

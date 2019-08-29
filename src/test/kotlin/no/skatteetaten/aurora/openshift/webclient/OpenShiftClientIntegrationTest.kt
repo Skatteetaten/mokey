@@ -31,7 +31,7 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
 
     @Test
     fun `Get deployment config`() {
-        val deploymentConfig = openShiftClient.deploymentConfig("paas-st-refapp-f2b5d15", "referanse").block()
+        val deploymentConfig = openShiftClient.deploymentConfig("aurora", "boober").block()
         assertThat(deploymentConfig).isNotNull()
     }
 
@@ -85,7 +85,7 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
 
     @Test
     fun `Get imagestream tag not found`() {
-        val imageStreamTag = openShiftClient.imageStreamTag("paas-st-refapp-f2b5d15", "referanse", "default")
+        val imageStreamTag = openShiftClient.imageStreamTag("aurora", "referanse", "default")
             .blockForResource()
         assertThat(imageStreamTag).isNull()
     }
@@ -104,7 +104,7 @@ class OpenShiftClientIntegrationTest @Autowired constructor(val openShiftClient:
 
     @Test
     fun `Get projects with invalid token`() {
-        val exception = catch { openShiftClient.projects(token = "abc123").retryWithLog().block() }
+        val exception = catch { openShiftClient.projects(token = "abc123").blockForResource() }
         assertThat((exception as WebClientResponseException).statusCode).isEqualTo(HttpStatus.UNAUTHORIZED)
     }
 
