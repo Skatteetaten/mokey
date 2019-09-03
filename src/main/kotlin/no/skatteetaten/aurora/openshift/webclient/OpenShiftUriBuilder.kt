@@ -55,11 +55,13 @@ enum class KubernetesApiGroup(private val label: String) : ApiGroup {
         }
 
         val ns = ns(namespace)
-        val uriTemplate = "$path$ns$kind"
+        val n = n(name)
+        val uriTemplate = "$path$ns$kind$n"
         return OpenShiftUri(
             uriTemplate, mapOf(
                 "namespace" to namespace,
-                "kind" to "${this.name.toLowerCase()}s"
+                "kind" to "${this.name.toLowerCase()}s",
+                "name" to name
             )
         )
     }

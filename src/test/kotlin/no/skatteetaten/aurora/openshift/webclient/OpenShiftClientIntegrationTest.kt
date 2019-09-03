@@ -73,7 +73,7 @@ class OpenShiftClientIntegrationTest @Autowired constructor(private val client: 
 
     @Test
     fun `Get replication controller`() {
-        val replicationController = client.serviceAccount().replicationController("aurora", "cantus-55").block()
+        val replicationController = client.serviceAccount().replicationController("aurora", "argus-11").block()
         assertThat(replicationController).isNotNull()
     }
 
