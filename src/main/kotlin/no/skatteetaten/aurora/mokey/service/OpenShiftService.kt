@@ -69,7 +69,7 @@ class OpenShiftService(
                 )
             )
         )
-        return openShiftClient.serviceAccount().selfSubjectAccessView(review).block()?.status?.allowed ?: false
+        return openShiftClient.userToken().selfSubjectAccessView(review).block()?.status?.allowed ?: false
     }
 
     fun user(token: String) = openShiftClient.userToken(token).user().blockForResourceWithTimeout()
