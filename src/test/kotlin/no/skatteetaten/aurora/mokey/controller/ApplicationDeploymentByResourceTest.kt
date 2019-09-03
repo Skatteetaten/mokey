@@ -9,7 +9,6 @@ import no.skatteetaten.aurora.mockmvc.extensions.responseJsonPath
 import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
-import no.skatteetaten.aurora.mokey.CacheWarmup
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -25,9 +24,6 @@ class ApplicationDeploymentByResourceTest : AbstractSecurityControllerTest() {
 
     @MockBean
     private lateinit var assembler: ApplicationDeploymentsWithDbResourceAssembler
-
-    @MockBean
-    private lateinit var cacheWarmup: CacheWarmup
 
     @Test
     fun `Return application deployment by resource`() {

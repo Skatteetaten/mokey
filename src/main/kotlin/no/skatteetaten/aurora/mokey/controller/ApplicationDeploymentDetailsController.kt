@@ -9,8 +9,6 @@ import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.Link
 import org.springframework.hateoas.mvc.ControllerLinkBuilder
@@ -31,8 +29,6 @@ class ApplicationDeploymentDetailsController(
     val applicationDataService: ApplicationDataService,
     val assembler: ApplicationDeploymentDetailsResourceAssembler
 ) {
-
-    val logger: Logger = LoggerFactory.getLogger(ApplicationDeploymentDetailsController::class.java)
 
     @GetMapping("/{id}")
     fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDeploymentDetailsResource? =

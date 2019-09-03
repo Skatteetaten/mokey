@@ -3,14 +3,14 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import io.fabric8.openshift.client.DefaultOpenShiftClient
-import io.fabric8.openshift.client.OpenShiftClient
+import no.skatteetaten.aurora.openshift.webclient.OpenShiftClientConfig
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.hateoas.config.EnableHypermediaSupport
 import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType.HAL
 import org.springframework.http.MediaType
@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit
 @Configuration
 @EnableScheduling
 @EnableHypermediaSupport(type = [HAL])
+@Import(OpenShiftClientConfig::class)
 class ApplicationConfig : BeanPostProcessor {
 
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
@@ -41,11 +42,6 @@ class ApplicationConfig : BeanPostProcessor {
         serializationInclusion(JsonInclude.Include.NON_NULL)
         featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         featuresToEnable(SerializationFeature.INDENT_OUTPUT)
-    }
-
-    @Bean
-    fun client(): OpenShiftClient {
-        return DefaultOpenShiftClient()
     }
 
     @Bean
@@ -66,7 +62,6 @@ class ApplicationConfig : BeanPostProcessor {
 
     @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)
     private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
-
         val okHttpClientBuilder = OkHttpClient().newBuilder()
             .readTimeout(readTimeout, TimeUnit.SECONDS)
             .connectTimeout(connectionTimeout, TimeUnit.SECONDS)

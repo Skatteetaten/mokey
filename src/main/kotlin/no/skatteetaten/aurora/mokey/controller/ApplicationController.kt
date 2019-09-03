@@ -2,8 +2,6 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
@@ -21,8 +19,6 @@ class ApplicationController(
     private val applicationDataService: ApplicationDataService,
     private val assembler: ApplicationResourceAssembler
 ) {
-
-    val logger: Logger = LoggerFactory.getLogger(ApplicationController::class.java)
 
     @GetMapping("/{applicationId}")
     fun getApplication(@PathVariable applicationId: String): ApplicationResource? =
