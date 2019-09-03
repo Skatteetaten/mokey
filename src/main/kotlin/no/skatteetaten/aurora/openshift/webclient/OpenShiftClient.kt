@@ -140,9 +140,10 @@ abstract class AbstractOpenShiftClient(private val webClient: WebClient, private
     }
 
     fun selfSubjectAccessView(review: SelfSubjectAccessReview): Mono<SelfSubjectAccessReview> {
+        val uri = SELFSUBJECTACCESSREVIEW.uri()
         return webClient
             .post()
-            .uri(SELFSUBJECTACCESSREVIEW.uri().expand())
+            .uri(uri.template, uri.variables)
             .body(BodyInserters.fromObject(review))
             .bearerToken(token)
             .retrieve()
