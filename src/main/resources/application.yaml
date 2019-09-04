@@ -33,6 +33,12 @@ management:
         enable:
             http:
                 client: false
+
+openshift:
+    cluster: utv
+    port: 8443
+    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
+
 ---
 spring:
     profiles: local
@@ -40,6 +46,8 @@ spring:
 mokey:
     cache:
         affiliations: paas, aurora
+    openshift:
+        tokenLocation: file:/tmp/boober-token
 
 logging:
     pattern:
@@ -48,9 +56,6 @@ logging:
     level:
         no.skatteetaten.aurora:
             mokey: DEBUG
-
-openshift-cluster: utv
-openshift.cluster: utv
 
 ---
 spring:

@@ -1,6 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -14,13 +14,13 @@ import org.springframework.security.web.authentication.preauth.RequestHeaderAuth
 import org.springframework.security.web.util.matcher.RequestMatcher
 import javax.servlet.http.HttpServletRequest
 
+private val logger = KotlinLogging.logger {}
+
 @EnableWebSecurity
 class WebSecurityConfig(
     val authenticationManager: BearerAuthenticationManager,
     @Value("\${management.server.port}") val managementPort: Int
 ) : WebSecurityConfigurerAdapter() {
-
-    private val logger = LoggerFactory.getLogger(WebSecurityConfig::class.java)
 
     override fun configure(http: HttpSecurity) {
 

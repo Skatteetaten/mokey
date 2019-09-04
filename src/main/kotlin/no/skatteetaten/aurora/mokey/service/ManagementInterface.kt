@@ -4,23 +4,22 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.model.EndpointType
+import no.skatteetaten.aurora.mokey.model.EndpointType.DISCOVERY
+import no.skatteetaten.aurora.mokey.model.EndpointType.ENV
+import no.skatteetaten.aurora.mokey.model.EndpointType.HEALTH
+import no.skatteetaten.aurora.mokey.model.EndpointType.INFO
+import no.skatteetaten.aurora.mokey.model.HealthPart
+import no.skatteetaten.aurora.mokey.model.HealthResponse
+import no.skatteetaten.aurora.mokey.model.HealthStatus
+import no.skatteetaten.aurora.mokey.model.HttpResponse
+import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.ManagementLinks.Companion.parseManagementResponse
-import no.skatteetaten.aurora.mokey.model.EndpointType.DISCOVERY
-import no.skatteetaten.aurora.mokey.model.EndpointType.HEALTH
-import no.skatteetaten.aurora.mokey.model.EndpointType.INFO
-import no.skatteetaten.aurora.mokey.model.EndpointType.ENV
-import no.skatteetaten.aurora.mokey.model.HealthResponse
-import no.skatteetaten.aurora.mokey.model.InfoResponse
-import no.skatteetaten.aurora.mokey.model.HealthPart
-import no.skatteetaten.aurora.mokey.model.HealthStatus
-import no.skatteetaten.aurora.mokey.model.HttpResponse
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Service
@@ -35,9 +34,9 @@ class ManagementInterfaceFactory(val restTemplate: RestTemplate) {
     }
 }
 
-class ManagementEndpoint(val url: String, private val endpointType: EndpointType) {
+private val logger = KotlinLogging.logger {}
 
-    val logger: Logger = LoggerFactory.getLogger(ManagementEndpoint::class.java)
+class ManagementEndpoint(val url: String, private val endpointType: EndpointType) {
 
     fun <S : Any> findJsonResource(restTemplate: RestTemplate, clazz: Class<S>): ManagementEndpointResult<S> {
         logger.debug("Getting resource with url={}", url)
@@ -65,26 +64,29 @@ class ManagementEndpoint(val url: String, private val endpointType: EndpointType
         return toManagementEndpointResultAsSuccess(deserialized = deserialized, response = response)
     }
 
-    fun <T : Any> findJsonResource(restTemplate: RestTemplate, parser: (node: JsonNode) -> T): ManagementEndpointResult<T> {
+    fun <T : Any> findJsonResource(
+        restTemplate: RestTemplate,
+        parser: (node: JsonNode) -> T
+    ): ManagementEndpointResult<T> {
         val intermediate = this.findJsonResource(restTemplate, JsonNode::class.java)
 
         return intermediate.deserialized?.let { deserialized ->
             try {
                 toManagementEndpointResultAsSuccess(
-                        deserialized = parser(deserialized),
-                        response = intermediate.response
+                    deserialized = parser(deserialized),
+                    response = intermediate.response
                 )
             } catch (e: Exception) {
                 toManagementEndpointResult<T>(
-                        response = intermediate.response,
-                        resultCode = "INVALID_FORMAT",
-                        errorMessage = e.message
+                    response = intermediate.response,
+                    resultCode = "INVALID_FORMAT",
+                    errorMessage = e.message
                 )
             }
         } ?: toManagementEndpointResult(
-                    response = intermediate.response,
-                    resultCode = intermediate.resultCode,
-                    errorMessage = intermediate.errorMessage
+            response = intermediate.response,
+            resultCode = intermediate.resultCode,
+            errorMessage = intermediate.errorMessage
         )
     }
 
@@ -109,9 +111,9 @@ class ManagementEndpoint(val url: String, private val endpointType: EndpointType
         response: HttpResponse?
     ): ManagementEndpointResult<T> =
         toManagementEndpointResult(
-                deserialized = deserialized,
-                response = response,
-                resultCode = "OK"
+            deserialized = deserialized,
+            response = response,
+            resultCode = "OK"
         )
 
     private fun <T : Any> toManagementEndpointResultAsError(
@@ -127,9 +129,10 @@ class ManagementEndpoint(val url: String, private val endpointType: EndpointType
         }
 
         return toManagementEndpointResult(
-                response = response,
-                resultCode = resultCode,
-                errorMessage = exception.message)
+            response = response,
+            resultCode = resultCode,
+            errorMessage = exception.message
+        )
     }
 }
 
@@ -142,24 +145,30 @@ class ManagementInterface internal constructor(
 
 ) {
     fun getHealthEndpointResult(): ManagementEndpointResult<HealthResponse> =
-            healthEndpoint?.findJsonResource(restTemplate, HealthResponseParser::parse)
-                    ?: toManagementEndpointResultLinkMissing(HEALTH)
+        healthEndpoint?.findJsonResource(restTemplate, HealthResponseParser::parse)
+            ?: toManagementEndpointResultLinkMissing(HEALTH)
 
     fun getInfoEndpointResult(): ManagementEndpointResult<InfoResponse> =
-            infoEndpoint?.findJsonResource(restTemplate, InfoResponse::class.java)
-                    ?: toManagementEndpointResultLinkMissing(INFO)
+        infoEndpoint?.findJsonResource(restTemplate, InfoResponse::class.java)
+            ?: toManagementEndpointResultLinkMissing(INFO)
 
     fun getEnvEndpointResult(): ManagementEndpointResult<JsonNode> =
-            envEndpoint?.findJsonResource(restTemplate, JsonNode::class.java)
-                    ?: toManagementEndpointResultLinkMissing(ENV)
+        envEndpoint?.findJsonResource(restTemplate, JsonNode::class.java)
+            ?: toManagementEndpointResultLinkMissing(ENV)
 
     companion object {
-        fun create(restTemplate: RestTemplate, host: String?, path: String?): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
+        fun create(
+            restTemplate: RestTemplate,
+            host: String?,
+            path: String?
+        ): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
             if (host.isNullOrBlank()) {
-                return Pair(null, toManagementEndpointResultDiscoveryConfigError("Host address is missing")
+                return Pair(
+                    null, toManagementEndpointResultDiscoveryConfigError("Host address is missing")
                 )
             } else if (path.isNullOrBlank()) {
-                return Pair(null, toManagementEndpointResultDiscoveryConfigError("Management path is missing")
+                return Pair(
+                    null, toManagementEndpointResultDiscoveryConfigError("Management path is missing")
                 )
             }
 
@@ -170,28 +179,28 @@ class ManagementInterface internal constructor(
 
             return response.deserialized?.let { links ->
                 Pair(ManagementInterface(
-                        restTemplate = restTemplate,
-                        links = links,
-                        infoEndpoint = links.linkFor(INFO)?.let { url -> ManagementEndpoint(url, INFO) },
-                        envEndpoint = links.linkFor(ENV)?.let { url -> ManagementEndpoint(url, ENV) },
-                        healthEndpoint = links.linkFor(HEALTH)?.let { url -> ManagementEndpoint(url, HEALTH) }
+                    restTemplate = restTemplate,
+                    links = links,
+                    infoEndpoint = links.linkFor(INFO)?.let { url -> ManagementEndpoint(url, INFO) },
+                    envEndpoint = links.linkFor(ENV)?.let { url -> ManagementEndpoint(url, ENV) },
+                    healthEndpoint = links.linkFor(HEALTH)?.let { url -> ManagementEndpoint(url, HEALTH) }
                 ), response)
             } ?: Pair(null, response)
         }
 
         private fun <T : Any> toManagementEndpointResultLinkMissing(endpointType: EndpointType): ManagementEndpointResult<T> {
             return ManagementEndpointResult(
-                    errorMessage = "Unknown endpoint link",
-                    endpointType = endpointType,
-                    resultCode = "LINK_MISSING"
+                errorMessage = "Unknown endpoint link",
+                endpointType = endpointType,
+                resultCode = "LINK_MISSING"
             )
         }
 
         private fun <T : Any> toManagementEndpointResultDiscoveryConfigError(cause: String): ManagementEndpointResult<T> {
             return ManagementEndpointResult(
-                    errorMessage = cause,
-                    endpointType = EndpointType.DISCOVERY,
-                    resultCode = "ERROR_CONFIGURATION"
+                errorMessage = cause,
+                endpointType = EndpointType.DISCOVERY,
+                resultCode = "ERROR_CONFIGURATION"
             )
         }
     }

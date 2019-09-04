@@ -1,10 +1,11 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deployTag
@@ -17,9 +18,9 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+
+private val logger = KotlinLogging.logger {}
 
 @Service
 class ApplicationDataServiceOpenShift(
@@ -29,9 +30,6 @@ class ApplicationDataServiceOpenShift(
     val addressService: AddressService,
     val imageService: ImageService
 ) {
-    val mtContext = newFixedThreadPoolContext(6, "mokeyPool")
-
-    val logger: Logger = LoggerFactory.getLogger(ApplicationDataServiceOpenShift::class.java)
 
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         fun findAllEnvironments(): List<Environment> {
@@ -62,7 +60,7 @@ class ApplicationDataServiceOpenShift(
             }
 
             val results = applicationDeployments.map {
-                async(mtContext) { tryCreateApplicationData(it) }
+                async(Dispatchers.IO) { tryCreateApplicationData(it) }
             }.map {
                 it.await()
             }

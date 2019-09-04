@@ -1,21 +1,16 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
-import io.fabric8.kubernetes.client.ConfigBuilder
-import io.fabric8.kubernetes.client.KubernetesClientException
-import io.fabric8.openshift.client.DefaultOpenShiftClient
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import no.skatteetaten.aurora.mokey.service.OpenShiftService
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken
 import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.util.regex.Pattern
 
 @Component
-class BearerAuthenticationManager : AuthenticationManager {
-
-    val logger: Logger = LoggerFactory.getLogger(BearerAuthenticationManager::class.java)
+class BearerAuthenticationManager(private val openShiftService: OpenShiftService) : AuthenticationManager {
 
     companion object {
         private val headerPattern: Pattern = Pattern.compile("Bearer\\s+(.*)", Pattern.CASE_INSENSITIVE)
@@ -31,13 +26,11 @@ class BearerAuthenticationManager : AuthenticationManager {
     }
 
     override fun authenticate(authentication: Authentication?): Authentication {
-
         try {
             val token = getBearerTokenFromAuthentication(authentication)
-            val client = DefaultOpenShiftClient(ConfigBuilder().withOauthToken(token).build())
-            val openShiftUser = client.currentUser()
-            return PreAuthenticatedAuthenticationToken(openShiftUser, token)
-        } catch (e: KubernetesClientException) {
+            val user = openShiftService.user(token)
+            return PreAuthenticatedAuthenticationToken(user, token)
+        } catch (e: WebClientResponseException.Unauthorized) {
             throw BadCredentialsException(e.localizedMessage, e)
         }
     }

@@ -1,3 +1,5 @@
+import com.adarshr.gradle.testlogger.theme.ThemeType
+
 plugins {
     id("org.springframework.cloud.contract")
     id("org.jetbrains.kotlin.jvm") version "1.3.41"
@@ -9,6 +11,7 @@ plugins {
     id("com.gorylenko.gradle-git-properties") version "2.0.0"
     id("com.github.ben-manes.versions") version "0.22.0"
     id("se.patrikerdes.use-latest-versions") version "0.2.12"
+    id("com.adarshr.test-logger") version "1.7.0"
 
     id("no.skatteetaten.gradle.aurora") version "2.4.2"
 }
@@ -16,16 +19,17 @@ plugins {
 extra["spring-hateoas.version"] = "0.24.0.RELEASE"
 
 dependencies {
-    implementation("io.fabric8:openshift-client:4.4.1")
+    implementation("com.squareup.okhttp3:okhttp:4.1.0")
+    implementation("com.fkorotkov:kubernetes-dsl:2.2")
     testImplementation("io.fabric8:openshift-server-mock:4.4.1")
-    testImplementation("com.fkorotkov:kubernetes-dsl:2.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.2.2")
     implementation("org.springframework.boot:spring-boot-starter-hateoas")
-    implementation("org.springframework.retry:spring-retry")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("io.projectreactor.addons:reactor-extra:3.2.3.RELEASE")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
@@ -33,4 +37,8 @@ dependencies {
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.19")
     testImplementation("com.nhaarman:mockito-kotlin:1.6.0")
     testImplementation("no.skatteetaten.aurora:mockmvc-extensions-kotlin:1.0.0")
+}
+
+testlogger {
+    theme = ThemeType.PLAIN
 }
