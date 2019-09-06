@@ -34,6 +34,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Mono
 import reactor.retry.Retry
+import java.net.URI
 import java.time.Duration
 
 private val logger = KotlinLogging.logger {}
@@ -211,10 +212,25 @@ fun <T> Mono<T>.retryWithLog(retryFirstInMs: Long, retryMaxInMs: Long) =
         it.exception() !is WebClientResponseException.Unauthorized
     }.exponentialBackoff(Duration.ofMillis(retryFirstInMs), Duration.ofMillis(retryMaxInMs)).retryMax(3))
 
+data class RequestedOpenShiftResource(val namespace: String?, val kind: String?, val name: String?)
+
+fun URI.requestedOpenShiftResource() =
+    "/namespaces/(.+)/(.+)/(.+)".toRegex()
+        .find(this.path)
+        ?.groupValues
+        ?.takeIf { it.size == 4 }
+        ?.let {
+            RequestedOpenShiftResource(it[1], it[2], it[3])
+        }
+
 fun <T> Mono<T>.notFoundAsEmpty() = this.onErrorResume {
     when (it) {
         is WebClientResponseException.NotFound -> {
-            logger.info { "Resource not found: ${it.request?.method} ${it.request?.uri}" }
+            val resource = it.request?.uri?.requestedOpenShiftResource()
+            logger.info {
+                "Resource not found, method=${it.request?.method} uri=${it.request?.uri} " +
+                    "namespace=${resource?.namespace} kind=${resource?.kind} name=${resource?.name}"
+            }
             Mono.empty()
         }
         else -> Mono.error(it)
