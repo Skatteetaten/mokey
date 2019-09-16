@@ -41,7 +41,7 @@ class ImageServiceTest {
 
     @Test
     fun `get image env`() {
-        val json = """{ "dockerImageMetadata": { "config": { "Env": ["Path=/usr/local"] } } }""".trimIndent()
+        val json = """{ "dockerImageMetadata": { "Config": { "Env": ["Path=/usr/local"] } } }""".trimIndent()
         val image = jacksonObjectMapper().readValue<Image>(json)
         assertThat(image.env.keys.first()).isEqualTo("Path")
         assertThat(image.env.values.first()).isEqualTo("/usr/local")

@@ -367,7 +367,7 @@ data class ImageStreamTagDataBuilder(
                 dockerImageReference = reference
                 dockerImageMetadata = newRawExtension {
                     val env = mapOf("Env" to env.map { "${it.key}=${it.value}" })
-                    setAdditionalProperty("config", env)
+                    setAdditionalProperty("Config", env)
                 }
             }
         }
