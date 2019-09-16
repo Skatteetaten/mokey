@@ -34,7 +34,7 @@ class ImageService(val openShiftService: OpenShiftService) {
 
 val Image.env: Map<String, String>
     get() = dockerImageMetadata?.additionalProperties?.let {
-        val config: Map<*, *> = it["ContainerConfig"] as Map<*, *>
+        val config: Map<*, *> = it["config"] as Map<*, *>
         val envList = config["Env"] as List<String>
         envList.map {
             val (key, value) = it.split("=")

@@ -2,6 +2,9 @@ package no.skatteetaten.aurora.mokey.service
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import io.fabric8.openshift.api.model.Image
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -34,5 +37,13 @@ class ImageServiceTest {
 
         val imageDetails = imageService.getImageDetails(dcBuilder.build())
         assertThat(imageDetails?.dockerImageReference).isEqualTo(istBuilder.reference)
+    }
+
+    @Test
+    fun `get image env`() {
+        val json = """{ "dockerImageMetadata": { "config": { "Env": ["Path=/usr/local"] } } }""".trimIndent()
+        val image = jacksonObjectMapper().readValue<Image>(json)
+        assertThat(image.env.keys.first()).isEqualTo("Path")
+        assertThat(image.env.values.first()).isEqualTo("/usr/local")
     }
 }
