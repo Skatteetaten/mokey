@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.Image
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.imageStreamTag
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import org.springframework.stereotype.Service
@@ -32,8 +33,12 @@ class ImageService(val openShiftService: OpenShiftService) {
     }
 }
 
+private val logger = KotlinLogging.logger {}
+
 val Image.env: Map<String, String>
     get() = dockerImageMetadata?.additionalProperties?.let {
+        logger.info("docker metadata: $it")
+
         val config: Map<*, *> = it["config"] as Map<*, *>
         val envList = config["Env"] as List<String>
         envList.map {
