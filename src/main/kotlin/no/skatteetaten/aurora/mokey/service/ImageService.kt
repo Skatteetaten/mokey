@@ -36,8 +36,8 @@ val Image.env: Map<String, String>
     get() = dockerImageMetadata?.additionalProperties?.let {
         val config: Map<*, *> = it["Config"] as Map<*, *>
         val envList = config["Env"] as List<String>
-        envList.map {
-            val (key, value) = it.split("=")
+        envList.map { env ->
+            val (key, value) = env.split("=")
             key to value
         }.toMap()
     } ?: emptyMap()
