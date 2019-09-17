@@ -17,6 +17,7 @@ plugins {
 }
 
 extra["spring-hateoas.version"] = "0.24.0.RELEASE"
+extra["jackson-bom.version"] = "2.10.0.pr3"
 
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.2.0")
