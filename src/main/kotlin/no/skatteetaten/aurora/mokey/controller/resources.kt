@@ -68,6 +68,7 @@ data class StatusCheckReportResource(
 
 class ApplicationDeploymentDetailsResource(
     id: String?,
+    val updatedBy: String?,
     val buildTime: Instant? = null,
     val gitInfo: GitInfoResource?,
     val imageDetails: ImageDetailsResource?,

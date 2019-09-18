@@ -11,6 +11,7 @@ import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deployTag
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
+import no.skatteetaten.aurora.mokey.extensions.updatedBy
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
@@ -163,6 +164,7 @@ class ApplicationDataServiceOpenShift(
             addresses = applicationAddresses,
             databases = databases,
             sprocketDone = dc.sprocketDone,
+            updatedBy = dc.updatedBy,
             splunkIndex = splunkIndex,
             deploymentCommand = applicationDeployment.spec.command,
             publicData = ApplicationPublicData(

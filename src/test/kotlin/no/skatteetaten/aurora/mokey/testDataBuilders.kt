@@ -121,10 +121,10 @@ data class DeploymentConfigDataBuilder(
 
     fun build(): DeploymentConfig {
         return newDeploymentConfig {
-
             metadata {
                 name = dcName
                 namespace = dcNamespace
+                labels = mapOf("updatedBy" to "linus")
             }
             status {
                 latestVersion = 1

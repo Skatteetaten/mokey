@@ -60,6 +60,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         return ApplicationDeploymentDetailsResource(
             id = applicationData.applicationDeploymentId,
+            updatedBy = applicationData.updatedBy,
             buildTime = infoResponse?.buildTime,
             gitInfo = toGitInfoResource(infoResponse),
             imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },

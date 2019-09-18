@@ -16,6 +16,7 @@ const val ANNOTATION_SPROCKET_DONE = "sprocket.sits.no-deployment-config.done"
 const val LABEL_AFFILIATION = "affiliation"
 const val LABEL_CREATED = "creationTimestamp"
 const val LABEL_DEPLOYTAG = "deployTag"
+const val LABEL_UPDATED_BY = "updatedBy"
 const val LABEL_BOOBER_DEPLOY_ID = "booberDeployId"
 const val ANNOTATION_MARJORY_SERVICE = "sprocket.sits.no/service.webseal"
 const val ANNOTATION_MARJORY_DONE = "marjory.sits.no-routes-config.done"
@@ -80,6 +81,9 @@ val ReplicationController.deployTag: String
 
 val ObjectMeta.booberDeployId: String?
     get() = safeMetadataLabels()[LABEL_BOOBER_DEPLOY_ID]
+
+val DeploymentConfig.updatedBy: String?
+    get() = safeMetadataLabels()[LABEL_UPDATED_BY]
 
 var ReplicationController.deploymentPhase: String?
     get() = safeMetadataAnnotations()[ANNOTATION_PHASE]
