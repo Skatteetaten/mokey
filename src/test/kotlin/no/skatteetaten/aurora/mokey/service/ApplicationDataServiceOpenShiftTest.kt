@@ -116,6 +116,7 @@ class ApplicationDataServiceOpenShiftTest {
         assertThat(applicationData.applicationId).isEqualTo(appDeployment.spec.applicationId)
         assertThat(applicationData.applicationName).isEqualTo(appDeployment.spec.applicationName)
         assertThat(applicationData.auroraStatus.level).isEqualTo(HEALTHY)
+        assertThat(applicationData.updatedBy).isEqualTo("linus")
         assertThat(applicationData.publicData.message).isEqualTo("message")
         assertThat(applicationData.deployDetails?.paused).isEqualTo(false)
         assertThat(applicationData.databases).contains("123-456-789")
