@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.spring") version "1.3.50"
     id("org.jlleitschuh.gradle.ktlint") version "8.2.0"
     id("org.sonarqube") version "2.7.1"
-
+    id("org.asciidoctor.convert") version "2.3.0"
     id("org.springframework.boot") version "2.1.8.RELEASE"
     id("com.gorylenko.gradle-git-properties") version "2.1.0"
     id("com.github.ben-manes.versions") version "0.25.0"
