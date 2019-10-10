@@ -139,7 +139,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         return result.response?.let { response ->
             HttpResponseResource(
                 hasResponse = true,
-                textResponse = response.jsonContentOrErrorMsg(),
+                textResponse = response.jsonContentOrError(),
                 httpCode = response.code,
                 createdAt = result.createdAt,
                 url = result.url,

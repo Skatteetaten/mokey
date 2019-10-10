@@ -97,19 +97,20 @@ data class ManagementEndpointResult<T>(
 }
 
 private val logger = KotlinLogging.logger {}
-const val jsonFormatErrorMsg = """{ "error": "Received content is not json" }"""
 
 data class HttpResponse(
     val content: String,
     val code: Int
 ) {
-    fun jsonContentOrErrorMsg() =
+    fun jsonContentOrError() =
         try {
             jacksonObjectMapper().readTree(content)
             content
         } catch (ignored: Exception) {
-            logger.warn { "Response is not json format: $content" }
-            jsonFormatErrorMsg
+            content.take(100).let {
+                logger.warn { "Response is not json format: $it" }
+                """{ "error": "Received content is not json", "content": "$it" }"""
+            }
         }
 }
 
