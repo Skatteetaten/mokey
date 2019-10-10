@@ -29,9 +29,15 @@ const val ANNOTATION_WEMBLEY_PATHS = "wembley.sits.no/apiPaths"
 const val ANNOTATION_WEMBLEY_EXTERNAL_HOST = "wembley.sits.no/externalHost"
 const val ANNOTATION_WEMBLEY_ASM = "wembley.sits.no/asmPolicy"
 
-val DeploymentConfig.imageStreamTag: String?
+val DeploymentConfig.imageStreamNameAndTag: Pair<String, String>?
     get() = spec.triggers.find { it.type == "ImageChange" }
-        ?.imageChangeParams?.from?.name?.split(":")?.lastOrNull()
+        ?.imageChangeParams?.from?.name?.split(":")?.let {
+        if (it.size != 2) {
+            null
+        } else {
+            it.get(0) to it.get(1)
+        }
+    }
 
 var DeploymentConfig.managementPath: String?
     get() = safeMetadataAnnotations()[ANNOTATION_MANAGEMENT_PATH]
