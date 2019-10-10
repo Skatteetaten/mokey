@@ -11,7 +11,6 @@ import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.hateoas.ExposesResourceFor
 import org.springframework.hateoas.Link
-import org.springframework.hateoas.mvc.ControllerLinkBuilder
 import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
 import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -140,7 +139,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         return result.response?.let { response ->
             HttpResponseResource(
                 hasResponse = true,
-                textResponse = response.content,
+                textResponse = response.jsonContentOrError(),
                 httpCode = response.code,
                 createdAt = result.createdAt,
                 url = result.url,
@@ -188,7 +187,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 
         val selfLink =
-            ControllerLinkBuilder.linkTo(ApplicationDeploymentDetailsController::class.java)
+            linkTo(ApplicationDeploymentDetailsController::class.java)
                 .slash(applicationData.applicationDeploymentId)
                 .withSelfRel()
         val addressLinks =

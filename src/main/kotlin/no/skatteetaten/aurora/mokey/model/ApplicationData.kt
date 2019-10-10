@@ -1,6 +1,8 @@
 package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import mu.KotlinLogging
 import java.time.Instant
 
 data class GroupedApplicationData(
@@ -94,10 +96,23 @@ data class ManagementEndpointResult<T>(
         get() = resultCode == "OK"
 }
 
+private val logger = KotlinLogging.logger {}
+
 data class HttpResponse(
     val content: String,
     val code: Int
-)
+) {
+    fun jsonContentOrError() =
+        try {
+            jacksonObjectMapper().readTree(content)
+            content
+        } catch (ignored: Exception) {
+            content.take(100).let {
+                logger.warn { "Response is not json format: $it" }
+                """{ "error": "Received content is not json", "content": "$it" }"""
+            }
+        }
+}
 
 data class OpenShiftPodExcerpt(
     val name: String,
