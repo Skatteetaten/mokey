@@ -25,12 +25,12 @@ class ImageServiceTest {
 
     @Test
     fun `get image details`() {
-        val dcBuilder = DeploymentConfigDataBuilder()
+        val dcBuilder = DeploymentConfigDataBuilder(dcDeployTag = "foobar:tag")
         val istBuilder = ImageStreamTagDataBuilder(env = mapOf("IMAGE_BUILD_TIME" to "2018-08-01T13:27:21Z"))
         every {
             openShiftService.imageStreamTag(
                 dcBuilder.dcNamespace,
-                dcBuilder.dcName,
+                "foobar",
                 "tag"
             )
         } returns istBuilder.build()
