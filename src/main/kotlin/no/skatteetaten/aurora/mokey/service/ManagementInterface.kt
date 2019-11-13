@@ -43,7 +43,7 @@ class ManagementEndpoint(val url: String, private val endpointType: EndpointType
         logger.debug("Getting resource with url={}", url)
 
         val response = try {
-            val entity = HttpEntity<String>(HttpHeaders().apply {
+            val entity = HttpEntity<String>(null, HttpHeaders().apply {
                 set(HttpHeaders.ACCEPT, "application/vnd.spring-boot.actuator.v2+json")
             })
             val response = restTemplate.exchange(url, HttpMethod.GET, entity, String::class.java)
