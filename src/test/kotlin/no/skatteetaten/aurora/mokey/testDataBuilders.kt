@@ -34,8 +34,6 @@ import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
-import no.skatteetaten.aurora.mokey.extensions.LABEL_DEPLOYTAG
-import no.skatteetaten.aurora.mokey.extensions.deployTag
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
