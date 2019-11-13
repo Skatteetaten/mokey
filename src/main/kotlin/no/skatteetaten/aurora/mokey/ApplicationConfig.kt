@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Import
 import org.springframework.hateoas.config.EnableHypermediaSupport
 import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType.HAL
 import org.springframework.http.HttpHeaders
-import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
@@ -53,12 +52,7 @@ class ApplicationConfig : BeanPostProcessor {
         return builder.requestFactory { createRequestFactory(2, 2) }
             .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
                 request.headers.apply {
-                    setAll(
-                        mapOf(
-                            HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json",
-                            HttpHeaders.ACCEPT to MediaType.APPLICATION_JSON_VALUE
-                        )
-                    )
+                    set(HttpHeaders.ACCEPT, "application/vnd.spring-boot.actuator.v2+json")
                     set("KlientID", applicationName)
                 }
 
