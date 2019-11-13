@@ -21,7 +21,6 @@ import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.ManagementLinks.Companion.parseManagementResponse
 import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
@@ -43,10 +42,7 @@ class ManagementEndpoint(val url: String, private val endpointType: EndpointType
         logger.debug("Getting resource with url={}", url)
 
         val response = try {
-            val entity = HttpEntity(null, HttpHeaders().apply {
-                set(HttpHeaders.ACCEPT, "application/vnd.spring-boot.actuator.v2+json")
-            })
-            val response = restTemplate.exchange(url, HttpMethod.GET, entity, String::class.java)
+            val response = restTemplate.exchange(url, HttpMethod.GET, HttpEntity.EMPTY, String::class.java)
             HttpResponse(response.body ?: "", response.statusCodeValue)
         } catch (e: HttpStatusCodeException) {
             val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())

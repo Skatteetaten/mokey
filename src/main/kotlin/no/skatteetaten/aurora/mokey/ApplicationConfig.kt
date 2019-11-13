@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.hateoas.config.EnableHypermediaSupport
 import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType.HAL
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
@@ -52,7 +53,12 @@ class ApplicationConfig : BeanPostProcessor {
         return builder.requestFactory { createRequestFactory(2, 2) }
             .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
                 request.headers.apply {
-                    accept = mutableListOf(MediaType.APPLICATION_JSON)
+                    setAll(
+                        mapOf(
+                            HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json",
+                            HttpHeaders.ACCEPT to MediaType.APPLICATION_JSON_VALUE
+                        )
+                    )
                     set("KlientID", applicationName)
                 }
 
