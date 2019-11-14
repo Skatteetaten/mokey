@@ -148,6 +148,7 @@ class ApplicationDataServiceOpenShift(
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
         // every pods has a name label we have to use selector from DeploymentConfig.
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
+
         val imageDetails = imageService.getImageDetails(dc)
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
@@ -202,7 +203,6 @@ class ApplicationDataServiceOpenShift(
 
         for (rcVersion in dc.status.latestVersion downTo 0) {
             getReplicationController(rcVersion)?.let {
-                println("test")
                 if (it.isRunning()) {
                     return details.copy(
                         deployment = it.metadata.name,
