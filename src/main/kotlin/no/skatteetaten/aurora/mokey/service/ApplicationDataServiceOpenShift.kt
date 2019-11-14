@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -147,7 +148,6 @@ class ApplicationDataServiceOpenShift(
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
         // every pods has a name label we have to use selector from DeploymentConfig.
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
-
         val imageDetails = imageService.getImageDetails(dc)
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
@@ -189,23 +189,31 @@ class ApplicationDataServiceOpenShift(
 
         val namespace = dc.metadata.namespace
 
-        val latestRCName = dc.status.latestVersion?.let { "${dc.metadata.name}-$it" }
-
-        val rc = latestRCName?.let { openshiftService.rc(namespace, it) }
+        fun getReplicationController(rcVersion: Long): ReplicationController? {
+            val rcName = "${dc.metadata.name}-$rcVersion"
+            return openshiftService.rc(namespace, rcName)
+        }
 
         val details = DeployDetails(
             targetReplicas = dc.spec.replicas,
             availableReplicas = dc.status.availableReplicas ?: 0,
             paused = dc.spec.paused ?: false
         )
-        if (rc == null) {
-            return details
-        }
 
-        return details.copy(
-            deployment = latestRCName,
-            phase = rc.deploymentPhase,
-            deployTag = rc.deployTag
-        )
+        for (rcVersion in dc.status.latestVersion downTo 0) {
+            getReplicationController(rcVersion)?.let {
+                if (it.isRunning()) {
+                    return details.copy(
+                        deployment = it.metadata.name,
+                        phase = it.deploymentPhase,
+                        deployTag = it.deployTag
+                    )
+                }
+            }
+        }
+        return details
     }
+
+    fun ReplicationController.isRunning() =
+        this.deploymentPhase == "Complete" && this.status.availableReplicas > 0 && this.status.replicas > 0
 }
