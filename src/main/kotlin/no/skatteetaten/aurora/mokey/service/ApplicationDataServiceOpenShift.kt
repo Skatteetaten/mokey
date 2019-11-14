@@ -176,7 +176,7 @@ class ApplicationDataServiceOpenShift(
                 namespace = namespace,
                 affiliation = affiliation,
                 auroraVersion = imageDetails?.auroraVersion,
-                deployTag = applicationDeployment.spec.deployTag ?: "",
+                deployTag = deployDetails.deployTag ?: "",
                 dockerImageRepo = imageDetails?.dockerImageRepo,
                 releaseTo = applicationDeployment.spec.releaseTo,
                 message = applicationDeployment.spec.message,
