@@ -176,7 +176,7 @@ class ApplicationDataServiceOpenShift(
                 namespace = namespace,
                 affiliation = affiliation,
                 auroraVersion = imageDetails?.auroraVersion,
-                deployTag = deployDetails.deployTag ?: "",
+                deployTag = deployDetails.deployTag ?: applicationDeployment.spec.deployTag ?: "",
                 dockerImageRepo = imageDetails?.dockerImageRepo,
                 releaseTo = applicationDeployment.spec.releaseTo,
                 message = applicationDeployment.spec.message,
@@ -202,6 +202,7 @@ class ApplicationDataServiceOpenShift(
 
         for (rcVersion in dc.status.latestVersion downTo 0) {
             getReplicationController(rcVersion)?.let {
+                println("test")
                 if (it.isRunning()) {
                     return details.copy(
                         deployment = it.metadata.name,
