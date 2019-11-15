@@ -157,8 +157,8 @@ class ApplicationDataServiceOpenShift(
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
         fun getDeployTag(): String {
-            if (deployDetails.deployTag != null && deployDetails.deployTag != "") return deployDetails.deployTag
-            else if (applicationDeployment.spec.deployTag != null) return applicationDeployment.spec.deployTag
+            if (!deployDetails.deployTag.isNullOrEmpty()) return deployDetails.deployTag
+            else applicationDeployment.spec.deployTag?.let { return it }
             return ""
         }
 
@@ -212,8 +212,8 @@ class ApplicationDataServiceOpenShift(
                 if (it.isRunning()) {
                     return details.copy(
                         deployment = it.metadata.name,
-                        phase = it.deploymentPhase,
-                        deployTag = it.deployTag
+                        deployTag = it.deployTag,
+                        phase = getReplicationController(dc.status.latestVersion)?.deploymentPhase
                     )
                 }
             }
