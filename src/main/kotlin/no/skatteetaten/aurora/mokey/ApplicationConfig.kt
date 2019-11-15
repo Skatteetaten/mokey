@@ -53,7 +53,7 @@ class ApplicationConfig : BeanPostProcessor {
             .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
                 request.headers.apply {
                     // We want to get the V2 format of the actuator health response
-                    set(HttpHeaders.ACCEPT, "application/vnd.spring-boot.actuator.v2+json")
+                    set(HttpHeaders.ACCEPT, "application/vnd.spring-boot.actuator.v2+json,application/json")
                     set("KlientID", applicationName)
                 }
 
