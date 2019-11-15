@@ -176,7 +176,7 @@ class ApplicationDataServiceOpenShiftTest {
 
         val applicationData = applicationDataServiceOpenShift.createSingleItem("aurora-dev", "mokey")
         assertThat(applicationData.deployDetails?.deployTag).isEqualTo("latest")
-        assertThat(applicationData.deployDetails?.phase).isEqualTo("Complete")
+        assertThat(applicationData.deployDetails?.phase).isEqualTo("Failed")
     }
 
     fun findAllApplicationData(
