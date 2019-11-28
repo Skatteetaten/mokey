@@ -1,0 +1,40 @@
+{
+  "items": [
+    {
+      "auroraVersion": "SNAPSHOT-bugfix_AOD_937-20191112.134737-1-b1.24.6-wingnut11-1.3.3",
+      "appVersion": "SNAPSHOT-bugfix_AOD_937-20191112.134737-1",
+      "timeline": {
+        "buildStarted": "2019-11-12T13:47:52Z",
+        "buildEnded": "2019-11-12T13:47:56.885316217Z"
+      },
+      "dockerVersion": "1.13.1",
+      "dockerDigest": "sha256:3e8185831409222de419ccce116c1eb9a4fc179eba48d94f3a9e2d74eb928546",
+      "java": {
+        "major": "11",
+        "minor": "0",
+        "build": "4.11-1",
+        "jolokia": "1.6.0"
+      },
+      "node": null,
+      "requestUrl": "container-registry-internal-private-pull.aurora.skead.no:443/no_skatteetaten_aurora/clerk/sha256:3e8185831409222de419ccce116c1eb9a4fc179eba48d94f3a9e2d74eb928546",
+      "_links": {
+        "self": {
+          "href": ""
+        }
+      },
+      "_embedded": {}
+    }
+  ],
+  "failure": [],
+  "success": true,
+  "message": "Success",
+  "failureCount": 0,
+  "successCount": 1,
+  "count": 1,
+  "_links": {
+    "self": {
+      "href": ""
+    }
+  },
+  "_embedded": {}
+}

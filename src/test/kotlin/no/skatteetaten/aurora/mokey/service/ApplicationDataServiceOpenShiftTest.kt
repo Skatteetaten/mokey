@@ -35,12 +35,14 @@ class ApplicationDataServiceOpenShiftTest {
     private val podService = mockk<PodService>()
     private val imageService = mockk<ImageService>()
     private val addressService = mockk<AddressService>(relaxed = true)
+    private val imageRegistryService = mockk<ImageRegistryService>()
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
         openshiftService = openShiftService,
         auroraStatusCalculator = auroraStatusCalculator,
         podService = podService,
         addressService = addressService,
-        imageService = imageService
+        imageService = imageService,
+        imageRegistryService = imageRegistryService
     )
 
     @BeforeEach
@@ -75,7 +77,7 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         every { openShiftService.rc(dcBuilder.dcNamespace, any()) } returns replicationController
         every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
-        every { imageService.getImageDetails(dc) } returns imageDetails
+        every { imageService.getImageDetails(dc, any()) } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
         every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
 
@@ -107,7 +109,7 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         every { openShiftService.rc(dcBuilder.dcNamespace, any()) } returns replicationController
         every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
-        every { imageService.getImageDetails(dc) } returns imageDetails
+        every { imageService.getImageDetails(dc, any()) } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
         every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
 
@@ -169,7 +171,7 @@ class ApplicationDataServiceOpenShiftTest {
             openShiftService.rc("aurora-dev", "${DeploymentConfigDataBuilder().dcName}-2")
         } returns ReplicationControllerDataBuilder(rcPhase = "Failed").build()
         every { podService.getPodDetails(any(), any(), any()) } returns listOf(PodDetailsDataBuilder().build())
-        every { imageService.getImageDetails(any()) } returns ImageDetailsDataBuilder().build()
+        every { imageService.getImageDetails(any(), any()) } returns ImageDetailsDataBuilder().build()
         every {
             auroraStatusCalculator.calculateAuroraStatus(any(), any(), any())
         } returns AuroraStatusBuilder().build()

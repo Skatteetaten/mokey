@@ -35,7 +35,7 @@ class ImageServiceTest {
             )
         } returns istBuilder.build()
 
-        val imageDetails = imageService.getImageDetails(dcBuilder.build())
+        val imageDetails = imageService.getImageDetails(dcBuilder.build(), null)
         assertThat(imageDetails?.dockerImageReference).isEqualTo(istBuilder.reference)
     }
 

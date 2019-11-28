@@ -1,7 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.Image
+import no.skatteetaten.aurora.mokey.extensions.deployTag
 import no.skatteetaten.aurora.mokey.extensions.imageStreamNameAndTag
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import org.springframework.stereotype.Service
@@ -12,10 +14,20 @@ class ImageService(val openShiftService: OpenShiftService) {
     /**
      * Gets ImageDetails for the first Image that is found in the ImageChange triggers for the given DeploymentConfig.
      */
-    fun getImageDetails(dc: DeploymentConfig): ImageDetails? {
+    fun getImageDetails(dc: DeploymentConfig, rc: ReplicationController?): ImageDetails? {
+        rc?.let {
+            return getImageDetails(dc.metadata.namespace, dc.metadata.name, rc.deployTag)
+        }
         val tagAndName = dc.imageStreamNameAndTag ?: return null
         return getImageDetails(dc.metadata.namespace, tagAndName.first, tagAndName.second)
     }
+/*    fun getImageDetails(rc: ReplicationController): ImageDetails? {
+        rc?.let {
+            return getImageDetails(rc.metadata.namespace, rc.metadata.name, rc.deployTag)
+        }
+        val tagAndName = dc.imageStreamNameAndTag ?: return null
+        return getImageDetails(dc.metadata.namespace, tagAndName.first, tagAndName.second)
+    }*/
 
     fun getImageDetails(namespace: String, name: String, tagName: String): ImageDetails? {
         return openShiftService.imageStreamTag(namespace, name, tagName)?.let { istag ->

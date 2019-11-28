@@ -3,25 +3,45 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import mu.KotlinLogging
+import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
+import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftClientConfig
+import no.skatteetaten.aurora.openshift.webclient.readContent
 import okhttp3.OkHttpClient
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.core.io.Resource
 import org.springframework.hateoas.config.EnableHypermediaSupport
 import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType.HAL
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
+import java.io.IOException
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
+
+enum class ServiceTypes {
+    CANTUS
+}
+
+@Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+@Qualifier
+annotation class TargetService(val value: ServiceTypes)
+
+private val logger = KotlinLogging.logger {}
 
 @Configuration
 @EnableScheduling
@@ -59,6 +79,32 @@ class ApplicationConfig : BeanPostProcessor {
                 execution.execute(request, body)
             }).build()
     }
+
+    @Bean
+    @TargetService(ServiceTypes.CANTUS)
+    fun webClientCantus(
+        builder: WebClient.Builder,
+        @Value("\${integrations.cantus.url}") cantusUrl: String,
+        @Value("\${mokey.openshift.tokenLocation:file:/var/run/secrets/kubernetes.io/serviceaccount/token}") token: Resource
+    ): WebClient {
+        logger.info("Configuring Cantus WebClient with base Url={}", cantusUrl)
+        val b = webClientBuilder()
+            .baseUrl(cantusUrl)
+
+        try {
+            b.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer ${token.readContent()}")
+        } catch (e: IOException) {
+            logger.info("No token file found, will not add Authorization header to WebClient")
+        }
+
+        return b.build()
+    }
+
+    fun webClientBuilder(ssl: Boolean = false) =
+        WebClient
+            .builder()
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .defaultHeader(AuroraHeaderFilter.KORRELASJONS_ID, RequestKorrelasjon.getId())
 
     @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)
     private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
