@@ -12,7 +12,7 @@
     </triggeringPolicy>
     <encoder>
       <charset>UTF-8</charset>
-      <pattern>%h %l %u [%t] "%r" %s %b "%header{Referer}" "%header{User-Agent}" Korrelasjonsid=%header{Korrelasjonsid} spanId=%header{X-B3-SpanId} traceId=%header{X-B3-TraceId} parentId=%header{X-B3-ParentSpanId} sampled=%header{X-B3-Sampled} tidBruktMs=%D</pattern>
+      <pattern>%h %l %u [%t] "%r" %s %b "%header{Referer}" "%header{User-Agent}" Korrelasjonsid=%header{Korrelasjonsid} spanId=%header{X-B3-SpanId} traceId=%header{X-B3-TraceId} parentId=%header{X-B3-ParentSpanId} sampled=%header{X-B3-Sampled} duration=%Dms</pattern>
     </encoder>
   </appender>
   <appender-ref ref="ROLLING" />
