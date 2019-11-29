@@ -47,7 +47,7 @@ class WebSecurityConfig(
 
             MDC.put("user", username)
             User(username, it.credentials as String, fullName).also {
-                logger.info("Logged in user username=$username, name='$fullName' tokenSnippet=${it.tokenSnippet}")
+                logger.debug("Logged in user username=$username, name='$fullName' tokenSnippet=${it.tokenSnippet}")
             }
         }
     }

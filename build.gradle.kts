@@ -31,6 +31,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("io.projectreactor.addons:reactor-extra:3.2.3.RELEASE")
+
+    implementation("net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.7.1")
+
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
