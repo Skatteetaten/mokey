@@ -150,6 +150,9 @@ class ApplicationDataServiceOpenShift(
         }
 
         fun getRunningReplicationController(): ReplicationController? {
+            if (getReplicationController(dc.status.latestVersion)?.isRunning() == true) {
+                return getReplicationController(dc.status.latestVersion)
+            }
             for (rcVersion in dc.status.latestVersion downTo 0) {
                 getReplicationController(rcVersion)?.let {
                     if (it.isRunning()) return it
@@ -158,20 +161,19 @@ class ApplicationDataServiceOpenShift(
             return null
         }
 
-        val latestRc = getReplicationController(dc.status.latestVersion)
+        val currentDeploymentPhase = getReplicationController(dc.status.latestVersion)?.deploymentPhase
 
         val runningRc = getRunningReplicationController()
 
-        val deployDetails = if (latestRc != null && latestRc.isRunning())
-            createDeployDetails(dc.spec.paused, latestRc)
-        else
-            createDeployDetails(dc.spec.paused, runningRc, latestRc)
+        val isLatestRc = getRunningReplicationController() == getReplicationController(dc.status.latestVersion)
+
+        val deployDetails = createDeployDetails(dc.spec.paused, runningRc, currentDeploymentPhase)
 
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
         // every pods has a name label we have to use selector from DeploymentConfig.
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
 
-        val imageDetails = imageService.getImageDetails(dc, runningRc)
+        val imageDetails = imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, isLatestRc, runningRc)
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
@@ -217,25 +219,18 @@ class ApplicationDataServiceOpenShift(
     private fun createDeployDetails(
         paused: Boolean?,
         runningRc: ReplicationController?,
-        latestRc: ReplicationController? = null
+        deploymentPhase: String?
     ): DeployDetails {
-        val details = DeployDetails(
+        return DeployDetails(
             targetReplicas = runningRc?.status?.replicas ?: 0,
             availableReplicas = runningRc?.status?.availableReplicas ?: 0,
             deployment = runningRc?.metadata?.name,
             deployTag = runningRc?.deployTag,
-            paused = paused ?: false
-        )
-        latestRc?.let {
-            return details.copy(
-                phase = latestRc.deploymentPhase
-            )
-        }
-        return details.copy(
-            phase = runningRc?.deploymentPhase
+            paused = paused ?: false,
+            phase = deploymentPhase
         )
     }
 
     fun ReplicationController.isRunning() =
-        this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
+        this.deploymentPhase == "Complete" && this.status.replicas?.let { it > 0 } ?: false
 }

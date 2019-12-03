@@ -11,8 +11,6 @@ import org.springframework.web.reactive.function.client.bodyToMono
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.ServiceTypes
 import no.skatteetaten.aurora.mokey.TargetService
-import org.springframework.http.ReactiveHttpOutputMessage
-import org.springframework.web.reactive.function.BodyInserter
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 import uk.q3c.rest.hal.HalResource
@@ -68,10 +66,10 @@ class ImageRegistryClient(
     val webClient: WebClient
 ) {
 
-    fun <T : HalResource> post(path: String, body: TagUrlsWrapper): Mono<AuroraResponse<T>> {
+    // TODO: make generic
+    fun post(path: String, body: Any): Mono<AuroraResponse<ImageTagResource>> {
         return execute {
-            val requestBody: BodyInserter<TagUrlsWrapper, ReactiveHttpOutputMessage> = BodyInserters.fromObject(body)
-            it.post().uri(path).body(requestBody)
+            it.post().uri(path).body(BodyInserters.fromObject(body))
         }
     }
 

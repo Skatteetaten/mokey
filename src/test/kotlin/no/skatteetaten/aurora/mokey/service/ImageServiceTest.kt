@@ -16,7 +16,9 @@ import org.junit.jupiter.api.Test
 class ImageServiceTest {
 
     private val openShiftService = mockk<OpenShiftService>()
-    private val imageService = ImageService(openShiftService)
+    private val imageRegistryService = mockk<ImageRegistryService>()
+
+    private val imageService = ImageService(openShiftService, imageRegistryService)
 
     @BeforeEach
     fun setUp() {
@@ -31,11 +33,10 @@ class ImageServiceTest {
             openShiftService.imageStreamTag(
                 dcBuilder.dcNamespace,
                 "foobar",
-                "tag"
+                "default"
             )
         } returns istBuilder.build()
-
-        val imageDetails = imageService.getImageDetails(dcBuilder.build(), null)
+        val imageDetails = imageService.getImageDetails(dcBuilder.dcNamespace, "foobar", true, null)
         assertThat(imageDetails?.dockerImageReference).isEqualTo(istBuilder.reference)
     }
 

@@ -24,7 +24,7 @@ integrations:
     metrics:
         url: "http://localhost"
     cantus:
-        url: "http://localhost:9000"
+        url: "http://localhost"
 
 mokey:
     openshift:
