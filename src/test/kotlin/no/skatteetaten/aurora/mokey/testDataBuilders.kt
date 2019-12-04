@@ -51,6 +51,9 @@ import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
+import no.skatteetaten.aurora.mokey.service.AuroraResponse
+import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
+import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import org.apache.commons.codec.digest.DigestUtils
 import java.net.URI
 import java.time.Instant
@@ -216,6 +219,27 @@ data class ServiceBuilder(
                 annotations = serviceAnnotations
             }
         }
+}
+
+data class AuroraResponseBuilder(
+    val arResponse: String = "test123"
+) {
+    fun build(): AuroraResponse<ImageTagResource> {
+        return AuroraResponse(
+            items = listOf(
+                ImageTagResource(
+                    auroraVersion = "4.0.0-b1.23.1-wingnut11-1.3.3",
+                    timeline = ImageBuildTimeline(
+                        Instant.now(), Instant.now()
+                    ),
+                    dockerDigest = "sha256:123hash",
+                    requestUrl = "docker-registry/group/name/sha256:123hash",
+                    dockerVersion = "1.13.1"
+                )
+            ),
+            message = arResponse
+        )
+    }
 }
 
 data class ReplicationControllerDataBuilder(
