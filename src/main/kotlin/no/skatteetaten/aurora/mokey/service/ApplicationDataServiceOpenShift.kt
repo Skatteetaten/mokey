@@ -144,30 +144,26 @@ class ApplicationDataServiceOpenShift(
             )
         }
 
-        fun getReplicationController(rcVersion: Long): ReplicationController? {
-            val rcName = "${dc.metadata.name}-$rcVersion"
-            return openshiftService.rc(namespace, rcName)
-        }
+        fun getRc(rcVersion: Long) =
+            openshiftService.rc(namespace, "${dc.metadata.name}-$rcVersion")
 
-        fun getRunningReplicationController(): ReplicationController? {
-            if (getReplicationController(dc.status.latestVersion)?.isRunning() == true) {
-                return getReplicationController(dc.status.latestVersion)
-            }
+        val latestRc = getRc(dc.status.latestVersion)
+
+        fun getRunningRc(): ReplicationController? {
+            if (latestRc?.isRunning() == true) return latestRc
             for (rcVersion in dc.status.latestVersion downTo 0) {
-                getReplicationController(rcVersion)?.let {
+                getRc(rcVersion)?.let {
                     if (it.isRunning()) return it
                 }
             }
             return null
         }
 
-        val currentDeploymentPhase = getReplicationController(dc.status.latestVersion)?.deploymentPhase
+        val runningRc = getRunningRc()
 
-        val runningRc = getRunningReplicationController()
+        val isLatestRc = runningRc == latestRc
 
-        val isLatestRc = getRunningReplicationController() == getReplicationController(dc.status.latestVersion)
-
-        val deployDetails = createDeployDetails(dc.spec.paused, runningRc, currentDeploymentPhase)
+        val deployDetails = createDeployDetails(dc.spec.paused, runningRc, latestRc?.deploymentPhase)
 
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
         // every pods has a name label we have to use selector from DeploymentConfig.
