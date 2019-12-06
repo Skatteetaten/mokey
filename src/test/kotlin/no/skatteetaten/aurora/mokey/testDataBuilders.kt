@@ -120,7 +120,7 @@ data class DeploymentConfigDataBuilder(
     val dcEnvName: String = DEFAULT_ENV_NAME,
     val dcDeployTag: String = "name:tag",
     val dcSelector: Map<String, String> = mapOf("name" to dcName),
-    val dcLatestVersion: Long = 1,
+    val dcLatestVersion: Long = 4,
     val pause: Boolean = false
 ) {
 

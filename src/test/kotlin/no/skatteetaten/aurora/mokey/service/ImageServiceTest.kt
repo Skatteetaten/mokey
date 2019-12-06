@@ -39,7 +39,7 @@ class ImageServiceTest {
             )
         } returns arBuilder.build()
 
-        val imageDetails = imageService.getImageDetails(dcBuilder.dcNamespace, "foobar", false, rcBuilder.build())
+        val imageDetails = imageService.getImageDetails(dcBuilder.dcNamespace, "foobar", rcBuilder.build().spec.template.spec.containers[0].image)
         assertThat(imageDetails?.dockerImageReference).isEqualTo("docker-registry/group/name@sha256:123hash")
         assertThat(imageDetails?.auroraVersion).isEqualTo(arBuilder.build().items[0].auroraVersion)
     }
@@ -57,7 +57,7 @@ class ImageServiceTest {
             )
         } returns istBuilder.build()
 
-        val imageDetails = imageService.getImageDetails(dcBuilder.dcNamespace, "foobar", true, null)
+        val imageDetails = imageService.getImageDetailsFromImageStream(dcBuilder.dcNamespace, "foobar", "default")
         assertThat(imageDetails?.dockerImageReference).isEqualTo("dockerImageReference")
     }
 

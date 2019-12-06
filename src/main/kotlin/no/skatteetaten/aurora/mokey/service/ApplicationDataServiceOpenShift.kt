@@ -29,8 +29,7 @@ class ApplicationDataServiceOpenShift(
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
     val addressService: AddressService,
-    val imageService: ImageService,
-    val imageRegistryService: ImageRegistryService
+    val imageService: ImageService
 ) {
 
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
@@ -108,6 +107,13 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
+    fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
+        val startingIndex = if (rcLatestVersion.toInt() == 1) 1 else rcLatestVersion.toInt() - 1
+        val range: IntProgression = startingIndex downTo 1
+        return range.asSequence().map { openshiftService.rc(namespace, "$name-$it") }
+            .firstOrNull() { it?.isRunning() ?: false }
+    }
+
     private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
         logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
         val affiliation = applicationDeployment.metadata.affiliation
@@ -144,24 +150,10 @@ class ApplicationDataServiceOpenShift(
             )
         }
 
-        fun getRc(rcVersion: Long) =
-            openshiftService.rc(namespace, "${dc.metadata.name}-$rcVersion")
+        val latestRc = openshiftService.rc(namespace, "${dc.metadata.name}-${dc.status.latestVersion}")
 
-        val latestRc = getRc(dc.status.latestVersion)
-
-        fun getRunningRc(): ReplicationController? {
-            if (latestRc?.isRunning() == true) return latestRc
-            for (rcVersion in dc.status.latestVersion downTo 0) {
-                getRc(rcVersion)?.let {
-                    if (it.isRunning()) return it
-                }
-            }
-            return null
-        }
-
-        val runningRc = getRunningRc()
-
-        val isLatestRc = runningRc == latestRc
+        val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
+            ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
 
         val deployDetails = createDeployDetails(dc.spec.paused, runningRc, latestRc?.deploymentPhase)
 
@@ -169,7 +161,14 @@ class ApplicationDataServiceOpenShift(
         // every pods has a name label we have to use selector from DeploymentConfig.
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
 
-        val imageDetails = imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, isLatestRc, runningRc)
+        // it is a lot faster to fetch from imageStreamTag from ocp rather then from cantus if it is up to date
+        val imageDetails = if (runningRc == latestRc || runningRc == null) {
+            imageService.getImageDetailsFromImageStream(dc.metadata.namespace, dc.metadata.name, "default")
+        } else {
+            val image = runningRc.spec.template.spec.containers[0].image
+            imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+        }
+
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)

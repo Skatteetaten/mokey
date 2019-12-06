@@ -14,6 +14,7 @@ import no.skatteetaten.aurora.mokey.TargetService
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 import uk.q3c.rest.hal.HalResource
+import java.time.Duration
 import java.time.Instant
 
 data class ImageTagResource(
@@ -66,7 +67,6 @@ class ImageRegistryClient(
     val webClient: WebClient
 ) {
 
-    // TODO: make generic
     fun post(path: String, body: Any): Mono<AuroraResponse<ImageTagResource>> {
         return execute {
             it.post().uri(path).body(BodyInserters.fromObject(body))
@@ -78,6 +78,7 @@ class ImageRegistryClient(
     ): Mono<T> = fn(webClient)
         .retrieve()
         .bodyToMono<T>()
+        .retryBackoff(3, Duration.ofMillis(200))
         .handleGenericError()
 
     private fun <T> Mono<T>.handleGenericError(): Mono<T> =

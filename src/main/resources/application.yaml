@@ -28,7 +28,7 @@ integrations:
     metrics:
         url: "http://metrics.skead.no"
     cantus:
-        url: "http://cantus"
+        url: "http://localhost:8084"
 
 management:
     metrics:
@@ -47,7 +47,7 @@ spring:
 
 mokey:
     cache:
-        affiliations: paas, aurora
+        affiliations: paas
     openshift:
         tokenLocation: file:/tmp/boober-token
 
