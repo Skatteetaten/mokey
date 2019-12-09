@@ -67,7 +67,7 @@ class ImageRegistryClient(
     val webClient: WebClient
 ) {
 
-    fun post(path: String, body: Any): Mono<AuroraResponse<ImageTagResource>> {
+    fun <T : HalResource?> post(path: String, body: Any): Mono<AuroraResponse<T>> {
         return execute {
             it.post().uri(path).body(BodyInserters.fromObject(body))
         }
