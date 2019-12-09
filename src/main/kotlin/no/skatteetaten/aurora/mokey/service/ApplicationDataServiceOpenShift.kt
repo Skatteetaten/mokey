@@ -175,11 +175,8 @@ class ApplicationDataServiceOpenShift(
 
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
-        fun getDeployTag(): String {
-            if (!deployDetails.deployTag.isNullOrEmpty()) return deployDetails.deployTag
-            else applicationDeployment.spec.deployTag?.let { return it }
-            return ""
-        }
+        val deployTag = deployDetails.deployTag.takeIf { !it.isNullOrEmpty() }
+            ?: (applicationDeployment.spec.deployTag?.let { it } ?: "")
 
         return ApplicationData(
             booberDeployId = applicationDeployment.metadata.booberDeployId,
@@ -202,7 +199,7 @@ class ApplicationDataServiceOpenShift(
                 namespace = namespace,
                 affiliation = affiliation,
                 auroraVersion = imageDetails?.auroraVersion,
-                deployTag = getDeployTag(),
+                deployTag = deployTag,
                 dockerImageRepo = imageDetails?.dockerImageRepo,
                 releaseTo = applicationDeployment.spec.releaseTo,
                 message = applicationDeployment.spec.message,
