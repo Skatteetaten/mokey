@@ -8,14 +8,12 @@ import assertk.assertions.isNotNull
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
+import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.setJsonFileAsBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.springframework.core.io.ClassPathResource
-import org.springframework.http.HttpHeaders
-import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.WebClient
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
@@ -34,12 +32,7 @@ class ImageRegistryServiceTest {
 
     @Test
     fun `find tags by name`() {
-        val manifest = ClassPathResource("manifest.json").file.readText()
-        server.execute(
-            MockResponse()
-                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .setBody(manifest)
-        ) {
+        server.execute(MockResponse().setJsonFileAsBody("manifest.json")) {
             val response = imageRegistryService.findTagsByName(tagUrls)
             assertThat(response).isNotNull()
         }
@@ -48,16 +41,10 @@ class ImageRegistryServiceTest {
     @Test
     fun `find tags by name, response contains failure`() {
         server.execute(
-            MockResponse()
-                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .setBody(
-                    jacksonObjectMapper().writeValueAsString(
-                        AuroraResponse<ImageTagResource>(
-                            success = false,
-                            message = "test failure"
-                        )
-                    )
-                )
+            AuroraResponse<ImageTagResource>(
+                success = false,
+                message = "test failure"
+            )
         ) {
             assertThat {
                 imageRegistryService.findTagsByName(tagUrls)
