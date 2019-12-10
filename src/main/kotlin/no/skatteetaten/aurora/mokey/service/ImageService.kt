@@ -7,10 +7,6 @@ import org.springframework.stereotype.Service
 @Service
 class ImageService(val openShiftService: OpenShiftService, val imageRegistryService: ImageRegistryService) {
 
-    /**
-     * Gets ImageDetails for the first Image that is found in the ImageChange triggers for the given DeploymentConfig if latest rc is runnig.
-     * If latest rc is not running, it calls cantus to gets the ImageDetails from the running rc.
-     */
     fun getImageDetails(
         namespace: String,
         imageSteamName: String,

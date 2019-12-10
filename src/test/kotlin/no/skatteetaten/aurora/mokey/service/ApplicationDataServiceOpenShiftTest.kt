@@ -34,7 +34,6 @@ class ApplicationDataServiceOpenShiftTest {
     private val podService = mockk<PodService>()
     private val imageService = mockk<ImageService>()
     private val addressService = mockk<AddressService>(relaxed = true)
-    private val imageRegistryService = mockk<ImageRegistryService>()
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
         openshiftService = openShiftService,
         auroraStatusCalculator = auroraStatusCalculator,
@@ -73,7 +72,7 @@ class ApplicationDataServiceOpenShiftTest {
         )
         every { openShiftService.applicationDeployments(dcBuilder.dcNamespace) } returns listOf(appDeployment)
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
-        every { openShiftService.rc(dcBuilder.dcNamespace, any()) } returns replicationController
+        every { openShiftService.rc(dcBuilder.dcNamespace, "${dcBuilder.dcName}-1") } returns replicationController
         every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
         every {
             imageService.getImageDetailsFromImageStream(
@@ -112,7 +111,7 @@ class ApplicationDataServiceOpenShiftTest {
         )
         every { openShiftService.applicationDeployments(dcBuilder.dcNamespace) } returns listOf(appDeployment)
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
-        every { openShiftService.rc(dcBuilder.dcNamespace, any()) } returns replicationController
+        every { openShiftService.rc(dcBuilder.dcNamespace, "${dcBuilder.dcName}-1") } returns replicationController
         every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
         every {
             imageService.getImageDetailsFromImageStream(
