@@ -111,7 +111,7 @@ class ApplicationDataServiceOpenShift(
         val startingIndex = if (rcLatestVersion.toInt() == 1) 1 else rcLatestVersion.toInt() - 1
         val range: IntProgression = startingIndex downTo 1
         return range.asSequence().map { openshiftService.rc(namespace, "$name-$it") }
-            .firstOrNull() { it?.isRunning() ?: false }
+            .firstOrNull { it?.isRunning() ?: false }
     }
 
     private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
