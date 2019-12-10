@@ -8,13 +8,12 @@ import io.fabric8.openshift.api.model.Image
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
-import no.skatteetaten.aurora.mokey.AuroraResponseBuilder
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageStreamTagDataBuilder
+import no.skatteetaten.aurora.mokey.ImageTagResourceBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.time.Instant
 
 class ImageServiceTest {
 
@@ -30,27 +29,22 @@ class ImageServiceTest {
 
     @Test
     fun `get image details when running rc is not latest`() {
-        val dcBuilder = DeploymentConfigDataBuilder(dcDeployTag = "foobar:tag")
-        val rcBuilder = ReplicationControllerDataBuilder()
-        val arBuilder = AuroraResponseBuilder()
+        val replicationController = ReplicationControllerDataBuilder().build()
+        val imageTagResource = ImageTagResourceBuilder().build()
 
         every {
             imageRegistryService.findTagsByName(
                 listOf("docker-registry/group/name/sha256:123hash")
             )
-        } returns ImageTagResource(
-            auroraVersion = "4.0.0-b1.23.1-wingnut11-1.3.3",
-            timeline = ImageBuildTimeline(
-                Instant.now(), Instant.now()
-            ),
-            dockerDigest = "sha256:123hash",
-            requestUrl = "docker-registry/group/name/sha256:123hash",
-            dockerVersion = "1.13.1"
-        )
+        } returns listOf(imageTagResource)
 
-        val imageDetails = imageService.getImageDetails(dcBuilder.dcNamespace, "foobar", rcBuilder.build().spec.template.spec.containers[0].image)
+        val imageDetails = imageService.getImageDetails(
+            DeploymentConfigDataBuilder(dcDeployTag = "foobar:tag").dcNamespace,
+            "foobar",
+            replicationController.spec.template.spec.containers[0].image
+        )
         assertThat(imageDetails?.dockerImageReference).isEqualTo("docker-registry/group/name@sha256:123hash")
-        assertThat(imageDetails?.auroraVersion).isEqualTo(arBuilder.build().items[0].auroraVersion)
+        assertThat(imageDetails?.auroraVersion).isEqualTo(imageTagResource.auroraVersion)
     }
 
     @Test

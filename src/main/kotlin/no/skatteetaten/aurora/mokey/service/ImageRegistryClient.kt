@@ -84,7 +84,11 @@ class ImageRegistryClient(
         .retryBackoff(3, Duration.ofMillis(200))
         .handleGenericError()
         .flatMapMany {
-            it.items.map { item -> objectMapper.convertValue(item, T::class.java) }.toFlux<T>()
+            if (it.success) {
+                it.items.map { item -> objectMapper.convertValue(item, T::class.java) }.toFlux<T>()
+            } else {
+                ServiceException(message = it.message).toFlux()
+            }
         }
 
     fun <T> Mono<T>.handleGenericError(): Mono<T> =

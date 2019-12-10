@@ -13,7 +13,7 @@ class ImageService(val openShiftService: OpenShiftService, val imageRegistryServ
         image: String
     ): ImageDetails? {
         val imageTagResource = image.replace("@", "/").let { sha ->
-            imageRegistryService.findTagsByName(listOf(sha))
+            imageRegistryService.findTagsByName(listOf(sha)).first()
         }
 
         val env: Map<String, String> = mapOf(
