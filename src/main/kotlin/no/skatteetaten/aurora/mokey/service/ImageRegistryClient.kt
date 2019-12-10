@@ -1,17 +1,20 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
+import mu.KotlinLogging
+import no.skatteetaten.aurora.mokey.ServiceTypes
+import no.skatteetaten.aurora.mokey.TargetService
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.reactive.function.client.bodyToMono
-import mu.KotlinLogging
-import no.skatteetaten.aurora.mokey.ServiceTypes
-import no.skatteetaten.aurora.mokey.TargetService
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import uk.q3c.rest.hal.HalResource
 import java.time.Duration
@@ -64,24 +67,27 @@ private val logger = KotlinLogging.logger { }
 @Service
 class ImageRegistryClient(
     @TargetService(ServiceTypes.CANTUS)
-    val webClient: WebClient
+    val webClient: WebClient,
+    val objectMapper: ObjectMapper
 ) {
 
-    fun <T : HalResource?> post(path: String, body: Any): Mono<AuroraResponse<T>> {
-        return execute {
-            it.post().uri(path).body(BodyInserters.fromObject(body))
+    final inline fun <reified T : Any> post(path: String, body: Any): Flux<T> =
+        execute {
+            post().uri(path).body(BodyInserters.fromObject(body))
         }
-    }
 
-    private inline fun <reified T : Any> execute(
-        fn: (WebClient) -> WebClient.RequestHeadersSpec<*>
-    ): Mono<T> = fn(webClient)
+    final inline fun <reified T : Any> execute(
+        fn: WebClient.() -> WebClient.RequestHeadersSpec<*>
+    ): Flux<T> = fn(webClient)
         .retrieve()
-        .bodyToMono<T>()
+        .bodyToMono<AuroraResponse<HalResource>>()
         .retryBackoff(3, Duration.ofMillis(200))
         .handleGenericError()
+        .flatMapMany {
+            it.items.map { item -> objectMapper.convertValue(item, T::class.java) }.toFlux<T>()
+        }
 
-    private fun <T> Mono<T>.handleGenericError(): Mono<T> =
+    fun <T> Mono<T>.handleGenericError(): Mono<T> =
         this.handleError("cantus")
             .switchIfEmpty(ServiceException("Empty resource from Image Registry").toMono())
 

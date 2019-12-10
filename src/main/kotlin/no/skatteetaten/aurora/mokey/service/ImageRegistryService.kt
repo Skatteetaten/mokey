@@ -9,10 +9,10 @@ class ImageRegistryService(
 ) {
     fun findTagsByName(
         tagUrls: List<String>
-    ): AuroraResponse<ImageTagResource> {
+    ): ImageTagResource {
         return imageRegistryClient.post<ImageTagResource>(
             "/manifest",
             TagUrlsWrapper(tagUrls)
-        ).block(Duration.ofSeconds(5))!!
+        ).blockFirst(Duration.ofSeconds(5))!!
     }
 }

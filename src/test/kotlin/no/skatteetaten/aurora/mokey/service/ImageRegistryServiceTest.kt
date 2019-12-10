@@ -3,9 +3,9 @@ package no.skatteetaten.aurora.mokey.service
 import assertk.assertThat
 import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
-import assertk.assertions.isTrue
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -21,7 +21,7 @@ import org.springframework.web.reactive.function.client.WebClient
 class ImageRegistryServiceTest {
     private val server = MockWebServer()
     private val webClient = WebClient.create(server.url("/").toString())
-    private val imageRegistryClient = ImageRegistryClient(webClient)
+    private val imageRegistryClient = ImageRegistryClient(webClient, jacksonObjectMapper().registerModule(JavaTimeModule()))
     private val imageRegistryService = ImageRegistryService(imageRegistryClient)
     private val tagUrls = listOf("localhost/sha256:1", "localhost/sha256:2")
 
@@ -39,13 +39,7 @@ class ImageRegistryServiceTest {
                 .setBody(manifest)
         ) {
             val response = imageRegistryService.findTagsByName(tagUrls)
-
             assertThat(response).isNotNull()
-            assertThat(response.success).isTrue()
-            assertThat(response.items).isNotEmpty()
-
-            val resource = response.items[0]
-            assertThat(resource).isNotNull()
         }
     }
 

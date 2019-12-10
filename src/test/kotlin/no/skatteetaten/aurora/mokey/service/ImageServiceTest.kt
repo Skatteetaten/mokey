@@ -14,6 +14,7 @@ import no.skatteetaten.aurora.mokey.ImageStreamTagDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 class ImageServiceTest {
 
@@ -37,7 +38,15 @@ class ImageServiceTest {
             imageRegistryService.findTagsByName(
                 listOf("docker-registry/group/name/sha256:123hash")
             )
-        } returns arBuilder.build()
+        } returns ImageTagResource(
+            auroraVersion = "4.0.0-b1.23.1-wingnut11-1.3.3",
+            timeline = ImageBuildTimeline(
+                Instant.now(), Instant.now()
+            ),
+            dockerDigest = "sha256:123hash",
+            requestUrl = "docker-registry/group/name/sha256:123hash",
+            dockerVersion = "1.13.1"
+        )
 
         val imageDetails = imageService.getImageDetails(dcBuilder.dcNamespace, "foobar", rcBuilder.build().spec.template.spec.containers[0].image)
         assertThat(imageDetails?.dockerImageReference).isEqualTo("docker-registry/group/name@sha256:123hash")
