@@ -163,6 +163,7 @@ class ApplicationDataServiceOpenShift(
 
         // it is a lot faster to fetch from imageStreamTag from ocp rather then from cantus if it is up to date
         val imageDetails = if (runningRc == latestRc || runningRc == null) {
+            // gets ImageDetails for the first Image that is found in the ImageChange triggers for the given DeploymentConfig
             imageService.getImageDetailsFromImageStream(dc.metadata.namespace, dc.metadata.name, "default")
         } else {
             val image = runningRc.spec.template.spec.containers[0].image
