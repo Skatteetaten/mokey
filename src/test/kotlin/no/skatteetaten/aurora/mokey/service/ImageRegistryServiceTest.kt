@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import assertk.assertThat
+import assertk.assertions.cause
 import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
@@ -21,7 +22,8 @@ import org.springframework.web.reactive.function.client.WebClient
 class ImageRegistryServiceTest {
     private val server = MockWebServer()
     private val webClient = WebClient.create(server.url("/").toString())
-    private val imageRegistryClient = ImageRegistryClient(webClient, jacksonObjectMapper().registerModule(JavaTimeModule()))
+    private val imageRegistryClient =
+        ImageRegistryClient(webClient, jacksonObjectMapper().registerModule(JavaTimeModule()))
     private val imageRegistryService = ImageRegistryService(imageRegistryClient)
     private val tagUrls = listOf("localhost/sha256:1", "localhost/sha256:2")
 
@@ -40,6 +42,26 @@ class ImageRegistryServiceTest {
         ) {
             val response = imageRegistryService.findTagsByName(tagUrls)
             assertThat(response).isNotNull()
+        }
+    }
+
+    @Test
+    fun `find tags by name, response contains failure`() {
+        server.execute(
+            MockResponse()
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody(
+                    jacksonObjectMapper().writeValueAsString(
+                        AuroraResponse<ImageTagResource>(
+                            success = false,
+                            message = "test failure"
+                        )
+                    )
+                )
+        ) {
+            assertThat {
+                imageRegistryService.findTagsByName(tagUrls)
+            }.isFailure().cause().isNotNull().isInstanceOf(ServiceException::class)
         }
     }
 

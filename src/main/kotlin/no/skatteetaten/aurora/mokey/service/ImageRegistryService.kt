@@ -10,9 +10,8 @@ class ImageRegistryService(
     fun findTagsByName(
         tagUrls: List<String>
     ): List<ImageTagResource> {
-        return imageRegistryClient.post<ImageTagResource>(
-            "/manifest",
-            TagUrlsWrapper(tagUrls)
-        ).collectList().block(Duration.ofSeconds(5))!!
+        return imageRegistryClient.post<ImageTagResource>("/manifest", TagUrlsWrapper(tagUrls))
+            .collectList()
+            .block(Duration.ofSeconds(5))!!
     }
 }
