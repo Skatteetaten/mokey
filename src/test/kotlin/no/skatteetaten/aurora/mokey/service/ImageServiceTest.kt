@@ -5,7 +5,7 @@ import assertk.assertions.isEqualTo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.fabric8.openshift.api.model.Image
-import io.mockk.clearMocks
+import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
@@ -24,7 +24,7 @@ class ImageServiceTest {
 
     @BeforeEach
     fun setUp() {
-        clearMocks(openShiftService)
+        clearAllMocks()
     }
 
     @Test
