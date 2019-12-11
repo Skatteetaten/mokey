@@ -87,7 +87,7 @@ class ImageRegistryClient(
             if (it.success) {
                 it.items.map { item -> objectMapper.convertValue(item, T::class.java) }.toFlux<T>()
             } else {
-                ServiceException(message = it.message).toFlux()
+                throw ServiceException(message = it.message)
             }
         }
 
