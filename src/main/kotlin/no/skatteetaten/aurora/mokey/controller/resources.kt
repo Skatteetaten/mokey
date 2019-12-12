@@ -1,28 +1,11 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonProperty
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
-import org.springframework.hateoas.Link
-import org.springframework.hateoas.ResourceSupport
+import uk.q3c.rest.hal.HalResource
+import uk.q3c.rest.hal.Links
 import java.time.Instant
-import java.util.HashMap
 import kotlin.reflect.KClass
-
-abstract class HalResource : ResourceSupport() {
-
-    private val embedded = HashMap<String, ResourceSupport>()
-
-    val embeddedResources: Map<String, ResourceSupport>
-        @JsonInclude(JsonInclude.Include.NON_EMPTY)
-        @JsonProperty("_embedded")
-        get() = embedded
-
-    fun embedResource(relationship: String, resource: ResourceSupport) {
-
-        embedded[relationship] = resource
-    }
-}
 
 abstract class IdentifiedHalResource(val identifier: String?) : HalResource()
 
@@ -77,7 +60,7 @@ class ApplicationDeploymentDetailsResource(
     val dependencies: Map<String, String> = emptyMap(),
     val applicationDeploymentCommand: ApplicationDeploymentCommandResource,
     val deployDetails: DeployDetailsResource?,
-    val serviceLinks: Map<String, Link>
+    val serviceLinks: Links
 ) : IdentifiedHalResource(id)
 
 data class ImageDetailsResource(
@@ -105,7 +88,7 @@ class PodResource(
     val status: String = phase,
     val ready: Boolean = containers.all { it.ready },
     val restartCount: Int = containers.sumBy { it.restartCount }
-) : ResourceSupport()
+) : HalResource()
 
 data class DeployDetailsResource(
     val targetReplicas: Int,
@@ -160,5 +143,5 @@ data class ManagementEndpointErrorResource(
     val message: String? = null
 )
 
-fun <T : ResourceSupport> resourceClassNameToRelName(kClass: KClass<T>): String =
+fun <T : HalResource> resourceClassNameToRelName(kClass: KClass<T>): String =
     kClass.simpleName!!.replace("Resource$".toRegex(), "")

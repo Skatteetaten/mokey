@@ -4,22 +4,23 @@ import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.StatusCheckReport
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import org.springframework.hateoas.ExposesResourceFor
-import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
-import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import uk.q3c.rest.hal.HalLink
 
 @RestController
-@ExposesResourceFor(ApplicationDeploymentResource::class)
-@RequestMapping("/api/applicationdeployment")
+@RequestMapping(ApplicationDeploymentController.path)
 class ApplicationDeploymentController(
     private val applicationDataService: ApplicationDataService,
     private val assembler: ApplicationDeploymentResourceAssembler
 ) {
+
+    companion object {
+        const val path = "/api/applicationdeployment"
+    }
 
     @GetMapping("/{id}")
     fun get(@PathVariable id: String): ApplicationDeploymentResource {
@@ -32,10 +33,7 @@ class ApplicationDeploymentController(
 
 @Component
 class ApplicationDeploymentResourceAssembler :
-    ResourceAssemblerSupport<ApplicationPublicData, ApplicationDeploymentResource>(
-        ApplicationDeploymentController::class.java,
-        ApplicationDeploymentResource::class.java
-    ) {
+    ResourceAssemblerSupport<ApplicationPublicData, ApplicationDeploymentResource>() {
 
     override fun toResource(applicationData: ApplicationPublicData): ApplicationDeploymentResource {
         val environment = Environment.fromNamespace(applicationData.namespace, applicationData.affiliation)
@@ -57,17 +55,11 @@ class ApplicationDeploymentResourceAssembler :
             dockerImageRepo = applicationData.dockerImageRepo,
             message = applicationData.message
         ).apply {
-            add(linkTo(ApplicationDeploymentController::class.java).slash(applicationData.applicationDeploymentId).withSelfRel())
-            add(
-                linkTo(ApplicationDeploymentDetailsController::class.java)
-                    .slash(applicationData.applicationDeploymentId)
-                    .withRel(resourceClassNameToRelName(ApplicationDeploymentDetailsResource::class))
-            )
-            add(
-                linkTo(ApplicationController::class.java)
-                    .slash(applicationData.applicationId)
-                    .withRel(resourceClassNameToRelName(ApplicationResource::class))
-            )
+            link(resourceClassNameToRelName(ApplicationDeploymentDetailsResource::class),
+                HalLink("${ApplicationDeploymentDetailsController.path}/${applicationData.applicationDeploymentId}"))
+
+            link(resourceClassNameToRelName(ApplicationResource::class),
+                HalLink("${ApplicationController.path}/${applicationData.applicationId}"))
         }
     }
 

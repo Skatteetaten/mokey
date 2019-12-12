@@ -17,8 +17,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.core.io.Resource
-import org.springframework.hateoas.config.EnableHypermediaSupport
-import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType.HAL
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
@@ -45,7 +43,6 @@ private val logger = KotlinLogging.logger {}
 
 @Configuration
 @EnableScheduling
-@EnableHypermediaSupport(type = [HAL])
 @Import(OpenShiftClientConfig::class)
 class ApplicationConfig : BeanPostProcessor {
 

@@ -2,9 +2,6 @@ package no.skatteetaten.aurora.mokey.controller
 
 import no.skatteetaten.aurora.mokey.model.GroupedApplicationData
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import org.springframework.hateoas.ExposesResourceFor
-import org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo
-import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -13,12 +10,15 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@ExposesResourceFor(ApplicationResource::class)
-@RequestMapping("/api/application")
+@RequestMapping(ApplicationController.path)
 class ApplicationController(
     private val applicationDataService: ApplicationDataService,
     private val assembler: ApplicationResourceAssembler
 ) {
+
+    companion object {
+        const val path = "/api/application"
+    }
 
     @GetMapping("/{applicationId}")
     fun getApplication(@PathVariable applicationId: String): ApplicationResource? =
@@ -36,26 +36,17 @@ class ApplicationController(
 }
 
 @Component
-class ApplicationResourceAssembler :
-    ResourceAssemblerSupport<GroupedApplicationData, ApplicationResource>(
-        ApplicationController::class.java,
-        ApplicationResource::class.java
-    ) {
+class ApplicationResourceAssembler : ResourceAssemblerSupport<GroupedApplicationData, ApplicationResource>() {
 
     private val applicationDeploymentAssembler = ApplicationDeploymentResourceAssembler()
 
     override fun toResource(data: GroupedApplicationData): ApplicationResource {
-
         val applicationDeployments = data.applications.map(applicationDeploymentAssembler::toResource)
-
         return ApplicationResource(
             data.applicationId,
             data.name,
             applicationDeployments
-        ).apply {
-            data.applicationId?.let {
-                add(linkTo(ApplicationController::class.java).slash(it).withSelfRel())
-            }
-        }
+        )
     }
+
 }

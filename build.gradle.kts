@@ -16,7 +16,6 @@ plugins {
     id("no.skatteetaten.gradle.aurora") version "3.1.0"
 }
 
-extra["spring-hateoas.version"] = "0.24.0.RELEASE"
 extra["jackson-bom.version"] = "2.10.0.pr3"
 
 dependencies {
@@ -26,7 +25,6 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.1")
-    implementation("org.springframework.boot:spring-boot-starter-hateoas")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")

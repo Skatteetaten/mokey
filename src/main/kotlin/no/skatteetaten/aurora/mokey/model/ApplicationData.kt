@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import mu.KotlinLogging
+import uk.q3c.rest.hal.HalResource
 import java.time.Instant
 
 data class GroupedApplicationData(
@@ -45,7 +46,7 @@ data class ApplicationPublicData(
     val paused: Boolean = false,
     val message: String? = null,
     val environment: String
-)
+) : HalResource()
 
 data class ApplicationData(
     val booberDeployId: String? = null,
