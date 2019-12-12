@@ -48,5 +48,4 @@ class ApplicationResourceAssembler : ResourceAssemblerSupport<GroupedApplication
             applicationDeployments
         )
     }
-
 }

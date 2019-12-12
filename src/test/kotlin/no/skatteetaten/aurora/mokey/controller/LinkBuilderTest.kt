@@ -2,14 +2,7 @@ package no.skatteetaten.aurora.mokey.controller
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
-import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
-import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import org.junit.jupiter.api.Test
-import java.nio.charset.Charset
 
 class LinkBuilderTest {
 

@@ -55,7 +55,6 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             ?.map { createServiceLink(applicationData, it.value, it.key) }?.toMap()
             ?: emptyMap()
 
-
         return ApplicationDeploymentDetailsResource(
             id = applicationData.applicationDeploymentId,
             updatedBy = applicationData.updatedBy,
