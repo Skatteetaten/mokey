@@ -10,6 +10,7 @@ import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deployTag
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
+import no.skatteetaten.aurora.mokey.extensions.imageStreamNameAndTag
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.extensions.updatedBy
 import no.skatteetaten.aurora.mokey.model.ApplicationData
@@ -182,7 +183,9 @@ class ApplicationDataServiceOpenShift(
         // it is a lot faster to fetch from imageStreamTag from ocp rather then from cantus if it is up to date
         val imageDetails = if (runningRc == latestRc || runningRc == null) {
             // gets ImageDetails for the first Image that is found in the ImageChange triggers for the given DeploymentConfig
-            imageService.getImageDetailsFromImageStream(dc.metadata.namespace, dc.metadata.name, "default")
+            dc.imageStreamNameAndTag?.let {
+                imageService.getImageDetailsFromImageStream(dc.metadata.namespace, it.first, it.second)
+            }
         } else {
             val image = runningRc.spec.template.spec.containers[0].image
             imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)

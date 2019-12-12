@@ -77,9 +77,8 @@ class ApplicationDataServiceOpenShiftTest {
         every {
             imageService.getImageDetailsFromImageStream(
                 dc.metadata.namespace,
-                dc.metadata.name,
-                "default"
-
+                "name",
+                "tag"
             )
         } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
@@ -116,8 +115,8 @@ class ApplicationDataServiceOpenShiftTest {
         every {
             imageService.getImageDetailsFromImageStream(
                 dc.metadata.namespace,
-                dc.metadata.name,
-                "default"
+                "name",
+                "tag"
             )
         } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
