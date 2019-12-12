@@ -114,8 +114,10 @@ class ApplicationDataServiceOpenShift(
             .firstOrNull { it?.isRunning() ?: false }
     }
 
-    private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
-        logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
+    private fun applicationPublicData(
+        applicationDeployment: ApplicationDeployment,
+        auroraStatus: AuroraStatus
+    ): ApplicationPublicData {
         val affiliation = applicationDeployment.metadata.affiliation
         val namespace = applicationDeployment.metadata.namespace
         val openShiftName = applicationDeployment.metadata.name
@@ -124,30 +126,46 @@ class ApplicationDataServiceOpenShift(
         val applicationName = applicationDeployment.spec.applicationName
             ?: throw OpenShiftObjectException("applicationName was not set for deployment $namespace/$openShiftName")
 
+        return ApplicationPublicData(
+            applicationId = applicationDeployment.spec.applicationId,
+            applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
+            auroraStatus = auroraStatus,
+            applicationName = applicationName,
+            applicationDeploymentName = applicationDeploymentName,
+            namespace = namespace,
+            affiliation = affiliation,
+            deployTag = applicationDeployment.spec.deployTag ?: "",
+            releaseTo = applicationDeployment.spec.releaseTo,
+            message = applicationDeployment.spec.message,
+            environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
+        )
+    }
+
+    private fun applicationData(
+        applicationDeployment: ApplicationDeployment,
+        applicationPublicData: ApplicationPublicData
+    ): ApplicationData {
         val databases = applicationDeployment.spec.databases ?: listOf()
+
+        return ApplicationData(
+            booberDeployId = applicationDeployment.metadata.booberDeployId,
+            managementPath = applicationDeployment.spec.managementPath,
+            deploymentCommand = applicationDeployment.spec.command,
+            databases = databases,
+            publicData = applicationPublicData
+        )
+    }
+
+    private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
+        logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
+        val namespace = applicationDeployment.metadata.namespace
+        val openShiftName = applicationDeployment.metadata.name
 
         val dc = openshiftService.dc(namespace, openShiftName)
         if (dc == null) {
             val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
-            return ApplicationData(
-                booberDeployId = applicationDeployment.metadata.booberDeployId,
-                managementPath = applicationDeployment.spec.managementPath,
-                deploymentCommand = applicationDeployment.spec.command,
-                databases = databases,
-                publicData = ApplicationPublicData(
-                    applicationId = applicationDeployment.spec.applicationId,
-                    applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-                    auroraStatus = auroraStatus,
-                    applicationName = applicationName,
-                    applicationDeploymentName = applicationDeploymentName,
-                    namespace = namespace,
-                    affiliation = affiliation,
-                    deployTag = applicationDeployment.spec.deployTag ?: "",
-                    releaseTo = applicationDeployment.spec.releaseTo,
-                    message = applicationDeployment.spec.message,
-                    environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
-                )
-            )
+            val apd = applicationPublicData(applicationDeployment, auroraStatus)
+            return applicationData(applicationDeployment, apd)
         }
 
         val latestRc = openshiftService.rc(namespace, "${dc.metadata.name}-${dc.status.latestVersion}")
@@ -179,33 +197,23 @@ class ApplicationDataServiceOpenShift(
         val deployTag = deployDetails.deployTag.takeIf { !it.isNullOrEmpty() }
             ?: (applicationDeployment.spec.deployTag?.let { it } ?: "")
 
-        return ApplicationData(
-            booberDeployId = applicationDeployment.metadata.booberDeployId,
-            managementPath = applicationDeployment.spec.managementPath,
+        val apd = applicationPublicData(
+            applicationDeployment,
+            auroraStatus
+        ).copy(
+            auroraVersion = imageDetails?.auroraVersion,
+            dockerImageRepo = imageDetails?.dockerImageRepo,
+            deployTag = deployTag
+        )
+
+        return applicationData(applicationDeployment, apd).copy(
             pods = pods,
             imageDetails = imageDetails,
-            deployDetails = deployDetails,
             addresses = applicationAddresses,
-            databases = databases,
-            sprocketDone = dc.sprocketDone,
-            updatedBy = dc.updatedBy,
             splunkIndex = splunkIndex,
-            deploymentCommand = applicationDeployment.spec.command,
-            publicData = ApplicationPublicData(
-                applicationId = applicationDeployment.spec.applicationId,
-                applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-                auroraStatus = auroraStatus,
-                applicationName = applicationName,
-                applicationDeploymentName = applicationDeploymentName,
-                namespace = namespace,
-                affiliation = affiliation,
-                auroraVersion = imageDetails?.auroraVersion,
-                deployTag = deployTag,
-                dockerImageRepo = imageDetails?.dockerImageRepo,
-                releaseTo = applicationDeployment.spec.releaseTo,
-                message = applicationDeployment.spec.message,
-                environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
-            )
+            deployDetails = deployDetails,
+            sprocketDone = dc.sprocketDone,
+            updatedBy = dc.updatedBy
         )
     }
 
