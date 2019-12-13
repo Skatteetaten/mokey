@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.ReplicationController
+import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -174,7 +175,7 @@ class ApplicationDataServiceOpenShift(
         val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
             ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
 
-        val deployDetails = createDeployDetails(dc.spec.paused, runningRc, latestRc?.deploymentPhase)
+        val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
 
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
         // every pods has a name label we have to use selector from DeploymentConfig.
@@ -221,20 +222,20 @@ class ApplicationDataServiceOpenShift(
     }
 
     private fun createDeployDetails(
-        paused: Boolean?,
+        dc: DeploymentConfig,
         runningRc: ReplicationController?,
         deploymentPhase: String?
     ): DeployDetails {
         return DeployDetails(
-            targetReplicas = runningRc?.status?.replicas ?: 0,
-            availableReplicas = runningRc?.status?.availableReplicas ?: 0,
+            targetReplicas = dc.spec.replicas,
+            availableReplicas = dc.status.availableReplicas ?: 0,
             deployment = runningRc?.metadata?.name,
             deployTag = runningRc?.deployTag,
-            paused = paused ?: false,
+            paused = dc.spec.paused ?: false,
             phase = deploymentPhase
         )
     }
 
     fun ReplicationController.isRunning() =
-        this.deploymentPhase == "Complete" && this.status.replicas?.let { it > 0 } ?: false
+        this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
 }
