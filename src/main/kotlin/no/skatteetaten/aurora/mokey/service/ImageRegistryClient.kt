@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
+import java.time.Duration
+import java.time.Instant
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.ServiceTypes
 import no.skatteetaten.aurora.mokey.TargetService
@@ -17,8 +19,6 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import uk.q3c.rest.hal.HalResource
-import java.time.Duration
-import java.time.Instant
 
 data class ImageTagResource(
     val auroraVersion: String? = null,

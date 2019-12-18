@@ -1,11 +1,11 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import java.time.Instant
+import kotlin.reflect.KClass
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
-import java.time.Instant
-import kotlin.reflect.KClass
 
 abstract class IdentifiedHalResource(val identifier: String?) : HalResource()
 

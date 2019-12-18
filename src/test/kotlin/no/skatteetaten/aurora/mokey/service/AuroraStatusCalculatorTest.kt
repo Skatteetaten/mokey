@@ -2,6 +2,8 @@ package no.skatteetaten.aurora.mokey.service
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import java.time.Duration
+import java.time.Instant
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.DOWN
@@ -27,8 +29,6 @@ import no.skatteetaten.aurora.mokey.service.auroraStatus.TooFewPodsCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.TooManyPodsCheck
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.Duration
-import java.time.Instant
 
 class AuroraStatusCalculatorTest {
 

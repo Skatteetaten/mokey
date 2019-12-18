@@ -2,33 +2,30 @@ import com.adarshr.gradle.testlogger.theme.ThemeType
 
 plugins {
     id("org.springframework.cloud.contract")
-    id("org.jetbrains.kotlin.jvm") version "1.3.50"
-    id("org.jetbrains.kotlin.plugin.spring") version "1.3.50"
-    id("org.jlleitschuh.gradle.ktlint") version "8.2.0"
+    id("org.jetbrains.kotlin.jvm") version "1.3.61"
+    id("org.jetbrains.kotlin.plugin.spring") version "1.3.61"
+    id("org.jlleitschuh.gradle.ktlint") version "9.1.1"
     id("org.sonarqube") version "2.7.1"
-    id("org.asciidoctor.convert") version "2.3.0"
-    id("org.springframework.boot") version "2.1.8.RELEASE"
-    id("com.gorylenko.gradle-git-properties") version "2.1.0"
-    id("com.github.ben-manes.versions") version "0.25.0"
-    id("se.patrikerdes.use-latest-versions") version "0.2.12"
-    id("com.adarshr.test-logger") version "1.7.0"
+    id("org.asciidoctor.convert") version "2.4.0"
+    id("org.springframework.boot") version "2.2.2.RELEASE"
+    id("com.gorylenko.gradle-git-properties") version "2.2.0"
+    id("com.github.ben-manes.versions") version "0.27.0"
+    id("se.patrikerdes.use-latest-versions") version "0.2.13"
+    id("com.adarshr.test-logger") version "2.0.0"
 
-    id("no.skatteetaten.gradle.aurora") version "3.1.0"
+    id("no.skatteetaten.gradle.aurora") version "3.2.0"
 }
 
-extra["jackson-bom.version"] = "2.10.0.pr3"
-
 dependencies {
-    implementation("com.squareup.okhttp3:okhttp:4.2.0")
-    implementation("com.fkorotkov:kubernetes-dsl:2.2")
-    testImplementation("io.fabric8:openshift-server-mock:4.5.1")
+    implementation("com.squareup.okhttp3:okhttp:3.14.4")
+    implementation("com.fkorotkov:kubernetes-dsl:3.0")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.3")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("io.projectreactor.addons:reactor-extra:3.2.3.RELEASE")
+    implementation("io.projectreactor.addons:reactor-extra:3.3.1.RELEASE")
 
     implementation("net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.7.1")
 

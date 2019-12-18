@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
+import java.util.regex.Pattern
 import no.skatteetaten.aurora.mokey.service.OpenShiftService
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
@@ -7,7 +8,6 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClientResponseException
-import java.util.regex.Pattern
 
 @Component
 class BearerAuthenticationManager(private val openShiftService: OpenShiftService) : AuthenticationManager {

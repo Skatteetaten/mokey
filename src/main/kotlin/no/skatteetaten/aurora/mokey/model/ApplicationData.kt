@@ -2,9 +2,9 @@ package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import java.time.Instant
 import mu.KotlinLogging
 import uk.q3c.rest.hal.HalResource
-import java.time.Instant
 
 data class GroupedApplicationData(
     val applicationId: String?,

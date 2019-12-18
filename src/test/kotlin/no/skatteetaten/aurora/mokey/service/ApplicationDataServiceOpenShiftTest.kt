@@ -10,6 +10,8 @@ import io.fabric8.openshift.api.model.Project
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
+import java.net.URI
+import java.time.Instant
 import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
@@ -24,8 +26,6 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.net.URI
-import java.time.Instant
 
 class ApplicationDataServiceOpenShiftTest {
 

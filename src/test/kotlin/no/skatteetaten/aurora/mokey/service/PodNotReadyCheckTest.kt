@@ -2,6 +2,8 @@ package no.skatteetaten.aurora.mokey.service
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import java.time.Duration
+import java.time.Instant
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
@@ -9,8 +11,6 @@ import no.skatteetaten.aurora.mokey.service.auroraStatus.PodNotReadyCheck
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
-import java.time.Duration
-import java.time.Instant
 
 val testExcerpt = OpenShiftContainerExcerpt(
     name = "name-java",

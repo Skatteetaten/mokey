@@ -9,12 +9,12 @@ import assertk.assertions.isNotNull
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.search.MeterNotFoundException
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import java.time.Instant
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.time.Instant
 
 class ApplicationStatusRegistryTest {
 

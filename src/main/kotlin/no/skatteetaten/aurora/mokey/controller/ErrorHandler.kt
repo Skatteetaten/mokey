@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import java.lang.Exception
 import no.skatteetaten.aurora.mokey.service.NoAccessException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -9,7 +10,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.context.request.WebRequest
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
-import java.lang.Exception
 
 @ControllerAdvice
 class ErrorHandler : ResponseEntityExceptionHandler() {
