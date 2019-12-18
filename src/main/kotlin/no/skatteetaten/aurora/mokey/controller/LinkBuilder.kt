@@ -130,7 +130,7 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
         }.toMap()
     }
 
-    fun createMokeyLink(rel: String, href: String) : Link {
+    fun createMokeyLink(rel: String, href: String): Link {
         val baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString()
         return Link(rel, "$baseUrl$href")
     }
