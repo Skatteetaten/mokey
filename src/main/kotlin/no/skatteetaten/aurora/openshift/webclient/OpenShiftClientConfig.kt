@@ -26,6 +26,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.util.StreamUtils
+import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.http.client.HttpClient
 import reactor.netty.tcp.SslProvider
@@ -48,6 +49,9 @@ class OpenShiftClientConfig(@Value("\${spring.application.name}") val applicatio
     ): WebClient {
         val b = builder
             .baseUrl(openshiftUrl)
+            .exchangeStrategies(ExchangeStrategies.builder().codecs { it.defaultCodecs().apply {
+                maxInMemorySize(-1) // unlimited
+            } }.build())
             .defaultHeaders(applicationName)
             .clientConnector(ReactorClientHttpConnector(HttpClient.from(tcpClient).compress(true)))
 

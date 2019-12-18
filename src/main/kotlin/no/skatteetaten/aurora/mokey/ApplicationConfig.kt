@@ -28,6 +28,7 @@ import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 
 enum class ServiceTypes {
@@ -88,6 +89,9 @@ class ApplicationConfig : BeanPostProcessor {
         logger.info("Configuring Cantus WebClient with base Url={}", cantusUrl)
         val b = webClientBuilder()
             .baseUrl(cantusUrl)
+            .exchangeStrategies(ExchangeStrategies.builder().codecs { it.defaultCodecs().apply {
+                maxInMemorySize(-1) // unlimited
+            } }.build())
 
         try {
             b.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer ${token.readContent()}")

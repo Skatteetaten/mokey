@@ -1,5 +1,3 @@
-@file:JvmName("ObjectMapperConfigurer")
-
 package no.skatteetaten.aurora.mokey
 
 import com.fasterxml.jackson.databind.ObjectMapper
