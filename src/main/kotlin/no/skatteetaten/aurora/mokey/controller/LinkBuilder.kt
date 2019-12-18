@@ -115,7 +115,7 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
     }
 
     // TODO: Should improve the way we create deep links to pods in the console.
-    fun openShiftConsoleLinks(pod: String, project: String): Map<String, String> {
+    fun openShiftConsoleLinks(pod: String, project: String): List<Link> {
         return listOf("details", "environment", "terminal", "events", "log").map {
             val url = UriComponentsBuilder
                 .newInstance()
@@ -126,8 +126,8 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
                 .queryParam("tab", it)
                 .build()
                 .toUriString()
-            "ocp console" to url
-        }.toMap()
+            Link("ocp_console_$it", url)
+        }
     }
 
     fun createMokeyLink(rel: String, href: String): Link {

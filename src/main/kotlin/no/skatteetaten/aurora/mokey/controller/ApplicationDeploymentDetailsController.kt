@@ -133,7 +133,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             }
 
             consoleLinks.forEach {
-                this.link(it.key, HalLink(it.value))
+                this.link(it)
             }
         }
     }
