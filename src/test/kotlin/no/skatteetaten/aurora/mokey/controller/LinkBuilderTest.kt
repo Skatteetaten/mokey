@@ -14,7 +14,7 @@ class LinkBuilderTest {
             "ServiceMetrics",
             mapOf("namespace" to "aurora", "name" to "mokey", "podName" to "mokey-1-acbea")
         )
-        assertThat(link.second).isEqualTo("http://metrics.skead.no/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-utv-ose&var-namespace=aurora&var-app=mokey&var-instance=mokey-1-acbea")
+        assertThat(link.href).isEqualTo("http://metrics.skead.no/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-utv-ose&var-namespace=aurora&var-app=mokey&var-instance=mokey-1-acbea")
     }
 
     @Test
@@ -30,7 +30,7 @@ class LinkBuilderTest {
                 "splunkIndex" to "openshift-test"
             )
         )
-        assertThat(link.second).isEqualTo("https://splunk.skead.no/en-GB/app/search/search?q=search%20index%3openshift-test%20application%3Dmokey")
+        assertThat(link.href).isEqualTo("https://splunk.skead.no/en-GB/app/search/search?q=search%20index%3openshift-test%20application%3Dmokey")
     }
 
 //    @Test

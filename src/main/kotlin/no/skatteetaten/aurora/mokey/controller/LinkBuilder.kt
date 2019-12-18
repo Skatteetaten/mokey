@@ -28,7 +28,7 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
                 .build().toUriString(), "ApplyResult"
         )
 
-    fun apply(deploymentCommand: ApplicationDeploymentCommand): Pair<String, String> {
+    fun apply(deploymentCommand: ApplicationDeploymentCommand): Link {
         val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
             .pathSegment("v1", "apply", deploymentCommand.auroraConfig.name)
             .queryParam("reference", deploymentCommand.auroraConfig.refName).build()
@@ -38,7 +38,7 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
         return createLink(uriComponents, "Apply")
     }
 
-    fun auroraConfigFile(deploymentCommand: ApplicationDeploymentCommand): Map<String, String> {
+    fun auroraConfigFile(deploymentCommand: ApplicationDeploymentCommand): List<Link> {
 
         val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
             .pathSegment("v1", "auroraconfig", deploymentCommand.auroraConfig.name, "{fileName}")
@@ -52,13 +52,13 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
                 .encode()
                 .toUriString()
 
-        return mapOf(
+        return listOf(
             createLink(currentLink, "AuroraConfigFileCurrent"),
             createLink(deployedLink, "AuroraConfigFileDeployed")
         )
     }
 
-    fun files(deploymentCommand: ApplicationDeploymentCommand): Map<String, String> {
+    fun files(deploymentCommand: ApplicationDeploymentCommand): List<Link> {
 
         val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
             .pathSegment("v1", "auroraconfig", deploymentCommand.auroraConfig.name)
@@ -74,13 +74,13 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
                 .encode()
                 .toUriString()
 
-        return mapOf(
+        return listOf(
             createLink(currentLink, "FilesCurrent"),
             createLink(deployedLink, "FilesDeployed")
         )
     }
 
-    fun deploymentSpec(deploymentCommand: ApplicationDeploymentCommand): Map<String, String> {
+    fun deploymentSpec(deploymentCommand: ApplicationDeploymentCommand): List<Link> {
         val overridesQueryParam = deploymentCommand.overrideFiles.takeIf { it.isNotEmpty() }?.let {
             jacksonObjectMapper().writeValueAsString(it)
         }
@@ -107,7 +107,7 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
                 .encode()
                 .toUriString()
 
-        return mapOf(
+        return listOf(
             createLink(currentLink, "DeploymentSpecCurrent"),
             createLink(deployedLink, "DeploymentSpecDeployed")
         )
@@ -129,9 +129,9 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
         }.toMap()
     }
 
-    fun createLink(linkString: String, rel: String, expandParams: Map<String, String> = mapOf()): Pair<String, String> {
+    fun createLink(linkString: String, rel: String, expandParams: Map<String, String> = mapOf()): Link {
         val expanded = (globalExpandParams + expandParams).entries
             .fold(linkString) { acc, e -> acc.replace("""{${e.key}}""", e.value) }
-        return rel to expanded
+        return Link(rel, expanded)
     }
 }

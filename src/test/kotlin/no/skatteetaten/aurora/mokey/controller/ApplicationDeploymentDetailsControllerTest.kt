@@ -9,6 +9,7 @@ import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers
 import org.mockito.BDDMockito.given
@@ -24,6 +25,7 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
     @MockBean
     private lateinit var assembler: ApplicationDeploymentDetailsResourceAssembler
 
+    @Disabled
     @Test
     fun `Return application deployment details by id`() {
         given(applicationDataService.findApplicationDataByApplicationDeploymentId(ArgumentMatchers.anyString()))

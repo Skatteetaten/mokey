@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.q3c.rest.hal.HalLink
-import uk.q3c.rest.hal.Links
 
 @RestController
 @RequestMapping(ApplicationDeploymentDetailsController.path)
@@ -52,8 +51,8 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
         val infoResponse = applicationData.firstInfoResponse
         val serviceLinks = applicationData.firstInfoResponse?.serviceLinks
-            ?.map { createServiceLink(applicationData, it.value, it.key) }?.toMap()
-            ?: emptyMap()
+            ?.map { createServiceLink(applicationData, it.value, it.key) }
+            ?: emptyList()
 
         return ApplicationDeploymentDetailsResource(
             id = applicationData.applicationDeploymentId,
@@ -66,11 +65,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             dependencies = infoResponse?.dependencies ?: emptyMap(),
             applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
             databases = applicationData.databases,
-            serviceLinks = Links().apply {
-                serviceLinks.entries.forEach {
-                    this.add(it.key, it.value)
-                }
-            }
+            serviceLinks = serviceLinks.toLinks()
         ).apply {
             createApplicationLinks(applicationData).forEach { (rel, href) ->
                 link(rel, HalLink(href))
@@ -192,40 +187,44 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             )
         )
 
-    private fun createApplicationLinks(applicationData: ApplicationData): Map<String, String> {
+    private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
 
-        val links = mutableMapOf<String, String>()
+        val links = mutableListOf<Link>()
 
         applicationData.addresses.forEach {
             val p = linkBuilder.createLink(it.url.toString(), it::class.simpleName!!)
-            links[p.first] = p.second
+            links.add(p)
         }
 
         val deploymentSpecLinks = linkBuilder.deploymentSpec(applicationData.deploymentCommand)
-        links.putAll(deploymentSpecLinks)
+        links.addAll(deploymentSpecLinks)
 
         val filesLinks = linkBuilder.files(applicationData.deploymentCommand)
-        links.putAll(filesLinks)
+        links.addAll(filesLinks)
 
         if (applicationData.booberDeployId != null) {
             val applyResultLink = linkBuilder.applyResult(
                 applicationData.deploymentCommand.auroraConfig.name,
                 applicationData.booberDeployId
             )
-            links[applyResultLink.first] = applyResultLink.second
+
+            links.add(applyResultLink)
         }
 
         val applyLink = linkBuilder.apply(deploymentCommand = applicationData.deploymentCommand)
-        links[applyLink.first] = applyLink.second
+        links.add(applyLink)
 
         val auroraConfigFileLinks = linkBuilder.auroraConfigFile(deploymentCommand = applicationData.deploymentCommand)
-        links.putAll(auroraConfigFileLinks)
+        links.addAll(auroraConfigFileLinks)
 
-        val applicationDeploymentRel = Pair("ApplicationDeployment", "${ApplicationDeploymentController.path}/${applicationData.applicationDeploymentId}")
-        links[applicationDeploymentRel.first] = applicationDeploymentRel.second
+        val applicationDeploymentRel = Link(
+            "ApplicationDeployment",
+            "${ApplicationDeploymentController.path}/${applicationData.applicationDeploymentId}"
+        )
+        links.add(applicationDeploymentRel)
 
-        val applicationRel = Pair("Application", "${ApplicationController.path}/${applicationData.applicationId}")
-        links[applicationRel.first] = applicationRel.second
+        val applicationRel = Link("Application", "${ApplicationController.path}/${applicationData.applicationId}")
+        links.add(applicationRel)
 
         return links
     }

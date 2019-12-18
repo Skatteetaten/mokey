@@ -2,6 +2,7 @@
 /build/
 .idea/
 /out/
+/logs/
 aoc
 *.iml
 rest-client.env.json
