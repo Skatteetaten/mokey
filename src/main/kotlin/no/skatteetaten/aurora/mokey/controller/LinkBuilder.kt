@@ -5,6 +5,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import org.springframework.web.util.UriComponentsBuilder
 
 @Configuration
@@ -127,6 +128,11 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
                 .toUriString()
             "ocp console" to url
         }.toMap()
+    }
+
+    fun createMokeyLink(rel: String, href: String) : Link {
+        val baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString()
+        return Link(rel, "$baseUrl$href")
     }
 
     fun createLink(linkString: String, rel: String, expandParams: Map<String, String> = mapOf()): Link {

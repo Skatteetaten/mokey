@@ -217,13 +217,13 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         val auroraConfigFileLinks = linkBuilder.auroraConfigFile(deploymentCommand = applicationData.deploymentCommand)
         links.addAll(auroraConfigFileLinks)
 
-        val applicationDeploymentRel = Link(
+        val applicationDeploymentRel = linkBuilder.createMokeyLink(
             "ApplicationDeployment",
             "${ApplicationDeploymentController.path}/${applicationData.applicationDeploymentId}"
         )
         links.add(applicationDeploymentRel)
 
-        val applicationRel = Link("Application", "${ApplicationController.path}/${applicationData.applicationId}")
+        val applicationRel = linkBuilder.createMokeyLink("Application", "${ApplicationController.path}/${applicationData.applicationId}")
         links.add(applicationRel)
 
         return links
