@@ -36,11 +36,13 @@ dependencies {
 
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    implementation("uk.q3c.rest:hal-kotlin:0.5.4.0.db32476")
+    implementation("com.jayway.jsonpath:json-path:2.4.0")
 
     testImplementation("io.mockk:mockk:1.9.3")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.19")
     testImplementation("com.nhaarman:mockito-kotlin:1.6.0")
-    testImplementation("no.skatteetaten.aurora:mockmvc-extensions-kotlin:1.0.0")
+    testImplementation("no.skatteetaten.aurora:mockmvc-extensions-kotlin:1.0.4")
 }
 
 testlogger {

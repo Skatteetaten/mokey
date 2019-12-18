@@ -27,6 +27,8 @@ integrations:
         url: "https://splunk.skead.no"
     metrics:
         url: "http://metrics.skead.no"
+    cantus:
+        url: "http://cantus"
 
 management:
     metrics:

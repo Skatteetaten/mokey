@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -10,6 +11,7 @@ import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deployTag
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
+import no.skatteetaten.aurora.mokey.extensions.imageStreamNameAndTag
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.extensions.updatedBy
 import no.skatteetaten.aurora.mokey.model.ApplicationData
@@ -107,8 +109,17 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
-    private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
-        logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
+    fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
+        val startingIndex = if (rcLatestVersion.toInt() == 1) 1 else rcLatestVersion.toInt() - 1
+        val range: IntProgression = startingIndex downTo 1
+        return range.asSequence().map { openshiftService.rc(namespace, "$name-$it") }
+            .firstOrNull { it?.isRunning() ?: false }
+    }
+
+    private fun applicationPublicData(
+        applicationDeployment: ApplicationDeployment,
+        auroraStatus: AuroraStatus
+    ): ApplicationPublicData {
         val affiliation = applicationDeployment.metadata.affiliation
         val namespace = applicationDeployment.metadata.namespace
         val openShiftName = applicationDeployment.metadata.name
@@ -117,95 +128,114 @@ class ApplicationDataServiceOpenShift(
         val applicationName = applicationDeployment.spec.applicationName
             ?: throw OpenShiftObjectException("applicationName was not set for deployment $namespace/$openShiftName")
 
+        return ApplicationPublicData(
+            applicationId = applicationDeployment.spec.applicationId,
+            applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
+            auroraStatus = auroraStatus,
+            applicationName = applicationName,
+            applicationDeploymentName = applicationDeploymentName,
+            namespace = namespace,
+            affiliation = affiliation,
+            deployTag = applicationDeployment.spec.deployTag ?: "",
+            releaseTo = applicationDeployment.spec.releaseTo,
+            message = applicationDeployment.spec.message,
+            environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
+        )
+    }
+
+    private fun applicationData(
+        applicationDeployment: ApplicationDeployment,
+        applicationPublicData: ApplicationPublicData
+    ): ApplicationData {
         val databases = applicationDeployment.spec.databases ?: listOf()
+
+        return ApplicationData(
+            booberDeployId = applicationDeployment.metadata.booberDeployId,
+            managementPath = applicationDeployment.spec.managementPath,
+            deploymentCommand = applicationDeployment.spec.command,
+            databases = databases,
+            publicData = applicationPublicData
+        )
+    }
+
+    private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
+        logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
+        val namespace = applicationDeployment.metadata.namespace
+        val openShiftName = applicationDeployment.metadata.name
 
         val dc = openshiftService.dc(namespace, openShiftName)
         if (dc == null) {
             val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
-            return ApplicationData(
-                booberDeployId = applicationDeployment.metadata.booberDeployId,
-                managementPath = applicationDeployment.spec.managementPath,
-                deploymentCommand = applicationDeployment.spec.command,
-                databases = databases,
-                publicData = ApplicationPublicData(
-                    applicationId = applicationDeployment.spec.applicationId,
-                    applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-                    auroraStatus = auroraStatus,
-                    applicationName = applicationName,
-                    applicationDeploymentName = applicationDeploymentName,
-                    namespace = namespace,
-                    affiliation = affiliation,
-                    deployTag = applicationDeployment.spec.deployTag ?: "",
-                    releaseTo = applicationDeployment.spec.releaseTo,
-                    message = applicationDeployment.spec.message,
-                    environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
-                )
-            )
+            val apd = applicationPublicData(applicationDeployment, auroraStatus)
+            return applicationData(applicationDeployment, apd)
         }
 
-        val deployDetails = createDeployDetails(dc)
+        val latestRc = openshiftService.rc(namespace, "${dc.metadata.name}-${dc.status.latestVersion}")
+
+        val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
+            ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
+
+        val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
+
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
         // every pods has a name label we have to use selector from DeploymentConfig.
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
 
-        val imageDetails = imageService.getImageDetails(dc)
+        // it is a lot faster to fetch from imageStreamTag from ocp rather then from cantus if it is up to date
+        val imageDetails = if (runningRc == latestRc || runningRc == null) {
+            // gets ImageDetails for the first Image that is found in the ImageChange triggers for the given DeploymentConfig
+            dc.imageStreamNameAndTag?.let {
+                imageService.getImageDetailsFromImageStream(dc.metadata.namespace, it.first, it.second)
+            }
+        } else {
+            val image = runningRc.spec.template.spec.containers[0].image
+            imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+        }
+
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
-        return ApplicationData(
-            booberDeployId = applicationDeployment.metadata.booberDeployId,
-            managementPath = applicationDeployment.spec.managementPath,
+        val deployTag = deployDetails.deployTag.takeIf { !it.isNullOrEmpty() }
+            ?: (applicationDeployment.spec.deployTag?.let { it } ?: "")
+
+        val apd = applicationPublicData(
+            applicationDeployment,
+            auroraStatus
+        ).copy(
+            auroraVersion = imageDetails?.auroraVersion,
+            dockerImageRepo = imageDetails?.dockerImageRepo,
+            deployTag = deployTag
+        )
+
+        return applicationData(applicationDeployment, apd).copy(
             pods = pods,
             imageDetails = imageDetails,
-            deployDetails = deployDetails,
             addresses = applicationAddresses,
-            databases = databases,
-            sprocketDone = dc.sprocketDone,
-            updatedBy = dc.updatedBy,
             splunkIndex = splunkIndex,
-            deploymentCommand = applicationDeployment.spec.command,
-            publicData = ApplicationPublicData(
-                applicationId = applicationDeployment.spec.applicationId,
-                applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-                auroraStatus = auroraStatus,
-                applicationName = applicationName,
-                applicationDeploymentName = applicationDeploymentName,
-                namespace = namespace,
-                affiliation = affiliation,
-                auroraVersion = imageDetails?.auroraVersion,
-                deployTag = applicationDeployment.spec.deployTag ?: "",
-                dockerImageRepo = imageDetails?.dockerImageRepo,
-                releaseTo = applicationDeployment.spec.releaseTo,
-                message = applicationDeployment.spec.message,
-                environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
-            )
+            deployDetails = deployDetails,
+            sprocketDone = dc.sprocketDone,
+            updatedBy = dc.updatedBy
         )
     }
 
-    private fun createDeployDetails(dc: DeploymentConfig): DeployDetails {
-
-        val namespace = dc.metadata.namespace
-
-        val latestRCName = dc.status.latestVersion?.let { "${dc.metadata.name}-$it" }
-
-        val rc = latestRCName?.let { openshiftService.rc(namespace, it) }
-
-        val details = DeployDetails(
+    private fun createDeployDetails(
+        dc: DeploymentConfig,
+        runningRc: ReplicationController?,
+        deploymentPhase: String?
+    ): DeployDetails {
+        return DeployDetails(
             targetReplicas = dc.spec.replicas,
             availableReplicas = dc.status.availableReplicas ?: 0,
-            paused = dc.spec.paused ?: false
-        )
-        if (rc == null) {
-            return details
-        }
-
-        return details.copy(
-            deployment = latestRCName,
-            phase = rc.deploymentPhase,
-            deployTag = rc.deployTag
+            deployment = runningRc?.metadata?.name,
+            deployTag = runningRc?.deployTag,
+            paused = dc.spec.paused ?: false,
+            phase = deploymentPhase
         )
     }
+
+    fun ReplicationController.isRunning() =
+        this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
 }

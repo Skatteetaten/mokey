@@ -2,9 +2,10 @@ package no.skatteetaten.aurora.openshift.webclient
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFailure
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
-import assertk.catch
+import assertk.assertions.prop
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReview
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewResourceAttributes
 import no.skatteetaten.aurora.mokey.model.SelfSubjectAccessReviewSpec
@@ -108,8 +109,10 @@ class OpenShiftClientIntegrationTest @Autowired constructor(private val client: 
 
     @Test
     fun `Get projects with invalid token`() {
-        val exception = catch { client.userToken("abc123").projects().blockForResource() }
-        assertThat((exception as WebClientResponseException).statusCode).isEqualTo(HttpStatus.UNAUTHORIZED)
+        assertThat { client.userToken("abc123").projects().blockForResource() }
+            .isFailure()
+            .prop("statusCode") { (it as WebClientResponseException).statusCode }
+            .isEqualTo(HttpStatus.UNAUTHORIZED)
     }
 
     @Test

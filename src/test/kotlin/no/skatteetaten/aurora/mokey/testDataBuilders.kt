@@ -34,6 +34,7 @@ import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
+import no.skatteetaten.aurora.mokey.extensions.LABEL_DEPLOYTAG
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
@@ -49,7 +50,11 @@ import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
+import no.skatteetaten.aurora.mokey.model.ServiceAddress
+import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
+import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import org.apache.commons.codec.digest.DigestUtils
+import java.net.URI
 import java.time.Instant
 
 const val DEFAULT_NAME = "app-name"
@@ -114,6 +119,7 @@ data class DeploymentConfigDataBuilder(
     val dcEnvName: String = DEFAULT_ENV_NAME,
     val dcDeployTag: String = "name:tag",
     val dcSelector: Map<String, String> = mapOf("name" to dcName),
+    val dcLatestVersion: Long = 1,
     val pause: Boolean = false
 ) {
 
@@ -127,7 +133,7 @@ data class DeploymentConfigDataBuilder(
                 labels = mapOf("updatedBy" to "linus")
             }
             status {
-                latestVersion = 1
+                latestVersion = dcLatestVersion
             }
             spec {
                 if (pause) {
@@ -214,19 +220,34 @@ data class ServiceBuilder(
         }
 }
 
+class ImageTagResourceBuilder {
+    fun build() = ImageTagResource(
+        auroraVersion = "4.0.0-b1.23.1-wingnut11-1.3.3",
+        timeline = ImageBuildTimeline(Instant.now(), Instant.now()),
+        dockerDigest = "sha256:123hash",
+        requestUrl = "docker-registry/group/name/sha256:123hash",
+        dockerVersion = "1.13.1"
+    )
+}
+
 data class ReplicationControllerDataBuilder(
     val rcPhase: String = "deploymentPhase",
-    val rcReplicas: Int = 1,
+    val rcDeployTag: String = "4.0.5",
+    val rcSpecReplicas: Int = 1,
     val rcAvailableReplicas: Int = 1,
+    val rcStatusReplicas: Int = 0,
     val rcContainers: Map<String, String> = mapOf("name-java" to "docker-registry/group/name@sha256:123hash")
 ) {
 
     fun build(): ReplicationController =
         newReplicationController {
+            metadata = newObjectMeta {
+                labels = mapOf(LABEL_DEPLOYTAG to rcDeployTag)
+            }
             deploymentPhase = rcPhase
 
             spec {
-                replicas = rcReplicas
+                replicas = rcSpecReplicas
 
                 template {
                     spec {
@@ -242,6 +263,7 @@ data class ReplicationControllerDataBuilder(
 
             status {
                 availableReplicas = rcAvailableReplicas
+                replicas = rcStatusReplicas
             }
         }
 }
@@ -371,6 +393,49 @@ data class ImageStreamTagDataBuilder(
                 }
             }
         }
+}
+
+class ApplicationDeploymentBuilder() {
+    fun build(): ApplicationDeployment =
+        ApplicationDeployment(
+            kind = "ApplicationDeployment",
+            metadata = newObjectMeta {
+                name = "mokey"
+                labels = emptyMap()
+                namespace = "aurora-dev"
+                annotations = emptyMap()
+            },
+            apiVersion = "skatteetaten.no/v1",
+            spec = ApplicationDeploymentSpec(
+                command = ApplicationDeploymentCommand(
+                    overrideFiles = emptyMap(),
+                    auroraConfig = AuroraConfigRef("aurora", "abc"),
+                    applicationDeploymentRef = ApplicationDeploymentRef(
+                        application = "mokey",
+                        environment = "aurora-dev"
+                    )
+                ),
+                applicationId = "123",
+                applicationName = "mokey",
+                applicationDeploymentId = "234",
+                applicationDeploymentName = "test-mokey",
+                databases = emptyList(),
+                splunkIndex = null,
+                managementPath = null,
+                releaseTo = null,
+                deployTag = null,
+                selector = emptyMap(),
+                message = null
+            )
+        )
+}
+
+class AddressBuilder() {
+    fun build() = ServiceAddress(url = URI("/mokey"), time = null)
+}
+
+class AuroraStatusBuilder() {
+    fun build() = AuroraStatus(level = HEALTHY)
 }
 
 data class ApplicationDataBuilder(

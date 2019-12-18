@@ -7,7 +7,7 @@ import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.openshift.api.model.Project
-import io.mockk.clearMocks
+import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
 import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
@@ -16,6 +16,7 @@ import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
+import no.skatteetaten.aurora.mokey.extensions.deployTag
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -28,11 +29,11 @@ import java.time.Instant
 
 class ApplicationDataServiceOpenShiftTest {
 
-    private val openShiftService = mockk<OpenShiftService>()
+    private val openShiftService = mockk<OpenShiftService>(relaxed = true)
     private val auroraStatusCalculator = mockk<AuroraStatusCalculator>()
     private val podService = mockk<PodService>()
     private val imageService = mockk<ImageService>()
-    private val addressService = mockk<AddressService>()
+    private val addressService = mockk<AddressService>(relaxed = true)
     private val applicationDataServiceOpenShift = ApplicationDataServiceOpenShift(
         openshiftService = openShiftService,
         auroraStatusCalculator = auroraStatusCalculator,
@@ -43,7 +44,7 @@ class ApplicationDataServiceOpenShiftTest {
 
     @BeforeEach
     fun setUp() {
-        clearMocks(openShiftService, auroraStatusCalculator, podService, imageService, addressService)
+        clearAllMocks()
     }
 
     @Test
@@ -73,7 +74,13 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         every { openShiftService.rc(dcBuilder.dcNamespace, "${dcBuilder.dcName}-1") } returns replicationController
         every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
-        every { imageService.getImageDetails(dc) } returns imageDetails
+        every {
+            imageService.getImageDetailsFromImageStream(
+                dc.metadata.namespace,
+                "name",
+                "tag"
+            )
+        } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
         every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
 
@@ -105,7 +112,13 @@ class ApplicationDataServiceOpenShiftTest {
         every { openShiftService.dc(dcBuilder.dcNamespace, dcBuilder.dcName) } returns dc
         every { openShiftService.rc(dcBuilder.dcNamespace, "${dcBuilder.dcName}-1") } returns replicationController
         every { podService.getPodDetails(appDeployment, any()) } returns listOf(podDetails)
-        every { imageService.getImageDetails(dc) } returns imageDetails
+        every {
+            imageService.getImageDetailsFromImageStream(
+                dc.metadata.namespace,
+                "name",
+                "tag"
+            )
+        } returns imageDetails
         every { addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName) } returns addresses
         every { auroraStatusCalculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatus(HEALTHY)
 
@@ -143,7 +156,33 @@ class ApplicationDataServiceOpenShiftTest {
         assertThat(applicationData.auroraStatus.level).isEqualTo(expected = AuroraStatusLevel.OFF)
     }
 
-    fun findAllApplicationData(
+    @Test
+    fun `should return running rc and handle when latest version is 1`() {
+        every {
+            openShiftService.rc("aurora-dev", "mokey-1")
+        } returns ReplicationControllerDataBuilder(
+            rcPhase = "Complete",
+            rcDeployTag = "latest",
+            rcStatusReplicas = 4
+        ).build()
+        val runningRc = applicationDataServiceOpenShift.getRunningRc("aurora-dev", "mokey", 1)
+        assertThat(runningRc?.deployTag).isEqualTo("latest")
+    }
+
+    @Test
+    fun `should return null when no rc is running`() {
+        every {
+            openShiftService.rc("aurora-dev", "mokey-1")
+        } returns ReplicationControllerDataBuilder(
+            rcPhase = "Failed",
+            rcDeployTag = "latest",
+            rcStatusReplicas = 4
+        ).build()
+        val runningRc = applicationDataServiceOpenShift.getRunningRc("aurora-dev", "mokey", 1)
+        assertThat(runningRc).isEqualTo(null)
+    }
+
+    private fun findAllApplicationData(
         affiliations: List<String> = emptyList(),
         ids: List<String> = emptyList()
     ): List<ApplicationData> {
