@@ -10,7 +10,7 @@ data class Link(val rel: String, val href: String, val baseUrl: String = "") {
         get() = HalLink("$baseUrl/$href")
 }
 
-fun HalResource.link(link: Link) = this.link(link.rel, link.halLink)
+fun HalResource.link(link: Link) = this.link(link.rel, HalLink(link.href))
 
 fun List<Link>.toLinks() = Links().also {
     this.forEach { link ->
