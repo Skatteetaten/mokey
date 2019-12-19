@@ -110,10 +110,14 @@ class ApplicationDataServiceOpenShift(
     }
 
     fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
-        val startingIndex = if (rcLatestVersion.toInt() == 1) 1 else rcLatestVersion.toInt() - 1
-        val range: IntProgression = startingIndex downTo 1
+        val range: IntProgression = rcLatestVersion.toInt() - 1 downTo 1
         return range.asSequence().map { openshiftService.rc(namespace, "$name-$it") }
-            .firstOrNull { it?.isRunning() ?: false }
+            .firstOrNull {
+                if (it == null) {
+                    return null
+                }
+                it.isRunning()
+            }
     }
 
     private fun applicationPublicData(
