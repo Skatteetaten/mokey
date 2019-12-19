@@ -10,6 +10,9 @@ import io.fabric8.openshift.api.model.Project
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
+import java.net.URI
+import java.time.Instant
 import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
@@ -24,8 +27,6 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.net.URI
-import java.time.Instant
 
 class ApplicationDataServiceOpenShiftTest {
 
@@ -179,7 +180,7 @@ class ApplicationDataServiceOpenShiftTest {
         verify(exactly = 1) { openShiftService.rc("aurora-dev", "mokey-9") }
         verify(exactly = 0) { openShiftService.rc("aurora-dev", "mokey-8") }
         verify(exactly = 0) { openShiftService.rc("aurora-dev", "mokey-7") }
-        assertThat(runningRc).isEqualTo(null)
+        assertThat(runningRc).isNull()
     }
 
     @Test
@@ -192,7 +193,7 @@ class ApplicationDataServiceOpenShiftTest {
             rcStatusReplicas = 4
         ).build()
         val runningRc = applicationDataServiceOpenShift.getRunningRc("aurora-dev", "mokey", 1)
-        assertThat(runningRc).isEqualTo(null)
+        assertThat(runningRc).isNull()
     }
 
     @Test
@@ -205,7 +206,7 @@ class ApplicationDataServiceOpenShiftTest {
             rcStatusReplicas = 4
         ).build()
         val runningRc = applicationDataServiceOpenShift.getRunningRc("aurora-dev", "mokey", 2)
-        assertThat(runningRc).isEqualTo(null)
+        assertThat(runningRc).isNull()
     }
 
     private fun findAllApplicationData(
