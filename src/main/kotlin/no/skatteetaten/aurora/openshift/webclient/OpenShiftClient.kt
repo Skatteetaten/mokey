@@ -227,7 +227,7 @@ fun <T> Mono<T>.notFoundAsEmpty() = this.onErrorResume {
     when (it) {
         is WebClientResponseException.NotFound -> {
             val resource = it.request?.uri?.requestedOpenShiftResource()
-            logger.info {
+            logger.debug {
                 "Resource not found, method=${it.request?.method} uri=${it.request?.uri} " +
                     "namespace=${resource?.namespace} kind=${resource?.kind} name=${resource?.name}"
             }

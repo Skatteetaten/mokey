@@ -10,8 +10,6 @@ import io.fabric8.openshift.api.model.Project
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
-import java.net.URI
-import java.time.Instant
 import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
@@ -26,6 +24,8 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.net.URI
+import java.time.Instant
 
 class ApplicationDataServiceOpenShiftTest {
 
@@ -165,12 +165,25 @@ class ApplicationDataServiceOpenShiftTest {
             rcDeployTag = "latest",
             rcStatusReplicas = 4
         ).build()
-        val runningRc = applicationDataServiceOpenShift.getRunningRc("aurora-dev", "mokey", 1)
+        val runningRc = applicationDataServiceOpenShift.getRunningRc("aurora-dev", "mokey", 2)
         assertThat(runningRc?.deployTag).isEqualTo("latest")
     }
 
     @Test
-    fun `should return null when no rc is running`() {
+    fun `should return null and stop the sequence when the current rc is null`() {
+        every {
+            openShiftService.rc("aurora-dev", "mokey-9")
+        } returns null
+
+        val runningRc = applicationDataServiceOpenShift.getRunningRc("aurora-dev", "mokey", 10)
+        verify(exactly = 1) { openShiftService.rc("aurora-dev", "mokey-9") }
+        verify(exactly = 0) { openShiftService.rc("aurora-dev", "mokey-8") }
+        verify(exactly = 0) { openShiftService.rc("aurora-dev", "mokey-7") }
+        assertThat(runningRc).isEqualTo(null)
+    }
+
+    @Test
+    fun `should return null when LatestVersion is 1`() {
         every {
             openShiftService.rc("aurora-dev", "mokey-1")
         } returns ReplicationControllerDataBuilder(
@@ -179,6 +192,19 @@ class ApplicationDataServiceOpenShiftTest {
             rcStatusReplicas = 4
         ).build()
         val runningRc = applicationDataServiceOpenShift.getRunningRc("aurora-dev", "mokey", 1)
+        assertThat(runningRc).isEqualTo(null)
+    }
+
+    @Test
+    fun `should return null when the next rc is Failed`() {
+        every {
+            openShiftService.rc("aurora-dev", "mokey-1")
+        } returns ReplicationControllerDataBuilder(
+            rcPhase = "Failed",
+            rcDeployTag = "latest",
+            rcStatusReplicas = 4
+        ).build()
+        val runningRc = applicationDataServiceOpenShift.getRunningRc("aurora-dev", "mokey", 2)
         assertThat(runningRc).isEqualTo(null)
     }
 
