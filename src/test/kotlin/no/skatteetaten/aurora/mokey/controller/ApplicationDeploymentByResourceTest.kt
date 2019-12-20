@@ -23,7 +23,7 @@ class ApplicationDeploymentByResourceTest : AbstractSecurityControllerTest() {
     private lateinit var assembler: ApplicationDeploymentsWithDbResourceAssembler
 
     @Test
-    fun `Return application deploylment by resource`() {
+    fun `Return application deployment by resource`() {
         given(applicationDataService.getFromCacheForUser()).willReturn(
             listOf(ApplicationDataBuilder().build())
         )
