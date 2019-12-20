@@ -1,9 +1,5 @@
 package no.skatteetaten.aurora.mokey.service.auroraStatus
 
-import java.time.Duration
-import java.time.Instant
-import java.time.Instant.parse
-import java.time.format.DateTimeParseException
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.DOWN
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
@@ -16,6 +12,10 @@ import no.skatteetaten.aurora.mokey.model.StatusCheck
 import no.skatteetaten.aurora.mokey.model.StatusDescription
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.time.Duration
+import java.time.Instant
+import java.time.Instant.parse
+import java.time.format.DateTimeParseException
 
 private val logger = KotlinLogging.logger {}
 
@@ -109,12 +109,17 @@ class DifferentDeploymentCheck(@Value("\${mokey.status.differentdeployment.hour:
         return when {
             pods.size < 2 -> false
             numberOfDifferentDeployments == 1 -> false
-            else -> pods.stream().anyMatch { p ->
+            else -> pods.any { p ->
                 if (p.openShiftPodExcerpt.startTime.isNullOrEmpty()) {
                     logger.info { "pod startTime is null for ${p.openShiftPodExcerpt.name}" }
                     false
                 } else {
-                    parse(p.openShiftPodExcerpt.startTime).isBefore(threshold)
+                    try {
+                        parse(p.openShiftPodExcerpt.startTime).isBefore(threshold)
+                    } catch (e: DateTimeParseException) {
+                        logger.warn { "could not parse ${p.openShiftPodExcerpt.startTime}" }
+                        false
+                    }
                 }
             }
         }
