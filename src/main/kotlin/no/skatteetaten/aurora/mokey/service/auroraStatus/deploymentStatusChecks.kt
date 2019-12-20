@@ -109,7 +109,14 @@ class DifferentDeploymentCheck(@Value("\${mokey.status.differentdeployment.hour:
         return when {
             pods.size < 2 -> false
             numberOfDifferentDeployments == 1 -> false
-            else -> pods.stream().anyMatch { p -> parse(p.openShiftPodExcerpt.startTime).isBefore(threshold) }
+            else -> pods.stream().anyMatch { p ->
+                if (p.openShiftPodExcerpt.startTime.isNullOrEmpty()) {
+                    logger.info { "pod startTime is null for ${p.openShiftPodExcerpt.name}" }
+                    false
+                } else {
+                    parse(p.openShiftPodExcerpt.startTime).isBefore(threshold)
+                }
+            }
         }
     }
 }
