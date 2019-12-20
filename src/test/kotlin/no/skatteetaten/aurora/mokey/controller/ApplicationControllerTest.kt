@@ -43,9 +43,6 @@ class ApplicationControllerTest : AbstractSecurityControllerTest() {
             listOf(applicationData.publicData)
         )
 
-        given(assembler.toResources(any()))
-            .withContractResponse(name = "application/applications") { willReturn(content) }
-
         mockMvc.get(Path("/api/application?affiliation=paas")) {
             statusIsOk().responseJsonPath("$.length()").equalsValue(1)
         }

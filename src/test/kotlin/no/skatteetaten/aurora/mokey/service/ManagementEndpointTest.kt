@@ -8,6 +8,8 @@ import assertk.assertions.isTrue
 import com.fasterxml.jackson.databind.node.IntNode
 import com.fasterxml.jackson.databind.node.LongNode
 import com.fasterxml.jackson.databind.node.TextNode
+import java.time.Instant
+import java.util.stream.Stream
 import no.skatteetaten.aurora.mokey.AbstractTest
 import no.skatteetaten.aurora.mokey.ApplicationConfig
 import no.skatteetaten.aurora.mokey.model.EndpointType
@@ -34,8 +36,6 @@ import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
-import java.time.Instant
-import java.util.stream.Stream
 
 class ManagementEndpointTest : AbstractTest() {
 

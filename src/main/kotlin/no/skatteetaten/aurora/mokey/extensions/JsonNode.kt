@@ -11,7 +11,7 @@ fun JsonNode?.asMap(): Map<String, JsonNode> {
 
     if (this is ObjectNode) {
         val fields = java.util.HashMap<String, JsonNode>()
-        this.fields().forEachRemaining { entry -> fields.put(entry.key, entry.value) }
+        this.fields().forEachRemaining { entry -> fields[entry.key] = entry.value }
         return fields
     }
     return emptyMap()

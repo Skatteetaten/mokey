@@ -40,15 +40,13 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
 
     @Test
     fun `Return application deployment details by affiliation`() {
-        given(applicationDataService.findAllApplicationData(any(), any()))
-            .willReturn(listOf(ApplicationDataBuilder().build()))
+        val applicationDatas = listOf(ApplicationDataBuilder().build())
 
-        val applicationDeploymentDetails = given(assembler.toResources((any())))
-            .withContractResponse("applicationdeploymentdetails/applicationdeploymentdetailsarray") { willReturn(content) }
-            .mockResponse
+        given(applicationDataService.findAllApplicationData(any(), any()))
+            .willReturn(applicationDatas)
 
         mockMvc.get(Path("/api/auth/applicationdeploymentdetails?affiliation=paas")) {
-            statusIsOk().responseJsonPath("$[0]").equalsObject(applicationDeploymentDetails.first())
+            statusIsOk()
         }
     }
 }

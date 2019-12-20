@@ -3,8 +3,8 @@ package no.skatteetaten.aurora.openshift.webclient
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
-import org.junit.jupiter.api.Test
 import java.net.URI
+import org.junit.jupiter.api.Test
 
 class OpenShiftClientTest {
 

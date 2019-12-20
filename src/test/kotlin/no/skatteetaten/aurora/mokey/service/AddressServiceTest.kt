@@ -9,6 +9,9 @@ import assertk.assertions.prop
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import java.net.URI
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.RouteBuilder
 import no.skatteetaten.aurora.mokey.ServiceBuilder
@@ -22,9 +25,6 @@ import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_WEMBLEY_SERVICE
 import no.skatteetaten.aurora.mokey.model.Address
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.net.URI
-import java.time.Instant
-import java.time.format.DateTimeFormatter
 
 class AddressServiceTest {
 

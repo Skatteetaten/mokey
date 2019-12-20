@@ -5,20 +5,19 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import java.nio.charset.Charset
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import org.junit.jupiter.api.Test
-import org.springframework.hateoas.Link
 import org.springframework.web.util.UriUtils
-import java.nio.charset.Charset
 
 class LinkBuilderTest {
 
     @Test
     fun `should expand placeholders correctly`() {
         val linkBuilder = LinkBuilder("", mapOf("metricsHostname" to "http://metrics.skead.no", "cluster" to "utv"))
-        val link: Link = linkBuilder.createLink(
+        val link = linkBuilder.createLink(
             "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}&var-instance={podName}",
             "ServiceMetrics",
             mapOf("namespace" to "aurora", "name" to "mokey", "podName" to "mokey-1-acbea")
@@ -29,7 +28,7 @@ class LinkBuilderTest {
     @Test
     fun `should expand splunk placeholders correctly`() {
         val linkBuilder = LinkBuilder("", mapOf("splunkHostname" to "https://splunk.skead.no", "cluster" to "utv"))
-        val link: Link = linkBuilder.createLink(
+        val link = linkBuilder.createLink(
             "{splunkHostname}/en-GB/app/search/search?q=search%20index%3{splunkIndex}%20application%3D{name}",
             "ServiceMetrics",
             mapOf(
@@ -66,7 +65,7 @@ class LinkBuilderTest {
     }
 
     @Test
-    fun `should create deploymentSepc links`() {
+    fun `should create deploymentSpec links`() {
 
         val linkBuilder = LinkBuilder("https://boober", mapOf())
 
@@ -89,7 +88,7 @@ class LinkBuilderTest {
     }
 
     @Test
-    fun `should create deploymentSepc links with overrides`() {
+    fun `should create deploymentSpec links with overrides`() {
 
         val linkBuilder = LinkBuilder("https://boober", mapOf())
 

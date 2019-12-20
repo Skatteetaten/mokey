@@ -3,6 +3,10 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import java.io.IOException
+import java.security.KeyManagementException
+import java.security.NoSuchAlgorithmException
+import java.util.concurrent.TimeUnit
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
@@ -17,8 +21,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.core.io.Resource
-import org.springframework.hateoas.config.EnableHypermediaSupport
-import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType.HAL
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
@@ -26,11 +28,8 @@ import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
-import java.io.IOException
-import java.security.KeyManagementException
-import java.security.NoSuchAlgorithmException
-import java.util.concurrent.TimeUnit
 
 enum class ServiceTypes {
     CANTUS
@@ -45,7 +44,6 @@ private val logger = KotlinLogging.logger {}
 
 @Configuration
 @EnableScheduling
-@EnableHypermediaSupport(type = [HAL])
 @Import(OpenShiftClientConfig::class)
 class ApplicationConfig : BeanPostProcessor {
 
@@ -91,6 +89,9 @@ class ApplicationConfig : BeanPostProcessor {
         logger.info("Configuring Cantus WebClient with base Url={}", cantusUrl)
         val b = webClientBuilder()
             .baseUrl(cantusUrl)
+            .exchangeStrategies(ExchangeStrategies.builder().codecs { it.defaultCodecs().apply {
+                maxInMemorySize(-1) // unlimited
+            } }.build())
 
         try {
             b.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer ${token.readContent()}")

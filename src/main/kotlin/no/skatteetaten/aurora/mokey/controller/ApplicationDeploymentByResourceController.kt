@@ -3,8 +3,6 @@ package no.skatteetaten.aurora.mokey.controller
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
-import org.springframework.hateoas.ExposesResourceFor
-import org.springframework.hateoas.mvc.ResourceAssemblerSupport
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -12,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@ExposesResourceFor(ApplicationDeploymentsWithDbResource::class)
 @ConditionalOnBean(ApplicationDataService::class)
 @RequestMapping("/api/auth/applicationdeploymentbyresource")
 class ApplicationDeploymentByResourceController(
@@ -37,10 +34,7 @@ class ApplicationDeploymentByResourceController(
 
 @Component
 class ApplicationDeploymentsWithDbResourceAssembler :
-    ResourceAssemblerSupport<Pair<String, List<ApplicationPublicData>>, ApplicationDeploymentsWithDbResource>(
-        Pair::class.java,
-        ApplicationDeploymentsWithDbResource::class.java
-    ) {
+    ResourceAssemblerSupport<Pair<String, List<ApplicationPublicData>>, ApplicationDeploymentsWithDbResource>() {
 
     private val applicationDeploymentAssembler = ApplicationDeploymentResourceAssembler()
 

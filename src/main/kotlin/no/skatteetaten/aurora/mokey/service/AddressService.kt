@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.Service
+import java.net.URI
 import no.skatteetaten.aurora.mokey.extensions.addIfNotNull
 import no.skatteetaten.aurora.mokey.extensions.created
 import no.skatteetaten.aurora.mokey.extensions.ensureStartWith
@@ -15,7 +16,6 @@ import no.skatteetaten.aurora.mokey.model.BigIPAddress
 import no.skatteetaten.aurora.mokey.model.RouteAddress
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import no.skatteetaten.aurora.mokey.model.WebSealAddress
-import java.net.URI
 
 @org.springframework.stereotype.Service
 class AddressService(val openShiftService: OpenShiftService) {

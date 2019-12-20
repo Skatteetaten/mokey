@@ -32,6 +32,8 @@ import com.fkorotkov.openshift.tls
 import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
+import java.net.URI
+import java.time.Instant
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.LABEL_DEPLOYTAG
@@ -54,8 +56,6 @@ import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
 import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import org.apache.commons.codec.digest.DigestUtils
-import java.net.URI
-import java.time.Instant
 
 const val DEFAULT_NAME = "app-name"
 const val DEFAULT_AFFILIATION = "affiliation"

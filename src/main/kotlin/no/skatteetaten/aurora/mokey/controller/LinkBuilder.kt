@@ -5,7 +5,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.hateoas.Link
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import org.springframework.web.util.UriComponentsBuilder
 
 @Configuration
@@ -21,17 +21,15 @@ class LinkBuilderFactory(
 
 class LinkBuilder(private val booberApiUrl: String, private val globalExpandParams: Map<String, String>) {
 
-    fun applyResult(auroraConfigName: String, deployId: String): Link {
-        return createLink(
+    fun applyResult(auroraConfigName: String, deployId: String) =
+        createLink(
             UriComponentsBuilder
                 .fromHttpUrl(booberApiUrl)
                 .path("/v1/apply-result/$auroraConfigName/$deployId")
                 .build().toUriString(), "ApplyResult"
         )
-    }
 
     fun apply(deploymentCommand: ApplicationDeploymentCommand): Link {
-
         val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
             .pathSegment("v1", "apply", deploymentCommand.auroraConfig.name)
             .queryParam("reference", deploymentCommand.auroraConfig.refName).build()
@@ -120,21 +118,26 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
     fun openShiftConsoleLinks(pod: String, project: String): List<Link> {
         return listOf("details", "environment", "terminal", "events", "log").map {
             val url = UriComponentsBuilder
-                    .newInstance()
-                    .scheme("https")
-                    .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
-                    .port(8443)
-                    .pathSegment("console/project", project, "browse/pods", pod)
-                    .queryParam("tab", it)
-                    .build()
-                    .toUriString()
-            Link(url, "ocp_console_" + it)
+                .newInstance()
+                .scheme("https")
+                .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
+                .port(8443)
+                .pathSegment("console/project", project, "browse/pods", pod)
+                .queryParam("tab", it)
+                .build()
+                .toUriString()
+            Link("ocp_console_$it", url)
         }
+    }
+
+    fun createMokeyLink(rel: String, href: String): Link {
+        val baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString()
+        return Link(rel, "$baseUrl$href")
     }
 
     fun createLink(linkString: String, rel: String, expandParams: Map<String, String> = mapOf()): Link {
         val expanded = (globalExpandParams + expandParams).entries
             .fold(linkString) { acc, e -> acc.replace("""{${e.key}}""", e.value) }
-        return Link(expanded, rel)
+        return Link(rel, expanded)
     }
 }
