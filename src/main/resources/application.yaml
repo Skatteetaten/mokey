@@ -8,6 +8,10 @@ spring:
     profiles:
         active: local
 
+loback:
+    access:
+        config: file:${logback.access.b3}
+
 logging:
     level:
         no.skatteetaten.aurora:
