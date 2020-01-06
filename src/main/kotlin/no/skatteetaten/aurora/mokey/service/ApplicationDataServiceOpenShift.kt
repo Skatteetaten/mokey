@@ -101,7 +101,7 @@ class ApplicationDataServiceOpenShift(
                 applicationData = createApplicationData(it)
             )
         } catch (e: Exception) {
-            logger.warn(
+            logger.info(
                 "Failed getting deployment name={}, namespace={} message={}", it.metadata.name,
                 it.metadata.namespace, e.message, e
             )
