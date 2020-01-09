@@ -95,8 +95,10 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         val pod = podDetails.openShiftPodExcerpt
 
         val podLinks = podDetails.managementData.let {
-            it.info?.deserialized?.podLinks
-        } ?: emptyMap()
+            it.info?.deserialized?.podLinks?.map { entry ->
+                linkBuilder.createLink(entry.key, entry.value)
+            }
+        } ?: emptyList()
 
         val consoleLinks = linkBuilder.openShiftConsoleLinks(pod.name, applicationData.namespace)
 
@@ -129,7 +131,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             }
         ).apply {
             podLinks.forEach {
-                this.link(it.key, HalLink(it.value))
+                this.link(it.rel, HalLink(it.href))
             }
 
             consoleLinks.forEach {
