@@ -48,7 +48,12 @@ import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.ImageDetails
+import no.skatteetaten.aurora.mokey.model.InfoResponse
+import no.skatteetaten.aurora.mokey.model.ManagementData
+import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
+import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
@@ -460,6 +465,37 @@ data class ApplicationDataBuilder(
             deploymentCommand = ApplicationDeploymentCommand(
                 applicationDeploymentRef = ApplicationDeploymentRef(DEFAULT_ENV_NAME, "name"),
                 auroraConfig = AuroraConfigRef(DEFAULT_AFFILIATION, "master")
+            ),
+            pods = listOf(
+                PodDetails(
+                    openShiftPodExcerpt = OpenShiftPodExcerpt(
+                        name = "name",
+                        phase = "phase",
+                        podIP = null,
+                        startTime = null,
+                        replicaName = null,
+                        deployTag = null,
+                        containers = emptyList(),
+                        latestDeployTag = true,
+                        latestReplicaName = true
+                    ),
+                    managementData = ManagementData(
+                        info =
+                        ManagementEndpointResult(
+                            endpointType = EndpointType.INFO,
+                            resultCode = "",
+                            deserialized = InfoResponse(podLinks = mapOf(
+                                "test" to "http://localhost",
+                                "metrics" to "{metricsHostname}"
+                            ))
+                        ),
+                        links = ManagementEndpointResult(
+                            endpointType = EndpointType.INFO,
+                            resultCode = "",
+                            deserialized = ManagementLinks(emptyMap())
+                        )
+                    )
+                )
             ),
             publicData = ApplicationPublicData(
                 applicationId = applicationId,
