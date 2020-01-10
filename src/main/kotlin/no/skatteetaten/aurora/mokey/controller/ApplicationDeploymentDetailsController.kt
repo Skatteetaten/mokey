@@ -94,9 +94,10 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
     private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
         val pod = podDetails.openShiftPodExcerpt
 
-        val podLinks = podDetails.managementData.let {
-            it.info?.deserialized?.podLinks
-        } ?: emptyMap()
+        val podLinks = podDetails.managementData.let { managementData ->
+            val podManagementLinks = managementData.info?.deserialized?.podLinks
+            podManagementLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
+        } ?: emptyList()
 
         val consoleLinks = linkBuilder.openShiftConsoleLinks(pod.name, applicationData.namespace)
 
@@ -129,7 +130,7 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             }
         ).apply {
             podLinks.forEach {
-                this.link(it.key, HalLink(it.value))
+                this.link(it.rel, HalLink(it.href))
             }
 
             consoleLinks.forEach {
@@ -231,6 +232,17 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
 
     private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =
         linkBuilder.createLink(link, rel, applicationData.expandParams)
+
+    private fun createPodLink(
+        applicationData: ApplicationData,
+        podDetails: PodDetails,
+        link: String,
+        rel: String
+    ): Link {
+        val podExpandParams = podDetails.expandParams
+        val applicationExpandParams = applicationData.expandParams
+        return linkBuilder.createLink(link, rel, applicationExpandParams + podExpandParams)
+    }
 }
 
 private val ApplicationData.firstInfoResponse: InfoResponse?
