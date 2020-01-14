@@ -34,6 +34,7 @@ import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import java.net.URI
 import java.time.Instant
+import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_BOOBER_DEPLOYTAG
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.LABEL_DEPLOYTAG
@@ -250,6 +251,11 @@ data class ReplicationControllerDataBuilder(
                 replicas = rcSpecReplicas
 
                 template {
+                    metadata {
+                        annotations = mapOf(
+                            ANNOTATION_BOOBER_DEPLOYTAG to rcDeployTag
+                        )
+                    }
                     spec {
                         containers = rcContainers.map {
                             newContainer {
