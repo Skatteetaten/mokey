@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.extensions
 
 import io.fabric8.kubernetes.api.model.HasMetadata
 import io.fabric8.kubernetes.api.model.ObjectMeta
+import io.fabric8.kubernetes.api.model.PodTemplateSpec
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.api.model.Service
 import io.fabric8.openshift.api.model.DeploymentConfig
@@ -28,6 +29,8 @@ const val ANNOTATION_WEMBLEY_DONE = "wembley.sits.no/done"
 const val ANNOTATION_WEMBLEY_PATHS = "wembley.sits.no/apiPaths"
 const val ANNOTATION_WEMBLEY_EXTERNAL_HOST = "wembley.sits.no/externalHost"
 const val ANNOTATION_WEMBLEY_ASM = "wembley.sits.no/asmPolicy"
+
+const val ANNOTATION_BOOBER_DEPLOYTAG = "boober.skatteetaten.no/deployTag"
 
 val DeploymentConfig.imageStreamNameAndTag: Pair<String, String>?
     get() = spec.triggers.find { it.type == "ImageChange" }
@@ -83,7 +86,8 @@ val DeploymentConfig.deployTag: String
     get() = safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
 
 val ReplicationController.deployTag: String
-    get() = safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
+    get() = this.spec.template.safeMetadata().safeMetadataAnnotations()[ANNOTATION_BOOBER_DEPLOYTAG]
+        ?: safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
 
 val ObjectMeta.booberDeployId: String?
     get() = safeMetadataLabels()[LABEL_BOOBER_DEPLOY_ID]
@@ -94,6 +98,11 @@ val DeploymentConfig.updatedBy: String?
 var ReplicationController.deploymentPhase: String?
     get() = safeMetadataAnnotations()[ANNOTATION_PHASE]
     set(value) = safeMetadataAnnotations().set(ANNOTATION_PHASE, value)
+
+private fun ObjectMeta.safeMetadataAnnotations(): MutableMap<String, String?> {
+    if (this.annotations == null) this.annotations = mutableMapOf<String, String>()
+    return this.annotations
+}
 
 private fun HasMetadata.safeMetadataAnnotations(): MutableMap<String, String?> {
     if (safeMetadata().annotations == null) metadata.annotations = mutableMapOf<String, String>()
@@ -111,6 +120,11 @@ private fun HasMetadata.safeMetadataLabels(): MutableMap<String, String?> {
 }
 
 private fun HasMetadata.safeMetadata(): ObjectMeta {
+    if (metadata == null) metadata = ObjectMeta()
+    return metadata
+}
+
+private fun PodTemplateSpec.safeMetadata(): ObjectMeta {
     if (metadata == null) metadata = ObjectMeta()
     return metadata
 }
