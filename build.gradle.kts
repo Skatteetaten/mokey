@@ -4,28 +4,28 @@ plugins {
     id("org.springframework.cloud.contract")
     id("org.jetbrains.kotlin.jvm") version "1.3.61"
     id("org.jetbrains.kotlin.plugin.spring") version "1.3.61"
-    id("org.jlleitschuh.gradle.ktlint") version "9.1.1"
-    id("org.sonarqube") version "2.7.1"
+    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    id("org.sonarqube") version "2.8"
     id("org.asciidoctor.convert") version "2.4.0"
-    id("org.springframework.boot") version "2.2.2.RELEASE"
-    id("com.gorylenko.gradle-git-properties") version "2.2.0"
+    id("org.springframework.boot") version "2.2.4.RELEASE"
+    id("com.gorylenko.gradle-git-properties") version "2.2.1"
     id("com.github.ben-manes.versions") version "0.27.0"
     id("se.patrikerdes.use-latest-versions") version "0.2.13"
     id("com.adarshr.test-logger") version "2.0.0"
 
-    id("no.skatteetaten.gradle.aurora") version "3.2.0"
+    id("no.skatteetaten.gradle.aurora") version "3.4.5"
 }
 
 dependencies {
-    implementation("com.squareup.okhttp3:okhttp:3.14.4")
+    implementation("com.squareup.okhttp3:okhttp:4.4.0")
     implementation("com.fkorotkov:kubernetes-dsl:3.0")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3-1.3.70-eap-42")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.3-1.3.70-eap-42")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("io.projectreactor.addons:reactor-extra:3.3.1.RELEASE")
+    implementation("io.projectreactor.addons:reactor-extra:3.3.2.RELEASE")
 
     implementation("net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.7.1")
 
