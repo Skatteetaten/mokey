@@ -8,9 +8,10 @@ spring:
     profiles:
         active: local
 
-logback:
-    access:
-        config: file:${logback.access.b3}
+
+#logback:
+#    access:
+#        config: file:${logback.access.b3}
 
 logging:
     level:
@@ -45,16 +46,23 @@ openshift:
     port: 8443
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
 
+kubernetes:
+    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
+    tokenLocation: /tmp/boober-token
 ---
 spring:
     profiles: local
 
 mokey:
     cache:
-        affiliations: paas, aurora
+        warmup: false
+        affiliations: demo
     openshift:
         tokenLocation: file:/tmp/boober-token
 
+integrations:
+    cantus:
+        url: http://cantus.aurora.utv.paas.skead.no
 logging:
     pattern:
         console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"

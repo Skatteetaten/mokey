@@ -15,6 +15,7 @@ import javax.net.ssl.TrustManagerFactory
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
@@ -38,9 +39,10 @@ private val logger = KotlinLogging.logger {}
 class OpenShiftClientConfig(@Value("\${spring.application.name}") val applicationName: String) {
 
     @Bean
-    fun openShiftClient(webClient: WebClient) = OpenShiftClient(webClient)
+    fun openShiftClient(@Qualifier("ocp") webClient: WebClient) = OpenShiftClient(webClient)
 
     @Bean
+    @Qualifier("ocp")
     fun webClient(
         builder: WebClient.Builder,
         tcpClient: TcpClient,
@@ -64,48 +66,6 @@ class OpenShiftClientConfig(@Value("\${spring.application.name}") val applicatio
         return b.build()
     }
 
-    @Bean
-    fun tcpClient(
-        @Value("\${mokey.httpclient.readTimeout:5000}") readTimeout: Long,
-        @Value("\${mokey.httpclient.writeTimeout:5000}") writeTimeout: Long,
-        @Value("\${mokey.httpclient.connectTimeout:5000}") connectTimeout: Int,
-        trustStore: KeyStore?
-    ): TcpClient {
-        val trustFactory = TrustManagerFactory.getInstance("X509")
-        trustFactory.init(trustStore)
-
-        val sslProvider = SslProvider.builder().sslContext(
-            SslContextBuilder
-                .forClient()
-                .trustManager(trustFactory)
-                .build()
-        ).build()
-        return TcpClient.create()
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
-            .secure(sslProvider)
-            .doOnConnected { connection ->
-                connection
-                    .addHandlerLast(ReadTimeoutHandler(readTimeout, TimeUnit.MILLISECONDS))
-                    .addHandlerLast(WriteTimeoutHandler(writeTimeout, TimeUnit.MILLISECONDS))
-            }
-    }
-
-    @ConditionalOnMissingBean(KeyStore::class)
-    @Bean
-    fun localKeyStore(): KeyStore? = null
-
-    @Profile("openshift")
-    @Primary
-    @Bean
-    fun openshiftSSLContext(@Value("\${trust.store}") trustStoreLocation: String): KeyStore? =
-        KeyStore.getInstance(KeyStore.getDefaultType())?.let { ks ->
-            ks.load(FileInputStream(trustStoreLocation), "changeit".toCharArray())
-            val fis = FileInputStream("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-            CertificateFactory.getInstance("X509").generateCertificates(fis).forEach {
-                ks.setCertificateEntry((it as X509Certificate).subjectX500Principal.name, it)
-            }
-            ks
-        }
 }
 
 private fun WebClient.Builder.defaultHeaders(applicationName: String) = this

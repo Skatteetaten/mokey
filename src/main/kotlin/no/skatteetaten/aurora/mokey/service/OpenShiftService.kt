@@ -22,9 +22,6 @@ class OpenShiftService(
     val openShiftClient: OpenShiftClient
 ) {
 
-    fun dc(namespace: String, name: String) =
-        openShiftClient.serviceAccount().deploymentConfig(namespace, name).blockForResourceWithTimeout()
-
     fun route(namespace: String, name: String) =
         openShiftClient.serviceAccount().route(namespace, name).blockForResourceWithTimeout()
 

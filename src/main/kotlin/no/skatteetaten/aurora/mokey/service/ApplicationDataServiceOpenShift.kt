@@ -1,5 +1,10 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fkorotkov.kubernetes.metadata
+import com.fkorotkov.kubernetes.newReplicationController
+import com.fkorotkov.openshift.metadata
+import com.fkorotkov.openshift.newDeploymentConfig
+import com.fkorotkov.openshift.newProject
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.Dispatchers
@@ -7,6 +12,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
+import no.skatteetaten.aurora.kubernetes.ClientTypes
+import no.skatteetaten.aurora.kubernetes.KubernetesClient
+import no.skatteetaten.aurora.kubernetes.TargetClient
+import no.skatteetaten.aurora.kubernetes.crd.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deployTag
@@ -15,7 +24,6 @@ import no.skatteetaten.aurora.mokey.extensions.imageStreamNameAndTag
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.extensions.updatedBy
 import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -27,7 +35,8 @@ private val logger = KotlinLogging.logger {}
 
 @Service
 class ApplicationDataServiceOpenShift(
-    val openshiftService: OpenShiftService,
+    //TODO: Hvordan får vi sagt ifra om at denne finnes i kubernetes-client?
+    @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesClient,
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
     val addressService: AddressService,
@@ -36,7 +45,11 @@ class ApplicationDataServiceOpenShift(
 
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         fun findAllEnvironments(): List<Environment> {
-            return openshiftService.projects().map { Environment.fromNamespace(it.metadata.name) }
+            return runBlocking {
+                client.getList(newProject { }).map {
+                    Environment.fromNamespace(it.metadata.name)
+                }
+            }
         }
         return findAllEnvironments().filter {
             if (affiliations.isNotEmpty()) {
@@ -57,9 +70,13 @@ class ApplicationDataServiceOpenShift(
 
         logger.debug("finding all applications in environments=$environments")
         return runBlocking(MDCContext()) {
-            val applicationDeployments = environments.flatMap { environment ->
+            val applicationDeployments: List<ApplicationDeployment> = environments.flatMap { environment ->
                 logger.debug("Finding ApplicationDeployments in namespace={}", environment)
-                openshiftService.applicationDeployments(environment.namespace)
+                val ad = ApplicationDeployment().apply {
+                    metadata.namespace = environment.namespace
+                }
+
+                client.getList(ad)
             }
 
             val results = applicationDeployments.map {
@@ -82,7 +99,12 @@ class ApplicationDataServiceOpenShift(
     }
 
     fun createSingleItem(namespace: String, name: String): ApplicationData {
-        val applicationDeployment = openshiftService.applicationDeployment(namespace, name)
+        val applicationDeployment = runBlocking {
+            client.get(ApplicationDeployment().apply {
+                metadata.name = name
+                metadata.namespace = namespace
+            })
+        }
         tryCreateApplicationData(applicationDeployment).applicationData?.let {
             return it
         } ?: throw tryCreateApplicationData(applicationDeployment).error!!
@@ -111,7 +133,16 @@ class ApplicationDataServiceOpenShift(
 
     fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
         val range: IntProgression = rcLatestVersion.toInt() - 1 downTo 1
-        return range.asSequence().map { openshiftService.rc(namespace, "$name-$it") }
+        return range.asSequence().map { num ->
+            runBlocking {
+                client.getOrNull(newReplicationController {
+                    metadata {
+                        this.namespace = namespace
+                        this.name = "$name-$num}"
+                    }
+                })
+            }
+        }
             .firstOrNull {
                 if (it == null) {
                     return null
@@ -167,14 +198,29 @@ class ApplicationDataServiceOpenShift(
         val namespace = applicationDeployment.metadata.namespace
         val openShiftName = applicationDeployment.metadata.name
 
-        val dc = openshiftService.dc(namespace, openShiftName)
+        val dc = runBlocking {
+            client.getOrNull(newDeploymentConfig {
+                metadata {
+                    this.namespace = namespace
+                    this.name = openShiftName
+                }
+            })
+        }
+
         if (dc == null) {
             val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
             val apd = applicationPublicData(applicationDeployment, auroraStatus)
             return applicationData(applicationDeployment, apd)
         }
 
-        val latestRc = openshiftService.rc(namespace, "${dc.metadata.name}-${dc.status.latestVersion}")
+        val latestRc = runBlocking {
+            client.getOrNull(newReplicationController {
+                metadata {
+                    this.namespace = namespace
+                    this.name = "${dc.metadata.name}-${dc.status.latestVersion}"
+                }
+            })
+        }
 
         val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
             ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
@@ -203,7 +249,7 @@ class ApplicationDataServiceOpenShift(
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
         val deployTag = deployDetails.deployTag.takeIf { !it.isNullOrEmpty() }
-            ?: (applicationDeployment.spec.deployTag?.let { it } ?: "")
+            ?: (applicationDeployment.spec.deployTag.let { it } ?: "")
 
         val apd = applicationPublicData(
             applicationDeployment,

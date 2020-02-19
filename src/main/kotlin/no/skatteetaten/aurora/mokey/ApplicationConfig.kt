@@ -3,13 +3,14 @@ package no.skatteetaten.aurora.mokey
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import java.io.IOException
-import java.security.KeyManagementException
-import java.security.NoSuchAlgorithmException
-import java.util.concurrent.TimeUnit
+import io.fabric8.kubernetes.api.model.KubernetesList
+import io.fabric8.kubernetes.internal.KubernetesDeserializer
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
+import no.skatteetaten.aurora.kubernetes.KubernetesClientConfig
+import no.skatteetaten.aurora.kubernetes.TokenFetcher
+import no.skatteetaten.aurora.kubernetes.crd.ApplicationDeployment
 import no.skatteetaten.aurora.openshift.webclient.OpenShiftClientConfig
 import no.skatteetaten.aurora.openshift.webclient.readContent
 import okhttp3.OkHttpClient
@@ -27,9 +28,14 @@ import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import java.io.IOException
+import java.security.KeyManagementException
+import java.security.NoSuchAlgorithmException
+import java.util.concurrent.TimeUnit
 
 enum class ServiceTypes {
     CANTUS
@@ -43,6 +49,20 @@ annotation class TargetService(val value: ServiceTypes)
 private val logger = KotlinLogging.logger {}
 
 @Configuration
+@Import(KubernetesClientConfig::class)
+class KubernetesConfig {
+
+    @Bean
+    fun tokenProvider() :TokenFetcher {
+        return object : TokenFetcher {
+            override fun token(): String {
+                return (SecurityContextHolder.getContext().authentication.principal as no.skatteetaten.aurora.mokey.controller.security.User).token
+            }
+        }
+    }
+}
+
+@Configuration
 @EnableScheduling
 @Import(OpenShiftClientConfig::class)
 class ApplicationConfig : BeanPostProcessor {
@@ -51,6 +71,16 @@ class ApplicationConfig : BeanPostProcessor {
         if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
             configureObjectMapper(bean)
         }
+
+        KubernetesDeserializer.registerCustomKind(
+            "skatteetaten.no/v1",
+            "ApplicationDeploymentList",
+            KubernetesList::class.java)
+
+        KubernetesDeserializer.registerCustomKind(
+            "skatteetaten.no/v1",
+            "ApplicationDeployment",
+            ApplicationDeployment::class.java)
 
         return super.postProcessAfterInitialization(bean, beanName)
     }
@@ -89,9 +119,11 @@ class ApplicationConfig : BeanPostProcessor {
         logger.info("Configuring Cantus WebClient with base Url={}", cantusUrl)
         val b = webClientBuilder()
             .baseUrl(cantusUrl)
-            .exchangeStrategies(ExchangeStrategies.builder().codecs { it.defaultCodecs().apply {
-                maxInMemorySize(-1) // unlimited
-            } }.build())
+            .exchangeStrategies(ExchangeStrategies.builder().codecs {
+                it.defaultCodecs().apply {
+                    maxInMemorySize(-1) // unlimited
+                }
+            }.build())
 
         try {
             b.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer ${token.readContent()}")
