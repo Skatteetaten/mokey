@@ -59,6 +59,7 @@ import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
+import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
 import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
 import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import org.apache.commons.codec.digest.DigestUtils
@@ -86,14 +87,15 @@ data class AuroraApplicationDeploymentDataBuilder(
     val appNamespace: String get() = "$affiliation-$envName"
 
     fun build(): ApplicationDeployment {
-        return ApplicationDeployment(
-            metadata = newObjectMeta {
+        return newApplicationDeployment {
+            metadata {
                 name = appName
                 namespace = appNamespace
                 labels = mapOf(
                     LABEL_AFFILIATION to affiliation
                 )
-            },
+            }
+
             spec = ApplicationDeploymentSpec(
                 command = ApplicationDeploymentCommand(
                     overrideFiles = overrides,
@@ -115,7 +117,7 @@ data class AuroraApplicationDeploymentDataBuilder(
                 selector = selector,
                 message = msg
             )
-        )
+        }
     }
 }
 
@@ -408,15 +410,13 @@ data class ImageStreamTagDataBuilder(
 
 class ApplicationDeploymentBuilder() {
     fun build(): ApplicationDeployment =
-        ApplicationDeployment(
-            kind = "ApplicationDeployment",
-            metadata = newObjectMeta {
+        newApplicationDeployment {
+            metadata {
                 name = "mokey"
                 labels = emptyMap()
                 namespace = "aurora-dev"
                 annotations = emptyMap()
-            },
-            apiVersion = "skatteetaten.no/v1",
+            }
             spec = ApplicationDeploymentSpec(
                 command = ApplicationDeploymentCommand(
                     overrideFiles = emptyMap(),
@@ -438,7 +438,7 @@ class ApplicationDeploymentBuilder() {
                 selector = emptyMap(),
                 message = null
             )
-        )
+        }
 }
 
 class AddressBuilder() {

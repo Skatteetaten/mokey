@@ -6,12 +6,16 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import assertk.assertions.prop
+import com.fkorotkov.kubernetes.newObjectMeta
+import com.fkorotkov.kubernetes.newService
+import com.fkorotkov.openshift.metadata
+import com.fkorotkov.openshift.newRoute
 import io.mockk.clearMocks
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import java.net.URI
-import java.time.Instant
-import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.runBlocking
+import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.RouteBuilder
 import no.skatteetaten.aurora.mokey.ServiceBuilder
@@ -25,46 +29,53 @@ import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_WEMBLEY_SERVICE
 import no.skatteetaten.aurora.mokey.model.Address
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.net.URI
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 
 class AddressServiceTest {
 
-    private val openShiftService = mockk<OpenShiftService>()
-    private val addressService = AddressService(openShiftService)
+    private val client = mockk<KubernetesCoroutinesClient>()
+    private val addressService = AddressService(client)
 
     val dcBuilder = DeploymentConfigDataBuilder()
     @BeforeEach
     fun setUp() {
-        clearMocks(openShiftService)
+        clearMocks(client)
+    }
+
+    val meta = newObjectMeta {
+        namespace = dcBuilder.dcNamespace
+        labels = mapOf("app" to dcBuilder.dcName)
     }
 
     @Test
     fun `should collect service address`() {
-        val serviceBuilder = ServiceBuilder()
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            serviceBuilder.build()
-        )
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf()
-        val addresses = addressService.getAddresses(
-            dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)["app"]
-                ?: ""
-        )
-        assertThat(addresses).hasSize(1)
-        assertThat(addresses[0]).isEqualTo(
-            url = "http://${serviceBuilder.serviceName}",
-            time = Instant.EPOCH
-        )
+
+        runBlocking {
+            val serviceBuilder = ServiceBuilder()
+            coEvery { client.getMany(newService { metadata = meta }) } returns listOf(serviceBuilder.build())
+
+            coEvery { client.getMany(newRoute { metadata = meta }) } returns listOf()
+
+            val addresses = addressService.getAddresses(
+                dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)["app"]
+                    ?: ""
+            )
+            assertThat(addresses).hasSize(1)
+            assertThat(addresses[0]).isEqualTo(
+                url = "http://${serviceBuilder.serviceName}",
+                time = Instant.EPOCH
+            )
+        }
     }
 
     @Test
     fun `should collect service and route address for secured route`() {
         val serviceBuilder = ServiceBuilder()
         val routeBuilder = RouteBuilder(tlsEnabled = true)
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            serviceBuilder.build()
-        )
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            routeBuilder.build()
-        )
+        coEvery { client.getMany(newService { metadata = meta }) } returns listOf(serviceBuilder.build())
+        coEvery { client.getMany(newRoute { metadata = meta }) } returns listOf(routeBuilder.build())
         val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assertThat(addresses).hasSize(2)
         assertThat(addresses[1]).isEqualTo(
@@ -77,12 +88,9 @@ class AddressServiceTest {
     fun `should collect service and route address`() {
         val serviceBuilder = ServiceBuilder()
         val routeBuilder = RouteBuilder()
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            serviceBuilder.build()
-        )
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            routeBuilder.build()
-        )
+
+        coEvery { client.getMany(newService { metadata = meta }) } returns listOf(serviceBuilder.build())
+        coEvery { client.getMany(newRoute { metadata = meta }) } returns listOf(routeBuilder.build())
         val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assertThat(addresses).hasSize(2)
         assertThat(addresses[1]).isEqualTo(
@@ -95,12 +103,10 @@ class AddressServiceTest {
     fun `should collect service and path based route address`() {
         val serviceBuilder = ServiceBuilder()
         val routeBuilder = RouteBuilder(routePath = "foo")
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            serviceBuilder.build()
-        )
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            routeBuilder.build()
-        )
+
+        coEvery { client.getMany(newService { metadata = meta }) } returns listOf(serviceBuilder.build())
+        coEvery { client.getMany(newRoute { metadata = meta }) } returns listOf(routeBuilder.build())
+
         val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assertThat(addresses).hasSize(2)
         assertThat(addresses[1]).isEqualTo(
@@ -120,12 +126,10 @@ class AddressServiceTest {
                 ANNOTATION_WEMBLEY_PATHS to "/web/foo/,/api/foo/"
             )
         )
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            serviceBuilder.build()
-        )
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            routeBuilder.build()
-        )
+
+        coEvery { client.getMany(newService { metadata = meta }) } returns listOf(serviceBuilder.build())
+        coEvery { client.getMany(newRoute { metadata = meta }) } returns listOf(routeBuilder.build())
+
         val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assertThat(addresses).hasSize(3)
         assertThat(addresses[2]).isEqualTo(
@@ -150,16 +154,17 @@ class AddressServiceTest {
                 ANNOTATION_MARJORY_OPEN to "true"
             )
         )
-        every { openShiftService.services(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf(
-            serviceBuilder.build()
-        )
-        every {
-            openShiftService.route(
-                dcBuilder.dcNamespace,
-                "${dcBuilder.dcName}-webseal"
-            )
-        } returns routeBuilder.build()
-        every { openShiftService.routes(dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)) } returns listOf()
+
+        coEvery { client.getMany(newService { metadata = meta }) } returns listOf(serviceBuilder.build())
+
+        coEvery { client.getMany(newRoute { metadata = meta }) } returns listOf()
+        coEvery { client.get(newRoute {
+            metadata {
+                namespace = dcBuilder.dcNamespace
+                name = "${dcBuilder.dcName}-webseal"
+            }
+         }) } returns routeBuilder.build()
+
         val addresses = addressService.getAddresses(dcBuilder.dcNamespace, dcBuilder.dcName)
         assertThat(addresses).hasSize(2)
         assertThat(addresses[1]).isEqualTo(

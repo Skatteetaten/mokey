@@ -22,7 +22,6 @@ plugins {
 
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:3.14.4")
-    implementation("com.fkorotkov:kubernetes-dsl:3.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.3")
