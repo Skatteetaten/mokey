@@ -1,11 +1,11 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
+import java.util.regex.Pattern
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesClient
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.kubernetes.newCurrentUser
-import java.util.regex.Pattern
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
@@ -17,7 +17,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 @Component
 class BearerAuthenticationManager(
-        @Qualifier("kubernetesClientWebClient") val webClient: WebClient
+    @Qualifier("kubernetesClientWebClient") val webClient: WebClient
 ) : AuthenticationManager {
 
     companion object {
@@ -36,7 +36,7 @@ class BearerAuthenticationManager(
     override fun authenticate(authentication: Authentication?): Authentication {
         try {
             val token = getBearerTokenFromAuthentication(authentication)
-            val client = KubernetesCoroutinesClient(KubernetesClient.Companion.create(webClient, object: TokenFetcher {
+            val client = KubernetesCoroutinesClient(KubernetesClient.Companion.create(webClient, object : TokenFetcher {
                 override fun token() = token
             }))
 

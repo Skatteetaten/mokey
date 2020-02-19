@@ -5,11 +5,11 @@ import com.fkorotkov.kubernetes.newService
 import com.fkorotkov.openshift.metadata
 import com.fkorotkov.openshift.newRoute
 import io.fabric8.kubernetes.api.model.Service
+import java.net.URI
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.ClientTypes
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.TargetClient
-import java.net.URI
 import no.skatteetaten.aurora.mokey.extensions.addIfNotNull
 import no.skatteetaten.aurora.mokey.extensions.created
 import no.skatteetaten.aurora.mokey.extensions.ensureStartWith
@@ -27,7 +27,7 @@ import no.skatteetaten.aurora.mokey.model.WebSealAddress
 
 @org.springframework.stereotype.Service
 class AddressService(
-        @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient
+    @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient
 ) {
 
     fun getAddresses(namespace: String, name: String): List<Address> {

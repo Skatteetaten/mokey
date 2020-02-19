@@ -12,14 +12,14 @@ import org.springframework.stereotype.Service
 
 @Service
 class ImageService(
-        @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient,
-        val imageRegistryService: ImageRegistryService
+    @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient,
+    val imageRegistryService: ImageRegistryService
 ) {
 
     fun getImageDetails(
-            namespace: String,
-            imageSteamName: String,
-            image: String
+        namespace: String,
+        imageSteamName: String,
+        image: String
     ): ImageDetails? {
         val imageTagResource = image.replace("@", "/").let { sha ->
             imageRegistryService.findTagsByName(listOf(sha)).first()

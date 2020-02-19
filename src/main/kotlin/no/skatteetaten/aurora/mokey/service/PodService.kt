@@ -17,16 +17,15 @@ import org.springframework.stereotype.Service
 
 @Service
 class PodService(
-        @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient,
-        val managementDataService: ManagementDataService
+    @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient,
+    val managementDataService: ManagementDataService
 ) {
 
     fun getPodDetails(
-            applicationDeployment: ApplicationDeployment,
-            deployDetails: DeployDetails,
-            selector: Map<String, String>
+        applicationDeployment: ApplicationDeployment,
+        deployDetails: DeployDetails,
+        selector: Map<String, String>
     ): List<PodDetails> {
-
 
         val pods = runBlocking {
             client.getMany(newPod {
@@ -37,7 +36,7 @@ class PodService(
             })
         }
         return pods.map { pod: Pod ->
-            //TODO: change this to use proxyGetEndpoint
+            // TODO: change this to use proxyGetEndpoint
             val managementResult =
                     managementDataService.load(pod.status.podIP, applicationDeployment.spec.managementPath)
             createPodDetails(pod, managementResult, deployDetails)
@@ -46,9 +45,9 @@ class PodService(
 
     companion object {
         fun createPodDetails(
-                pod: Pod,
-                managementResult: ManagementData,
-                deployDetails: DeployDetails
+            pod: Pod,
+            managementResult: ManagementData,
+            deployDetails: DeployDetails
         ): PodDetails {
             val containers = pod.spec.containers.mapNotNull { container ->
                 createContainerExcerpt(pod, container.name)
@@ -76,8 +75,8 @@ class PodService(
         }
 
         private fun createContainerExcerpt(
-                pod: Pod,
-                containerName: String
+            pod: Pod,
+            containerName: String
         ): OpenShiftContainerExcerpt? {
             val status = pod.status.containerStatuses.firstOrNull { it.name == containerName } ?: return null
 

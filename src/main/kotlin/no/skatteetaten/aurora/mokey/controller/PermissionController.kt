@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/auth/permissions")
 class PermissionController(
-        @TargetClient(ClientTypes.USER_TOKEN) val client: KubernetesCoroutinesClient
+    @TargetClient(ClientTypes.USER_TOKEN) val client: KubernetesCoroutinesClient
 ) {
 
     @GetMapping("/{namespace}")
@@ -38,7 +38,6 @@ class PermissionController(
         }
     }
 
-
     fun canViewAndAdmin(namespace: String): Boolean {
         val review = newSelfSubjectAccessReview {
             spec {
@@ -54,12 +53,10 @@ class PermissionController(
             client.post(review).status?.allowed ?: false
         }
     }
-
-
 }
 
 data class AuroraNamespacePermissions(
-        val view: Boolean = false,
-        val admin: Boolean = false,
-        val namespace: String
+    val view: Boolean = false,
+    val admin: Boolean = false,
+    val namespace: String
 )

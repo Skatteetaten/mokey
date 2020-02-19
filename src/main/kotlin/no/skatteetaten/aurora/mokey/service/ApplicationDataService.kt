@@ -1,10 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
-import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.openshift.metadata
 import com.fkorotkov.openshift.newProject
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.ClientTypes
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
@@ -181,7 +180,7 @@ class ApplicationDataService(
 
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
-        val projectNames = runBlocking { client.getMany(newProject { })}.map { it.metadata.name}
+        val projectNames = runBlocking { client.getMany(newProject { }) }.map { it.metadata.name }
 
         return values.filter { projectNames.contains(it.namespace) }
     }

@@ -5,6 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import io.fabric8.kubernetes.api.model.KubernetesList
 import io.fabric8.kubernetes.internal.KubernetesDeserializer
+import java.io.IOException
+import java.nio.charset.StandardCharsets
+import java.security.KeyManagementException
+import java.security.NoSuchAlgorithmException
+import java.util.concurrent.TimeUnit
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
@@ -31,11 +36,6 @@ import org.springframework.util.StreamUtils
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.security.KeyManagementException
-import java.security.NoSuchAlgorithmException
-import java.util.concurrent.TimeUnit
 
 enum class ServiceTypes {
     CANTUS
@@ -48,14 +48,13 @@ annotation class TargetService(val value: ServiceTypes)
 
 private val logger = KotlinLogging.logger {}
 
-
 @Configuration
 @EnableScheduling
 @Import(KubernetesClientConfig::class)
 class ApplicationConfig : BeanPostProcessor {
 
     @Bean
-    fun tokenProvider() :TokenFetcher {
+    fun tokenProvider(): TokenFetcher {
         return object : TokenFetcher {
             override fun token(): String {
                 return (SecurityContextHolder.getContext().authentication.principal as no.skatteetaten.aurora.mokey.controller.security.User).token
@@ -110,7 +109,7 @@ class ApplicationConfig : BeanPostProcessor {
     fun webClientCantus(
         builder: WebClient.Builder,
         @Value("\${integrations.cantus.url}") cantusUrl: String,
-        //TODO: Hvorfor lese denne som ressurs og ikke som File som i kubernetesKlienten?
+        // TODO: Hvorfor lese denne som ressurs og ikke som File som i kubernetesKlienten?
         @Value("\${mokey.openshift.tokenLocation:file:/var/run/secrets/kubernetes.io/serviceaccount/token}") token: Resource
     ): WebClient {
         logger.info("Configuring Cantus WebClient with base Url={}", cantusUrl)
