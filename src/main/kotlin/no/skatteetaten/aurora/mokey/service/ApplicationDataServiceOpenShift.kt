@@ -245,7 +245,7 @@ class ApplicationDataServiceOpenShift(
             imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
         }
 
-        val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
+        val applicationAddresses = runBlocking {addressService.getAddresses(namespace, openShiftName) }
 
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
