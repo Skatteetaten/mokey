@@ -1,7 +1,14 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fkorotkov.kubernetes.newObjectMeta
+import com.fkorotkov.openshift.metadata
+import com.fkorotkov.openshift.newProject
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 import mu.KotlinLogging
+import no.skatteetaten.aurora.kubernetes.ClientTypes
+import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
+import no.skatteetaten.aurora.kubernetes.TargetClient
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
@@ -15,7 +22,7 @@ private val logger = KotlinLogging.logger {}
 @Service
 class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,
-    val openShiftService: OpenShiftService,
+    @TargetClient(ClientTypes.USER_TOKEN) val client: KubernetesCoroutinesClient,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
     @Value("\${mokey.crawler.sleepSeconds:1}") val sleep: Long,
     val statusRegistry: ApplicationStatusRegistry
@@ -174,7 +181,7 @@ class ApplicationDataService(
 
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
-        val projectNames = openShiftService.projectsForUser().map { it.metadata.name }
+        val projectNames = runBlocking { client.getMany(newProject { })}.map { it.metadata.name}
 
         return values.filter { projectNames.contains(it.namespace) }
     }

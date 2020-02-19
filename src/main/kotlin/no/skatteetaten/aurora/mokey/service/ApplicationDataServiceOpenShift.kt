@@ -13,10 +13,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.ClientTypes
-import no.skatteetaten.aurora.kubernetes.KubernetesClient
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.TargetClient
-import no.skatteetaten.aurora.kubernetes.crd.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deployTag

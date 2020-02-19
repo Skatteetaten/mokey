@@ -10,9 +10,7 @@ import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
 import no.skatteetaten.aurora.kubernetes.KubernetesClientConfig
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
-import no.skatteetaten.aurora.kubernetes.crd.ApplicationDeployment
-import no.skatteetaten.aurora.openshift.webclient.OpenShiftClientConfig
-import no.skatteetaten.aurora.openshift.webclient.readContent
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -29,10 +27,12 @@ import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.util.StreamUtils
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.TimeUnit
@@ -48,9 +48,11 @@ annotation class TargetService(val value: ServiceTypes)
 
 private val logger = KotlinLogging.logger {}
 
+
 @Configuration
+@EnableScheduling
 @Import(KubernetesClientConfig::class)
-class KubernetesConfig {
+class ApplicationConfig : BeanPostProcessor {
 
     @Bean
     fun tokenProvider() :TokenFetcher {
@@ -60,12 +62,6 @@ class KubernetesConfig {
             }
         }
     }
-}
-
-@Configuration
-@EnableScheduling
-@Import(OpenShiftClientConfig::class)
-class ApplicationConfig : BeanPostProcessor {
 
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
         if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
@@ -114,6 +110,7 @@ class ApplicationConfig : BeanPostProcessor {
     fun webClientCantus(
         builder: WebClient.Builder,
         @Value("\${integrations.cantus.url}") cantusUrl: String,
+        //TODO: Hvorfor lese denne som ressurs og ikke som File som i kubernetesKlienten?
         @Value("\${mokey.openshift.tokenLocation:file:/var/run/secrets/kubernetes.io/serviceaccount/token}") token: Resource
     ): WebClient {
         logger.info("Configuring Cantus WebClient with base Url={}", cantusUrl)
@@ -149,3 +146,5 @@ class ApplicationConfig : BeanPostProcessor {
         return OkHttp3ClientHttpRequestFactory(okHttpClientBuilder.build())
     }
 }
+
+fun Resource.readContent() = StreamUtils.copyToString(this.inputStream, StandardCharsets.UTF_8)

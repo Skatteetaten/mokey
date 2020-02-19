@@ -1,6 +1,12 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fkorotkov.kubernetes.metadata
+import com.fkorotkov.kubernetes.newPod
 import io.fabric8.kubernetes.api.model.Pod
+import kotlinx.coroutines.runBlocking
+import no.skatteetaten.aurora.kubernetes.ClientTypes
+import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
+import no.skatteetaten.aurora.kubernetes.TargetClient
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ManagementData
@@ -11,29 +17,38 @@ import org.springframework.stereotype.Service
 
 @Service
 class PodService(
-    val openShiftService: OpenShiftService,
-    val managementDataService: ManagementDataService
+        @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient,
+        val managementDataService: ManagementDataService
 ) {
 
     fun getPodDetails(
-        applicationDeployment: ApplicationDeployment,
-        deployDetails: DeployDetails,
-        selector: Map<String, String> = applicationDeployment.spec.selector
+            applicationDeployment: ApplicationDeployment,
+            deployDetails: DeployDetails,
+            selector: Map<String, String>
     ): List<PodDetails> {
 
-        val pods = openShiftService.pods(applicationDeployment.metadata.namespace, selector)
+
+        val pods = runBlocking {
+            client.getMany(newPod {
+                metadata {
+                    namespace = applicationDeployment.metadata.namespace
+                    labels = selector
+                }
+            })
+        }
         return pods.map { pod: Pod ->
+            //TODO: change this to use proxyGetEndpoint
             val managementResult =
-                managementDataService.load(pod.status.podIP, applicationDeployment.spec.managementPath)
+                    managementDataService.load(pod.status.podIP, applicationDeployment.spec.managementPath)
             createPodDetails(pod, managementResult, deployDetails)
         }
     }
 
     companion object {
         fun createPodDetails(
-            pod: Pod,
-            managementResult: ManagementData,
-            deployDetails: DeployDetails
+                pod: Pod,
+                managementResult: ManagementData,
+                deployDetails: DeployDetails
         ): PodDetails {
             val containers = pod.spec.containers.mapNotNull { container ->
                 createContainerExcerpt(pod, container.name)
@@ -45,24 +60,24 @@ class PodService(
             val latestDeployment = podDeployment == deployDetails.deployment
             val latestDeployTag = deployTag == deployDetails.deployTag
             return PodDetails(
-                OpenShiftPodExcerpt(
-                    name = pod.metadata.name,
-                    phase = pod.status.phase,
-                    podIP = pod.status.podIP,
-                    replicaName = podDeployment,
-                    startTime = pod.status.startTime,
-                    deployTag = deployTag,
-                    latestDeployTag = latestDeployTag,
-                    latestReplicaName = latestDeployment,
-                    containers = containers
-                ),
-                managementResult
+                    OpenShiftPodExcerpt(
+                            name = pod.metadata.name,
+                            phase = pod.status.phase,
+                            podIP = pod.status.podIP,
+                            replicaName = podDeployment,
+                            startTime = pod.status.startTime,
+                            deployTag = deployTag,
+                            latestDeployTag = latestDeployTag,
+                            latestReplicaName = latestDeployment,
+                            containers = containers
+                    ),
+                    managementResult
             )
         }
 
         private fun createContainerExcerpt(
-            pod: Pod,
-            containerName: String
+                pod: Pod,
+                containerName: String
         ): OpenShiftContainerExcerpt? {
             val status = pod.status.containerStatuses.firstOrNull { it.name == containerName } ?: return null
 
@@ -74,11 +89,11 @@ class PodService(
 
             val image = status.imageID.substringAfterLast("docker-pullable://")
             return OpenShiftContainerExcerpt(
-                name = containerName,
-                image = image,
-                ready = status.ready,
-                restartCount = status.restartCount,
-                state = state
+                    name = containerName,
+                    image = image,
+                    ready = status.ready,
+                    restartCount = status.restartCount,
+                    state = state
             )
         }
     }
