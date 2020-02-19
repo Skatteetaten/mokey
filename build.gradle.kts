@@ -1,5 +1,9 @@
 import com.adarshr.gradle.testlogger.theme.ThemeType
 
+repositories {
+    mavenLocal()
+}
+
 plugins {
     id("org.springframework.cloud.contract")
     id("org.jetbrains.kotlin.jvm") version "1.3.61"
@@ -27,7 +31,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("io.projectreactor.addons:reactor-extra:3.3.2.RELEASE")
 
-    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:AOS-4178-5")
+    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:AOS-4178-8")
     implementation("net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.7.1")
 
     testImplementation("org.springframework.security:spring-security-test")

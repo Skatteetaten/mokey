@@ -14,6 +14,7 @@ import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.ClientTypes
 import no.skatteetaten.aurora.kubernetes.KubernetesClient
+import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.TargetClient
 import no.skatteetaten.aurora.kubernetes.crd.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.extensions.affiliation
@@ -23,12 +24,7 @@ import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.extensions.imageStreamNameAndTag
 import no.skatteetaten.aurora.mokey.extensions.sprocketDone
 import no.skatteetaten.aurora.mokey.extensions.updatedBy
-import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
-import no.skatteetaten.aurora.mokey.model.AuroraStatus
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
-import no.skatteetaten.aurora.mokey.model.DeployDetails
-import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.model.*
 import org.springframework.stereotype.Service
 
 private val logger = KotlinLogging.logger {}
@@ -36,17 +32,18 @@ private val logger = KotlinLogging.logger {}
 @Service
 class ApplicationDataServiceOpenShift(
     //TODO: Hvordan får vi sagt ifra om at denne finnes i kubernetes-client?
-    @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesClient,
+    @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient,
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
     val addressService: AddressService,
     val imageService: ImageService
 ) {
 
+    // TODO: Can we rewrite this to use a label query? If all projects are labels with affiliation now?
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         fun findAllEnvironments(): List<Environment> {
             return runBlocking {
-                client.getList(newProject { }).map {
+                client.getMany(newProject { }).map {
                     Environment.fromNamespace(it.metadata.name)
                 }
             }
@@ -72,11 +69,11 @@ class ApplicationDataServiceOpenShift(
         return runBlocking(MDCContext()) {
             val applicationDeployments: List<ApplicationDeployment> = environments.flatMap { environment ->
                 logger.debug("Finding ApplicationDeployments in namespace={}", environment)
-                val ad = ApplicationDeployment().apply {
-                    metadata.namespace = environment.namespace
-                }
-
-                client.getList(ad)
+                client.getMany(newApplicationDeployment {
+                    metadata {
+                        namespace= environment.namespace
+                    }
+                })
             }
 
             val results = applicationDeployments.map {
@@ -213,6 +210,7 @@ class ApplicationDataServiceOpenShift(
             return applicationData(applicationDeployment, apd)
         }
 
+        //TOOD: Can we replace this with a call to find all replicationController with a given app= label and then sort them?
         val latestRc = runBlocking {
             client.getOrNull(newReplicationController {
                 metadata {
