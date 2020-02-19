@@ -9,6 +9,7 @@ import assertk.assertions.prop
 import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newService
 import com.fkorotkov.openshift.newRoute
+import io.fabric8.kubernetes.api.model.Service
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -42,7 +43,7 @@ class AddressServiceTest {
         }
 
         val serviceBuilder = ServiceBuilder()
-        coEvery { client.getMany(newService { metadata = meta }) } returns listOf(serviceBuilder.build())
+        coEvery { client.getMany(any<Service>())} returns listOf(serviceBuilder.build())
 
         coEvery { client.getMany(newRoute { metadata = meta }) } returns listOf()
 
