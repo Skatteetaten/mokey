@@ -1,13 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
-import com.fkorotkov.openshift.metadata
-import com.fkorotkov.openshift.newProject
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import no.skatteetaten.aurora.kubernetes.ClientTypes
-import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
-import no.skatteetaten.aurora.kubernetes.TargetClient
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
@@ -15,13 +9,14 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
+import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
 
 @Service
 class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,
-    @TargetClient(ClientTypes.USER_TOKEN) val client: KubernetesCoroutinesClient,
+    val client: OpenShiftUserClient,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
     @Value("\${mokey.crawler.sleepSeconds:1}") val sleep: Long,
     val statusRegistry: ApplicationStatusRegistry
@@ -180,7 +175,7 @@ class ApplicationDataService(
 
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
-        val projectNames = runBlocking { client.getMany(newProject { }) }.map { it.metadata.name }
+        val projectNames = runBlocking { client.getAllProjects() }.map { it.metadata.name }
 
         return values.filter { projectNames.contains(it.namespace) }
     }

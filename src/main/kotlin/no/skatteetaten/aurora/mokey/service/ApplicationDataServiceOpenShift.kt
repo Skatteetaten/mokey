@@ -2,9 +2,6 @@ package no.skatteetaten.aurora.mokey.service
 
 import com.fkorotkov.kubernetes.metadata
 import com.fkorotkov.kubernetes.newReplicationController
-import com.fkorotkov.openshift.metadata
-import com.fkorotkov.openshift.newDeploymentConfig
-import com.fkorotkov.openshift.newProject
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.Dispatchers
@@ -12,9 +9,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
-import no.skatteetaten.aurora.kubernetes.ClientTypes
-import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
-import no.skatteetaten.aurora.kubernetes.TargetClient
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
 import no.skatteetaten.aurora.mokey.extensions.deployTag
@@ -29,15 +23,13 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
-import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
 import org.springframework.stereotype.Service
 
 private val logger = KotlinLogging.logger {}
 
 @Service
 class ApplicationDataServiceOpenShift(
-        // TODO: Hvordan får vi sagt ifra om at denne finnes i kubernetes-client?
-    @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient,
+    val client: OpenShiftServiceAccountClient,
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
     val addressService: AddressService,
@@ -48,7 +40,7 @@ class ApplicationDataServiceOpenShift(
     fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         fun findAllEnvironments(): List<Environment> {
             return runBlocking {
-                client.getMany(newProject { }).map {
+                client.getAllProjects().map {
                     Environment.fromNamespace(it.metadata.name)
                 }
             }
@@ -65,7 +57,7 @@ class ApplicationDataServiceOpenShift(
         ids: List<String> = emptyList()
     ): List<ApplicationData> {
         return findAllApplicationDataByEnvironments(environments)
-                .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
+            .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
 
     private fun findAllApplicationDataByEnvironments(environments: List<Environment>): List<ApplicationData> {
@@ -74,11 +66,7 @@ class ApplicationDataServiceOpenShift(
         return runBlocking(MDCContext()) {
             val applicationDeployments: List<ApplicationDeployment> = environments.flatMap { environment ->
                 logger.debug("Finding ApplicationDeployments in namespace={}", environment)
-                client.getMany(newApplicationDeployment {
-                    metadata {
-                        namespace = environment.namespace
-                    }
-                })
+                client.getApplicationDeployments(environment.namespace)
             }
 
             val results = applicationDeployments.map {
@@ -101,15 +89,13 @@ class ApplicationDataServiceOpenShift(
     }
 
     fun createSingleItem(namespace: String, name: String): ApplicationData {
-        val applicationDeployment = runBlocking {
-            client.get(ApplicationDeployment().apply {
-                metadata.name = name
-                metadata.namespace = namespace
-            })
+        return runBlocking {
+            val applicationDeployment = client.getApplicationDeployment(name, namespace)
+
+            tryCreateApplicationData(applicationDeployment).applicationData?.let {
+                it
+            } ?: throw tryCreateApplicationData(applicationDeployment).error!!
         }
-        tryCreateApplicationData(applicationDeployment).applicationData?.let {
-            return it
-        } ?: throw tryCreateApplicationData(applicationDeployment).error!!
     }
 
     private data class MaybeApplicationData(
@@ -118,39 +104,34 @@ class ApplicationDataServiceOpenShift(
         val error: Exception? = null
     )
 
-    private fun tryCreateApplicationData(it: ApplicationDeployment): MaybeApplicationData {
+    private suspend fun tryCreateApplicationData(it: ApplicationDeployment): MaybeApplicationData {
         return try {
             MaybeApplicationData(
-                    applicationDeployment = it,
-                    applicationData = createApplicationData(it)
+                applicationDeployment = it,
+                applicationData = createApplicationData(it)
             )
         } catch (e: Exception) {
             logger.info(
-                    "Failed getting deployment name={}, namespace={} message={}", it.metadata.name,
-                    it.metadata.namespace, e.message, e
+                "Failed getting deployment name={}, namespace={} message={}", it.metadata.name,
+                it.metadata.namespace, e.message, e
             )
             MaybeApplicationData(applicationDeployment = it, error = e)
         }
     }
 
-    fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
+    suspend fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
         val range: IntProgression = rcLatestVersion.toInt() - 1 downTo 1
         return range.asSequence().map { num ->
+            // TODO: Why?
             runBlocking {
-                client.getOrNull(newReplicationController {
-                    metadata {
-                        this.namespace = namespace
-                        this.name = "$name-$num}"
-                    }
-                })
+                client.getReplicationController(namespace, name, num)
             }
-        }
-                .firstOrNull {
-                    if (it == null) {
-                        return null
-                    }
-                    it.isRunning()
+        }.firstOrNull {
+                if (it == null) {
+                    return null
                 }
+                it.isRunning()
+            }
     }
 
     private fun applicationPublicData(
@@ -161,22 +142,22 @@ class ApplicationDataServiceOpenShift(
         val namespace = applicationDeployment.metadata.namespace
         val openShiftName = applicationDeployment.metadata.name
         val applicationDeploymentName = applicationDeployment.spec.applicationDeploymentName
-                ?: throw OpenShiftObjectException("applicationDeploymentName was not set for deployment $namespace/$openShiftName")
+            ?: throw OpenShiftObjectException("applicationDeploymentName was not set for deployment $namespace/$openShiftName")
         val applicationName = applicationDeployment.spec.applicationName
-                ?: throw OpenShiftObjectException("applicationName was not set for deployment $namespace/$openShiftName")
+            ?: throw OpenShiftObjectException("applicationName was not set for deployment $namespace/$openShiftName")
 
         return ApplicationPublicData(
-                applicationId = applicationDeployment.spec.applicationId,
-                applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
-                auroraStatus = auroraStatus,
-                applicationName = applicationName,
-                applicationDeploymentName = applicationDeploymentName,
-                namespace = namespace,
-                affiliation = affiliation,
-                deployTag = applicationDeployment.spec.deployTag ?: "",
-                releaseTo = applicationDeployment.spec.releaseTo,
-                message = applicationDeployment.spec.message,
-                environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
+            applicationId = applicationDeployment.spec.applicationId,
+            applicationDeploymentId = applicationDeployment.spec.applicationDeploymentId,
+            auroraStatus = auroraStatus,
+            applicationName = applicationName,
+            applicationDeploymentName = applicationDeploymentName,
+            namespace = namespace,
+            affiliation = affiliation,
+            deployTag = applicationDeployment.spec.deployTag ?: "",
+            releaseTo = applicationDeployment.spec.releaseTo,
+            message = applicationDeployment.spec.message,
+            environment = applicationDeployment.spec.command.applicationDeploymentRef.environment
         )
     }
 
@@ -187,27 +168,20 @@ class ApplicationDataServiceOpenShift(
         val databases = applicationDeployment.spec.databases ?: listOf()
 
         return ApplicationData(
-                booberDeployId = applicationDeployment.metadata.booberDeployId,
-                managementPath = applicationDeployment.spec.managementPath,
-                deploymentCommand = applicationDeployment.spec.command,
-                databases = databases,
-                publicData = applicationPublicData
+            booberDeployId = applicationDeployment.metadata.booberDeployId,
+            managementPath = applicationDeployment.spec.managementPath,
+            deploymentCommand = applicationDeployment.spec.command,
+            databases = databases,
+            publicData = applicationPublicData
         )
     }
 
-    private fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
+    private suspend fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
         logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
         val namespace = applicationDeployment.metadata.namespace
         val openShiftName = applicationDeployment.metadata.name
 
-        val dc = runBlocking {
-            client.getOrNull(newDeploymentConfig {
-                metadata {
-                    this.namespace = namespace
-                    this.name = openShiftName
-                }
-            })
-        }
+        val dc = client.getDeploymentConfig(namespace, openShiftName)
 
         if (dc == null) {
             val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
@@ -216,17 +190,10 @@ class ApplicationDataServiceOpenShift(
         }
 
         // TOOD: Can we replace this with a call to find all replicationController with a given app= label and then sort them?
-        val latestRc = runBlocking {
-            client.getOrNull(newReplicationController {
-                metadata {
-                    this.namespace = namespace
-                    this.name = "${dc.metadata.name}-${dc.status.latestVersion}"
-                }
-            })
-        }
+        val latestRc = client.getReplicationController(namespace, dc.metadata.name, dc.status.latestVersion.toInt())
 
         val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
-                ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
+            ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
 
         val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
 
@@ -245,32 +212,32 @@ class ApplicationDataServiceOpenShift(
             imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
         }
 
-        val applicationAddresses = runBlocking {addressService.getAddresses(namespace, openShiftName) }
+        val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
         val deployTag = deployDetails.deployTag.takeIf { !it.isNullOrEmpty() }
-                ?: (applicationDeployment.spec.deployTag.let { it } ?: "")
+            ?: (applicationDeployment.spec.deployTag.let { it } ?: "")
 
         val apd = applicationPublicData(
-                applicationDeployment,
-                auroraStatus
+            applicationDeployment,
+            auroraStatus
         ).copy(
-                auroraVersion = imageDetails?.auroraVersion,
-                dockerImageRepo = imageDetails?.dockerImageRepo,
-                deployTag = deployTag
+            auroraVersion = imageDetails?.auroraVersion,
+            dockerImageRepo = imageDetails?.dockerImageRepo,
+            deployTag = deployTag
         )
 
         return applicationData(applicationDeployment, apd).copy(
-                pods = pods,
-                imageDetails = imageDetails,
-                addresses = applicationAddresses,
-                splunkIndex = splunkIndex,
-                deployDetails = deployDetails,
-                sprocketDone = dc.sprocketDone,
-                updatedBy = dc.updatedBy
+            pods = pods,
+            imageDetails = imageDetails,
+            addresses = applicationAddresses,
+            splunkIndex = splunkIndex,
+            deployDetails = deployDetails,
+            sprocketDone = dc.sprocketDone,
+            updatedBy = dc.updatedBy
         )
     }
 
@@ -280,15 +247,15 @@ class ApplicationDataServiceOpenShift(
         deploymentPhase: String?
     ): DeployDetails {
         return DeployDetails(
-                targetReplicas = dc.spec.replicas,
-                availableReplicas = dc.status.availableReplicas ?: 0,
-                deployment = runningRc?.metadata?.name,
-                deployTag = runningRc?.deployTag,
-                paused = dc.spec.paused ?: false,
-                phase = deploymentPhase
+            targetReplicas = dc.spec.replicas,
+            availableReplicas = dc.status.availableReplicas ?: 0,
+            deployment = runningRc?.metadata?.name,
+            deployTag = runningRc?.deployTag,
+            paused = dc.spec.paused ?: false,
+            phase = deploymentPhase
         )
     }
 
     fun ReplicationController.isRunning() =
-            this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
+        this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
 }

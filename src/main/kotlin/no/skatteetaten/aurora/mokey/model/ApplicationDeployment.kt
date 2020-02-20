@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
-import io.fabric8.kubernetes.api.model.ObjectMeta
 import no.skatteetaten.aurora.kubernetes.crd.SkatteetatenCRD
 
 fun newApplicationDeployment(block: ApplicationDeployment.() -> Unit = {}): ApplicationDeployment {
@@ -18,8 +17,6 @@ fun newApplicationDeployment(block: ApplicationDeployment.() -> Unit = {}): Appl
 data class ApplicationDeployment(
     var spec: ApplicationDeploymentSpec = ApplicationDeploymentSpec()
 ) : SkatteetatenCRD("ApplicationDeployment")
-
-
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)

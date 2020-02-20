@@ -1,32 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
-import assertk.assertThat
 import assertk.assertions.contains
-import assertk.assertions.isEqualTo
-import assertk.assertions.isNull
-import assertk.assertions.isTrue
-import io.fabric8.kubernetes.api.model.ObjectMeta
-import io.fabric8.openshift.api.model.Project
-import io.mockk.clearAllMocks
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
-import java.net.URI
-import java.time.Instant
-import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
-import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
-import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
-import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
-import no.skatteetaten.aurora.mokey.ProjectDataBuilder
-import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
-import no.skatteetaten.aurora.mokey.extensions.deployTag
-import no.skatteetaten.aurora.mokey.model.ApplicationData
-import no.skatteetaten.aurora.mokey.model.AuroraStatus
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
-import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
-import no.skatteetaten.aurora.mokey.model.ServiceAddress
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 
 /*
 TODO : fix

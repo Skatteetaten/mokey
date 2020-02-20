@@ -1,13 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
 import com.fkorotkov.kubernetes.newObjectMeta
-import com.fkorotkov.kubernetes.newService
 import com.fkorotkov.openshift.metadata
 import com.fkorotkov.openshift.newRoute
 import io.fabric8.kubernetes.api.model.Service
-import no.skatteetaten.aurora.kubernetes.ClientTypes
-import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
-import no.skatteetaten.aurora.kubernetes.TargetClient
 import no.skatteetaten.aurora.mokey.extensions.addIfNotNull
 import no.skatteetaten.aurora.mokey.extensions.created
 import no.skatteetaten.aurora.mokey.extensions.ensureStartWith
@@ -75,7 +71,7 @@ class AddressService(
 
     private suspend fun findWebsealAddresses(services: List<Service>, namespace: String): List<WebSealAddress> {
         return services.filter { it.marjoryDone != null }.mapNotNull {
-            openshiftClient.getRouteOrNull( newRoute {
+            openshiftClient.getRouteOrNull(newRoute {
                 metadata {
                     this.namespace = namespace
                     this.name = "${it.metadata.name}-webseal"
