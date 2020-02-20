@@ -26,7 +26,7 @@ import java.net.URI
 
 @org.springframework.stereotype.Service
 class AddressService(
-    @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient
+    val openshiftClient: OpenShiftServiceAccountClient
 ) {
 
     suspend fun getAddresses(namespace: String, name: String): List<Address> {
@@ -35,8 +35,8 @@ class AddressService(
             this.namespace = namespace
             this.labels = mapOf("app" to name)
         }
-        val services = client.getMany(newService { this.metadata = metadata })
-        val routes = client.getMany(newRoute { this.metadata = metadata })
+        val services = openshiftClient.getServices(metadata)
+        val routes = openshiftClient.getRoutes(metadata)
 
         val serviceAddresses = services.map { ServiceAddress(URI.create("http://${it.metadata.name}"), it.created) }
 
@@ -75,7 +75,7 @@ class AddressService(
 
     private suspend fun findWebsealAddresses(services: List<Service>, namespace: String): List<WebSealAddress> {
         return services.filter { it.marjoryDone != null }.mapNotNull {
-            client.getOrNull(newRoute {
+            openshiftClient.getRouteOrNull( newRoute {
                 metadata {
                     this.namespace = namespace
                     this.name = "${it.metadata.name}-webseal"

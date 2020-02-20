@@ -25,7 +25,7 @@ import java.time.Instant
 
 class AddressServiceTest {
 
-    private val client = mockk<KubernetesCoroutinesClient>()
+    private val client = mockk<OpenShiftServiceAccountClient>()
     private val addressService = AddressService(client)
 
     val dcBuilder = DeploymentConfigDataBuilder()
@@ -43,9 +43,9 @@ class AddressServiceTest {
         }
 
         val serviceBuilder = ServiceBuilder()
-        coEvery { client.getMany(any<Service>())} returns listOf(serviceBuilder.build())
+        coEvery { client.getServices(any())} returns listOf(serviceBuilder.build())
 
-        coEvery { client.getMany(newRoute { metadata = meta }) } returns listOf()
+        coEvery { client.getRoutes(any()) } returns listOf()
 
         val addresses = addressService.getAddresses(
             dcBuilder.dcNamespace, mapOf("app" to dcBuilder.dcName)["app"]
