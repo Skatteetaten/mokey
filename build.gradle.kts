@@ -17,7 +17,7 @@ plugins {
     id("se.patrikerdes.use-latest-versions") version "0.2.13"
     id("com.adarshr.test-logger") version "2.0.0"
 
-    id("no.skatteetaten.gradle.aurora") version "3.4.5"
+    id("no.skatteetaten.gradle.aurora") version "3.4.6"
 }
 
 dependencies {
@@ -39,7 +39,7 @@ dependencies {
     implementation("com.jayway.jsonpath:json-path:2.4.0")
 
     testImplementation("io.mockk:mockk:1.9.3")
-    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.19")
+    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.21")
     testImplementation("com.nhaarman:mockito-kotlin:1.6.0")
     testImplementation("no.skatteetaten.aurora:mockmvc-extensions-kotlin:1.0.4")
 }

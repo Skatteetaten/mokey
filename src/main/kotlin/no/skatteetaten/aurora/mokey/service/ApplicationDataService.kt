@@ -6,6 +6,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
 import java.util.concurrent.ConcurrentHashMap
@@ -69,13 +70,11 @@ class ApplicationDataService(
             .filter { if (affiliations.isEmpty()) true else affiliations.contains(it.affiliation) }
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
-    /*
     @Scheduled(
         fixedDelayString = "\${mokey.crawler.rateSeconds:120000}",
         initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
     )
     fun cache() = refreshCache(affiliations)
-     */
 
     fun refreshItem(applicationId: String) =
         findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->

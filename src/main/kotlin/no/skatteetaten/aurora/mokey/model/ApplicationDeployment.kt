@@ -3,8 +3,11 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.fabric8.kubernetes.api.model.HasMetadata
 import io.fabric8.kubernetes.api.model.ObjectMeta
+import no.skatteetaten.aurora.kubernetes.crd.SkatteetatenCRD
 
 fun newApplicationDeployment(block: ApplicationDeployment.() -> Unit = {}): ApplicationDeployment {
     val instance = ApplicationDeployment()
@@ -15,32 +18,10 @@ fun newApplicationDeployment(block: ApplicationDeployment.() -> Unit = {}): Appl
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder(value = ["apiVersion", "kind", "metadata", "spec"])
+@JsonDeserialize(using = JsonDeserializer.None::class)
 class ApplicationDeployment(
     var spec: ApplicationDeploymentSpec = ApplicationDeploymentSpec()
-) : HasMetadata {
-
-    private lateinit var metadata: ObjectMeta
-    private var apiVersion: String = "skatteetaten.no/v1"
-
-    override fun getMetadata() = metadata
-
-    fun metadata(block: ObjectMeta.() -> Unit) {
-        metadata = ObjectMeta()
-        metadata.block()
-    }
-
-    override fun getKind(): String = "ApplicationDeployment"
-
-    override fun getApiVersion() = apiVersion
-
-    override fun setMetadata(data: ObjectMeta) {
-        metadata = data
-    }
-
-    override fun setApiVersion(version: String) {
-        this.apiVersion = version
-    }
-}
+) : SkatteetatenCRD("ApplicationDeployment")
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -76,12 +57,6 @@ data class AuroraConfigRef(
     val name: String,
     val refName: String,
     val resolvedRef: String? = null
-)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class ApplicationDeploymentList(
-    val items: List<ApplicationDeployment> = emptyList()
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
