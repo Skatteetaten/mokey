@@ -98,7 +98,6 @@ class AddressServiceTest {
                 url = "http://${routeBuilder.routeHost}",
                 time = Instant.EPOCH
             )
-
         }
     }
 
@@ -162,7 +161,6 @@ class AddressServiceTest {
                     ANNOTATION_MARJORY_OPEN to "true"
                 )
             )
-
 
             coEvery { client.getRoutes(any()) } returns listOf()
             coEvery { client.getServices(any()) } returns listOf(serviceBuilder.build())

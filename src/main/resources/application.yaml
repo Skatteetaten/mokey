@@ -48,7 +48,7 @@ openshift:
 
 kubernetes:
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
-    tokenLocation: /tmp/boober-token
+    tokenLocation: /tmp/reader-token
 ---
 spring:
     profiles: local
@@ -58,7 +58,7 @@ mokey:
         warmup: false
         affiliations: demo
     openshift:
-        tokenLocation: file:/tmp/boober-token
+        tokenLocation: file:/tmp/reader-token
 
 integrations:
     cantus:

@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
 import com.fkorotkov.kubernetes.metadata
-import com.fkorotkov.kubernetes.newReplicationController
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.Dispatchers

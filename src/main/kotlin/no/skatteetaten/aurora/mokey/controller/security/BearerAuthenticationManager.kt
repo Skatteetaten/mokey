@@ -1,10 +1,9 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
 import kotlinx.coroutines.runBlocking
+import no.skatteetaten.aurora.kubernetes.KubernetesClientReactor
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
-import no.skatteetaten.aurora.kubernetes.KubernetesReactiveClient
 import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
-import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.kubernetes.newCurrentUser
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.security.authentication.AuthenticationManager
@@ -37,9 +36,13 @@ class BearerAuthenticationManager(
     override fun authenticate(authentication: Authentication?): Authentication {
         try {
             val token = getBearerTokenFromAuthentication(authentication)
-            val client = KubernetesCoroutinesClient(KubernetesReactiveClient.create(webClient, object : TokenFetcher {
-                override fun token() = token
-            }, KubernetesRetryConfiguration(0)))
+            val client = KubernetesCoroutinesClient(
+                KubernetesClientReactor.create(
+                    webClient,
+                    token,
+                    KubernetesRetryConfiguration(0)
+                )
+            )
 
             val user = runBlocking {
                 client.get(newCurrentUser())

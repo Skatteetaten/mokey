@@ -3,6 +3,8 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
+import io.fabric8.kubernetes.api.model.HasMetadata
+import io.fabric8.kubernetes.api.model.ObjectMeta
 import no.skatteetaten.aurora.kubernetes.crd.SkatteetatenCRD
 
 fun newApplicationDeployment(block: ApplicationDeployment.() -> Unit = {}): ApplicationDeployment {
@@ -14,9 +16,32 @@ fun newApplicationDeployment(block: ApplicationDeployment.() -> Unit = {}): Appl
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder(value = ["apiVersion", "kind", "metadata", "spec"])
-data class ApplicationDeployment(
+class ApplicationDeployment(
     var spec: ApplicationDeploymentSpec = ApplicationDeploymentSpec()
-) : SkatteetatenCRD("ApplicationDeployment")
+) : HasMetadata {
+
+    private lateinit var metadata: ObjectMeta
+    private var apiVersion: String = "skatteetaten.no/v1"
+
+    override fun getMetadata() = metadata
+
+    fun metadata(block: ObjectMeta.() -> Unit) {
+        metadata = ObjectMeta()
+        metadata.block()
+    }
+
+    override fun getKind(): String = "ApplicationDeployment"
+
+    override fun getApiVersion() = apiVersion
+
+    override fun setMetadata(data: ObjectMeta) {
+        metadata = data
+    }
+
+    override fun setApiVersion(version: String) {
+        this.apiVersion = version
+    }
+}
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)

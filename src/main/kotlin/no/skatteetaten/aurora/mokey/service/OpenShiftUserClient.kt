@@ -14,13 +14,13 @@ class OpenShiftUserClient(
     @TargetClient(ClientTypes.USER_TOKEN) val client: KubernetesCoroutinesClient
 ) {
     // TODO: is this the best way?
-    suspend fun getProjectByNameOrNull(p: String) :Project? = client.getOrNull(newProject {
+    suspend fun getProjectByNameOrNull(p: String): Project? = client.getOrNull(newProject {
         metadata {
             name = p
         }
     })
 
-    suspend fun selfSubjectAccessReview(review: SelfSubjectAccessReview) : SelfSubjectAccessReview= client.post(review)
+    suspend fun selfSubjectAccessReview(review: SelfSubjectAccessReview): SelfSubjectAccessReview = client.post(review)
 
-    suspend fun getAllProjects(): List<Project> = client.getMany(null)
+    suspend fun getAllProjects(): List<Project> = client.getMany()
 }

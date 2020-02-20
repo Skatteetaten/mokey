@@ -14,6 +14,7 @@ import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
 import no.skatteetaten.aurora.kubernetes.KubernetesClientConfig
+import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import okhttp3.OkHttpClient
@@ -50,7 +51,7 @@ private val logger = KotlinLogging.logger {}
 
 @Configuration
 @EnableScheduling
-@Import(KubernetesClientConfig::class)
+@Import(KubernetesClientConfig::class, KubernetesRetryConfiguration::class)
 class ApplicationConfig : BeanPostProcessor {
 
     @Bean
@@ -104,6 +105,7 @@ class ApplicationConfig : BeanPostProcessor {
             }).build()
     }
 
+    // TODO: Hvorfor har cantus med seg denne tokenen?
     @Bean
     @TargetService(ServiceTypes.CANTUS)
     fun webClientCantus(
