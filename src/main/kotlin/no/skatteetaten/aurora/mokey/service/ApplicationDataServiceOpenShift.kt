@@ -72,7 +72,7 @@ class ApplicationDataServiceOpenShift(
                 async(Dispatchers.IO) { tryCreateApplicationData(it) }
             }.map {
                 it.await()
-            }**/
+            } **/
 
             val errors = results.mapNotNull { it.error }
 
