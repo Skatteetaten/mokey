@@ -13,30 +13,28 @@ import java.util.concurrent.TimeUnit
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
-import no.skatteetaten.aurora.kubernetes.KubernetesClientConfig
+import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
+import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
-import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.core.io.Resource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.util.StreamUtils
-import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import java.security.KeyStore
 
 enum class ServiceTypes {
     CANTUS
@@ -51,8 +49,10 @@ private val logger = KotlinLogging.logger {}
 
 @Configuration
 @EnableScheduling
-@Import(KubernetesClientConfig::class, KubernetesRetryConfiguration::class)
-class ApplicationConfig : BeanPostProcessor {
+class ApplicationConfig(
+    @Value("\${spring.application.name}") val applicationName: String,
+    val kubeernetesClientConfig: KubnernetesClientConfiguration
+) : BeanPostProcessor {
 
     @Bean
     fun tokenProvider(): TokenFetcher {
@@ -71,14 +71,28 @@ class ApplicationConfig : BeanPostProcessor {
         KubernetesDeserializer.registerCustomKind(
             "skatteetaten.no/v1",
             "ApplicationDeploymentList",
-            KubernetesList::class.java)
+            KubernetesList::class.java
+        )
 
         KubernetesDeserializer.registerCustomKind(
             "skatteetaten.no/v1",
             "ApplicationDeployment",
-            ApplicationDeployment::class.java)
+            ApplicationDeployment::class.java
+        )
 
         return super.postProcessAfterInitialization(bean, beanName)
+    }
+
+    @Qualifier("managmenetClient")
+    @Bean
+    fun managementClient(
+        builder: WebClient.Builder,
+        @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?
+    ): KubernetesCoroutinesClient {
+        return KubernetesCoroutinesClient(
+            kubeernetesClientConfig.copy(retry = KubernetesRetryConfiguration(times = 0))
+                .createServiceAccountReactorClient(builder, trustStore, applicationName)
+        )
     }
 
     @Bean
@@ -86,23 +100,6 @@ class ApplicationConfig : BeanPostProcessor {
         serializationInclusion(JsonInclude.Include.NON_NULL)
         featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         featuresToEnable(SerializationFeature.INDENT_OUTPUT)
-    }
-
-    @Bean
-    fun restTemplate(
-        builder: RestTemplateBuilder,
-        @Value("\${spring.application.name}") applicationName: String
-    ): RestTemplate {
-        return builder.requestFactory { createRequestFactory(2, 2) }
-            .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
-                request.headers.apply {
-                    // We want to get the V2 format of the actuator health response
-                    set(HttpHeaders.ACCEPT, "application/vnd.spring-boot.actuator.v2+json,application/json")
-                    set("KlientID", applicationName)
-                }
-
-                execution.execute(request, body)
-            }).build()
     }
 
     // TODO: Hvorfor har cantus med seg denne tokenen?

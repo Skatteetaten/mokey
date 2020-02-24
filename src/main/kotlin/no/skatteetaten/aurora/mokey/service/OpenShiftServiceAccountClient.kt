@@ -56,7 +56,7 @@ class OpenShiftServiceAccountClient(
         return client.getOrNull(newReplicationController {
             metadata {
                 this.namespace = namespace
-                this.name = "$name-$num}"
+                this.name = "$name-$num"
             }
         })
     }

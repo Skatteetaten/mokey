@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.fabric8.kubernetes.api.model.Pod
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.extensions.extract
@@ -19,33 +21,38 @@ import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
-import no.skatteetaten.aurora.mokey.model.ManagementLinks.Companion.parseManagementResponse
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestClientException
-import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClientResponseException
 
 @Service
-class ManagementInterfaceFactory(val restTemplate: RestTemplate) {
-    fun create(host: String?, path: String?): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
-        return ManagementInterface.create(restTemplate, host, path)
+class ManagementInterfaceFactory(
+    val client: OpenShiftManagementClient
+) {
+    fun create(pod: Pod, path: String?): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
+        return ManagementInterface.create(client, pod, path)
     }
 }
 
 private val logger = KotlinLogging.logger {}
 
-class ManagementEndpoint(val url: String, private val endpointType: EndpointType) {
+class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private val endpointType: EndpointType) {
 
-    fun <S : Any> findJsonResource(restTemplate: RestTemplate, clazz: Class<S>): ManagementEndpointResult<S> {
-        logger.debug("Getting resource with url={}", url)
+    val url = "namespaces/${pod.metadata.namespace}/pods/${pod.metadata.name}:$port/proxy/$path"
 
+    fun <S : Any> findJsonResource(client: OpenShiftManagementClient, clazz: Class<S>): ManagementEndpointResult<S> {
+
+        logger.debug("Getting managementResource for type=${endpointType.key} uri={}", url)
+
+        // TODO: Previously this had a timeout of 2s, what is it now?
         val response = try {
-            val response = restTemplate.exchange(url, HttpMethod.GET, HttpEntity.EMPTY, String::class.java)
-            HttpResponse(response.body ?: "", response.statusCodeValue)
-        } catch (e: HttpStatusCodeException) {
+            val response = runBlocking { client.proxyManagementInterfaceRaw(pod, port, path) }
+            logger.debug("Response status=OK body={}", response)
+            HttpResponse(response, 200)
+        } catch (e: WebClientResponseException) {
             val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
+            logger.debug("Respone status=ERROR body={}", errorResponse.content)
             if (e.statusCode.is5xxServerError) {
                 errorResponse
             } else {
@@ -65,10 +72,11 @@ class ManagementEndpoint(val url: String, private val endpointType: EndpointType
     }
 
     fun <T : Any> findJsonResource(
-        restTemplate: RestTemplate,
+        client: OpenShiftManagementClient,
         parser: (node: JsonNode) -> T
     ): ManagementEndpointResult<T> {
-        val intermediate = this.findJsonResource(restTemplate, JsonNode::class.java)
+
+        val intermediate = this.findJsonResource(client, JsonNode::class.java)
 
         return intermediate.deserialized?.let { deserialized ->
             try {
@@ -137,7 +145,7 @@ class ManagementEndpoint(val url: String, private val endpointType: EndpointType
 }
 
 class ManagementInterface internal constructor(
-    private val restTemplate: RestTemplate,
+    private val client: OpenShiftManagementClient,
     val links: ManagementLinks,
     val infoEndpoint: ManagementEndpoint? = null,
     val envEndpoint: ManagementEndpoint? = null,
@@ -145,45 +153,59 @@ class ManagementInterface internal constructor(
 
 ) {
     fun getHealthEndpointResult(): ManagementEndpointResult<HealthResponse> =
-        healthEndpoint?.findJsonResource(restTemplate, HealthResponseParser::parse)
+        healthEndpoint?.findJsonResource(client, HealthResponseParser::parse)
             ?: toManagementEndpointResultLinkMissing(HEALTH)
 
     fun getInfoEndpointResult(): ManagementEndpointResult<InfoResponse> =
-        infoEndpoint?.findJsonResource(restTemplate, InfoResponse::class.java)
+        infoEndpoint?.findJsonResource(client, InfoResponse::class.java)
             ?: toManagementEndpointResultLinkMissing(INFO)
 
     fun getEnvEndpointResult(): ManagementEndpointResult<JsonNode> =
-        envEndpoint?.findJsonResource(restTemplate, JsonNode::class.java)
+        envEndpoint?.findJsonResource(client, JsonNode::class.java)
             ?: toManagementEndpointResultLinkMissing(ENV)
 
     companion object {
         fun create(
-            restTemplate: RestTemplate,
-            host: String?,
+            client: OpenShiftManagementClient,
+            pod: Pod,
             path: String?
         ): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
-            if (host.isNullOrBlank()) {
-                return Pair(
-                    null, toManagementEndpointResultDiscoveryConfigError("Host address is missing")
-                )
-            } else if (path.isNullOrBlank()) {
+            if (path.isNullOrBlank()) {
                 return Pair(
                     null, toManagementEndpointResultDiscoveryConfigError("Management path is missing")
                 )
             }
+            // TODO: validate this
+            val port = path.substringBefore("/").removePrefix(":").toInt()
+            val p = path.substringAfter("/")
 
-            // TODO Url composition must be more robust.
-            val discoveryUrl = "http://$host$path"
-            val discoveryEndpoint = ManagementEndpoint(discoveryUrl, DISCOVERY)
-            val response = discoveryEndpoint.findJsonResource(restTemplate, ::parseManagementResponse)
+            val discoveryEndpoint = ManagementEndpoint(pod, port, p, DISCOVERY)
+
+            val response = discoveryEndpoint.findJsonResource(client) { response: JsonNode ->
+                val asMap = response[EndpointType.DISCOVERY.key].asMap()
+                val links = asMap
+                    .mapValues {
+                        val rawHref = it.value["href"].asText()!!
+                        rawHref.replace("http://", "").substringAfter("/")
+                    }
+                ManagementLinks(links)
+            }
 
             return response.deserialized?.let { links ->
+
                 Pair(ManagementInterface(
-                    restTemplate = restTemplate,
+                    client = client,
                     links = links,
-                    infoEndpoint = links.linkFor(INFO)?.let { url -> ManagementEndpoint(url, INFO) },
-                    envEndpoint = links.linkFor(ENV)?.let { url -> ManagementEndpoint(url, ENV) },
-                    healthEndpoint = links.linkFor(HEALTH)?.let { url -> ManagementEndpoint(url, HEALTH) }
+                    infoEndpoint = links.linkFor(INFO)?.let { url -> ManagementEndpoint(pod, port, url, INFO) },
+                    envEndpoint = links.linkFor(ENV)?.let { url -> ManagementEndpoint(pod, port, url, ENV) },
+                    healthEndpoint = links.linkFor(HEALTH)?.let { url ->
+                        ManagementEndpoint(
+                            pod,
+                            port,
+                            url,
+                            HEALTH
+                        )
+                    }
                 ), response)
             } ?: Pair(null, response)
         }

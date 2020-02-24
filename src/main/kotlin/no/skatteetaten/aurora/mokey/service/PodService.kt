@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.Pod
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ManagementData
@@ -9,6 +10,7 @@ import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service
 
+private val logger = KotlinLogging.logger {}
 @Service
 class PodService(
     val client: OpenShiftServiceAccountClient,
@@ -22,9 +24,8 @@ class PodService(
     ): List<PodDetails> {
 
         return client.getPods(applicationDeployment.metadata.namespace, selector).map { pod: Pod ->
-            // TODO: change this to use proxyGetEndpoint
             val managementResult =
-                managementDataService.load(pod.status.podIP, applicationDeployment.spec.managementPath)
+                managementDataService.load(pod, applicationDeployment.spec.managementPath)
             createPodDetails(pod, managementResult, deployDetails)
         }
     }

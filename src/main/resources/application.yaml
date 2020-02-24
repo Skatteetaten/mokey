@@ -15,8 +15,7 @@ spring:
 
 logging:
     level:
-        no.skatteetaten.aurora:
-            mokey: INFO
+        no.skatteetaten.aurora: INFO
         org:
             hibernate: WARN
             springframework: WARN
@@ -48,17 +47,16 @@ openshift:
 
 kubernetes:
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
-    tokenLocation: /tmp/reader-token
+    tokenLocation: /tmp/mokey-token
 ---
 spring:
     profiles: local
 
 mokey:
     cache:
-        warmup: false
-        affiliations: demo
-    openshift:
-        tokenLocation: file:/tmp/reader-token
+        warmup:
+            enabled: true
+        affiliations: aurora
 
 integrations:
     cantus:
@@ -68,8 +66,11 @@ logging:
         console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
     level:
-        no.skatteetaten.aurora:
-            mokey: DEBUG
+        no.skatteetaten.aurora: DEBUG
+
+kubernetes:
+    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
+    tokenLocation: /tmp/mokey-token
 
 ---
 spring:

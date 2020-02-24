@@ -103,7 +103,7 @@ data class HttpResponse(
     val content: String,
     val code: Int
 ) {
-    fun jsonContentOrError() =
+    fun jsonContentOrError(): String =
         try {
             jacksonObjectMapper().readTree(content)
             content

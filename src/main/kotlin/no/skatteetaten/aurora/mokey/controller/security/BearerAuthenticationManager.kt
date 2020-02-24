@@ -1,9 +1,9 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
 import kotlinx.coroutines.runBlocking
-import no.skatteetaten.aurora.kubernetes.KubernetesClientReactor
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
+import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
 import no.skatteetaten.aurora.kubernetes.newCurrentUser
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.security.authentication.AuthenticationManager
@@ -13,11 +13,14 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import java.security.KeyStore
 import java.util.regex.Pattern
 
 @Component
 class BearerAuthenticationManager(
-    @Qualifier("kubernetesClientWebClient") val webClient: WebClient
+    val kubernetesClientConfiguration: KubnernetesClientConfiguration,
+    val builder: WebClient.Builder,
+    @Qualifier("kubernetesClientWebClient") val trustStore: KeyStore?
 ) : AuthenticationManager {
 
     companion object {
@@ -37,11 +40,8 @@ class BearerAuthenticationManager(
         try {
             val token = getBearerTokenFromAuthentication(authentication)
             val client = KubernetesCoroutinesClient(
-                KubernetesClientReactor.create(
-                    webClient,
-                    token,
-                    KubernetesRetryConfiguration(0)
-                )
+                kubernetesClientConfiguration.copy(retry = KubernetesRetryConfiguration(times = 0))
+                    .createServiceAccountReactorClient(builder, trustStore, token)
             )
 
             val user = runBlocking {

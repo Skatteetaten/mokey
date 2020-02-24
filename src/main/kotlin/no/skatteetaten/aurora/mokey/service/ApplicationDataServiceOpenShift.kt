@@ -1,10 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
-import com.fkorotkov.kubernetes.metadata
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
@@ -68,11 +65,14 @@ class ApplicationDataServiceOpenShift(
                 client.getApplicationDeployments(environment.namespace)
             }
 
+            val results = applicationDeployments.map { tryCreateApplicationData(it) }
+
+            /**
             val results = applicationDeployments.map {
                 async(Dispatchers.IO) { tryCreateApplicationData(it) }
             }.map {
                 it.await()
-            }
+            }**/
 
             val errors = results.mapNotNull { it.error }
 
@@ -126,11 +126,11 @@ class ApplicationDataServiceOpenShift(
                 client.getReplicationController(namespace, name, num)
             }
         }.firstOrNull {
-                if (it == null) {
-                    return null
-                }
-                it.isRunning()
+            if (it == null) {
+                return null
             }
+            it.isRunning()
+        }
     }
 
     private fun applicationPublicData(
@@ -176,7 +176,7 @@ class ApplicationDataServiceOpenShift(
     }
 
     private suspend fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
-        logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
+        logger.info("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
         val namespace = applicationDeployment.metadata.namespace
         val openShiftName = applicationDeployment.metadata.name
 
