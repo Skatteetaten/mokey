@@ -30,7 +30,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("io.projectreactor.addons:reactor-extra:3.3.2.RELEASE")
 
-    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.0-SNAPSHOT")
+    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:feature_AOS_4178_split_coroutines_and_reactor-SNAPSHOT")
     implementation("net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.7.1")
 
     testImplementation("org.springframework.security:spring-security-test")
