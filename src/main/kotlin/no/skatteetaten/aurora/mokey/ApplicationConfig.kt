@@ -91,10 +91,9 @@ class ApplicationConfig(
         @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?
     ): KubernetesReactorClient {
         return kubeernetesClientConfig.copy(retry = KubernetesRetryConfiguration(times = 0))
-            .createServiceAccountReactorClient(builder, trustStore ).apply {
-            webClientBuilder.defaultHeaders(applicationName)
-        }.build()
-
+            .createServiceAccountReactorClient(builder, trustStore).apply {
+                webClientBuilder.defaultHeaders(applicationName)
+            }.build()
     }
 
     @Bean
