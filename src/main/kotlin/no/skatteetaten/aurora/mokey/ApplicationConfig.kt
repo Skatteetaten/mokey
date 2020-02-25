@@ -14,28 +14,19 @@ import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.kubernetes.defaultHeaders
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
-import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.io.Resource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.util.StreamUtils
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.security.KeyManagementException
 import java.security.KeyStore
-import java.security.NoSuchAlgorithmException
-import java.util.concurrent.TimeUnit
 
 enum class ServiceTypes {
     CANTUS
@@ -65,6 +56,8 @@ class ApplicationConfig(
     }
 
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
+
+        // TODO: Trenger vi denne?
         if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
             configureObjectMapper(bean)
         }
@@ -96,6 +89,7 @@ class ApplicationConfig(
             }.build()
     }
 
+    // TODO: Trenger vi denne
     @Bean
     fun mapperBuilder(): Jackson2ObjectMapperBuilder = Jackson2ObjectMapperBuilder().apply {
         serializationInclusion(JsonInclude.Include.NON_NULL)
@@ -103,47 +97,23 @@ class ApplicationConfig(
         featuresToEnable(SerializationFeature.INDENT_OUTPUT)
     }
 
-    // TODO: Hvorfor har cantus med seg denne tokenen?
     @Bean
     @TargetService(ServiceTypes.CANTUS)
     fun webClientCantus(
         builder: WebClient.Builder,
-        @Value("\${integrations.cantus.url}") cantusUrl: String,
-        // TODO: Hvorfor lese denne som ressurs og ikke som File som i kubernetesKlienten?
-        @Value("\${mokey.openshift.tokenLocation:file:/var/run/secrets/kubernetes.io/serviceaccount/token}") token: Resource
+        @Value("\${integrations.cantus.url}") cantusUrl: String
     ): WebClient {
         logger.info("Configuring Cantus WebClient with base Url={}", cantusUrl)
-        val b = webClientBuilder()
+        val b = builder
             .baseUrl(cantusUrl)
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .defaultHeader(AuroraHeaderFilter.KORRELASJONS_ID, RequestKorrelasjon.getId())
             .exchangeStrategies(ExchangeStrategies.builder().codecs {
                 it.defaultCodecs().apply {
                     maxInMemorySize(-1) // unlimited
                 }
             }.build())
 
-        try {
-            b.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer ${token.readContent()}")
-        } catch (e: IOException) {
-            logger.info("No token file found, will not add Authorization header to WebClient")
-        }
-
         return b.build()
     }
-
-    fun webClientBuilder(ssl: Boolean = false) =
-        WebClient
-            .builder()
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .defaultHeader(AuroraHeaderFilter.KORRELASJONS_ID, RequestKorrelasjon.getId())
-
-    @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)
-    private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
-        val okHttpClientBuilder = OkHttpClient().newBuilder()
-            .readTimeout(readTimeout, TimeUnit.SECONDS)
-            .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
-
-        return OkHttp3ClientHttpRequestFactory(okHttpClientBuilder.build())
-    }
 }
-
-fun Resource.readContent() = StreamUtils.copyToString(this.inputStream, StandardCharsets.UTF_8)
