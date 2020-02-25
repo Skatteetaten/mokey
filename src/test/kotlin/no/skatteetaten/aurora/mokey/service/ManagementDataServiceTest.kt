@@ -131,7 +131,7 @@ class ManagementDataServiceTest {
 
         every { managementInterfaceFactory.create(any(), any()) } returns Pair(null, discoveryResult)
 
-        val result = managementDataService.load(newPod{}, "/bar")
+        val result = managementDataService.load(newPod {}, "/bar")
 
         verify { managementInterfaceFactory.create(any(), any()) }
         assertThat(result.links).isEqualTo(discoveryResult)
@@ -181,7 +181,7 @@ class ManagementDataServiceTest {
         every { managementInterface.getHealthEndpointResult() } returns healthResult
         every { managementInterfaceFactory.create(any(), any()) } returns Pair(managementInterface, discoveryResult)
 
-        val data = managementDataService.load(newPod{}, "/test")
+        val data = managementDataService.load(newPod {}, "/test")
 
         verify { managementInterfaceFactory.create(any(), any()) }
         verify { managementInterface.getInfoEndpointResult() }
