@@ -79,7 +79,7 @@ class OpenShiftServiceAccountClient(
         })
     }
 
-    suspend fun getPods(namespace: String, label: Map<String, String?>): List<Pod> {
+    suspend fun getPods(namespace: String, labels: Map<String, String?>): List<Pod> {
         return client.getMany(newPod {
             metadata {
                 this.namespace = namespace

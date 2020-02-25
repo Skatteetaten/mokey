@@ -23,7 +23,9 @@ class PodService(
         selector: Map<String, String>
     ): List<PodDetails> {
 
+        logger.debug("Getting pods in namespace=${applicationDeployment.metadata.namespace} for selector=$selector")
         return client.getPods(applicationDeployment.metadata.namespace, selector).map { pod: Pod ->
+            logger.debug("Getting management result for pod=${pod.metadata.name}")
             val managementResult =
                 managementDataService.load(pod, applicationDeployment.spec.managementPath)
             createPodDetails(pod, managementResult, deployDetails)

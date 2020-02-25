@@ -5,15 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import io.fabric8.kubernetes.api.model.KubernetesList
 import io.fabric8.kubernetes.internal.KubernetesDeserializer
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.security.KeyManagementException
-import java.security.NoSuchAlgorithmException
-import java.util.concurrent.TimeUnit
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
-import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
+import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
 import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
@@ -34,7 +29,12 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.util.StreamUtils
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import java.io.IOException
+import java.nio.charset.StandardCharsets
+import java.security.KeyManagementException
 import java.security.KeyStore
+import java.security.NoSuchAlgorithmException
+import java.util.concurrent.TimeUnit
 
 enum class ServiceTypes {
     CANTUS
@@ -88,11 +88,9 @@ class ApplicationConfig(
     fun managementClient(
         builder: WebClient.Builder,
         @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?
-    ): KubernetesCoroutinesClient {
-        return KubernetesCoroutinesClient(
-            kubeernetesClientConfig.copy(retry = KubernetesRetryConfiguration(times = 0))
-                .createServiceAccountReactorClient(builder, trustStore, applicationName)
-        )
+    ): KubernetesReactorClient {
+        return kubeernetesClientConfig.copy(retry = KubernetesRetryConfiguration(times = 0))
+            .createServiceAccountReactorClient(builder, trustStore, applicationName)
     }
 
     @Bean

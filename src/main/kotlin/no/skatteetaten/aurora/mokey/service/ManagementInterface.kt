@@ -43,16 +43,16 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private 
 
     fun <S : Any> findJsonResource(client: OpenShiftManagementClient, clazz: Class<S>): ManagementEndpointResult<S> {
 
-        logger.debug("Getting managementResource for type=${endpointType.key} uri={}", url)
+        //logger.debug("Getting managementResource for uri={}", url)
 
         // TODO: Previously this had a timeout of 2s, what is it now?
         val response = try {
             val response = runBlocking { client.proxyManagementInterfaceRaw(pod, port, path) }
-            logger.debug("Response status=OK body={}", response)
+            // logger.debug("Response status=OK body={}", response)
             HttpResponse(response, 200)
         } catch (e: WebClientResponseException) {
             val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
-            logger.debug("Respone status=ERROR body={}", errorResponse.content)
+            // logger.debug("Respone url=$url status=ERROR body={}", errorResponse.content)
             if (e.statusCode.is5xxServerError) {
                 errorResponse
             } else {
