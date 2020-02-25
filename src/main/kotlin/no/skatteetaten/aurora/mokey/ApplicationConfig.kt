@@ -12,6 +12,7 @@ import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
 import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
+import no.skatteetaten.aurora.kubernetes.defaultHeaders
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Qualifier
@@ -90,7 +91,10 @@ class ApplicationConfig(
         @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?
     ): KubernetesReactorClient {
         return kubeernetesClientConfig.copy(retry = KubernetesRetryConfiguration(times = 0))
-            .createServiceAccountReactorClient(builder, trustStore, applicationName)
+            .createServiceAccountReactorClient(builder, trustStore ).apply {
+            webClientBuilder.defaultHeaders(applicationName)
+        }.build()
+
     }
 
     @Bean

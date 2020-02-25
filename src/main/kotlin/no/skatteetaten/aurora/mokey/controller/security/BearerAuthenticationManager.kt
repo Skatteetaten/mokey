@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
 import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
+import no.skatteetaten.aurora.kubernetes.StringTokenFetcher
 import no.skatteetaten.aurora.kubernetes.newCurrentUser
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.security.authentication.AuthenticationManager
@@ -41,7 +42,8 @@ class BearerAuthenticationManager(
             val token = getBearerTokenFromAuthentication(authentication)
             val client = KubernetesCoroutinesClient(
                 kubernetesClientConfiguration.copy(retry = KubernetesRetryConfiguration(times = 0))
-                    .createServiceAccountReactorClient(builder, trustStore, token)
+                    .createUserAccountReactorClient(builder, trustStore, StringTokenFetcher(token))
+                    .build()
             )
 
             val user = runBlocking {
