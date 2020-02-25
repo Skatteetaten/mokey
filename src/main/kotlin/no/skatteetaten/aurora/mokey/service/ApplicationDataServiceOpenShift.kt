@@ -19,6 +19,8 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.model.ImageDetails
+import no.skatteetaten.aurora.mokey.pmapIO
 import org.springframework.stereotype.Service
 
 private val logger = KotlinLogging.logger {}
@@ -65,14 +67,7 @@ class ApplicationDataServiceOpenShift(
                 client.getApplicationDeployments(environment.namespace)
             }
 
-            val results = applicationDeployments.map { tryCreateApplicationData(it) }
-
-            /**
-            val results = applicationDeployments.map {
-                async(Dispatchers.IO) { tryCreateApplicationData(it) }
-            }.map {
-                it.await()
-            } **/
+            val results = applicationDeployments.pmapIO { tryCreateApplicationData(it) }
 
             val errors = results.mapNotNull { it.error }
 
@@ -119,9 +114,11 @@ class ApplicationDataServiceOpenShift(
     }
 
     suspend fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
+        if(rcLatestVersion==0L) {
+            return null
+        }
         val range: IntProgression = rcLatestVersion.toInt() - 1 downTo 1
         return range.asSequence().map { num ->
-            // TODO: Why?
             runBlocking {
                 client.getReplicationController(namespace, name, num)
             }
@@ -176,7 +173,7 @@ class ApplicationDataServiceOpenShift(
     }
 
     private suspend fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
-        logger.info("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
+        logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
         val namespace = applicationDeployment.metadata.namespace
         val openShiftName = applicationDeployment.metadata.name
 
@@ -201,14 +198,18 @@ class ApplicationDataServiceOpenShift(
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
 
         // it is a lot faster to fetch from imageStreamTag from ocp rather then from cantus if it is up to date
-        val imageDetails = if (runningRc == latestRc || runningRc == null) {
+        val imageDetails: ImageDetails? = if (runningRc == latestRc || runningRc == null) {
             // gets ImageDetails for the first Image that is found in the ImageChange triggers for the given DeploymentConfig
             dc.imageStreamNameAndTag?.let {
                 imageService.getImageDetailsFromImageStream(dc.metadata.namespace, it.first, it.second)
             }
         } else {
             val image = runningRc.spec.template.spec.containers[0].image
-            imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+            if (image.startsWith("172")) {
+                null
+            } else {
+                imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+            }
         }
 
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
@@ -258,3 +259,4 @@ class ApplicationDataServiceOpenShift(
     fun ReplicationController.isRunning() =
         this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
 }
+

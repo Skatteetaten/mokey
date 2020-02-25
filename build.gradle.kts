@@ -21,16 +21,15 @@ plugins {
 }
 
 dependencies {
-    implementation("com.squareup.okhttp3:okhttp:3.14.4")
-
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.3")
+    implementation("io.projectreactor.addons:reactor-extra:3.3.2.RELEASE")
+    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.2-1")
+
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("io.projectreactor.addons:reactor-extra:3.3.2.RELEASE")
 
-    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:feature_AOS_4178_split_coroutines_and_reactor-SNAPSHOT")
     implementation("net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.7.1")
 
     testImplementation("org.springframework.security:spring-security-test")

@@ -53,10 +53,10 @@ spring:
     profiles: local
 
 mokey:
+    cachewarmup:
+        enabled: true
     cache:
-        warmup:
-            enabled: true
-        affiliations: aurora
+        affiliations: sirius
 
 integrations:
     cantus:
@@ -66,11 +66,12 @@ logging:
         console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
     level:
-        no.skatteetaten.aurora: DEBUG
+        no.skatteetaten.aurora: INFO
+        no.skatteetaten.aurora.kubernetes: DEBUG
 
 kubernetes:
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
-    tokenLocation: /tmp/mokey-token
+    tokenLocation: /tmp/reader-token
 
 ---
 spring:
