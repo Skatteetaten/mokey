@@ -57,7 +57,7 @@ class ApplicationConfig(
 
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
 
-        //TODO: Trenger vi denne?
+        // TODO: Trenger vi denne?
         if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
             configureObjectMapper(bean)
         }
@@ -117,4 +117,3 @@ class ApplicationConfig(
         return b.build()
     }
 }
-
