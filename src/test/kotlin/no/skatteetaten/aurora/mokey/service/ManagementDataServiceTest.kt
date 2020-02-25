@@ -5,6 +5,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fkorotkov.kubernetes.newPod
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -130,7 +131,7 @@ class ManagementDataServiceTest {
 
         every { managementInterfaceFactory.create(any(), any()) } returns Pair(null, discoveryResult)
 
-        val result = managementDataService.load("http://foo", "/bar")
+        val result = managementDataService.load(newPod{}, "/bar")
 
         verify { managementInterfaceFactory.create(any(), any()) }
         assertThat(result.links).isEqualTo(discoveryResult)
@@ -180,7 +181,7 @@ class ManagementDataServiceTest {
         every { managementInterface.getHealthEndpointResult() } returns healthResult
         every { managementInterfaceFactory.create(any(), any()) } returns Pair(managementInterface, discoveryResult)
 
-        val data = managementDataService.load("http://foo", "/test")
+        val data = managementDataService.load(newPod{}, "/test")
 
         verify { managementInterfaceFactory.create(any(), any()) }
         verify { managementInterface.getInfoEndpointResult() }

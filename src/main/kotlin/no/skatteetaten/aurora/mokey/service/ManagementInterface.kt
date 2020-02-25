@@ -43,7 +43,7 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private 
 
     fun <S : Any> findJsonResource(client: OpenShiftManagementClient, clazz: Class<S>): ManagementEndpointResult<S> {
 
-        //logger.debug("Getting managementResource for uri={}", url)
+        // logger.debug("Getting managementResource for uri={}", url)
 
         // TODO: Previously this had a timeout of 2s, what is it now?
         val response = try {

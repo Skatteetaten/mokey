@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+/* TODO: test
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
@@ -74,3 +75,5 @@ class ManagementInterfaceTest : AbstractTest() {
     private fun withJsonFromFile(resourceName: String) =
         MockRestResponseCreators.withSuccess(loadResource(resourceName), MediaType.APPLICATION_JSON)
 }
+
+ */

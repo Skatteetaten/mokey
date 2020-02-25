@@ -26,6 +26,5 @@ integrations:
     cantus:
         url: "http://localhost"
 
-mokey:
-    openshift:
-        tokenLocation: classpath:test-token.txt
+kubernetes:
+    tokenLocation: src/test/resources/test-token.txt
