@@ -106,15 +106,15 @@ class ApplicationDataServiceOpenShift(
             )
         } catch (e: Exception) {
             logger.info(
-                "Failed getting deployment name={}, namespace={} message={}", it.metadata.name,
-                it.metadata.namespace, e.message, e
+                "Failed getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace} message=${e.message}",
+                e
             )
             MaybeApplicationData(applicationDeployment = it, error = e)
         }
     }
 
     suspend fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
-        if(rcLatestVersion==0L) {
+        if (rcLatestVersion == 0L) {
             return null
         }
         val range: IntProgression = rcLatestVersion.toInt() - 1 downTo 1
@@ -259,4 +259,3 @@ class ApplicationDataServiceOpenShift(
     fun ReplicationController.isRunning() =
         this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
 }
-

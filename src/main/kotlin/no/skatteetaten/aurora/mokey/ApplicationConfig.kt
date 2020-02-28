@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
@@ -81,18 +82,6 @@ class ApplicationConfig(
         return super.postProcessAfterInitialization(bean, beanName)
     }
 
-    @Qualifier("managmenetClient")
-    @Bean
-    fun managementClient(
-        builder: WebClient.Builder,
-        @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?
-    ): KubernetesReactorClient {
-        return kubeernetesClientConfig.copy(retry = KubernetesRetryConfiguration(times = 0))
-            .createServiceAccountReactorClient(builder, trustStore).apply {
-                webClientBuilder.defaultHeaders(applicationName)
-            }.build()
-    }
-
     // TODO: Trenger vi denne
     @Bean
     fun mapperBuilder(): Jackson2ObjectMapperBuilder = Jackson2ObjectMapperBuilder().apply {
@@ -123,5 +112,5 @@ class ApplicationConfig(
 }
 
 suspend fun <A, B> Iterable<A>.pmapIO(f: suspend (A) -> B): List<B> = coroutineScope {
-    map { async(Dispatchers.IO) { f(it) } }.awaitAll()
+    map { async(Dispatchers.IO + MDCContext()) { f(it) } }.awaitAll()
 }

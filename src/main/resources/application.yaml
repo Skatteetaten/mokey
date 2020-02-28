@@ -15,7 +15,9 @@ spring:
 
 logging:
     level:
+        reactor.netty: ERROR
         no.skatteetaten.aurora: INFO
+        no.skatteetaten.aurora.kubernetes: DEBUG
         org:
             hibernate: WARN
             springframework: WARN
@@ -34,6 +36,7 @@ integrations:
     cantus:
         url: "http://cantus"
 
+# TODO: FIX
 management:
     metrics:
         enable:
@@ -46,8 +49,10 @@ openshift:
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
 
 kubernetes:
-    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
-    tokenLocation: /tmp/mokey-token
+    retry:
+        time: 3
+        min: 100ms
+        max: 2s
 ---
 spring:
     profiles: local
@@ -66,7 +71,7 @@ logging:
         console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
     level:
-        no.skatteetaten.aurora: INFO
+        no.skatteetaten.aurora: DEBUG
         no.skatteetaten.aurora.kubernetes: DEBUG
 
 kubernetes:
