@@ -52,11 +52,11 @@ class OpenShiftServiceAccountClient(
         })
     }
 
-    suspend fun getReplicationController(namespace: String, name: String, num: Int): ReplicationController? {
-        return client.getOrNull(newReplicationController {
+    suspend fun getReplicationControllers(namespace: String, labels: Map<String, String>): List<ReplicationController> {
+        return client.getMany(newReplicationController {
             metadata {
                 this.namespace = namespace
-                this.name = "$name-$num"
+                this.labels = labels
             }
         })
     }

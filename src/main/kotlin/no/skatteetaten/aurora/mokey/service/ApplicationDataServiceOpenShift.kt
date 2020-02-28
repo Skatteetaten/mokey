@@ -21,6 +21,7 @@ import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.pmapIO
 import org.springframework.stereotype.Service
+import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
 
@@ -106,24 +107,6 @@ class ApplicationDataServiceOpenShift(
         }
     }
 
-    suspend fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
-        if (rcLatestVersion == 0L) {
-            return null
-        }
-        val range: IntProgression = rcLatestVersion.toInt() - 1 downTo 1
-        return range.asSequence().map { num ->
-            // TODO: Fix this
-            runBlocking {
-                client.getReplicationController(namespace, name, num)
-            }
-        }.firstOrNull {
-            if (it == null) {
-                return null
-            }
-            it.isRunning()
-        }
-    }
-
     private fun applicationPublicData(
         applicationDeployment: ApplicationDeployment,
         auroraStatus: AuroraStatus
@@ -179,11 +162,15 @@ class ApplicationDataServiceOpenShift(
             return applicationData(applicationDeployment, apd)
         }
 
-        // TOOD: Can we replace this with a call to find all replicationController with a given app= label and then sort them?
-        val latestRc = client.getReplicationController(namespace, dc.metadata.name, dc.status.latestVersion.toInt())
+        val replicationControllers =
+            client.getReplicationControllers(namespace, mapOf("app" to dc.metadata.name)).sortedByDescending {
+                it.metadata.name.substringAfterLast("-").toInt()
+            }
+        val latestRc = replicationControllers.firstOrNull()
 
-        val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
-            ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
+        val runningRc = replicationControllers.firstOrNull {
+            it.isRunning()
+        }
 
         val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
 
