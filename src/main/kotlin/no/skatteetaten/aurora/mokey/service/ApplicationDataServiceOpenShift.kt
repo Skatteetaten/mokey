@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.service
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
@@ -35,12 +34,10 @@ class ApplicationDataServiceOpenShift(
 ) {
 
     // TODO: Can we rewrite this to use a label query? If all projects are labels with affiliation now?
-    fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
-        fun findAllEnvironments(): List<Environment> {
-            return runBlocking {
-                client.getAllProjects().map {
-                    Environment.fromNamespace(it.metadata.name)
-                }
+    suspend fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
+        suspend fun findAllEnvironments(): List<Environment> {
+            return client.getAllProjects().map {
+                Environment.fromNamespace(it.metadata.name)
             }
         }
         return findAllEnvironments().filter {
@@ -50,7 +47,7 @@ class ApplicationDataServiceOpenShift(
         }.groupBy { it.affiliation }
     }
 
-    fun findAllApplicationDataForEnv(
+    suspend fun findAllApplicationDataForEnv(
         environments: List<Environment>,
         ids: List<String> = emptyList()
     ): List<ApplicationData> {
@@ -58,38 +55,34 @@ class ApplicationDataServiceOpenShift(
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
     }
 
-    private fun findAllApplicationDataByEnvironments(environments: List<Environment>): List<ApplicationData> {
+    private suspend fun findAllApplicationDataByEnvironments(environments: List<Environment>): List<ApplicationData> {
 
         logger.debug("finding all applications in environments=$environments")
-        return runBlocking(MDCContext()) {
-            val applicationDeployments: List<ApplicationDeployment> = environments.flatMap { environment ->
-                logger.debug("Finding ApplicationDeployments in namespace={}", environment)
-                client.getApplicationDeployments(environment.namespace)
-            }
-
-            val results = applicationDeployments.pmapIO { tryCreateApplicationData(it) }
-
-            val errors = results.mapNotNull { it.error }
-
-            val data = results.mapNotNull { it.applicationData }
-            data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach { data ->
-                val names = data.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
-                logger.debug("Duplicate applicationDeploymeentId for=$names")
-            }
-
-            logger.debug("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
-            data
+        val applicationDeployments: List<ApplicationDeployment> = environments.flatMap { environment ->
+            logger.debug("Finding ApplicationDeployments in namespace={}", environment)
+            client.getApplicationDeployments(environment.namespace)
         }
+
+        val results = applicationDeployments.pmapIO { tryCreateApplicationData(it) }
+
+        val errors = results.mapNotNull { it.error }
+
+        val data = results.mapNotNull { it.applicationData }
+        data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach { data ->
+            val names = data.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
+            logger.debug("Duplicate applicationDeploymeentId for=$names")
+        }
+
+        logger.debug("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
+        return data
     }
 
-    fun createSingleItem(namespace: String, name: String): ApplicationData {
-        return runBlocking {
-            val applicationDeployment = client.getApplicationDeployment(name, namespace)
+    suspend fun createSingleItem(namespace: String, name: String): ApplicationData {
+        val applicationDeployment = client.getApplicationDeployment(name, namespace)
 
-            tryCreateApplicationData(applicationDeployment).applicationData?.let {
-                it
-            } ?: throw tryCreateApplicationData(applicationDeployment).error!!
-        }
+        return tryCreateApplicationData(applicationDeployment).applicationData?.let {
+            it
+        } ?: throw tryCreateApplicationData(applicationDeployment).error!!
     }
 
     private data class MaybeApplicationData(
@@ -119,6 +112,7 @@ class ApplicationDataServiceOpenShift(
         }
         val range: IntProgression = rcLatestVersion.toInt() - 1 downTo 1
         return range.asSequence().map { num ->
+            // TODO: Fix this
             runBlocking {
                 client.getReplicationController(namespace, name, num)
             }

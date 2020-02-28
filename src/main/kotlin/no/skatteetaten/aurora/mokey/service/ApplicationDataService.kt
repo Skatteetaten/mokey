@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
@@ -78,13 +79,20 @@ class ApplicationDataService(
 
     fun refreshItem(applicationId: String) =
         findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
-            val data = applicationDataService.createSingleItem(current.namespace, current.applicationDeploymentName)
+            val data = runBlocking(MDCContext()) {
+                applicationDataService.createSingleItem(
+                    current.namespace,
+                    current.applicationDeploymentName
+                )
+            }
             addCacheEntry(applicationId, data)
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
 
     fun cacheAtStartup() {
-        applicationDataService.findAndGroupAffiliations(affiliations)
-            .forEach { refreshAffiliation(it.key, it.value) }
+        val affiliation = runBlocking(MDCContext()) {
+            applicationDataService.findAndGroupAffiliations(affiliations)
+        }
+        affiliation.forEach { refreshAffiliation(it.key, it.value) }
     }
 
     private fun addCacheEntry(applicationId: String, data: ApplicationData) {
@@ -105,7 +113,9 @@ class ApplicationDataService(
     fun refreshCache(affiliationInput: List<String> = emptyList()) {
 
         val watch = StopWatch().also { it.start() }
-        val affiliations = applicationDataService.findAndGroupAffiliations(affiliationInput)
+        val affiliations = runBlocking(MDCContext()) {
+            applicationDataService.findAndGroupAffiliations(affiliationInput)
+        }
 
         affiliations.forEach { (affiliation, env) ->
 
@@ -147,7 +157,9 @@ class ApplicationDataService(
     ): List<ApplicationData> {
         val applications = mutableListOf<ApplicationData>()
         val time = withStopWatch {
-            applications += applicationDataService.findAllApplicationDataForEnv(environments = env)
+            applications += runBlocking(MDCContext()) {
+                applicationDataService.findAllApplicationDataForEnv(environments = env)
+            }
         }
 
         applications.forEach {

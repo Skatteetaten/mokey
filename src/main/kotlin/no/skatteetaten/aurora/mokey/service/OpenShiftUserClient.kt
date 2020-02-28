@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service
 class OpenShiftUserClient(
     @TargetClient(ClientTypes.USER_TOKEN) val client: KubernetesCoroutinesClient
 ) {
-    // TODO: is this the best way?
     suspend fun getProjectByNameOrNull(p: String): Project? = client.getOrNull(newProject {
         metadata {
             name = p
