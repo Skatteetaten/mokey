@@ -10,7 +10,7 @@ class ImageService(
     val imageRegistryService: ImageRegistryService
 ) {
 
-    fun getImageDetails(
+    suspend fun getImageDetails(
         namespace: String,
         imageSteamName: String,
         image: String

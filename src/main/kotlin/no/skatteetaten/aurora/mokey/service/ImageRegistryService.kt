@@ -1,17 +1,18 @@
 package no.skatteetaten.aurora.mokey.service
 
-import java.time.Duration
+import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.stereotype.Service
 
+// TODO: Do we really need a seperate service for this?
 @Service
 class ImageRegistryService(
     val imageRegistryClient: ImageRegistryClient
 ) {
-    fun findTagsByName(
+    // TODO: do not block, cache, retry
+    suspend fun findTagsByName(
         tagUrls: List<String>
     ): List<ImageTagResource> {
-        return imageRegistryClient.post<ImageTagResource>("/manifest", TagUrlsWrapper(tagUrls))
-            .collectList()
-            .block(Duration.ofSeconds(5))!!
+        return imageRegistryClient.post<ImageTagResource>("/manifest", TagUrlsWrapper(tagUrls)).collectList()
+            .awaitFirst()
     }
 }

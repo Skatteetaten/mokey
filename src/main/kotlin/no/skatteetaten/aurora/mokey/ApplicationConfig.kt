@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import io.fabric8.kubernetes.api.model.KubernetesList
 import io.fabric8.kubernetes.internal.KubernetesDeserializer
@@ -13,8 +12,10 @@ import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
+import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
+import no.skatteetaten.aurora.kubernetes.defaultHeaders
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -28,6 +29,7 @@ import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import java.security.KeyStore
 
 enum class ServiceTypes {
     CANTUS
@@ -47,6 +49,25 @@ class ApplicationConfig(
     val kubeernetesClientConfig: KubnernetesClientConfiguration
 ) : BeanPostProcessor {
 
+    @Qualifier("managmenetClient")
+    @Bean
+    fun managementClient(
+        builder: WebClient.Builder,
+        @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?
+    ): KubernetesReactorClient {
+        return kubeernetesClientConfig.createServiceAccountReactorClient(builder, trustStore).apply {
+            webClientBuilder.defaultHeaders(applicationName)
+        }.build()
+    }
+
+    // Management interface parsing needs this
+    @Bean
+    fun mapperBuilder(): Jackson2ObjectMapperBuilder = Jackson2ObjectMapperBuilder().apply {
+        serializationInclusion(JsonInclude.Include.NON_NULL)
+        featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        featuresToEnable(SerializationFeature.INDENT_OUTPUT)
+    }
+
     @Bean
     fun tokenProvider(): TokenFetcher {
         return object : TokenFetcher {
@@ -57,12 +78,6 @@ class ApplicationConfig(
     }
 
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
-
-        // TODO: Trenger vi denne?
-        if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
-            configureObjectMapper(bean)
-        }
-
         KubernetesDeserializer.registerCustomKind(
             "skatteetaten.no/v1",
             "ApplicationDeploymentList",
@@ -74,16 +89,7 @@ class ApplicationConfig(
             "ApplicationDeployment",
             ApplicationDeployment::class.java
         )
-
         return super.postProcessAfterInitialization(bean, beanName)
-    }
-
-    // TODO: Trenger vi denne
-    @Bean
-    fun mapperBuilder(): Jackson2ObjectMapperBuilder = Jackson2ObjectMapperBuilder().apply {
-        serializationInclusion(JsonInclude.Include.NON_NULL)
-        featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        featuresToEnable(SerializationFeature.INDENT_OUTPUT)
     }
 
     @Bean
@@ -97,6 +103,7 @@ class ApplicationConfig(
             .baseUrl(cantusUrl)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .defaultHeader(AuroraHeaderFilter.KORRELASJONS_ID, RequestKorrelasjon.getId())
+            .defaultHeader("User-Agent", applicationName)
             .exchangeStrategies(ExchangeStrategies.builder().codecs {
                 it.defaultCodecs().apply {
                     maxInMemorySize(-1) // unlimited

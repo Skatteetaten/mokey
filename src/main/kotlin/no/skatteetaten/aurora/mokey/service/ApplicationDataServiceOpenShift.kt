@@ -32,7 +32,6 @@ class ApplicationDataServiceOpenShift(
     val imageService: ImageService
 ) {
 
-    // TODO: Can we rewrite this to use a label query? If all projects are labels with affiliation now?
     suspend fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         suspend fun findAllEnvironments(): List<Environment> {
             return client.getAllProjects().map {
@@ -67,10 +66,6 @@ class ApplicationDataServiceOpenShift(
         val errors = results.mapNotNull { it.error }
 
         val data = results.mapNotNull { it.applicationData }
-        data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach { data ->
-            val names = data.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
-            logger.debug("Duplicate applicationDeploymeentId for=$names")
-        }
 
         logger.debug("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
         return data
@@ -172,8 +167,6 @@ class ApplicationDataServiceOpenShift(
 
         val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
 
-        // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
-        // every pods has a name label we have to use selector from DeploymentConfig.
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
 
         // it is a lot faster to fetch from imageStreamTag from ocp rather then from cantus if it is up to date
@@ -187,7 +180,16 @@ class ApplicationDataServiceOpenShift(
             if (image.startsWith("172")) {
                 null
             } else {
-                imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+                try {
+                    // TOOD: denne kan caches
+                    imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+                } catch (e: Exception) {
+                    logger.warn(
+                        "Failed getting imageDetails for namespace=${dc.metadata.namespace} name=${dc.metadata.name} image=$image",
+                        e
+                    )
+                    null
+                }
             }
         }
 

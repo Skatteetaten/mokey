@@ -7,6 +7,8 @@ import com.jayway.jsonpath.Option
 import java.time.Duration
 import java.time.Instant
 import mu.KotlinLogging
+import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
+import no.skatteetaten.aurora.kubernetes.retryWithLog
 import no.skatteetaten.aurora.mokey.ServiceTypes
 import no.skatteetaten.aurora.mokey.TargetService
 import org.springframework.stereotype.Service
@@ -64,6 +66,7 @@ data class TagUrlsWrapper(val tagUrls: List<String>)
 
 private val logger = KotlinLogging.logger { }
 
+// TODO: Could we make this simpler?
 @Service
 class ImageRegistryClient(
     @TargetService(ServiceTypes.CANTUS)
@@ -81,11 +84,12 @@ class ImageRegistryClient(
     ): Flux<T> = fn(webClient)
         .retrieve()
         .bodyToMono<AuroraResponse<HalResource>>()
-        .retryBackoff(3, Duration.ofMillis(200))
+        .timeout(Duration.ofSeconds(5))
+        .retryWithLog(KubernetesRetryConfiguration(3, Duration.ofMillis(200), Duration.ofSeconds(3)), false)
         .handleGenericError()
         .flatMapMany {
             if (it.success) {
-                it.items.map { item -> objectMapper.convertValue(item, T::class.java) }.toFlux<T>()
+                it.items.map { item -> objectMapper.convertValue(item, T::class.java) }.toFlux()
             } else {
                 throw ServiceException(message = it.message)
             }
