@@ -2,7 +2,6 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
@@ -33,7 +32,6 @@ class ApplicationDataServiceOpenShift(
     val imageService: ImageService
 ) {
 
-    // TODO: Can we rewrite this to use a label query? If all projects are labels with affiliation now?
     suspend fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         suspend fun findAllEnvironments(): List<Environment> {
             return client.getAllProjects().map {
@@ -68,10 +66,6 @@ class ApplicationDataServiceOpenShift(
         val errors = results.mapNotNull { it.error }
 
         val data = results.mapNotNull { it.applicationData }
-        data.groupBy { it.applicationDeploymentId }.filter { it.value.size != 1 }.forEach { data ->
-            val names = data.value.map { "${it.namespace}/${it.applicationDeploymentName}" }
-            logger.debug("Duplicate applicationDeploymeentId for=$names")
-        }
 
         logger.debug("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
         return data
@@ -103,24 +97,6 @@ class ApplicationDataServiceOpenShift(
                 e
             )
             MaybeApplicationData(applicationDeployment = it, error = e)
-        }
-    }
-
-    suspend fun getRunningRc(namespace: String, name: String, rcLatestVersion: Long): ReplicationController? {
-        if (rcLatestVersion == 0L) {
-            return null
-        }
-        val range: IntProgression = rcLatestVersion.toInt() - 1 downTo 1
-        return range.asSequence().map { num ->
-            // TODO: Fix this
-            runBlocking {
-                client.getReplicationController(namespace, name, num)
-            }
-        }.firstOrNull {
-            if (it == null) {
-                return null
-            }
-            it.isRunning()
         }
     }
 
@@ -179,16 +155,18 @@ class ApplicationDataServiceOpenShift(
             return applicationData(applicationDeployment, apd)
         }
 
-        // TOOD: Can we replace this with a call to find all replicationController with a given app= label and then sort them?
-        val latestRc = client.getReplicationController(namespace, dc.metadata.name, dc.status.latestVersion.toInt())
+        val replicationControllers =
+            client.getReplicationControllers(namespace, mapOf("app" to dc.metadata.name)).sortedByDescending {
+                it.metadata.name.substringAfterLast("-").toInt()
+            }
+        val latestRc = replicationControllers.firstOrNull()
 
-        val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
-            ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
+        val runningRc = replicationControllers.firstOrNull {
+            it.isRunning()
+        }
 
         val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
 
-        // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
-        // every pods has a name label we have to use selector from DeploymentConfig.
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, dc.spec.selector)
 
         // it is a lot faster to fetch from imageStreamTag from ocp rather then from cantus if it is up to date
@@ -202,7 +180,16 @@ class ApplicationDataServiceOpenShift(
             if (image.startsWith("172")) {
                 null
             } else {
-                imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+                try {
+                    // TOOD: denne kan caches
+                    imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+                } catch (e: Exception) {
+                    logger.warn(
+                        "Failed getting imageDetails for namespace=${dc.metadata.namespace} name=${dc.metadata.name} image=$image",
+                        e
+                    )
+                    null
+                }
             }
         }
 

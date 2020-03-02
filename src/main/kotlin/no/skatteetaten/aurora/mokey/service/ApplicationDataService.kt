@@ -19,7 +19,6 @@ class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,
     val client: OpenShiftUserClient,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
-    @Value("\${mokey.crawler.sleepSeconds:1}") val sleep: Long,
     val statusRegistry: ApplicationStatusRegistry
 
 ) {
@@ -118,17 +117,7 @@ class ApplicationDataService(
         }
 
         affiliations.forEach { (affiliation, env) ->
-
-            val affiliationWatch = StopWatch().also { it.start() }
             refreshAffiliation(affiliation, env)
-            val affiliationTime = affiliationWatch.let {
-                it.stop()
-                it.totalTimeMillis
-            }
-
-            if (affiliationTime > 200) {
-                Thread.sleep(sleep * 1000)
-            }
         }
         val time: Double = watch.let {
             it.stop()

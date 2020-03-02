@@ -1,6 +1,9 @@
 package no.skatteetaten.aurora.mokey
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import no.skatteetaten.aurora.mockmvc.extensions.TestObjectMapperConfigurer
 import no.skatteetaten.aurora.mokey.controller.security.User
 import org.junit.jupiter.api.AfterEach
@@ -43,4 +46,12 @@ private class TestUserDetailsService : UserDetailsService {
     override fun loadUserByUsername(username: String?): UserDetails {
         return User(username ?: "username", "token", "fullName")
     }
+}
+
+// TOOD: Do we need this?
+fun configureObjectMapper(objectMapper: ObjectMapper): ObjectMapper {
+    return objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+        .configure(SerializationFeature.INDENT_OUTPUT, true)
+        .registerModules(JavaTimeModule())
+        .registerKotlinModule()
 }

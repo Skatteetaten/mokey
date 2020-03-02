@@ -7,6 +7,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.setJsonFileAsBody
 import okhttp3.mockwebserver.MockResponse
@@ -33,8 +34,10 @@ class ImageRegistryServiceTest {
     @Test
     fun `find tags by name`() {
         server.execute(MockResponse().setJsonFileAsBody("manifest.json")) {
-            val response = imageRegistryService.findTagsByName(tagUrls)
-            assertThat(response).isNotNull()
+            runBlocking {
+                val response = imageRegistryService.findTagsByName(tagUrls)
+                assertThat(response).isNotNull()
+            }
         }
     }
 
@@ -46,18 +49,22 @@ class ImageRegistryServiceTest {
                 message = "test failure"
             )
         ) {
-            assertThat {
-                imageRegistryService.findTagsByName(tagUrls)
-            }.isFailure().cause().isNotNull().isInstanceOf(ServiceException::class)
+            runBlocking {
+                assertThat {
+                    imageRegistryService.findTagsByName(tagUrls)
+                }.isFailure().cause().isNotNull().isInstanceOf(ServiceException::class)
+            }
         }
     }
 
     @Test
     fun `throws IllegalStateException if response is 404`() {
         server.execute(MockResponse().setResponseCode(404)) {
-            assertThat {
-                imageRegistryService.findTagsByName(tagUrls)
-            }.isFailure().isInstanceOf(IllegalStateException::class)
+            runBlocking {
+                assertThat {
+                    imageRegistryService.findTagsByName(tagUrls)
+                }.isFailure().isInstanceOf(IllegalStateException::class)
+            }
         }
     }
 }

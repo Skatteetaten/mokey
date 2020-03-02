@@ -26,6 +26,14 @@ logging:
                 catalina: WARN
                 velocity: WARN
 
+management:
+    metrics:
+        distribution:
+            minimum-expected-value:
+                http: 50ms
+            maximum-expected-value:
+                http: 3s
+
 integrations:
     boober:
         url: "http://boober"
@@ -35,13 +43,6 @@ integrations:
         url: "http://metrics.skead.no"
     cantus:
         url: "http://cantus"
-
-# TODO: FIX
-management:
-    metrics:
-        enable:
-            http:
-                client: false
 
 openshift:
     cluster: utv
@@ -61,7 +62,7 @@ mokey:
     cachewarmup:
         enabled: true
     cache:
-        affiliations: sirius
+        affiliations: demo
 
 integrations:
     cantus:
