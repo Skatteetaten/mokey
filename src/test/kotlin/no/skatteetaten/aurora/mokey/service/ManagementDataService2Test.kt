@@ -25,14 +25,12 @@ class ManagementDataService2Test {
     private val port = 8282
 
     private val service = ManagementDataService(
-        ManagementInterfaceFactory(
-            OpenShiftManagementClient(
-                KubernetesReactorClient(
-                    WebClient.create("http://localhost:$port"), object : TokenFetcher {
-                        override fun token() = "test-token"
-                    },
-                    RetryConfiguration()
-                )
+        OpenShiftManagementClient(
+            KubernetesReactorClient(
+                WebClient.create("http://localhost:$port"), object : TokenFetcher {
+                    override fun token() = "test-token"
+                },
+                RetryConfiguration()
             )
         )
     )

@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
+/*
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
@@ -200,3 +201,4 @@ class ManagementDataServiceTest {
         assertThat(data.health!!.endpointType).isEqualTo(EndpointType.HEALTH)
     }
 }
+*/
