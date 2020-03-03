@@ -18,7 +18,6 @@ import no.skatteetaten.aurora.mokey.model.HealthPart
 import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.HttpResponse
-import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import org.springframework.web.client.HttpStatusCodeException
@@ -148,17 +147,6 @@ class ManagementInterface internal constructor(
     val healthEndpoint: ManagementEndpoint? = null
 
 ) {
-    fun getHealthEndpointResult(): ManagementEndpointResult<HealthResponse> =
-        healthEndpoint?.findJsonResource(client, HealthResponseParser::parse)
-            ?: toManagementEndpointResultLinkMissing(HEALTH)
-
-    fun getInfoEndpointResult(): ManagementEndpointResult<InfoResponse> =
-        infoEndpoint?.findJsonResource(client, InfoResponse::class.java)
-            ?: toManagementEndpointResultLinkMissing(INFO)
-
-    fun getEnvEndpointResult(): ManagementEndpointResult<JsonNode> =
-        envEndpoint?.findJsonResource(client, JsonNode::class.java)
-            ?: toManagementEndpointResultLinkMissing(ENV)
 
     companion object {
         fun create(
@@ -213,15 +201,6 @@ class ManagementInterface internal constructor(
                     }
                 ManagementLinks(links)
             }
-        }
-
-        // TODO, move this into error handling on client
-        fun <T : Any> toManagementEndpointResultLinkMissing(endpointType: EndpointType): ManagementEndpointResult<T> {
-            return ManagementEndpointResult(
-                errorMessage = "Unknown endpoint link",
-                endpointType = endpointType,
-                resultCode = "LINK_MISSING"
-            )
         }
 
         // TODO: Move this into error handling when finding managementEndpoint

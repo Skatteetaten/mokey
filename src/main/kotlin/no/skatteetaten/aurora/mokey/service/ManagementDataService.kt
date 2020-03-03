@@ -57,19 +57,32 @@ class ManagementDataService(
             it.getCachedOrCompute { endpoint ->
                 endpoint.findJsonResource(client, InfoResponse::class.java)
             }
-        } ?: ManagementInterface.toManagementEndpointResultLinkMissing(EndpointType.INFO)
+        } ?: EndpointType.INFO.missingResult()
 
         val env = mgmtInterface.envEndpoint?.let {
             it.getCachedOrCompute { endpoint ->
                 endpoint.findJsonResource(client, JsonNode::class.java)
             }
-        } ?: ManagementInterface.toManagementEndpointResultLinkMissing(EndpointType.ENV)
+        } ?: EndpointType.ENV.missingResult()
+
+        val health = mgmtInterface.healthEndpoint?.let {
+            it.findJsonResource(client, HealthResponseParser::parse)
+        } ?: EndpointType.HEALTH.missingResult()
+
 
         return ManagementData(
             links = p.second,
             info = info,
             env = env,
-            health = mgmtInterface.getHealthEndpointResult()
+            health = health
         )
     }
+}
+
+fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> {
+    return ManagementEndpointResult(
+        errorMessage = "Unknown endpoint link",
+        endpointType = this,
+        resultCode = "LINK_MISSING"
+    )
 }
