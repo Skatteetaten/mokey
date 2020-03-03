@@ -75,8 +75,6 @@ class ManagementDataBuilder(
             endpointType = EndpointType.INFO
     )
 
-
-
     private val links: ManagementEndpointResult<ManagementLinks> = ManagementEndpointResult(
             deserialized = ManagementLinks.parseManagementResponse(jacksonObjectMapper().readValue(linksResponseJson, JsonNode::class.java)),
             response = HttpResponse(content = linksResponseJson, code = 200),

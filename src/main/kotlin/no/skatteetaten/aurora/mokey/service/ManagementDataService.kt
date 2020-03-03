@@ -112,4 +112,3 @@ fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> {
         resultCode = "LINK_MISSING"
     )
 }
-
