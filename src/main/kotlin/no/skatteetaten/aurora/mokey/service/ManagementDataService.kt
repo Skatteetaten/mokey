@@ -69,7 +69,6 @@ class ManagementDataService(
             it.findJsonResource(client, HealthResponseParser::parse)
         } ?: EndpointType.HEALTH.missingResult()
 
-
         return ManagementData(
             links = p.second,
             info = info,
