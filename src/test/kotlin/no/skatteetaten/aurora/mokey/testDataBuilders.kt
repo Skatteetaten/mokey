@@ -32,8 +32,18 @@ import com.fkorotkov.openshift.tls
 import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
-import java.net.URI
-import java.time.Instant
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentCommandResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentDetailsResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentRefResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentsWithDbResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationResource
+import no.skatteetaten.aurora.mokey.controller.AuroraConfigRefResource
+import no.skatteetaten.aurora.mokey.controller.AuroraStatusResource
+import no.skatteetaten.aurora.mokey.controller.DeployDetailsResource
+import no.skatteetaten.aurora.mokey.controller.GitInfoResource
+import no.skatteetaten.aurora.mokey.controller.ImageDetailsResource
+import no.skatteetaten.aurora.mokey.controller.Version
 import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_BOOBER_DEPLOYTAG
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
@@ -63,10 +73,68 @@ import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
 import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
 import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import org.apache.commons.codec.digest.DigestUtils
+import uk.q3c.rest.hal.Links
+import java.net.URI
+import java.time.Instant
 
 const val DEFAULT_NAME = "app-name"
 const val DEFAULT_AFFILIATION = "affiliation"
 const val DEFAULT_ENV_NAME = "namespace"
+
+class ApplicationResourceBuilder {
+    fun build() = ApplicationResource(
+        id = "123",
+        name = "name",
+        applicationDeployments = listOf(ApplicationDeploymentResourceBuilder().build())
+    )
+}
+
+class ApplicationDeploymentResourceBuilder {
+    fun build() = ApplicationDeploymentResource(
+        id = "123",
+        affiliation = "aurora",
+        environment = "utv",
+        namespace = "aurora-dev",
+        name = "test",
+        status = AuroraStatusResource(""),
+        version = Version("123", "12345", null),
+        dockerImageRepo = "",
+        time = Instant.now(),
+        message = null
+    )
+}
+
+class ApplicationDeploymentDetailsResourceBuilder {
+    fun build() = ApplicationDeploymentDetailsResource(
+        id = "123",
+        updatedBy = "user",
+        buildTime = Instant.now(),
+        gitInfo = GitInfoResource(),
+        imageDetails = ImageDetailsResource(null, null, null),
+        podResources = emptyList(),
+        databases = emptyList(),
+        applicationDeploymentCommand = ApplicationDeploymentCommandResource(
+            applicationDeploymentRef = ApplicationDeploymentRefResource(
+                environment = "utv",
+                application = "test-app"
+            ),
+            auroraConfig = AuroraConfigRefResource("test-config", "ref")
+        ),
+        deployDetails = DeployDetailsResource(
+            targetReplicas = 1,
+            availableReplicas = 2,
+            paused = false
+        ),
+        serviceLinks = Links()
+    )
+}
+
+class ApplicationDeploymentsWithDbResourceBuilder {
+    fun build() = ApplicationDeploymentsWithDbResource(
+        databaseId = "123",
+        applicationDeployments = emptyList()
+    )
+}
 
 data class AuroraApplicationDeploymentDataBuilder(
     val appName: String = DEFAULT_NAME,
@@ -490,10 +558,12 @@ data class ApplicationDataBuilder(
                         ManagementEndpointResult(
                             endpointType = EndpointType.INFO,
                             resultCode = "",
-                            deserialized = InfoResponse(podLinks = mapOf(
-                                "test" to "http://localhost",
-                                "metrics" to "{metricsHostname}"
-                            ))
+                            deserialized = InfoResponse(
+                                podLinks = mapOf(
+                                    "test" to "http://localhost",
+                                    "metrics" to "{metricsHostname}"
+                                )
+                            )
                         ),
                         links = ManagementEndpointResult(
                             endpointType = EndpointType.INFO,

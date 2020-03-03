@@ -3,18 +3,15 @@ package no.skatteetaten.aurora.mokey.service
 import assertk.assertThat
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
-import okhttp3.mockwebserver.MockResponse
+import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.springframework.http.HttpHeaders
-import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.WebClient
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
@@ -72,16 +69,5 @@ class ManagementDataService2Test {
         assertThat(managementData.env?.errorMessage).isNull()
         assertThat(managementData.health?.errorMessage).isNull()
         assertThat(managementData.info?.errorMessage).isNull()
-    }
-
-    private fun jsonResponse(body: Any? = null): MockResponse {
-        val response = MockResponse().setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-        return body?.let {
-            if (it is String) {
-                response.setBody(it)
-            } else {
-                response.setBody(jacksonObjectMapper().writeValueAsString(body))
-            }
-        } ?: response
     }
 }
