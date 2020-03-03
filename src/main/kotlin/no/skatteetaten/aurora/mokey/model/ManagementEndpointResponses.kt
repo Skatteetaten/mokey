@@ -3,10 +3,10 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
-import java.time.Instant
 import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.service.DateParser
+import java.time.Instant
 
 enum class EndpointType(val key: String) {
     HEALTH("health"),
@@ -35,6 +35,7 @@ enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
 data class HealthResponse(
     val status: HealthStatus,
+    // Do we even need parts here? we do not use it for anything.
     val parts: Map<String, HealthPart> = emptyMap()
 )
 

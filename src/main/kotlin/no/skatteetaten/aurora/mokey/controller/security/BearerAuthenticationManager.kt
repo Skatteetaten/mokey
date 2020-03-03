@@ -2,8 +2,8 @@ package no.skatteetaten.aurora.mokey.controller.security
 
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
-import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
 import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
+import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.kubernetes.StringTokenFetcher
 import no.skatteetaten.aurora.kubernetes.newCurrentUser
 import org.springframework.beans.factory.annotation.Qualifier
@@ -41,7 +41,7 @@ class BearerAuthenticationManager(
         try {
             val token = getBearerTokenFromAuthentication(authentication)
             val client = KubernetesCoroutinesClient(
-                kubernetesClientConfiguration.copy(retry = KubernetesRetryConfiguration(times = 0))
+                kubernetesClientConfiguration.copy(retry = RetryConfiguration(times = 0))
                     .createUserAccountReactorClient(builder, trustStore, StringTokenFetcher(token))
                     .build()
             )

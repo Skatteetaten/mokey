@@ -25,4 +25,6 @@ class OpenShiftManagementClient(
                 Mono.error<String>(RuntimeException("Timed out getting management interface in namespace=${pod.metadata.namespace}  pod=${pod.metadata.name} path=$path for "))
             ).awaitFirst()
     }
+
+    // TODO: Here we should have methods for each of the different endpoints that return ManagementEndpointResult
 }

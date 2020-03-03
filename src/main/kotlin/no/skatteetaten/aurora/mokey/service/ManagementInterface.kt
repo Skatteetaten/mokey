@@ -26,6 +26,7 @@ import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 
+// TODO: This abstraction can be removed and joined with the parent one.
 @Service
 class ManagementInterfaceFactory(
     val client: OpenShiftManagementClient
@@ -37,10 +38,12 @@ class ManagementInterfaceFactory(
 
 private val logger = KotlinLogging.logger {}
 
+// TODO: This entire abstraction can go away. The client code can go into OpenShiftManagemetnClient
 class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private val endpointType: EndpointType) {
 
     val url = "namespaces/${pod.metadata.namespace}/pods/${pod.metadata.name}:$port/proxy/$path"
 
+    // A lot of this error handling should be moved into the client
     fun <S : Any> findJsonResource(client: OpenShiftManagementClient, clazz: Class<S>): ManagementEndpointResult<S> {
 
         // logger.debug("Getting managementResource for uri={}", url)
@@ -71,6 +74,7 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private 
         return toManagementEndpointResultAsSuccess(deserialized = deserialized, response = response)
     }
 
+    // TODO: This method can disappear
     fun <T : Any> findJsonResource(
         client: OpenShiftManagementClient,
         parser: (node: JsonNode) -> T
@@ -85,6 +89,7 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private 
                     response = intermediate.response
                 )
             } catch (e: Exception) {
+                // TODO: Rpleace this with error handling in client
                 toManagementEndpointResult<T>(
                     response = intermediate.response,
                     resultCode = "INVALID_FORMAT",
@@ -95,7 +100,7 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private 
             response = intermediate.response,
             resultCode = intermediate.resultCode,
             errorMessage = intermediate.errorMessage
-        )
+        ) // TODO: replace this with error handling in client
     }
 
     private fun <T : Any> toManagementEndpointResult(
@@ -124,6 +129,7 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private 
             resultCode = "OK"
         )
 
+    // TODO: This has to be rewritten in the client
     private fun <T : Any> toManagementEndpointResultAsError(
         exception: Exception,
         response: HttpResponse? = null
@@ -144,6 +150,7 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private 
     }
 }
 
+// TODO This entire abstraction can go away
 class ManagementInterface internal constructor(
     private val client: OpenShiftManagementClient,
     val links: ManagementLinks,
@@ -181,6 +188,7 @@ class ManagementInterface internal constructor(
 
             val discoveryEndpoint = ManagementEndpoint(pod, port, p, DISCOVERY)
 
+            // TODO: Replace this with marshalling into a data class that has the proper format.
             val response = discoveryEndpoint.findJsonResource(client) { response: JsonNode ->
                 val asMap = response[EndpointType.DISCOVERY.key].asMap()
                 val links = asMap
@@ -210,6 +218,7 @@ class ManagementInterface internal constructor(
             } ?: Pair(null, response)
         }
 
+        // TODO, move this into error handling on client
         private fun <T : Any> toManagementEndpointResultLinkMissing(endpointType: EndpointType): ManagementEndpointResult<T> {
             return ManagementEndpointResult(
                 errorMessage = "Unknown endpoint link",
@@ -218,6 +227,7 @@ class ManagementInterface internal constructor(
             )
         }
 
+        // TODO: Move this into error handling when finding managementEndpoint
         private fun <T : Any> toManagementEndpointResultDiscoveryConfigError(cause: String): ManagementEndpointResult<T> {
             return ManagementEndpointResult(
                 errorMessage = cause,
@@ -228,6 +238,7 @@ class ManagementInterface internal constructor(
     }
 }
 
+// TODO: Replace this with just marshalling to jsonNode and validating that there is a status property that resolves to a valid status field
 object HealthResponseParser {
 
     enum class HealthResponseFormat { SPRING_BOOT_1X, SPRING_BOOT_2X }

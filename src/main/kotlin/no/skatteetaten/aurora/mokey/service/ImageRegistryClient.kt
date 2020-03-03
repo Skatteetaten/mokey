@@ -4,10 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
-import java.time.Duration
-import java.time.Instant
 import mu.KotlinLogging
-import no.skatteetaten.aurora.kubernetes.KubernetesRetryConfiguration
+import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.kubernetes.retryWithLog
 import no.skatteetaten.aurora.mokey.ServiceTypes
 import no.skatteetaten.aurora.mokey.TargetService
@@ -21,6 +19,8 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import uk.q3c.rest.hal.HalResource
+import java.time.Duration
+import java.time.Instant
 
 data class ImageTagResource(
     val auroraVersion: String? = null,
@@ -85,7 +85,7 @@ class ImageRegistryClient(
         .retrieve()
         .bodyToMono<AuroraResponse<HalResource>>()
         .timeout(Duration.ofSeconds(5))
-        .retryWithLog(KubernetesRetryConfiguration(3, Duration.ofMillis(200), Duration.ofSeconds(3)), false)
+        .retryWithLog(RetryConfiguration(3, Duration.ofMillis(200), Duration.ofSeconds(3)), false)
         .handleGenericError()
         .flatMapMany {
             if (it.success) {
