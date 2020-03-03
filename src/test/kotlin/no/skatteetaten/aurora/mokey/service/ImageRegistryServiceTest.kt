@@ -58,12 +58,12 @@ class ImageRegistryServiceTest {
     }
 
     @Test
-    fun `throws IllegalStateException if response is 404`() {
-        server.execute(MockResponse().setResponseCode(404)) {
+    fun `throws ServiceException if response is 404`() {
+        server.execute(MockResponse().setBody("{}").setResponseCode(404)) {
             runBlocking {
                 assertThat {
                     imageRegistryService.findTagsByName(tagUrls)
-                }.isFailure().isInstanceOf(IllegalStateException::class)
+                }.isFailure().isInstanceOf(ServiceException::class)
             }
         }
     }
