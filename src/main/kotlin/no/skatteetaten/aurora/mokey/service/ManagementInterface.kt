@@ -21,25 +21,14 @@ import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
-import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 
-// TODO: This abstraction can be removed and joined with the parent one.
-@Service
-class ManagementInterfaceFactory(
-    val client: OpenShiftManagementClient
-) {
-    fun create(pod: Pod, path: String?): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
-        return ManagementInterface.create(client, pod, path)
-    }
-}
-
 private val logger = KotlinLogging.logger {}
 
 // TODO: This entire abstraction can go away. The client code can go into OpenShiftManagemetnClient
-class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, private val endpointType: EndpointType) {
+class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endpointType: EndpointType) {
 
     val url = "namespaces/${pod.metadata.namespace}/pods/${pod.metadata.name}:$port/proxy/$path"
 
@@ -188,15 +177,8 @@ class ManagementInterface internal constructor(
 
             val discoveryEndpoint = ManagementEndpoint(pod, port, p, DISCOVERY)
 
-            // TODO: Replace this with marshalling into a data class that has the proper format.
-            val response = discoveryEndpoint.findJsonResource(client) { response: JsonNode ->
-                val asMap = response[EndpointType.DISCOVERY.key].asMap()
-                val links = asMap
-                    .mapValues {
-                        val rawHref = it.value["href"].asText()!!
-                        rawHref.replace("http://", "").substringAfter("/")
-                    }
-                ManagementLinks(links)
+            val response: ManagementEndpointResult<ManagementLinks> = discoveryEndpoint.getCachedOrCompute {
+                findManagementLinks(it, client)
             }
 
             return response.deserialized?.let { links ->
@@ -218,8 +200,23 @@ class ManagementInterface internal constructor(
             } ?: Pair(null, response)
         }
 
+        private fun findManagementLinks(
+            discoveryEndpoint: ManagementEndpoint,
+            client: OpenShiftManagementClient
+        ): ManagementEndpointResult<ManagementLinks> {
+            return discoveryEndpoint.findJsonResource(client) { response: JsonNode ->
+                val asMap = response[DISCOVERY.key].asMap()
+                val links = asMap
+                    .mapValues {
+                        val rawHref = it.value["href"].asText()!!
+                        rawHref.replace("http://", "").substringAfter("/")
+                    }
+                ManagementLinks(links)
+            }
+        }
+
         // TODO, move this into error handling on client
-        private fun <T : Any> toManagementEndpointResultLinkMissing(endpointType: EndpointType): ManagementEndpointResult<T> {
+        fun <T : Any> toManagementEndpointResultLinkMissing(endpointType: EndpointType): ManagementEndpointResult<T> {
             return ManagementEndpointResult(
                 errorMessage = "Unknown endpoint link",
                 endpointType = endpointType,
@@ -228,7 +225,7 @@ class ManagementInterface internal constructor(
         }
 
         // TODO: Move this into error handling when finding managementEndpoint
-        private fun <T : Any> toManagementEndpointResultDiscoveryConfigError(cause: String): ManagementEndpointResult<T> {
+        fun <T : Any> toManagementEndpointResultDiscoveryConfigError(cause: String): ManagementEndpointResult<T> {
             return ManagementEndpointResult(
                 errorMessage = cause,
                 endpointType = EndpointType.DISCOVERY,

@@ -24,7 +24,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.3")
     implementation("io.projectreactor.addons:reactor-extra:3.3.2.RELEASE")
-    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.3-1")
+    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.4-1")
+    implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
 
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
