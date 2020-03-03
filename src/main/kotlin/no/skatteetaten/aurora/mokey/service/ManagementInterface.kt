@@ -8,15 +8,11 @@ import io.fabric8.kubernetes.api.model.Pod
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.asMap
-import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.EndpointType.DISCOVERY
 import no.skatteetaten.aurora.mokey.model.EndpointType.ENV
 import no.skatteetaten.aurora.mokey.model.EndpointType.HEALTH
 import no.skatteetaten.aurora.mokey.model.EndpointType.INFO
-import no.skatteetaten.aurora.mokey.model.HealthPart
-import no.skatteetaten.aurora.mokey.model.HealthResponse
-import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.ManagementLinks
@@ -118,7 +114,7 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endp
         )
 
     // TODO: This has to be rewritten in the client
-    private fun <T : Any> toManagementEndpointResultAsError(
+    fun <T : Any> toManagementEndpointResultAsError(
         exception: Exception,
         response: HttpResponse? = null
     ): ManagementEndpointResult<T> {
@@ -214,59 +210,3 @@ class ManagementInterface internal constructor(
     }
 }
 
-// TODO: Replace this with just marshalling to jsonNode and validating that there is a status property that resolves to a valid status field
-object HealthResponseParser {
-
-    enum class HealthResponseFormat { SPRING_BOOT_1X, SPRING_BOOT_2X }
-
-    private const val STATUS_PROPERTY = "status"
-    private const val DETAILS_PROPERTY = "details"
-
-    fun parse(json: JsonNode): HealthResponse = when (json.format) {
-        HealthResponseFormat.SPRING_BOOT_2X -> handleSpringBoot2Format(json)
-        else -> handleSpringBoot1Format(json)
-    }
-
-    private fun handleSpringBoot2Format(json: JsonNode): HealthResponse =
-        handleSpringBootFormat(json) { it.details }
-
-    private fun handleSpringBoot1Format(json: JsonNode): HealthResponse =
-        handleSpringBootFormat(json) { it.allNodesExceptStatus }
-
-    private fun handleSpringBootFormat(
-        json: JsonNode,
-        detailsExtractor: (JsonNode) -> Map<String, JsonNode>
-    ): HealthResponse {
-        val healthStatus = json.status
-        val allDetails = detailsExtractor(json)
-        val parts = allDetails.mapValues {
-            val status = it.value.status
-            val partDetails = detailsExtractor(it.value)
-            HealthPart(status, partDetails)
-        }
-        return HealthResponse(healthStatus, parts)
-    }
-
-    private val JsonNode.format
-        get(): HealthResponseFormat {
-            return if (this.has(DETAILS_PROPERTY) && this.has(STATUS_PROPERTY) && this.size() == 2) {
-                HealthResponseFormat.SPRING_BOOT_2X
-            } else {
-                HealthResponseFormat.SPRING_BOOT_1X
-            }
-        }
-
-    private val JsonNode.details get() = this.extract("/$DETAILS_PROPERTY").asMap()
-
-    private val JsonNode.allNodesExceptStatus
-        get() = this.asMap().toMutableMap().also { it.remove(STATUS_PROPERTY) }.toMap()
-
-    private val JsonNode.status
-        get(): HealthStatus {
-            return try {
-                this.extract("/$STATUS_PROPERTY")?.textValue()?.let { HealthStatus.valueOf(it) }
-            } catch (e: Throwable) {
-                null
-            } ?: throw IllegalArgumentException("Element did not contain valid $STATUS_PROPERTY property")
-        }
-}

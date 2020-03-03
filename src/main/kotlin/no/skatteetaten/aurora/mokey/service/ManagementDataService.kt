@@ -1,11 +1,13 @@
 package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.MissingNode
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.fabric8.kubernetes.api.model.Pod
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.EndpointType
+import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
@@ -17,7 +19,7 @@ private val logger = KotlinLogging.logger {}
 // Does this need to be an async cache?
 val cache: Cache<ManagementCacheKey, ManagementEndpointResult<*>> = Caffeine.newBuilder()
     .expireAfterAccess(10, TimeUnit.MINUTES)
-    .maximumSize(10000)
+    .maximumSize(100000)
     .build()
 
 // TODO: We have to make sure that replication is correct here when we go to replicaset
@@ -66,9 +68,8 @@ class ManagementDataService(
         } ?: EndpointType.ENV.missingResult()
 
         val health = mgmtInterface.healthEndpoint?.let {
-            it.findJsonResource(client, HealthResponseParser::parse)
+            parseHealthResult(it.findJsonResource(client, JsonNode::class.java))
         } ?: EndpointType.HEALTH.missingResult()
-
 
         return ManagementData(
             links = p.second,
@@ -76,6 +77,31 @@ class ManagementDataService(
             env = env,
             health = health
         )
+    }
+
+    private fun parseHealthResult(it: ManagementEndpointResult<JsonNode>): ManagementEndpointResult<JsonNode> {
+        if (!it.isSuccess) {
+            return it
+        }
+        val statusField = it.deserialized?.at("/status")
+        if (statusField == null || statusField is MissingNode) {
+            return ManagementEndpointResult(
+                errorMessage = "Invalid format, does not contain status",
+                endpointType = EndpointType.HEALTH,
+                resultCode = "INVALID_FORMAT"
+            )
+        }
+
+        try {
+            HealthStatus.valueOf(statusField.textValue())
+        } catch (e: Exception) {
+            return ManagementEndpointResult(
+                errorMessage = "Invalid format, status is not valid HealthStatus value",
+                endpointType = EndpointType.HEALTH,
+                resultCode = "INVALID_FORMAT"
+            )
+        }
+        return it
     }
 }
 
@@ -86,3 +112,4 @@ fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> {
         resultCode = "LINK_MISSING"
     )
 }
+

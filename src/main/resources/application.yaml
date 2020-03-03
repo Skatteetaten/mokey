@@ -50,6 +50,9 @@ openshift:
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
 
 kubernetes:
+    timeout:
+        connect: 2s
+        read: 10s
     retry:
         time: 3
         min: 100ms
