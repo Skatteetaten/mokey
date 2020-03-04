@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
 
+// TODO: Split cache relevant functionality into its own service
 @Service
 class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,

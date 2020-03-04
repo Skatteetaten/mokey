@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service
 class ImageRegistryService(
     val imageRegistryClient: ImageRegistryClient
 ) {
-    // TODO: do not block, cache, retry
     suspend fun findTagsByName(
         tagUrls: List<String>
     ): List<ImageTagResource> {
