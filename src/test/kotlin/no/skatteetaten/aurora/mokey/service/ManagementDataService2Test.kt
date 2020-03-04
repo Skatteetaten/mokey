@@ -13,7 +13,6 @@ import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
 import okhttp3.mockwebserver.MockResponse
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.http.HttpHeaders
