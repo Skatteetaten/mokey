@@ -47,32 +47,51 @@ class ManagementDataService(
 ) {
 
     fun load(pod: Pod, endpointPath: String?): ManagementData {
-        val p = ManagementInterface.create(client, pod, endpointPath)
 
-        if (p.first == null) {
-            return ManagementData(links = p.second)
+        // TODO: validate this
+        val (port, path) = try {
+            assert(endpointPath != null && endpointPath.isNotBlank()) {
+                "Management path is missing"
+            }
+            val port = endpointPath!!.substringBefore("/").removePrefix(":").toInt()
+            val p = endpointPath.substringAfter("/")
+            port to p
+        } catch (e: Exception) {
+            return ManagementData(
+                ManagementEndpointResult(
+                    errorMessage = e.message,
+                    endpointType = EndpointType.DISCOVERY,
+                    resultCode = "ERROR_CONFIGURATION"
+                )
+            )
         }
 
-        val mgmtInterface = p.first!!
+        val discoveryEndpoint = ManagementEndpoint(pod, port, path, EndpointType.DISCOVERY)
 
-        val info = mgmtInterface.infoEndpoint?.let {
+        val discoveryResponse: ManagementEndpointResult<DiscoveryResponse> = discoveryEndpoint.getCachedOrCompute {
+            it.findJsonResource(client, DiscoveryResponse::class.java)
+        }
+
+        val discoveryResult = discoveryResponse.deserialized ?: return ManagementData((discoveryResponse))
+
+        val info = discoveryResult.createEndpoint(pod, port, EndpointType.INFO)?.let {
             it.getCachedOrCompute { endpoint ->
                 endpoint.findJsonResource(client, InfoResponse::class.java)
             }
         } ?: EndpointType.INFO.missingResult()
 
-        val env = mgmtInterface.envEndpoint?.let {
+        val env = discoveryResult.createEndpoint(pod, port, EndpointType.ENV)?.let {
             it.getCachedOrCompute { endpoint ->
                 endpoint.findJsonResource(client, JsonNode::class.java)
             }
         } ?: EndpointType.ENV.missingResult()
 
-        val health = mgmtInterface.healthEndpoint?.let {
+        val health = discoveryResult.createEndpoint(pod, port, EndpointType.HEALTH)?.let {
             parseHealthResult(it.findJsonResource(client, JsonNode::class.java))
         } ?: EndpointType.HEALTH.missingResult()
 
         return ManagementData(
-            links = p.second,
+            links = discoveryResponse,
             info = info,
             env = env,
             health = health

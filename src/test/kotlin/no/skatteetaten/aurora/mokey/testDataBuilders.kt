@@ -32,8 +32,6 @@ import com.fkorotkov.openshift.tls
 import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
-import java.net.URI
-import java.time.Instant
 import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_BOOBER_DEPLOYTAG
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
@@ -54,15 +52,17 @@ import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
-import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
+import no.skatteetaten.aurora.mokey.service.DiscoveryResponse
 import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
 import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import org.apache.commons.codec.digest.DigestUtils
+import java.net.URI
+import java.time.Instant
 
 const val DEFAULT_NAME = "app-name"
 const val DEFAULT_AFFILIATION = "affiliation"
@@ -498,7 +498,7 @@ data class ApplicationDataBuilder(
                         links = ManagementEndpointResult(
                             endpointType = EndpointType.INFO,
                             resultCode = "",
-                            deserialized = ManagementLinks(emptyMap())
+                            deserialized = DiscoveryResponse(emptyMap())
                         )
                     )
                 )

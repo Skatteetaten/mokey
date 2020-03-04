@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
-import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.service.DateParser
 import java.time.Instant
@@ -15,21 +14,6 @@ enum class EndpointType(val key: String) {
     DISCOVERY("_links")
 }
 
-data class ManagementLinks(private val links: Map<String, String>) {
-
-    fun linkFor(endpointType: EndpointType): String? {
-        return links[endpointType.key]
-    }
-
-    companion object {
-        fun parseManagementResponse(response: JsonNode): ManagementLinks {
-            val asMap = response[EndpointType.DISCOVERY.key].asMap()
-            val links = asMap
-                .mapValues { it.value["href"].asText()!! }
-            return ManagementLinks(links)
-        }
-    }
-}
 
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 

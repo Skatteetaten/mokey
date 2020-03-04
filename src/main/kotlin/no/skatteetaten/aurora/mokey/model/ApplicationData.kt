@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import mu.KotlinLogging
+import no.skatteetaten.aurora.mokey.service.DiscoveryResponse
 import uk.q3c.rest.hal.HalResource
 import java.time.Instant
 
@@ -78,7 +79,7 @@ data class PodDetails(
 )
 
 data class ManagementData(
-    val links: ManagementEndpointResult<ManagementLinks>,
+    val links: ManagementEndpointResult<DiscoveryResponse>,
     val info: ManagementEndpointResult<InfoResponse>? = null,
     val health: ManagementEndpointResult<JsonNode>? = null,
     val env: ManagementEndpointResult<JsonNode>? = null

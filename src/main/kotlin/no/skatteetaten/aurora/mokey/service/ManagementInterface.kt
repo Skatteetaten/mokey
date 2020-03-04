@@ -1,21 +1,14 @@
 package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.fabric8.kubernetes.api.model.Pod
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import no.skatteetaten.aurora.mokey.extensions.asMap
 import no.skatteetaten.aurora.mokey.model.EndpointType
-import no.skatteetaten.aurora.mokey.model.EndpointType.DISCOVERY
-import no.skatteetaten.aurora.mokey.model.EndpointType.ENV
-import no.skatteetaten.aurora.mokey.model.EndpointType.HEALTH
-import no.skatteetaten.aurora.mokey.model.EndpointType.INFO
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
-import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.reactive.function.client.WebClientResponseException
@@ -58,35 +51,6 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endp
         return toManagementEndpointResultAsSuccess(deserialized = deserialized, response = response)
     }
 
-    // TODO: This method can disappear
-    fun <T : Any> findJsonResource(
-        client: OpenShiftManagementClient,
-        parser: (node: JsonNode) -> T
-    ): ManagementEndpointResult<T> {
-
-        val intermediate = this.findJsonResource(client, JsonNode::class.java)
-
-        return intermediate.deserialized?.let { deserialized ->
-            try {
-                toManagementEndpointResultAsSuccess(
-                    deserialized = parser(deserialized),
-                    response = intermediate.response
-                )
-            } catch (e: Exception) {
-                // TODO: Rpleace this with error handling in client
-                toManagementEndpointResult<T>(
-                    response = intermediate.response,
-                    resultCode = "INVALID_FORMAT",
-                    errorMessage = e.message
-                )
-            }
-        } ?: toManagementEndpointResult(
-            response = intermediate.response,
-            resultCode = intermediate.resultCode,
-            errorMessage = intermediate.errorMessage
-        ) // TODO: replace this with error handling in client
-    }
-
     private fun <T : Any> toManagementEndpointResult(
         deserialized: T? = null,
         response: HttpResponse? = null,
@@ -103,7 +67,7 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endp
         )
     }
 
-    private fun <T : Any> toManagementEndpointResultAsSuccess(
+    fun <T : Any> toManagementEndpointResultAsSuccess(
         deserialized: T?,
         response: HttpResponse?
     ): ManagementEndpointResult<T> =
@@ -114,10 +78,10 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endp
         )
 
     // TODO: This has to be rewritten in the client
-    fun <T : Any> toManagementEndpointResultAsError(
+    fun <S : Any> toManagementEndpointResultAsError(
         exception: Exception,
         response: HttpResponse? = null
-    ): ManagementEndpointResult<T> {
+    ): ManagementEndpointResult<S> {
         val resultCode = when (exception) {
             is HttpStatusCodeException -> "ERROR_${exception.statusCode}"
             is RestClientException -> "ERROR_HTTP"
@@ -131,81 +95,5 @@ class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endp
             resultCode = resultCode,
             errorMessage = exception.message
         )
-    }
-}
-
-// TODO This entire abstraction can go away
-class ManagementInterface internal constructor(
-    private val client: OpenShiftManagementClient,
-    val links: ManagementLinks,
-    val infoEndpoint: ManagementEndpoint? = null,
-    val envEndpoint: ManagementEndpoint? = null,
-    val healthEndpoint: ManagementEndpoint? = null
-
-) {
-
-    companion object {
-        fun create(
-            client: OpenShiftManagementClient,
-            pod: Pod,
-            path: String?
-        ): Pair<ManagementInterface?, ManagementEndpointResult<ManagementLinks>> {
-            if (path.isNullOrBlank()) {
-                return Pair(
-                    null, toManagementEndpointResultDiscoveryConfigError("Management path is missing")
-                )
-            }
-            // TODO: validate this
-            val port = path.substringBefore("/").removePrefix(":").toInt()
-            val p = path.substringAfter("/")
-
-            val discoveryEndpoint = ManagementEndpoint(pod, port, p, DISCOVERY)
-
-            val response: ManagementEndpointResult<ManagementLinks> = discoveryEndpoint.getCachedOrCompute {
-                findManagementLinks(it, client)
-            }
-
-            return response.deserialized?.let { links ->
-
-                Pair(ManagementInterface(
-                    client = client,
-                    links = links,
-                    infoEndpoint = links.linkFor(INFO)?.let { url -> ManagementEndpoint(pod, port, url, INFO) },
-                    envEndpoint = links.linkFor(ENV)?.let { url -> ManagementEndpoint(pod, port, url, ENV) },
-                    healthEndpoint = links.linkFor(HEALTH)?.let { url ->
-                        ManagementEndpoint(
-                            pod,
-                            port,
-                            url,
-                            HEALTH
-                        )
-                    }
-                ), response)
-            } ?: Pair(null, response)
-        }
-
-        private fun findManagementLinks(
-            discoveryEndpoint: ManagementEndpoint,
-            client: OpenShiftManagementClient
-        ): ManagementEndpointResult<ManagementLinks> {
-            return discoveryEndpoint.findJsonResource(client) { response: JsonNode ->
-                val asMap = response[DISCOVERY.key].asMap()
-                val links = asMap
-                    .mapValues {
-                        val rawHref = it.value["href"].asText()!!
-                        rawHref.replace("http://", "").substringAfter("/")
-                    }
-                ManagementLinks(links)
-            }
-        }
-
-        // TODO: Move this into error handling when finding managementEndpoint
-        fun <T : Any> toManagementEndpointResultDiscoveryConfigError(cause: String): ManagementEndpointResult<T> {
-            return ManagementEndpointResult(
-                errorMessage = cause,
-                endpointType = EndpointType.DISCOVERY,
-                resultCode = "ERROR_CONFIGURATION"
-            )
-        }
     }
 }
