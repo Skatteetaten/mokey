@@ -7,11 +7,13 @@ import assertk.assertions.isNull
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
+import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
 import okhttp3.mockwebserver.MockResponse
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.http.HttpHeaders
@@ -36,91 +38,101 @@ class ManagementDataService2Test {
         )
     )
 
+    // TODO: need to clean up these test so that they can run at the same tim
     @Test
     fun `management health should fail with text response`() {
-        httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
-                jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("health", "/health")
-                    })
-                )
+        runBlocking {
+            httpMockServer(port) {
+                rule({ path?.endsWith("links") }) {
+                    jsonResponse(
+                        HalResource(_links = Links().apply {
+                            add("health", "/health")
+                        })
+                    )
+                }
+
+                rule({ path?.endsWith("health") }) {
+                    MockResponse().setBody("Foo")
+                }
             }
 
-            rule({ path?.endsWith("health") }) {
-                MockResponse().setBody("Foo")
-            }
+            val managementData =
+                service.load(newPod {
+                    metadata = newObjectMeta {
+                        name = "name"
+                        namespace = "namespace"
+                    }
+                }, ":8081/links")
+
+            assertThat(managementData).isNotNull()
+            assertThat(managementData.health?.resultCode).isEqualTo("INVALID_JSON")
         }
-
-        val managementData = service.load(newPod {
-            metadata = newObjectMeta {
-                name = "name"
-                namespace = "namespace"
-            }
-        }, ":8081/links")
-
-        assertThat(managementData).isNotNull()
-        assertThat(managementData.health?.resultCode).isEqualTo("INVALID_JSON")
     }
 
     @Test
     fun `management health should fail with wrong status value`() {
-        httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
-                jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("health", "/health")
-                    })
-                )
+        runBlocking {
+            httpMockServer(port) {
+                rule({ path?.endsWith("links") }) {
+                    jsonResponse(
+                        HalResource(_links = Links().apply {
+                            add("health", "/health")
+                        })
+                    )
+                }
+
+                rule({ path?.endsWith("health") }) {
+                    jsonResponse("""{"status":"FOOBAR","details":{"diskSpace":{"status":"UP"}}}""")
+                }
             }
 
-            rule({ path?.endsWith("health") }) {
-                jsonResponse("""{"status":"FOOBAR","details":{"diskSpace":{"status":"UP"}}}""")
-            }
+            val managementData =
+                service.load(newPod {
+                    metadata = newObjectMeta {
+                        name = "name"
+                        namespace = "namespace"
+                    }
+                }, ":8081/links")
+
+            assertThat(managementData).isNotNull()
+            assertThat(managementData.health?.errorMessage).isEqualTo("Invalid format, status is not valid HealthStatus value")
         }
-
-        val managementData = service.load(newPod {
-            metadata = newObjectMeta {
-                name = "name"
-                namespace = "namespace"
-            }
-        }, ":8081/links")
-
-        assertThat(managementData).isNotNull()
-        assertThat(managementData.health?.errorMessage).isEqualTo("Invalid format, status is not valid HealthStatus value")
     }
 
     @Test
     fun `management health should fail`() {
-        httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
-                jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("health", "/health")
-                    })
-                )
+        runBlocking {
+            httpMockServer(port) {
+                rule({ path.endsWith("links") }) {
+                    jsonResponse(
+                        HalResource(_links = Links().apply {
+                            add("health", "/health")
+                        })
+                    )
+                }
+
+                rule({ path.endsWith("health") }) {
+                    jsonResponse("""{"stastus":"UP","details":{"diskSpace":{"status":"UP"}}}""")
+                }
             }
 
-            rule({ path?.endsWith("health") }) {
-                jsonResponse("""{"stastus":"UP","details":{"diskSpace":{"status":"UP"}}}""")
-            }
+            val managementData =
+                service.load(newPod {
+                    metadata = newObjectMeta {
+                        name = "name"
+                        namespace = "namespace"
+                    }
+                }, ":8081/links")
+
+            assertThat(managementData).isNotNull()
+            assertThat(managementData.health?.errorMessage).isEqualTo("Invalid format, does not contain status")
         }
-
-        val managementData = service.load(newPod {
-            metadata = newObjectMeta {
-                name = "name"
-                namespace = "namespace"
-            }
-        }, ":8081/links")
-
-        assertThat(managementData).isNotNull()
-        assertThat(managementData.health?.errorMessage).isEqualTo("Invalid format, does not contain status")
     }
 
     @Test
     fun `Request and create management data`() {
         httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
+            rule({ path.endsWith("links") }) {
                 jsonResponse(
                     HalResource(_links = Links().apply {
                         add("info", "/info")
@@ -130,25 +142,27 @@ class ManagementDataService2Test {
                 )
             }
 
-            rule({ path?.endsWith("info") }) {
+            rule({ path.endsWith("info") }) {
                 jsonResponse("""{"activeProfiles":["openshift"]}""")
             }
 
-            rule({ path?.endsWith("env") }) {
+            rule({ path.endsWith("env") }) {
                 jsonResponse("{}")
             }
 
-            rule({ path?.endsWith("health") }) {
+            rule({ path.endsWith("health") }) {
                 jsonResponse("""{"status":"UP","details":{"diskSpace":{"status":"UP"}}}""")
             }
         }
 
-        val managementData = service.load(newPod {
-            metadata = newObjectMeta {
-                name = "name"
-                namespace = "namespace"
-            }
-        }, ":8081/links")
+        val managementData = runBlocking {
+            service.load(newPod {
+                metadata = newObjectMeta {
+                    name = "name"
+                    namespace = "namespace"
+                }
+            }, ":8081/links")
+        }
 
         assertThat(managementData).isNotNull()
         assertThat(managementData.env?.errorMessage).isNull()

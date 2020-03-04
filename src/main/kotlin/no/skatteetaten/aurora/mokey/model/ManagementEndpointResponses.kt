@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
+import io.fabric8.kubernetes.api.model.Pod
 import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.service.DateParser
 import java.time.Instant
@@ -14,6 +15,9 @@ enum class EndpointType(val key: String) {
     DISCOVERY("_links")
 }
 
+data class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endpointType: EndpointType) {
+    val url = "namespaces/${pod.metadata.namespace}/pods/${pod.metadata.name}:$port/proxy/$path"
+}
 
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 

@@ -10,6 +10,7 @@ import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
+import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
@@ -28,8 +29,8 @@ fun ManagementEndpoint.toCacheKey() =
 
 data class ManagementCacheKey(val namespace: String, val replicationName: String, val type: EndpointType)
 
-fun <T> ManagementEndpoint.getCachedOrCompute(
-    fn: (endpoint: ManagementEndpoint) -> ManagementEndpointResult<T>
+suspend fun <T> ManagementEndpoint.getCachedOrCompute(
+    fn: suspend (endpoint: ManagementEndpoint) -> ManagementEndpointResult<T>
 ): ManagementEndpointResult<T> {
     val key = this.toCacheKey()
     val cachedResponse = (cache.getIfPresent(key) as ManagementEndpointResult<T>?)?.also {
@@ -46,9 +47,8 @@ class ManagementDataService(
     val client: OpenShiftManagementClient
 ) {
 
-    fun load(pod: Pod, endpointPath: String?): ManagementData {
+    suspend fun load(pod: Pod, endpointPath: String?): ManagementData {
 
-        // TODO: validate this
         val (port, path) = try {
             assert(endpointPath != null && endpointPath.isNotBlank()) {
                 "Management path is missing"
@@ -69,25 +69,25 @@ class ManagementDataService(
         val discoveryEndpoint = ManagementEndpoint(pod, port, path, EndpointType.DISCOVERY)
 
         val discoveryResponse: ManagementEndpointResult<DiscoveryResponse> = discoveryEndpoint.getCachedOrCompute {
-            it.findJsonResource(client, DiscoveryResponse::class.java)
+            client.findJsonResource<DiscoveryResponse>(it)
         }
 
         val discoveryResult = discoveryResponse.deserialized ?: return ManagementData((discoveryResponse))
 
         val info = discoveryResult.createEndpoint(pod, port, EndpointType.INFO)?.let {
             it.getCachedOrCompute { endpoint ->
-                endpoint.findJsonResource(client, InfoResponse::class.java)
+                client.findJsonResource<InfoResponse>(endpoint)
             }
         } ?: EndpointType.INFO.missingResult()
 
         val env = discoveryResult.createEndpoint(pod, port, EndpointType.ENV)?.let {
             it.getCachedOrCompute { endpoint ->
-                endpoint.findJsonResource(client, JsonNode::class.java)
+                client.findJsonResource<JsonNode>(endpoint)
             }
         } ?: EndpointType.ENV.missingResult()
 
         val health = discoveryResult.createEndpoint(pod, port, EndpointType.HEALTH)?.let {
-            parseHealthResult(it.findJsonResource(client, JsonNode::class.java))
+            parseHealthResult(client.findJsonResource(it))
         } ?: EndpointType.HEALTH.missingResult()
 
         return ManagementData(
@@ -122,12 +122,4 @@ class ManagementDataService(
         }
         return it
     }
-}
-
-fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> {
-    return ManagementEndpointResult(
-        errorMessage = "Unknown endpoint link",
-        endpointType = this,
-        resultCode = "LINK_MISSING"
-    )
 }
