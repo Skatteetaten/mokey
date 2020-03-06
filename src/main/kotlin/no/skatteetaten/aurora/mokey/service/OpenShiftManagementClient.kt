@@ -78,7 +78,7 @@ class OpenShiftManagementClient(
         val logger = KotlinLogging.logger {}
         val response = try {
             val response = proxyManagementInterfaceRaw(endpoint.pod, endpoint.port, endpoint.path)
-            //logger.debug("Response status=OK body={}", response)
+            // logger.debug("Response status=OK body={}", response)
             HttpResponse(response, 200)
         } catch (e: WebClientResponseException) {
             // THis needs to be cleaned up after we have coverage of it all
@@ -88,6 +88,7 @@ class OpenShiftManagementClient(
                 errorResponse
             } else {
                 logger.debug("Respone error url=${endpoint.url} status=ERROR body={}", errorResponse.content)
+                return toManagementEndpointResultAsError(exception = e, response = errorResponse, endpoint = endpoint)
             }
         } catch (e: Exception) {
             logger.debug("Respone other excpption url=${endpoint.url} status=ERROR body={}", e.message, e)
@@ -131,7 +132,7 @@ class OpenShiftManagementClient(
         response: HttpResponse? = null,
         endpoint: ManagementEndpoint
     ): ManagementEndpointResult<S> {
-        //JsonParseException
+        // JsonParseException
         val resultCode = when (exception) {
             is JsonParseException -> "INVALID_JSON"
             is WebClientResponseException -> "ERROR_HTTP"
@@ -145,6 +146,4 @@ class OpenShiftManagementClient(
             endpoint = endpoint
         )
     }
-
 }
-

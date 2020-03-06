@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service
 
 private val logger = KotlinLogging.logger {}
 
-
 @Service
 class ManagementDataService(
     val client: OpenShiftManagementClient
