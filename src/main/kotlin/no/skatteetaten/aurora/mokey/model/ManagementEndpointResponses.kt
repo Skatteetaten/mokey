@@ -3,7 +3,7 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
-import no.skatteetaten.aurora.mokey.extensions.asMap
+import io.fabric8.kubernetes.api.model.Pod
 import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.service.DateParser
 import java.time.Instant
@@ -15,34 +15,17 @@ enum class EndpointType(val key: String) {
     DISCOVERY("_links")
 }
 
-data class ManagementLinks(private val links: Map<String, String>) {
-
-    fun linkFor(endpointType: EndpointType): String? {
-        return links[endpointType.key]
-    }
-
-    companion object {
-        fun parseManagementResponse(response: JsonNode): ManagementLinks {
-            val asMap = response[EndpointType.DISCOVERY.key].asMap()
-            val links = asMap
-                .mapValues { it.value["href"].asText()!! }
-            return ManagementLinks(links)
-        }
-    }
+data class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endpointType: EndpointType) {
+    val url = "namespaces/${pod.metadata.namespace}/pods/${pod.metadata.name}:$port/proxy/$path"
 }
 
+// TODO: We have to make sure that replication is correct here when we go to replicaset
+fun ManagementEndpoint.toCacheKey() =
+    ManagementCacheKey(this.pod.metadata.namespace, this.pod.metadata.name.substringBeforeLast("-"), this.endpointType)
+
+data class ManagementCacheKey(val namespace: String, val replicationName: String, val type: EndpointType)
+
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
-
-data class HealthResponse(
-    val status: HealthStatus,
-    // Do we even need parts here? we do not use it for anything.
-    val parts: Map<String, HealthPart> = emptyMap()
-)
-
-data class HealthPart(
-    val status: HealthStatus = HealthStatus.UP,
-    val details: Map<String, JsonNode> = emptyMap()
-)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class InfoResponse(

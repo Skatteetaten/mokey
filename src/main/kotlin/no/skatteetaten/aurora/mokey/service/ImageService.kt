@@ -15,6 +15,7 @@ class ImageService(
         imageSteamName: String,
         image: String
     ): ImageDetails? {
+        // TODO: Cache here
         val imageTagResource = image.replace("@", "/").let { sha ->
             imageRegistryService.findTagsByName(listOf(sha)).first()
         }

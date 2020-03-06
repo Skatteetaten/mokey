@@ -64,12 +64,12 @@ import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
-import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
+import no.skatteetaten.aurora.mokey.service.DiscoveryResponse
 import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
 import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import org.apache.commons.codec.digest.DigestUtils
@@ -476,7 +476,7 @@ data class ImageStreamTagDataBuilder(
         }
 }
 
-class ApplicationDeploymentBuilder() {
+class ApplicationDeploymentBuilder {
     fun build(): ApplicationDeployment =
         newApplicationDeployment {
             metadata {
@@ -509,11 +509,11 @@ class ApplicationDeploymentBuilder() {
         }
 }
 
-class AddressBuilder() {
+class AddressBuilder {
     fun build() = ServiceAddress(url = URI("/mokey"), time = null)
 }
 
-class AuroraStatusBuilder() {
+class AuroraStatusBuilder {
     fun build() = AuroraStatus(level = HEALTHY)
 }
 
@@ -568,7 +568,7 @@ data class ApplicationDataBuilder(
                         links = ManagementEndpointResult(
                             endpointType = EndpointType.INFO,
                             resultCode = "",
-                            deserialized = ManagementLinks(emptyMap())
+                            deserialized = DiscoveryResponse(emptyMap())
                         )
                     )
                 )

@@ -50,6 +50,9 @@ openshift:
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
 
 kubernetes:
+    timeout:
+        connect: 2s
+        read: 10s
     retry:
         time: 3
         min: 100ms
@@ -62,7 +65,7 @@ mokey:
     cachewarmup:
         enabled: true
     cache:
-        affiliations: safir
+        affiliations: aurora
 
 integrations:
     cantus:
@@ -72,8 +75,7 @@ logging:
         console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
     level:
-        no.skatteetaten.aurora: INFO
-        no.skatteetaten.aurora.kubernetes: INFO
+        no.skatteetaten.aurora: DEBUG
 
 kubernetes:
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}

@@ -1,17 +1,14 @@
 package no.skatteetaten.aurora.mokey
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import java.time.Instant
 import no.skatteetaten.aurora.mokey.model.EndpointType
-import no.skatteetaten.aurora.mokey.model.HealthResponse
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
-import no.skatteetaten.aurora.mokey.model.ManagementLinks
-import no.skatteetaten.aurora.mokey.service.HealthResponseParser
+import no.skatteetaten.aurora.mokey.service.DiscoveryResponse
 import org.intellij.lang.annotations.Language
+import java.time.Instant
 
 data class ManagementEndpointResultDataBuilder<T>(
     val deserialized: T? = null,
@@ -23,15 +20,15 @@ data class ManagementEndpointResultDataBuilder<T>(
     val url: String? = null
 ) {
     fun build(): ManagementEndpointResult<T> =
-            ManagementEndpointResult(
-                    deserialized = deserialized,
-                    response = HttpResponse(content = textResponse, code = 200),
-                    createdAt = createdAt,
-                    endpointType = endpointType,
-                    errorMessage = errorMessage,
-                    url = url,
-                    resultCode = "OK"
-            )
+        ManagementEndpointResult(
+            deserialized = deserialized,
+            response = HttpResponse(content = textResponse, code = 200),
+            createdAt = createdAt,
+            endpointType = endpointType,
+            errorMessage = errorMessage,
+            url = url,
+            resultCode = "OK"
+        )
 }
 
 class ManagementDataBuilder(
@@ -70,32 +67,24 @@ class ManagementDataBuilder(
   }"""
 ) {
     private val info: ManagementEndpointResult<InfoResponse> = ManagementEndpointResult(
-            deserialized = jacksonObjectMapper().readValue(infoResponseJson, InfoResponse::class.java),
-            response = HttpResponse(content = infoResponseJson, code = 200),
-            resultCode = "OK",
-            url = "http://localhost:8081/info",
-            endpointType = EndpointType.INFO
+        deserialized = jacksonObjectMapper().readValue(infoResponseJson, InfoResponse::class.java),
+        response = HttpResponse(content = infoResponseJson, code = 200),
+        resultCode = "OK",
+        url = "http://localhost:8081/info",
+        endpointType = EndpointType.INFO
     )
 
-    private val health: ManagementEndpointResult<HealthResponse> = ManagementEndpointResult(
-            deserialized = HealthResponseParser.parse(jacksonObjectMapper().readValue(healthResponseJson, JsonNode::class.java)),
-            response = HttpResponse(content = healthResponseJson, code = 200),
-            resultCode = "OK",
-            url = "http://localhost:8081/health",
-            endpointType = EndpointType.HEALTH
-    )
-
-    private val links: ManagementEndpointResult<ManagementLinks> = ManagementEndpointResult(
-            deserialized = ManagementLinks.parseManagementResponse(jacksonObjectMapper().readValue(linksResponseJson, JsonNode::class.java)),
-            response = HttpResponse(content = linksResponseJson, code = 200),
-            resultCode = "OK",
-            url = "http://localhost:8081/actuator",
-            endpointType = EndpointType.DISCOVERY
+    private val links: ManagementEndpointResult<DiscoveryResponse> = ManagementEndpointResult(
+        deserialized = jacksonObjectMapper().readValue(linksResponseJson, DiscoveryResponse::class.java),
+        response = HttpResponse(content = linksResponseJson, code = 200),
+        resultCode = "OK",
+        url = "http://localhost:8081/actuator",
+        endpointType = EndpointType.DISCOVERY
     )
 
     fun build() = ManagementData(
-            links = links,
-            info = info,
-            health = health
+        links,
+        info = info,
+        health = null
     )
 }

@@ -2,9 +2,10 @@ package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import java.time.Instant
 import mu.KotlinLogging
+import no.skatteetaten.aurora.mokey.service.DiscoveryResponse
 import uk.q3c.rest.hal.HalResource
+import java.time.Instant
 
 data class GroupedApplicationData(
     val applicationId: String?,
@@ -78,12 +79,13 @@ data class PodDetails(
 )
 
 data class ManagementData(
-    val links: ManagementEndpointResult<ManagementLinks>,
+    val links: ManagementEndpointResult<DiscoveryResponse>,
     val info: ManagementEndpointResult<InfoResponse>? = null,
-    val health: ManagementEndpointResult<HealthResponse>? = null,
+    val health: ManagementEndpointResult<JsonNode>? = null,
     val env: ManagementEndpointResult<JsonNode>? = null
 )
 
+// TODO: Kan vi lage 2 klasser her, en som er suksess og en som er failure?
 data class ManagementEndpointResult<T>(
     val endpointType: EndpointType,
     val resultCode: String,
