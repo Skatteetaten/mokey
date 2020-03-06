@@ -165,4 +165,13 @@ class ManagementDataServiceTest {
         assertThat(managementData.health?.errorMessage).isNull()
         assertThat(managementData.info?.errorMessage).isNull()
     }
+
+    @Test
+    fun `Return ManagementData with error response for invalid endpoint configuration`() {
+        val response = runBlocking {
+            service.load(newPod {}, "invalid endpoint path")
+        }
+
+        assertThat(response.links.resultCode).isEqualTo("ERROR_CONFIGURATION")
+    }
 }
