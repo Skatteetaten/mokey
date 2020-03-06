@@ -59,6 +59,7 @@ import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.DiscoveryResponse
 import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
@@ -69,7 +70,6 @@ import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
-import no.skatteetaten.aurora.mokey.service.DiscoveryResponse
 import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
 import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import org.apache.commons.codec.digest.DigestUtils

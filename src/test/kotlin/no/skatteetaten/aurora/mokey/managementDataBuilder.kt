@@ -1,12 +1,12 @@
 package no.skatteetaten.aurora.mokey
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import no.skatteetaten.aurora.mokey.model.DiscoveryResponse
 import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
-import no.skatteetaten.aurora.mokey.service.DiscoveryResponse
 import org.intellij.lang.annotations.Language
 import java.time.Instant
 
