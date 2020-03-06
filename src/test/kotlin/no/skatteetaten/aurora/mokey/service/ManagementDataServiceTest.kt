@@ -16,11 +16,13 @@ import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
 import okhttp3.mockwebserver.MockResponse
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
 import org.springframework.web.reactive.function.client.WebClient
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
 
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ManagementDataServiceTest {
 
     private val port = SocketUtils.findAvailableTcpPort()
