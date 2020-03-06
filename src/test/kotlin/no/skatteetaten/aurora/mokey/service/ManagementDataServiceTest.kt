@@ -1,204 +1,168 @@
 package no.skatteetaten.aurora.mokey.service
 
-/*
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
 import assertk.assertions.isNull
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
-import no.skatteetaten.aurora.mokey.ManagementEndpointResultDataBuilder
-import no.skatteetaten.aurora.mokey.model.EndpointType
-import no.skatteetaten.aurora.mokey.model.InfoResponse
-import no.skatteetaten.aurora.mokey.model.ManagementLinks
-import org.junit.jupiter.api.BeforeEach
+import kotlinx.coroutines.runBlocking
+import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
+import no.skatteetaten.aurora.kubernetes.RetryConfiguration
+import no.skatteetaten.aurora.kubernetes.TokenFetcher
+import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.HttpMock
+import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
+import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
+import okhttp3.mockwebserver.MockResponse
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.springframework.util.SocketUtils
+import org.springframework.web.reactive.function.client.WebClient
+import uk.q3c.rest.hal.HalResource
+import uk.q3c.rest.hal.Links
 
 class ManagementDataServiceTest {
-    private val managementInterfaceFactory = mockk<ManagementInterfaceFactory>()
-    private val managementInterface = mockk<ManagementInterface>()
-    private val managementDataService = ManagementDataService(managementInterfaceFactory)
 
-    private val discoveryResponse = """{
-  "_links": {
-    "health": {
-      "href": "http://localhost:8081/health"
-    },
-    "env": {
-      "href": "http://localhost:8081/env"
-    },
-    "info": {
-      "href": "http://localhost:8081/info"
-    }
-  }
-}"""
+    private val port = SocketUtils.findAvailableTcpPort()
+    private val service = ManagementDataService(
+        OpenShiftManagementClient(
+            KubernetesReactorClient(
+                WebClient.create("http://localhost:$port"), object : TokenFetcher {
+                    override fun token() = "test-token"
+                },
+                RetryConfiguration()
+            )
+        )
+    )
 
-    private val infoResponse = """{
-  "serviceLinks": {
-    "api-doc": "myhost/docs/index.html",
-    "metrics": "myhost/foo/bar"
-  },
-  "dependencies": {
-    "skatteetaten": "skatteetaten"
-  },
-  "auroraVersion": "2.0.13-b1.17.0-foo-8.181.1",
-  "podLinks": {
-    "metrics": "/my/foo/bar/mypod"
-  },
-  "imageBuildTime": "2018-10-24T17:42:37Z",
-  "git": {
-    "commit": {
-      "time": "2018-10-23T08:34:31Z",
-      "id": "ab23ea76"
-    },
-    "branch": "c72fd243cd418313b1123efdb3e6f82cd9427e58"
-  },
-  "build": {
-    "version": "2.0.13",
-    "artifact": "myapp",
-    "name": "myapp",
-    "group": "no.skatteetaten.aurora.openshift",
-    "time": "2018-10-24T17:40:57.509Z"
-  }
-}"""
-
-    private val healthResponse = """{
-  "status": "UP",
-  "atsServiceHelse": {
-    "status": "UP"
-  },
-  "diskSpace": {
-    "status": "UP",
-    "total": 10718543872,
-    "free": 10508611584,
-    "threshold": 10485760
-  },
-  "db": {
-    "status": "UP",
-    "database": "Mydb",
-    "hello": "Hello"
-  }
-}"""
-
-    private val envResponse = """{
-  "activeProfiles": [
-    "myprofile"
-  ],
-  "propertySources": [
-    {
-        "name": "systemProperties",
-        "properties": {
-            "os.name": {
-                "value": "Linux"
-            },
-            "os.version": {
-                "value": "3.12.x86_64"
-            },
-            "file.encoding.pkg": {
-                "value": "sun.io"
-            }
-        }
-    },
-    {
-        "name": "applicationProperties",
-        "properties": {
-            "user.level": {
-                "value": "3"
-            },
-            "user.home": {
-                "value": "/home/bozo"
-            }
-        }
-    }
-  ]
-}"""
-
-    @BeforeEach
-    fun setUp() {
-        clearMocks(managementInterfaceFactory, managementInterface)
+    @AfterEach
+    fun tearDown() {
+        HttpMock.clearAllHttpMocks()
     }
 
     @Test
-    fun `Return discovery result if unable to create management interface`() {
-        val discoveryResult = ManagementEndpointResultDataBuilder<ManagementLinks>(
-            textResponse = """{"foo" : "bar" }""",
-            endpointType = EndpointType.INFO
-        )
-            .build()
+    fun `management health should fail with text response`() {
+        httpMockServer(port) {
+            rule({ path?.endsWith("links") }) {
+                jsonResponse(
+                    HalResource(_links = Links().apply {
+                        add("health", "/health")
+                    })
+                )
+            }
 
-        every { ManagementInterface.create(managementInterfaceFactory.client, any(), any()) } returns Pair(
-            null,
-            discoveryResult
-        )
+            rule({ path?.endsWith("health") }) {
+                MockResponse().setBody("Foo")
+            }
+        }
 
-        val result = managementDataService.load(newPod {}, "/bar")
-
-        verify { ManagementInterface.create(managementInterfaceFactory.client, any(), any()) }
-        assertThat(result.links).isEqualTo(discoveryResult)
-        assertThat(result.health).isNull()
-        assertThat(result.info).isNull()
-        assertThat(result.env).isNull()
+        val managementData = runBlocking {
+            service.load(newPod {
+                metadata = newObjectMeta {
+                    name = "name1"
+                    namespace = "namespace1"
+                }
+            }, ":8081/links")
+        }
+        assertThat(managementData).isNotNull()
+        assertThat(managementData.health?.resultCode).isEqualTo("INVALID_JSON")
     }
 
     @Test
-    fun `Return aggregated result object on happy day`() {
-        val infoResult = ManagementEndpointResultDataBuilder(
-            deserialized = jacksonObjectMapper().readValue(infoResponse, InfoResponse::class.java),
-            endpointType = EndpointType.INFO
-        )
-            .build()
-
-        val healthResult = ManagementEndpointResultDataBuilder(
-            deserialized = HealthResponseParser.parse(
-                jacksonObjectMapper().readValue(
-                    healthResponse,
-                    JsonNode::class.java
+    fun `management health should fail with wrong status value`() {
+        httpMockServer(port) {
+            rule({ path?.endsWith("links") }) {
+                jsonResponse(
+                    HalResource(_links = Links().apply {
+                        add("health", "/health")
+                    })
                 )
-            ),
-            endpointType = EndpointType.HEALTH
-        )
-            .build()
+            }
 
-        val discoveryResult = ManagementEndpointResultDataBuilder(
-            deserialized = ManagementLinks.parseManagementResponse(
-                jacksonObjectMapper().readValue(
-                    discoveryResponse,
-                    JsonNode::class.java
+            rule({ path?.endsWith("health") }) {
+                jsonResponse("""{"status":"FOOBAR","details":{"diskSpace":{"status":"UP"}}}""")
+            }
+        }
+
+        val managementData = runBlocking {
+            service.load(newPod {
+                metadata = newObjectMeta {
+                    name = "name2"
+                    namespace = "namespace2"
+                }
+            }, ":8081/links")
+        }
+        assertThat(managementData).isNotNull()
+        assertThat(managementData.health?.errorMessage).isEqualTo("Invalid format, status is not valid HealthStatus value")
+    }
+
+    @Test
+    fun `management health should fail`() {
+        httpMockServer(port) {
+            rule({ path?.endsWith("links") }) {
+                jsonResponse(
+                    HalResource(_links = Links().apply {
+                        add("health", "/health")
+                    })
                 )
-            ),
-            endpointType = EndpointType.DISCOVERY
-        )
-            .build()
+            }
 
-        val envResult = ManagementEndpointResultDataBuilder(
-            deserialized = jacksonObjectMapper().readValue(envResponse, JsonNode::class.java),
-            endpointType = EndpointType.ENV
-        )
-            .build()
+            rule({ path?.endsWith("health") }) {
+                jsonResponse("""{"stastus":"UP","details":{"diskSpace":{"status":"UP"}}}""")
+            }
+        }
 
-        every { managementInterface.getInfoEndpointResult() } returns infoResult
-        every { managementInterface.getEnvEndpointResult() } returns envResult
-        every { managementInterface.getHealthEndpointResult() } returns healthResult
-        every { ManagementInterface.create(managementInterfaceFactory.client, any(), any()) } returns Pair(
-            managementInterface,
-            discoveryResult
-        )
+        val managementData = runBlocking {
+            service.load(newPod {
+                metadata = newObjectMeta {
+                    name = "name3"
+                    namespace = "namespace3"
+                }
+            }, ":8081/links")
+        }
 
-        val data = managementDataService.load(newPod {}, "/test")
+        assertThat(managementData).isNotNull()
+        assertThat(managementData.health?.errorMessage).isEqualTo("Invalid format, does not contain status")
+    }
 
-        verify { ManagementInterface.create(managementInterfaceFactory.client, any(), any()) }
-        verify { managementInterface.getInfoEndpointResult() }
-        verify { managementInterface.getEnvEndpointResult() }
-        verify { managementInterface.getHealthEndpointResult() }
+    @Test
+    fun `Request and create management data`() {
+        httpMockServer(port) {
+            rule({ path?.endsWith("links") }) {
+                jsonResponse(
+                    HalResource(_links = Links().apply {
+                        add("info", "/info")
+                        add("health", "/health")
+                        add("env", "/env")
+                    })
+                )
+            }
 
-        assertThat(data.links.endpointType).isEqualTo(EndpointType.DISCOVERY)
-        assertThat(data.info!!.endpointType).isEqualTo(EndpointType.INFO)
-        assertThat(data.env!!.endpointType).isEqualTo(EndpointType.ENV)
-        assertThat(data.health!!.endpointType).isEqualTo(EndpointType.HEALTH)
+            rule({ path?.endsWith("info") }) {
+                jsonResponse("{}")
+            }
+
+            rule({ path?.endsWith("env") }) {
+                jsonResponse("""{"activeProfiles":["openshift"]}""")
+            }
+
+            rule({ path?.endsWith("health") }) {
+                jsonResponse("""{"status":"UP","details":{"diskSpace":{"status":"UP"}}}""")
+            }
+        }
+
+        val managementData = runBlocking {
+            service.load(newPod {
+                metadata = newObjectMeta {
+                    name = "name4"
+                    namespace = "namespace4"
+                }
+            }, ":8081/links")
+        }
+
+        assertThat(managementData).isNotNull()
+        assertThat(managementData.env?.errorMessage).isNull()
+        assertThat(managementData.health?.errorMessage).isNull()
+        assertThat(managementData.info?.errorMessage).isNull()
     }
 }
-*/
