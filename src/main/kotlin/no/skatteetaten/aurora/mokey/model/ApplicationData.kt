@@ -85,6 +85,7 @@ data class ManagementData(
     val env: ManagementEndpointResult<JsonNode>? = null
 )
 
+// TODO: Kan vi lage 2 klasser her, en som er suksess og en som er failure?
 data class ManagementEndpointResult<T>(
     val endpointType: EndpointType,
     val resultCode: String,

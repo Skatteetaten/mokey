@@ -29,18 +29,6 @@ fun ManagementEndpoint.toCacheKey() =
 
 data class ManagementCacheKey(val namespace: String, val replicationName: String, val type: EndpointType)
 
-suspend fun <T> ManagementEndpoint.getCachedOrCompute(
-    fn: suspend (endpoint: ManagementEndpoint) -> ManagementEndpointResult<T>
-): ManagementEndpointResult<T> {
-    val key = this.toCacheKey()
-    val cachedResponse = (cache.getIfPresent(key) as ManagementEndpointResult<T>?)?.also {
-        logger.debug("Found cached response for $key")
-    }
-    return cachedResponse ?: fn(this).also {
-        logger.debug("Cached management interface $key")
-        cache.put(key, it)
-    }
-}
 
 @Service
 class ManagementDataService(
@@ -68,22 +56,16 @@ class ManagementDataService(
 
         val discoveryEndpoint = ManagementEndpoint(pod, port, path, EndpointType.DISCOVERY)
 
-        val discoveryResponse: ManagementEndpointResult<DiscoveryResponse> = discoveryEndpoint.getCachedOrCompute {
-            client.findJsonResource<DiscoveryResponse>(it)
-        }
+        val discoveryResponse: ManagementEndpointResult<DiscoveryResponse> = client.getCachedOrFind(discoveryEndpoint)
 
         val discoveryResult = discoveryResponse.deserialized ?: return ManagementData((discoveryResponse))
 
         val info = discoveryResult.createEndpoint(pod, port, EndpointType.INFO)?.let {
-            it.getCachedOrCompute { endpoint ->
-                client.findJsonResource<InfoResponse>(endpoint)
-            }
+            client.getCachedOrFind<InfoResponse>(it)
         } ?: EndpointType.INFO.missingResult()
 
         val env = discoveryResult.createEndpoint(pod, port, EndpointType.ENV)?.let {
-            it.getCachedOrCompute { endpoint ->
-                client.findJsonResource<JsonNode>(endpoint)
-            }
+            client.getCachedOrFind<JsonNode>(it)
         } ?: EndpointType.ENV.missingResult()
 
         val health = discoveryResult.createEndpoint(pod, port, EndpointType.HEALTH)?.let {

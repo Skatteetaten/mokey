@@ -5,14 +5,18 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.fabric8.kubernetes.api.model.Pod
 import kotlinx.coroutines.reactive.awaitFirst
+import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
@@ -20,22 +24,49 @@ import org.springframework.web.client.RestClientException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
 import java.time.Duration
+import java.util.concurrent.TimeUnit
+
+private val logger = KotlinLogging.logger {}
 
 @Service
 class OpenShiftManagementClient(
-    @Qualifier("managmenetClient") val client: KubernetesReactorClient
+    @Qualifier("managmenetClient") val client: KubernetesReactorClient,
+    @Value("\${mokey.management.cache:true}") val cacheManagement: Boolean
 ) {
     suspend fun proxyManagementInterfaceRaw(pod: Pod, port: Int, path: String): String {
         return client.proxyGet<String>(
-            pod = pod,
-            port = port,
-            path = path,
-            headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
-        )
+                pod = pod,
+                port = port,
+                path = path,
+                headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
+            )
             .timeout(
                 Duration.ofSeconds(2),
-                Mono.error<String>(RuntimeException("Timed out getting management interface in namespace=${pod.metadata.namespace}  pod=${pod.metadata.name} path=$path for "))
+                Mono.error(RuntimeException("Timed out getting management interface in namespace=${pod.metadata.namespace}  pod=${pod.metadata.name} path=$path for "))
             ).awaitFirst()
+    }
+
+    fun clearCache() = cache.invalidateAll()
+
+    final suspend inline fun <reified T : Any> getCachedOrFind(
+        endpoint: ManagementEndpoint
+    ): ManagementEndpointResult<T> {
+        val logger = KotlinLogging.logger {}
+
+        if (!cacheManagement) {
+            logger.debug("cache disabled")
+            return findJsonResource(endpoint)
+        }
+
+        val key = endpoint.toCacheKey()
+        val cachedResponse = (cache.getIfPresent(key) as ManagementEndpointResult<T>?)?.also {
+            logger.debug("Found cached response for $key")
+        }
+        return cachedResponse ?: findJsonResource<T>(endpoint).also {
+            // TODO: Here we have to make sure that if this is an error that should not be cached we cannot cache it. IE network errors
+            logger.debug("Cached management interface $key")
+            cache.put(key, it)
+        }
     }
 
     final suspend inline fun <reified S : Any> findJsonResource(endpoint: ManagementEndpoint): ManagementEndpointResult<S> {
@@ -108,6 +139,12 @@ class OpenShiftManagementClient(
             endpoint = endpoint
         )
     }
+
+    // Does this need to be an async cache?
+    val cache: Cache<ManagementCacheKey, ManagementEndpointResult<*>> = Caffeine.newBuilder()
+        .expireAfterAccess(10, TimeUnit.MINUTES)
+        .maximumSize(100000)
+        .build()
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -136,3 +173,4 @@ fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> {
         resultCode = "LINK_MISSING"
     )
 }
+

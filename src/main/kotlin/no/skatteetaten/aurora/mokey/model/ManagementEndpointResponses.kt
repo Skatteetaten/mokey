@@ -21,16 +21,6 @@ data class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val
 
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
-data class HealthResponse(
-    val status: HealthStatus,
-    // Do we even need parts here? we do not use it for anything.
-    val parts: Map<String, HealthPart> = emptyMap()
-)
-
-data class HealthPart(
-    val status: HealthStatus = HealthStatus.UP,
-    val details: Map<String, JsonNode> = emptyMap()
-)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class InfoResponse(
