@@ -31,7 +31,7 @@ class ManagementDataServiceTest {
                     override fun token() = "test-token"
                 },
                 RetryConfiguration()
-            )
+            ), false
         )
     )
 

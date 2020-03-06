@@ -19,18 +19,13 @@ data class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val
     val url = "namespaces/${pod.metadata.namespace}/pods/${pod.metadata.name}:$port/proxy/$path"
 }
 
+// TODO: We have to make sure that replication is correct here when we go to replicaset
+fun ManagementEndpoint.toCacheKey() =
+    ManagementCacheKey(this.pod.metadata.namespace, this.pod.metadata.name.substringBeforeLast("-"), this.endpointType)
+
+data class ManagementCacheKey(val namespace: String, val replicationName: String, val type: EndpointType)
+
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
-
-data class HealthResponse(
-    val status: HealthStatus,
-    // Do we even need parts here? we do not use it for anything.
-    val parts: Map<String, HealthPart> = emptyMap()
-)
-
-data class HealthPart(
-    val status: HealthStatus = HealthStatus.UP,
-    val details: Map<String, JsonNode> = emptyMap()
-)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class InfoResponse(
