@@ -13,8 +13,10 @@ import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.HttpResponse
+import no.skatteetaten.aurora.mokey.model.ManagementCacheKey
 import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
+import no.skatteetaten.aurora.mokey.model.toCacheKey
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders

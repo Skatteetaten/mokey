@@ -2,8 +2,6 @@ package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
-import com.github.benmanes.caffeine.cache.Cache
-import com.github.benmanes.caffeine.cache.Caffeine
 import io.fabric8.kubernetes.api.model.Pod
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.EndpointType
@@ -13,21 +11,9 @@ import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import org.springframework.stereotype.Service
-import java.util.concurrent.TimeUnit
 
 private val logger = KotlinLogging.logger {}
 
-// Does this need to be an async cache?
-val cache: Cache<ManagementCacheKey, ManagementEndpointResult<*>> = Caffeine.newBuilder()
-    .expireAfterAccess(10, TimeUnit.MINUTES)
-    .maximumSize(100000)
-    .build()
-
-// TODO: We have to make sure that replication is correct here when we go to replicaset
-fun ManagementEndpoint.toCacheKey() =
-    ManagementCacheKey(this.pod.metadata.namespace, this.pod.metadata.name.substringBeforeLast("-"), this.endpointType)
-
-data class ManagementCacheKey(val namespace: String, val replicationName: String, val type: EndpointType)
 
 @Service
 class ManagementDataService(
