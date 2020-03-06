@@ -21,7 +21,6 @@ data class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val
 
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
-
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class InfoResponse(
     val podLinks: Map<String, String> = mapOf(),

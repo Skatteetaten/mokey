@@ -29,7 +29,6 @@ fun ManagementEndpoint.toCacheKey() =
 
 data class ManagementCacheKey(val namespace: String, val replicationName: String, val type: EndpointType)
 
-
 @Service
 class ManagementDataService(
     val client: OpenShiftManagementClient
