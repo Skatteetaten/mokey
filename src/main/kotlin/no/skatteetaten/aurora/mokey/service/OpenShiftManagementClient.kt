@@ -76,6 +76,8 @@ class OpenShiftManagementClient(
 
     /*
       What if we want to find prometheus endpoint here that is not json?
+
+      Refactoring suggestion, make the proxy call return an exception or an success rather then doing the parsing here
      */
     final suspend inline fun <reified S : Any> findJsonResource(endpoint: ManagementEndpoint): ManagementEndpointResult<S> {
 
@@ -86,13 +88,14 @@ class OpenShiftManagementClient(
             // This needs to be cleaned up after we have coverage of it all
             val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
             if (e.statusCode.is5xxServerError) {
-                // This is OK, it is not an error
                 // 503
                 logger.debug(
                     "Respone ${e.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
                     errorResponse.content
                 )
+                // This is the management call succeeeding but returning an error code in the 5x range, which is acceptable
                 errorResponse
+
             } else {
                 // 401 this is an error
                 logger.debug("Respone error url=${endpoint.url} status=ERROR body={}", errorResponse.content)
@@ -104,6 +107,7 @@ class OpenShiftManagementClient(
             return toManagementEndpointResultAsError(exception = e, endpoint = endpoint)
         }
 
+        // this scales poorly if we want to call prometheus here, we should just get proxy method to return the body parsed
         val deserialized: S = try {
             jacksonObjectMapper().readValue(response.content)
         } catch (e: Exception) {

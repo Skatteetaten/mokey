@@ -80,15 +80,6 @@ data class ManagementData(
     val env: ManagementEndpointResult<JsonNode>? = null
 )
 
-sealed class BaseManagementEndpointResult<T>(
-    val createdAt: Instant = Instant.now()
-) {
-    abstract val isSuccess: Boolean
-    abstract val endpointType: EndpointType
-    abstract val resultCode: String
-}
-
-// TODO: Kan vi lage 2 klasser her, en som er suksess og en som er failure?
 data class ManagementEndpointResult<T>(
     val endpointType: EndpointType,
     val resultCode: String,
@@ -101,7 +92,6 @@ data class ManagementEndpointResult<T>(
     val isSuccess: Boolean
         get() = resultCode == "OK"
 }
-
 
 data class HttpResponse(
     val content: String,

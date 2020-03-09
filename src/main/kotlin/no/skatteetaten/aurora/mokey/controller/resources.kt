@@ -1,11 +1,11 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import java.time.Instant
-import kotlin.reflect.KClass
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
+import java.time.Instant
+import kotlin.reflect.KClass
 
 abstract class IdentifiedHalResource(val identifier: String?) : HalResource()
 
@@ -109,6 +109,7 @@ data class ContainerResource(
 
 data class HttpResponseResource(
     val hasResponse: Boolean,
+    // This field is called textResponse, but right now it is always json if set.
     val textResponse: String? = null,
     val httpCode: Int? = null,
     val createdAt: Instant = Instant.now(),
