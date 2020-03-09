@@ -42,15 +42,11 @@ class OpenShiftManagementClient(
 
     suspend fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): HttpResponse {
 
-        val headers = if (endpoint.endpointType == EndpointType.HEALTH) {
-            mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
-        } else emptyMap()
-
         val call = client.proxyGet<String>(
             pod = endpoint.pod,
             port = endpoint.port,
             path = endpoint.path,
-            headers = headers
+            headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
         ).flatMap { Mono.just(HttpResponse(it, 200)) }
 
         if (endpoint.endpointType != EndpointType.HEALTH) {
@@ -132,7 +128,7 @@ class OpenShiftManagementClient(
             jacksonObjectMapper().readValue(response.content)
         } catch (e: Exception) {
             // inavalid body
-            logger.debug("Jackson serialization exception for url=${endpoint.url} message=${e.message}")
+            logger.debug("Jackson serialization exception for url=${endpoint.url} content='${response.content}' message=${e.message}")
             return toManagementEndpointResultAsError(exception = e, response = response, endpoint = endpoint)
         }
 
