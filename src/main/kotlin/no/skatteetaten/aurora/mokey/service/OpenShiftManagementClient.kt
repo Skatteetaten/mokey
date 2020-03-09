@@ -1,16 +1,14 @@
 package no.skatteetaten.aurora.mokey.service
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.fabric8.kubernetes.api.model.Pod
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
+import no.skatteetaten.aurora.kubernetes.ResourceNotFoundException
 import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementCacheKey
@@ -21,30 +19,56 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
-import org.springframework.web.client.HttpStatusCodeException
-import org.springframework.web.client.RestClientException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
 import java.io.IOException
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import java.util.function.BiConsumer
+import java.util.function.Predicate
+
+private val logger = KotlinLogging.logger {}
 
 @Service
 class OpenShiftManagementClient(
     @Qualifier("managmenetClient") val client: KubernetesReactorClient,
     @Value("\${mokey.management.cache:true}") val cacheManagement: Boolean
 ) {
-    suspend fun proxyManagementInterfaceRaw(pod: Pod, port: Int, path: String): String {
-        return client.proxyGet<String>(
-                pod = pod,
-                port = port,
-                path = path,
-                headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
-            )
-            .timeout(
+
+    // Does this need to be an async cache?
+    val cache: Cache<ManagementCacheKey, ManagementEndpointResult<*>> = Caffeine.newBuilder()
+        .expireAfterAccess(10, TimeUnit.MINUTES)
+        .maximumSize(100000)
+        .build()
+
+    suspend fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): HttpResponse {
+
+        val call = client.proxyGet<String>(
+            pod = endpoint.pod,
+            port = endpoint.port,
+            path = endpoint.path,
+            headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
+        ).flatMap { Mono.just(HttpResponse(it, 200)) }
+
+        if (endpoint.endpointType != EndpointType.HEALTH) {
+            return call.awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
+        }
+
+        return call.onErrorContinue(
+                Predicate { it is WebClientResponseException && it.statusCode.is5xxServerError },
+                BiConsumer { t, u ->
+                    val wre = t as WebClientResponseException
+                    logger.debug(
+                        "Respone ${wre.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
+                        wre.responseBodyAsString
+                    )
+                    HttpResponse(wre.responseBodyAsString, wre.statusCode.value())
+                }
+            ).timeout(
                 Duration.ofSeconds(2),
-                Mono.error(RuntimeException("Timed out getting management interface in namespace=${pod.metadata.namespace} pod=${pod.metadata.name} path=$path"))
-            ).awaitFirstOrNull() ?: throw IOException("Could not find resource in namespace=${pod.metadata.namespace} pod=${pod.metadata.name} path=$path")
+                Mono.error(TimeoutException("Timed out getting management interface for url=${endpoint.url}"))
+            )
+            .awaitFirstOrNull() ?: throw IOException("No response for url=${endpoint.url}")
     }
 
     fun clearCache() = cache.invalidateAll()
@@ -55,7 +79,7 @@ class OpenShiftManagementClient(
         val logger = KotlinLogging.logger {}
 
         if (!cacheManagement) {
-            logger.debug("cache disabled")
+            logger.trace("cache disabled")
             return findJsonResource(endpoint)
         }
 
@@ -64,34 +88,48 @@ class OpenShiftManagementClient(
             logger.debug("Found cached response for $key")
         }
         return cachedResponse ?: findJsonResource<T>(endpoint).also {
-            // TODO: Here we have to make sure that if this is an error that should not be cached we cannot cache it. IE network errors
-            logger.debug("Cached management interface $key")
-            cache.put(key, it)
+            // TODO: do we need to fine tune this?
+            if (!it.isSuccess && it.response?.code == 503) {
+                logger.debug("There is a 503 error that does not succeed")
+            } else {
+                logger.debug("Cached management interface $key")
+                cache.put(key, it)
+            }
         }
     }
 
+    /*
+      What if we want to find prometheus endpoint here that is not json?
+
+      Refactoring suggestion, make the proxy call return an exception or an success rather then doing the parsing here
+     */
     final suspend inline fun <reified S : Any> findJsonResource(endpoint: ManagementEndpoint): ManagementEndpointResult<S> {
 
+        // If health we should run the code above
+        val logger = KotlinLogging.logger {}
         val response = try {
-            val response = proxyManagementInterfaceRaw(endpoint.pod, endpoint.port, endpoint.path)
-            // logger.debug("Response status=OK body={}", response)
-            HttpResponse(response, 200)
+            proxyManagementInterfaceRaw(endpoint)
         } catch (e: WebClientResponseException) {
-            // THis needs to be cleaned up after we have coverage of it all
-            val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
-            // logger.debug("Respone url=$url status=ERROR body={}", errorResponse.content)
-            if (e.statusCode.is5xxServerError) {
-                errorResponse
-            } else {
-                return toManagementEndpointResultAsError(exception = e, response = errorResponse, endpoint = endpoint)
-            }
+            // 401 this is an error
+            logger.debug("Respone error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
+            return toManagementEndpointResult(
+                response = HttpResponse(e.responseBodyAsString, e.rawStatusCode),
+                resultCode = "ERROR_HTTP",
+                errorMessage = e.localizedMessage,
+                endpoint = endpoint
+            )
         } catch (e: Exception) {
+            // When there is no response
+            logger.debug("Respone other excpption url=${endpoint.url} status=ERROR body={}", e.message, e)
             return toManagementEndpointResultAsError(exception = e, endpoint = endpoint)
         }
 
+        // this scales poorly if we want to call prometheus here, we should just get proxy method to return the body parsed
         val deserialized: S = try {
             jacksonObjectMapper().readValue(response.content)
         } catch (e: Exception) {
+            // inavalid body
+            logger.debug("Jackson serialization exception for url=${endpoint.url} content='${response.content}' message=${e.message}")
             return toManagementEndpointResultAsError(exception = e, response = response, endpoint = endpoint)
         }
 
@@ -126,10 +164,9 @@ class OpenShiftManagementClient(
         endpoint: ManagementEndpoint
     ): ManagementEndpointResult<S> {
         val resultCode = when (exception) {
-            is HttpStatusCodeException -> "ERROR_${exception.statusCode}"
-            is RestClientException -> "ERROR_HTTP"
             is JsonParseException -> "INVALID_JSON"
-            is MismatchedInputException -> "INVALID_JSON"
+            is ResourceNotFoundException -> "ERROR_IO"
+            is TimeoutException -> "TIMEOUT"
             else -> "ERROR_UNKNOWN"
         }
 
@@ -140,37 +177,4 @@ class OpenShiftManagementClient(
             endpoint = endpoint
         )
     }
-
-    // Does this need to be an async cache?
-    val cache: Cache<ManagementCacheKey, ManagementEndpointResult<*>> = Caffeine.newBuilder()
-        .expireAfterAccess(10, TimeUnit.MINUTES)
-        .maximumSize(100000)
-        .build()
-}
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class DiscoveryResponse(
-    val _links: Map<String, DiscoveryLink>
-)
-
-fun DiscoveryResponse.createEndpoint(pod: Pod, port: Int, type: EndpointType): ManagementEndpoint? {
-    return this._links[type.key.toLowerCase()]?.path?.let {
-        ManagementEndpoint(pod, port, it, type)
-    }
-}
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class DiscoveryLink(
-    val href: String
-) {
-
-    val path: String get() = href.replace("http://", "").substringAfter("/")
-}
-
-fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> {
-    return ManagementEndpointResult(
-        errorMessage = "Unknown endpoint link",
-        endpointType = this,
-        resultCode = "LINK_MISSING"
-    )
 }

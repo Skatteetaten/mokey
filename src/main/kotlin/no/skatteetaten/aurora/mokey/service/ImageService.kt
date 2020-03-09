@@ -1,21 +1,51 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.fabric8.openshift.api.model.Image
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ImageDetails
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import java.util.concurrent.TimeUnit
 
 @Service
 class ImageService(
     val client: OpenShiftServiceAccountClient,
-    val imageRegistryService: ImageRegistryService
+    val imageRegistryService: ImageRegistryService,
+    @Value("\${mokey.cantus.cache:true}") val cacheManagement: Boolean
 ) {
 
-    suspend fun getImageDetails(
-        namespace: String,
-        imageSteamName: String,
+    // Does this need to be an async cache?
+    val cache: Cache<String, ImageDetails?> = Caffeine.newBuilder()
+        .expireAfterAccess(10, TimeUnit.MINUTES)
+        .maximumSize(10000)
+        .build()
+
+    fun clearCache() = cache.invalidateAll()
+
+    suspend fun getCachedOrFind(
         image: String
     ): ImageDetails? {
-        // TODO: Cache here
+        val logger = KotlinLogging.logger {}
+
+        if (!cacheManagement) {
+            logger.trace("cache disabled")
+            return getImageDetails(image)
+        }
+
+        val cachedResponse = (cache.getIfPresent(image))?.also {
+            logger.debug("Found cached response for $image")
+        }
+        return cachedResponse ?: getImageDetails(image)?.also {
+            logger.debug("Cached management interface $image")
+            cache.put(image, it)
+        }
+    }
+
+    suspend fun getImageDetails(
+        image: String
+    ): ImageDetails? {
         val imageTagResource = image.replace("@", "/").let { sha ->
             imageRegistryService.findTagsByName(listOf(sha)).first()
         }
@@ -32,7 +62,9 @@ class ImageService(
             "REQUEST_URL" to imageTagResource.requestUrl
         ).filterNullValues()
 
-        return ImageDetails(image, null, null, env)
+        val imageBuildTime = env["IMAGE_BUILD_TIME"]?.let(DateParser::parseString)
+
+        return ImageDetails(image, null, imageBuildTime, env)
     }
 
     suspend fun getImageDetailsFromImageStream(namespace: String, name: String, tagName: String): ImageDetails? {

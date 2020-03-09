@@ -14,6 +14,7 @@ import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.url
+import no.skatteetaten.aurora.mokey.PodDataBuilder
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -49,7 +50,9 @@ class ManagementDataServiceNetworkTest {
 
     @AfterEach
     fun tearDown() {
-        server.shutdown()
+        kotlin.runCatching {
+            server.shutdown()
+        }
     }
 
     @Test
@@ -59,12 +62,7 @@ class ManagementDataServiceNetworkTest {
 
         val requests = server.execute(linksResponse, healthErrorResponse, healthErrorResponse, healthOkResponse) {
             val managementData = runBlocking {
-                service.load(newPod {
-                    metadata = newObjectMeta {
-                        name = "name1"
-                        namespace = "namespace1"
-                    }
-                }, ":8081/links")
+                service.load(PodDataBuilder().build(), ":8081/links")
             }
 
             assertThat(managementData.health?.errorMessage).isNull()
@@ -81,12 +79,7 @@ class ManagementDataServiceNetworkTest {
 
         val requests = server.execute(linksResponse, error, error, ok) {
             val managementData = runBlocking {
-                service.load(newPod {
-                    metadata = newObjectMeta {
-                        name = "name1"
-                        namespace = "namespace1"
-                    }
-                }, ":8081/links")
+                service.load(PodDataBuilder().build(), ":8081/links")
             }
 
             assertThat(managementData.health?.errorMessage).isNull()
@@ -102,14 +95,9 @@ class ManagementDataServiceNetworkTest {
 
         server.execute(linksResponse, error) {
             runBlocking {
-                val managementData = service.load(newPod {
-                    metadata = newObjectMeta {
-                        name = "name1"
-                        namespace = "namespace1"
-                    }
-                }, ":8081/links")
+                val managementData = service.load(PodDataBuilder().build(), ":8081/links")
                 assertThat(managementData.health?.errorMessage)
-                    .isEqualTo("Timed out getting management interface in namespace=namespace1 pod=name1 path=health")
+                    .isEqualTo("Timed out getting management interface for url=namespaces/namespace/pods/name:8081/proxy/health")
             }
         }
     }
@@ -131,7 +119,7 @@ class ManagementDataServiceNetworkTest {
                         namespace = "namespace1"
                     }
                 }, ":8081/links")
-                assertThat(managementData.health?.errorMessage).isEqualTo("Could not find resource in namespace=namespace1 pod=name1 path=health")
+                assertThat(managementData.health?.errorMessage).isEqualTo("No response for url=namespaces/namespace1/pods/name1:8081/proxy/health")
             }
         }
     }
@@ -142,12 +130,7 @@ class ManagementDataServiceNetworkTest {
 
         val requests = server.execute(linksResponse, healthTimeoutResponse) {
             val managementData = runBlocking {
-                service.load(newPod {
-                    metadata = newObjectMeta {
-                        name = "name2"
-                        namespace = "namespace2"
-                    }
-                }, ":8081/links")
+                service.load(PodDataBuilder().build(), ":8081/links")
             }
 
             assertThat(managementData.health?.errorMessage).isNotNull()

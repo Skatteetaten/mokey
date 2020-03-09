@@ -3,21 +3,16 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import mu.KotlinLogging
-import no.skatteetaten.aurora.mokey.service.DiscoveryResponse
 import uk.q3c.rest.hal.HalResource
 import java.time.Instant
+
+private val logger = KotlinLogging.logger {}
 
 data class GroupedApplicationData(
     val applicationId: String?,
     val name: String,
     val applications: List<ApplicationPublicData>
 ) {
-    constructor(application: ApplicationPublicData) : this(
-        application.applicationId,
-        application.applicationName,
-        listOf(application)
-    )
-
     companion object {
         fun create(applications: List<ApplicationPublicData>): List<GroupedApplicationData> =
             applications.groupBy { it.applicationId ?: it.applicationName }
@@ -85,7 +80,6 @@ data class ManagementData(
     val env: ManagementEndpointResult<JsonNode>? = null
 )
 
-// TODO: Kan vi lage 2 klasser her, en som er suksess og en som er failure?
 data class ManagementEndpointResult<T>(
     val endpointType: EndpointType,
     val resultCode: String,
@@ -98,8 +92,6 @@ data class ManagementEndpointResult<T>(
     val isSuccess: Boolean
         get() = resultCode == "OK"
 }
-
-private val logger = KotlinLogging.logger {}
 
 data class HttpResponse(
     val content: String,

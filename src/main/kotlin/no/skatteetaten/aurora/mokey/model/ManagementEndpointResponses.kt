@@ -28,6 +28,33 @@ data class ManagementCacheKey(val namespace: String, val replicationName: String
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+data class DiscoveryResponse(
+    val _links: Map<String, DiscoveryLink>
+)
+
+fun DiscoveryResponse.createEndpoint(pod: Pod, port: Int, type: EndpointType): ManagementEndpoint? {
+    return this._links[type.key.toLowerCase()]?.path?.let {
+        ManagementEndpoint(pod, port, it, type)
+    }
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class DiscoveryLink(
+    val href: String
+) {
+
+    val path: String get() = href.replace("http://", "").substringAfter("/")
+}
+
+fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> {
+    return ManagementEndpointResult(
+        errorMessage = "Unknown endpoint link",
+        endpointType = this,
+        resultCode = "LINK_MISSING"
+    )
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class InfoResponse(
     val podLinks: Map<String, String> = mapOf(),
     val serviceLinks: Map<String, String> = mapOf(),

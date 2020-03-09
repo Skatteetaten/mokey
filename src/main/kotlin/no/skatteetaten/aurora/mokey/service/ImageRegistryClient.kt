@@ -76,7 +76,7 @@ class ImageRegistryClient(
 
     final inline fun <reified T : Any> post(path: String, body: Any): Flux<T> =
         execute {
-            post().uri(path).body(BodyInserters.fromObject(body))
+            post().uri(path).body(BodyInserters.fromValue(body))
         }
 
     final inline fun <reified T : Any> execute(
