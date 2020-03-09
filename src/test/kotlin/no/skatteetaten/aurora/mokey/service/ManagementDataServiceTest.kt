@@ -4,7 +4,6 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
-import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
@@ -13,9 +12,9 @@ import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.HttpMock
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
+import no.skatteetaten.aurora.mokey.PodDataBuilder
 import okhttp3.mockwebserver.MockResponse
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
@@ -43,33 +42,8 @@ class ManagementDataServiceTest {
         HttpMock.clearAllHttpMocks()
     }
 
-    @Disabled("this just spins forever now :/")
     @Test
-    fun `management info should fail with no response`() {
-        httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
-                jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("info", "/info")
-                    })
-                )
-            }
-        }
-
-        val managementData = runBlocking {
-            service.load(newPod {
-                metadata = newObjectMeta {
-                    name = "name1"
-                    namespace = "namespace1"
-                }
-            }, ":8081/links")
-        }
-        assertThat(managementData).isNotNull()
-        assertThat(managementData.info?.resultCode).isEqualTo("TIMEOUT")
-    }
-
-    @Test
-    fun `management info should fail with invaild body`() {
+    fun `management info should fail with invalid body`() {
         httpMockServer(port) {
             rule({ path?.endsWith("links") }) {
                 jsonResponse(
@@ -85,12 +59,7 @@ class ManagementDataServiceTest {
         }
 
         val managementData = runBlocking {
-            service.load(newPod {
-                metadata = newObjectMeta {
-                    name = "name1"
-                    namespace = "namespace1"
-                }
-            }, ":8081/links")
+            service.load(PodDataBuilder().build(), ":8081/links")
         }
         assertThat(managementData).isNotNull()
         assertThat(managementData.info?.resultCode).isEqualTo("INVALID_JSON")
@@ -113,12 +82,7 @@ class ManagementDataServiceTest {
         }
 
         val managementData = runBlocking {
-            service.load(newPod {
-                metadata = newObjectMeta {
-                    name = "name1"
-                    namespace = "namespace1"
-                }
-            }, ":8081/links")
+            service.load(PodDataBuilder().build(), ":8081/links")
         }
         assertThat(managementData).isNotNull()
         assertThat(managementData.health?.resultCode).isEqualTo("INVALID_JSON")
@@ -141,12 +105,7 @@ class ManagementDataServiceTest {
         }
 
         val managementData = runBlocking {
-            service.load(newPod {
-                metadata = newObjectMeta {
-                    name = "name2"
-                    namespace = "namespace2"
-                }
-            }, ":8081/links")
+            service.load(PodDataBuilder().build(), ":8081/links")
         }
         assertThat(managementData).isNotNull()
         assertThat(managementData.health?.resultCode).isEqualTo("ERROR_HTTP")
@@ -172,12 +131,7 @@ class ManagementDataServiceTest {
         }
 
         val managementData = runBlocking {
-            service.load(newPod {
-                metadata = newObjectMeta {
-                    name = "name2"
-                    namespace = "namespace2"
-                }
-            }, ":8081/links")
+            service.load(PodDataBuilder().build(), ":8081/links")
         }
         assertThat(managementData).isNotNull()
         assertThat(managementData.health?.response?.code).isEqualTo(503)
@@ -200,12 +154,7 @@ class ManagementDataServiceTest {
         }
 
         val managementData = runBlocking {
-            service.load(newPod {
-                metadata = newObjectMeta {
-                    name = "name2"
-                    namespace = "namespace2"
-                }
-            }, ":8081/links")
+            service.load(PodDataBuilder().build(), ":8081/links")
         }
         assertThat(managementData).isNotNull()
         assertThat(managementData.health?.errorMessage).isEqualTo("Invalid format, status is not valid HealthStatus value")
@@ -228,12 +177,7 @@ class ManagementDataServiceTest {
         }
 
         val managementData = runBlocking {
-            service.load(newPod {
-                metadata = newObjectMeta {
-                    name = "name3"
-                    namespace = "namespace3"
-                }
-            }, ":8081/links")
+            service.load(PodDataBuilder().build(), ":8081/links")
         }
 
         assertThat(managementData).isNotNull()
@@ -267,12 +211,7 @@ class ManagementDataServiceTest {
         }
 
         val managementData = runBlocking {
-            service.load(newPod {
-                metadata = newObjectMeta {
-                    name = "name4"
-                    namespace = "namespace4"
-                }
-            }, ":8081/links")
+            service.load(PodDataBuilder().build(), ":8081/links")
         }
 
         assertThat(managementData).isNotNull()
