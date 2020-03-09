@@ -38,7 +38,7 @@ class AddressService(
                 path.ensureStartWith("/")
             } ?: ""
             val success = true // TODO
-            val protocol = "http"  // TODO: Http
+            val protocol = "http" // TODO: Http
 
             val route = RouteAddress(URI.create("$protocol://${host}$path"), it.created, success, "OK")
 
@@ -47,5 +47,4 @@ class AddressService(
 
         return serviceAddresses.addIfNotNull(routeAddresses)
     }
-
 }
