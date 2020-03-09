@@ -22,6 +22,8 @@ class ImageService(
         .maximumSize(10000)
         .build()
 
+    fun clearCache() = cache.invalidateAll()
+
     suspend fun getCachedOrFind(
         image: String
     ): ImageDetails? {

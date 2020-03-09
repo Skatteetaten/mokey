@@ -181,7 +181,6 @@ class ApplicationDataServiceOpenShift(
                 null
             } else {
                 try {
-                    // TOOD: denne kan caches
                     imageService.getCachedOrFind(image)
                 } catch (e: Exception) {
                     logger.warn(
