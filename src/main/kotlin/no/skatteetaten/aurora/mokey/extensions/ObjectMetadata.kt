@@ -5,6 +5,8 @@ import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.api.model.Service
+import io.fabric8.kubernetes.api.model.apps.Deployment
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.Route
 import java.time.Instant
@@ -49,6 +51,13 @@ var DeploymentConfig.managementPath: String?
 val DeploymentConfig.sprocketDone: String?
     get() = safeMetadataAnnotations()[ANNOTATION_SPROCKET_DONE]
 
+var Deployment.managementPath: String?
+    get() = safeMetadataAnnotations()[ANNOTATION_MANAGEMENT_PATH]
+    set(value) = safeMetadataAnnotations().set(ANNOTATION_MANAGEMENT_PATH, value)
+
+val Deployment.sprocketDone: String?
+    get() = safeMetadataAnnotations()[ANNOTATION_SPROCKET_DONE]
+
 val Route.marjoryDone: Instant?
     get() = safeMetadataAnnotations()[ANNOTATION_MARJORY_DONE]
         ?.let { DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(it, Instant::from) }
@@ -82,8 +91,15 @@ var ObjectMeta.affiliation: String?
     get() = safeMetadataLabels()[LABEL_AFFILIATION]
     set(value) = safeMetadataLabels().set(LABEL_AFFILIATION, value)
 
+val Deployment.deployTag: String
+    get() = safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
+
 val DeploymentConfig.deployTag: String
     get() = safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
+
+val ReplicaSet.deployTag: String
+    get() = this.spec.template.safeMetadata().safeMetadataAnnotations()[ANNOTATION_BOOBER_DEPLOYTAG]
+        ?: safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
 
 val ReplicationController.deployTag: String
     get() = this.spec.template.safeMetadata().safeMetadataAnnotations()[ANNOTATION_BOOBER_DEPLOYTAG]
@@ -94,6 +110,16 @@ val ObjectMeta.booberDeployId: String?
 
 val DeploymentConfig.updatedBy: String?
     get() = safeMetadataLabels()[LABEL_UPDATED_BY]
+
+val Deployment.updatedBy: String?
+    get() = safeMetadataLabels()[LABEL_UPDATED_BY]
+
+val ReplicaSet.revision: String?
+    get() = safeMetadataAnnotations()["deployment.kubernetes.io/revision"]
+
+var ReplicaSet.deploymentPhase: String?
+    get() = safeMetadataAnnotations()[ANNOTATION_PHASE]
+    set(value) = safeMetadataAnnotations().set(ANNOTATION_PHASE, value)
 
 var ReplicationController.deploymentPhase: String?
     get() = safeMetadataAnnotations()[ANNOTATION_PHASE]

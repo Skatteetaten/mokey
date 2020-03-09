@@ -20,7 +20,7 @@ class PermissionController(
     fun checkPermissions(@PathVariable namespace: String): AuroraNamespacePermissions {
 
         return runBlocking {
-            client.getProjectByNameOrNull(namespace)?.let {
+            client.getNamespaceByNameOrNull(namespace)?.let {
                 AuroraNamespacePermissions(
                     namespace = namespace,
                     view = true,
