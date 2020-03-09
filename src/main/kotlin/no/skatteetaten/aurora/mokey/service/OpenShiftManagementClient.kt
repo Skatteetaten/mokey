@@ -8,7 +8,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.fabric8.kubernetes.api.model.Pod
-import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.mokey.model.EndpointType
@@ -25,10 +25,9 @@ import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
+import java.io.IOException
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-
-private val logger = KotlinLogging.logger {}
 
 @Service
 class OpenShiftManagementClient(
@@ -44,8 +43,8 @@ class OpenShiftManagementClient(
             )
             .timeout(
                 Duration.ofSeconds(2),
-                Mono.error(RuntimeException("Timed out getting management interface in namespace=${pod.metadata.namespace}  pod=${pod.metadata.name} path=$path for "))
-            ).awaitFirst()
+                Mono.error(RuntimeException("Timed out getting management interface in namespace=${pod.metadata.namespace} pod=${pod.metadata.name} path=$path"))
+            ).awaitFirstOrNull() ?: throw IOException("Could not find resource in namespace=${pod.metadata.namespace} pod=${pod.metadata.name} path=$path")
     }
 
     fun clearCache() = cache.invalidateAll()

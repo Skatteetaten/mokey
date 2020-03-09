@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.service
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
 import io.fabric8.kubernetes.api.model.Pod
-import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.InfoResponse
@@ -11,9 +10,6 @@ import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import org.springframework.stereotype.Service
-
-private val logger = KotlinLogging.logger {}
-
 
 @Service
 class ManagementDataService(

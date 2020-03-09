@@ -20,6 +20,8 @@ import okhttp3.mockwebserver.SocketPolicy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.web.reactive.function.client.WebClient
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
@@ -52,8 +54,7 @@ class ManagementDataServiceNetworkTest {
 
     @Test
     fun `Retry on network failure`() {
-        // val healthErrorResponse = MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST)
-        val healthErrorResponse = MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START)
+        val healthErrorResponse = MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST)
         val healthOkResponse = jsonResponse("""{"status":"UP","details":{"diskSpace":{"status":"UP"}}}""")
 
         val requests = server.execute(linksResponse, healthErrorResponse, healthErrorResponse, healthOkResponse) {
@@ -71,6 +72,68 @@ class ManagementDataServiceNetworkTest {
         }
 
         assertThat(requests).hasSize(4)
+    }
+
+    @Test
+    fun `Retry for disconnect after request`() {
+        val error = MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST)
+        val ok = jsonResponse("""{"status":"UP","details":{"diskSpace":{"status":"UP"}}}""")
+
+        val requests = server.execute(linksResponse, error, error, ok) {
+            val managementData = runBlocking {
+                service.load(newPod {
+                    metadata = newObjectMeta {
+                        name = "name1"
+                        namespace = "namespace1"
+                    }
+                }, ":8081/links")
+            }
+
+            assertThat(managementData.health?.errorMessage).isNull()
+            assertThat(managementData.health?.resultCode).isEqualTo("OK")
+        }
+
+        assertThat(requests).hasSize(4)
+    }
+
+    @Test
+    fun `Time out when no response is returned`() {
+        val error = MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)
+
+        server.execute(linksResponse, error) {
+            runBlocking {
+                val managementData = service.load(newPod {
+                    metadata = newObjectMeta {
+                        name = "name1"
+                        namespace = "namespace1"
+                    }
+                }, ":8081/links")
+                assertThat(managementData.health?.errorMessage)
+                    .isEqualTo("Timed out getting management interface in namespace=namespace1 pod=name1 path=health")
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+        value = SocketPolicy::class,
+        mode = EnumSource.Mode.EXCLUDE,
+        names = ["DISCONNECT_AFTER_REQUEST", "NO_RESPONSE"]
+    )
+    fun `Throw IOException when null is returned`(socketPolicy: SocketPolicy) {
+        val error = MockResponse().setSocketPolicy(socketPolicy)
+
+        server.execute(linksResponse, error) {
+            runBlocking {
+                val managementData = service.load(newPod {
+                    metadata = newObjectMeta {
+                        name = "name1"
+                        namespace = "namespace1"
+                    }
+                }, ":8081/links")
+                assertThat(managementData.health?.errorMessage).isEqualTo("Could not find resource in namespace=namespace1 pod=name1 path=health")
+            }
+        }
     }
 
     @Test
