@@ -22,6 +22,8 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import java.util.function.BiConsumer
+import java.util.function.Predicate
 
 private val logger = KotlinLogging.logger {}
 
@@ -37,13 +39,23 @@ class OpenShiftManagementClient(
         .maximumSize(100000)
         .build()
 
-    suspend fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): String {
+    suspend fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): HttpResponse {
         return client.proxyGet<String>(
                 pod = endpoint.pod,
                 port = endpoint.port,
                 path = endpoint.path,
                 headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
-            )
+            ).flatMap { Mono.just(HttpResponse(it, 200)) }
+            .onErrorContinue(
+                Predicate { it is WebClientResponseException && it.statusCode.is5xxServerError },
+                BiConsumer { t, u ->
+                    val wre = t as WebClientResponseException
+                    logger.debug(
+                        "Respone ${wre.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
+                        wre.responseBodyAsString
+                    )
+                    HttpResponse(wre.responseBodyAsString, wre.statusCode.value())
+                })
             .timeout(
                 Duration.ofSeconds(2),
                 Mono.error(TimeoutException("Timed out getting management interface for url=${endpoint.url}"))
@@ -83,24 +95,16 @@ class OpenShiftManagementClient(
 
         val logger = KotlinLogging.logger {}
         val response = try {
-            HttpResponse(proxyManagementInterfaceRaw(endpoint), 200)
+            proxyManagementInterfaceRaw(endpoint)
         } catch (e: WebClientResponseException) {
-            // This needs to be cleaned up after we have coverage of it all
-            val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
-            if (e.statusCode.is5xxServerError) {
-                // 503
-                logger.debug(
-                    "Respone ${e.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
-                    errorResponse.content
-                )
-                // This is the management call succeeeding but returning an error code in the 5x range, which is acceptable
-                errorResponse
-
-            } else {
-                // 401 this is an error
-                logger.debug("Respone error url=${endpoint.url} status=ERROR body={}", errorResponse.content)
-                return toManagementEndpointResultAsError(exception = e, response = errorResponse, endpoint = endpoint)
-            }
+            // 401 this is an error
+            logger.debug("Respone error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
+            return toManagementEndpointResult(
+                response = HttpResponse(e.responseBodyAsString, e.rawStatusCode),
+                resultCode = "ERROR_HTTP",
+                errorMessage = e.localizedMessage,
+                endpoint = endpoint
+            )
         } catch (e: Exception) {
             // When there is no response
             logger.debug("Respone other excpption url=${endpoint.url} status=ERROR body={}", e.message, e)
@@ -149,7 +153,6 @@ class OpenShiftManagementClient(
         // JsonParseException
         val resultCode = when (exception) {
             is JsonParseException -> "INVALID_JSON"
-            is WebClientResponseException -> "ERROR_HTTP"
             is ResourceNotFoundException -> "ERROR_IO"
             is TimeoutException -> "TIMEOUT"
             else -> "ERROR_UNKNOWN"

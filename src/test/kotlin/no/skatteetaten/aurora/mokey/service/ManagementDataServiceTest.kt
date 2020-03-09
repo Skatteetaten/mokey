@@ -61,7 +61,7 @@ class ManagementDataServiceTest {
             }, ":8081/links")
         }
         assertThat(managementData).isNotNull()
-        assertThat(managementData.info?.resultCode).isEqualTo("INVALID_JSON")
+        assertThat(managementData.info?.resultCode).isEqualTo("TIMEOUT")
     }
 
     @Test
