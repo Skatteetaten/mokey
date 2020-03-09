@@ -65,7 +65,7 @@ mokey:
     cachewarmup:
         enabled: true
     cache:
-        affiliations: aurora
+        affiliations: safir
 
 integrations:
     cantus:

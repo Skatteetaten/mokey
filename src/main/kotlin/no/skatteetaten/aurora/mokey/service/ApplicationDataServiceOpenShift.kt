@@ -177,12 +177,12 @@ class ApplicationDataServiceOpenShift(
             }
         } else {
             val image = runningRc.spec.template.spec.containers[0].image
-            if (image.startsWith("172")) {
+            if (image.substring(0, 2).toIntOrNull() != null) {
                 null
             } else {
                 try {
                     // TOOD: denne kan caches
-                    imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+                    imageService.getCachedOrFind(image)
                 } catch (e: Exception) {
                     logger.warn(
                         "Failed getting imageDetails for namespace=${dc.metadata.namespace} name=${dc.metadata.name} image=$image",
