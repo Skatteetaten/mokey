@@ -391,6 +391,7 @@ data class PodDataBuilder(
         newPod {
             metadata {
                 name = podName
+                namespace = "namespace"
                 labels = mapOf("replicaName" to "replicaName")
             }
             spec {

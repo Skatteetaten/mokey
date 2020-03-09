@@ -21,6 +21,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
+import java.io.IOException
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
@@ -67,7 +68,7 @@ class OpenShiftManagementClient(
                 Duration.ofSeconds(2),
                 Mono.error(TimeoutException("Timed out getting management interface for url=${endpoint.url}"))
             )
-            .awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
+            .awaitFirstOrNull() ?: throw IOException("No response for url=${endpoint.url}")
     }
 
     fun clearCache() = cache.invalidateAll()
