@@ -5,10 +5,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.fabric8.kubernetes.api.model.Pod
-import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
+import no.skatteetaten.aurora.kubernetes.ResourceNotFoundException
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementCacheKey
 import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
@@ -37,17 +37,18 @@ class OpenShiftManagementClient(
         .maximumSize(100000)
         .build()
 
-    suspend fun proxyManagementInterfaceRaw(pod: Pod, port: Int, path: String): String {
+    suspend fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): String {
         return client.proxyGet<String>(
-                pod = pod,
-                port = port,
-                path = path,
+                pod = endpoint.pod,
+                port = endpoint.port,
+                path = endpoint.path,
                 headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
             )
             .timeout(
                 Duration.ofSeconds(2),
-                Mono.error(RuntimeException("Timed out getting management interface in namespace=${pod.metadata.namespace}  pod=${pod.metadata.name} path=$path for "))
-            ).awaitFirst()
+                Mono.error(TimeoutException("Timed out getting management interface for url=${endpoint.url}"))
+            )
+            .awaitFirstOrNull() ?: throw ResourceNotFoundException("No response forurl=${endpoint.url}")
     }
 
     fun clearCache() = cache.invalidateAll()
@@ -73,24 +74,32 @@ class OpenShiftManagementClient(
         }
     }
 
+    /*
+      What if we want to find prometheus endpoint here that is not json?
+     */
     final suspend inline fun <reified S : Any> findJsonResource(endpoint: ManagementEndpoint): ManagementEndpointResult<S> {
 
         val logger = KotlinLogging.logger {}
         val response = try {
-            val response = proxyManagementInterfaceRaw(endpoint.pod, endpoint.port, endpoint.path)
-            // logger.debug("Response status=OK body={}", response)
-            HttpResponse(response, 200)
+            HttpResponse(proxyManagementInterfaceRaw(endpoint), 200)
         } catch (e: WebClientResponseException) {
-            // THis needs to be cleaned up after we have coverage of it all
+            // This needs to be cleaned up after we have coverage of it all
             val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
             if (e.statusCode.is5xxServerError) {
-                logger.debug("Respone 500 error url=${endpoint.url} status=ERROR body={}", errorResponse.content)
+                // This is OK, it is not an error
+                // 503
+                logger.debug(
+                    "Respone ${e.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
+                    errorResponse.content
+                )
                 errorResponse
             } else {
+                // 401 this is an error
                 logger.debug("Respone error url=${endpoint.url} status=ERROR body={}", errorResponse.content)
                 return toManagementEndpointResultAsError(exception = e, response = errorResponse, endpoint = endpoint)
             }
         } catch (e: Exception) {
+            // When there is no response
             logger.debug("Respone other excpption url=${endpoint.url} status=ERROR body={}", e.message, e)
             return toManagementEndpointResultAsError(exception = e, endpoint = endpoint)
         }
@@ -98,6 +107,7 @@ class OpenShiftManagementClient(
         val deserialized: S = try {
             jacksonObjectMapper().readValue(response.content)
         } catch (e: Exception) {
+            // inavalid body
             logger.debug("Jackson serialization exception=${e.message}")
             return toManagementEndpointResultAsError(exception = e, response = response, endpoint = endpoint)
         }
@@ -136,6 +146,8 @@ class OpenShiftManagementClient(
         val resultCode = when (exception) {
             is JsonParseException -> "INVALID_JSON"
             is WebClientResponseException -> "ERROR_HTTP"
+            is ResourceNotFoundException -> "ERROR_IO"
+            is TimeoutException -> "TIMEOUT"
             else -> "ERROR_UNKNOWN"
         }
 

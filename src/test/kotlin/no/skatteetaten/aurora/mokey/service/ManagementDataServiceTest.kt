@@ -41,6 +41,30 @@ class ManagementDataServiceTest {
     }
 
     @Test
+    fun `management info should fail with no response`() {
+        httpMockServer(port) {
+            rule({ path?.endsWith("links") }) {
+                jsonResponse(
+                    HalResource(_links = Links().apply {
+                        add("info", "/info")
+                    })
+                )
+            }
+        }
+
+        val managementData = runBlocking {
+            service.load(newPod {
+                metadata = newObjectMeta {
+                    name = "name1"
+                    namespace = "namespace1"
+                }
+            }, ":8081/links")
+        }
+        assertThat(managementData).isNotNull()
+        assertThat(managementData.info?.resultCode).isEqualTo("INVALID_JSON")
+    }
+
+    @Test
     fun `management info should fail with invaild body`() {
         httpMockServer(port) {
             rule({ path?.endsWith("links") }) {

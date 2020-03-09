@@ -6,17 +6,13 @@ import mu.KotlinLogging
 import uk.q3c.rest.hal.HalResource
 import java.time.Instant
 
+private val logger = KotlinLogging.logger {}
+
 data class GroupedApplicationData(
     val applicationId: String?,
     val name: String,
     val applications: List<ApplicationPublicData>
 ) {
-    constructor(application: ApplicationPublicData) : this(
-        application.applicationId,
-        application.applicationName,
-        listOf(application)
-    )
-
     companion object {
         fun create(applications: List<ApplicationPublicData>): List<GroupedApplicationData> =
             applications.groupBy { it.applicationId ?: it.applicationName }
@@ -84,6 +80,14 @@ data class ManagementData(
     val env: ManagementEndpointResult<JsonNode>? = null
 )
 
+sealed class BaseManagementEndpointResult<T>(
+    val createdAt: Instant = Instant.now()
+) {
+    abstract val isSuccess: Boolean
+    abstract val endpointType: EndpointType
+    abstract val resultCode: String
+}
+
 // TODO: Kan vi lage 2 klasser her, en som er suksess og en som er failure?
 data class ManagementEndpointResult<T>(
     val endpointType: EndpointType,
@@ -98,7 +102,6 @@ data class ManagementEndpointResult<T>(
         get() = resultCode == "OK"
 }
 
-private val logger = KotlinLogging.logger {}
 
 data class HttpResponse(
     val content: String,
