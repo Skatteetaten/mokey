@@ -53,7 +53,7 @@ class ManagementDataService(
         } ?: EndpointType.ENV.missingResult()
 
         val health = discoveryResult.createEndpoint(pod, port, EndpointType.HEALTH)?.let {
-            parseHealthResult(client.findJsonResource(it))
+            client.findJsonResource<JsonNode>(it).healthResult()
         } ?: EndpointType.HEALTH.missingResult()
 
         return ManagementData(
@@ -63,29 +63,29 @@ class ManagementDataService(
             health = health
         )
     }
+}
 
-    private fun parseHealthResult(it: ManagementEndpointResult<JsonNode>): ManagementEndpointResult<JsonNode> {
-        if (!it.isSuccess) {
-            return it
-        }
-        val statusField = it.deserialized?.at("/status")
-        if (statusField == null || statusField is MissingNode) {
-            return ManagementEndpointResult(
-                errorMessage = "Invalid format, does not contain status",
-                endpointType = EndpointType.HEALTH,
-                resultCode = "INVALID_FORMAT"
-            )
-        }
-
-        try {
-            HealthStatus.valueOf(statusField.textValue())
-        } catch (e: Exception) {
-            return ManagementEndpointResult(
-                errorMessage = "Invalid format, status is not valid HealthStatus value",
-                endpointType = EndpointType.HEALTH,
-                resultCode = "INVALID_FORMAT"
-            )
-        }
-        return it
+fun ManagementEndpointResult<JsonNode>.healthResult(): ManagementEndpointResult<JsonNode> {
+    if (!this.isSuccess) {
+        return this
     }
+    val statusField = this.deserialized?.at("/status")
+    if (statusField == null || statusField is MissingNode) {
+        return ManagementEndpointResult(
+            errorMessage = "Invalid format, does not contain status",
+            endpointType = EndpointType.HEALTH,
+            resultCode = "INVALID_FORMAT"
+        )
+    }
+
+    try {
+        HealthStatus.valueOf(statusField.textValue())
+    } catch (e: Exception) {
+        return ManagementEndpointResult(
+            errorMessage = "Invalid format, status is not valid HealthStatus value",
+            endpointType = EndpointType.HEALTH,
+            resultCode = "INVALID_FORMAT"
+        )
+    }
+    return this
 }

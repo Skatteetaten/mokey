@@ -59,7 +59,7 @@ class OpenShiftManagementClient(
                 BiConsumer { t, u ->
                     val wre = t as WebClientResponseException
                     logger.debug(
-                        "Respone ${wre.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
+                        "Response ${wre.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
                         wre.responseBodyAsString
                     )
                     HttpResponse(wre.responseBodyAsString, wre.statusCode.value())
@@ -111,7 +111,7 @@ class OpenShiftManagementClient(
             proxyManagementInterfaceRaw(endpoint)
         } catch (e: WebClientResponseException) {
             // 401 this is an error
-            logger.debug("Respone error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
+            logger.debug("Response error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
             return toManagementEndpointResult(
                 response = HttpResponse(e.responseBodyAsString, e.rawStatusCode),
                 resultCode = "ERROR_HTTP",
@@ -120,7 +120,7 @@ class OpenShiftManagementClient(
             )
         } catch (e: Exception) {
             // When there is no response
-            logger.debug("Respone other excpption url=${endpoint.url} status=ERROR body={}", e.message, e)
+            logger.debug("Response other exception url=${endpoint.url} status=ERROR body={}", e.message, e)
             return toManagementEndpointResultAsError(exception = e, endpoint = endpoint)
         }
 
@@ -128,7 +128,7 @@ class OpenShiftManagementClient(
         val deserialized: S = try {
             jacksonObjectMapper().readValue(response.content)
         } catch (e: Exception) {
-            // inavalid body
+            // invalid body
             logger.debug("Jackson serialization exception for url=${endpoint.url} content='${response.content}' message=${e.message}")
             return toManagementEndpointResultAsError(exception = e, response = response, endpoint = endpoint)
         }

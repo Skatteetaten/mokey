@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.MockMvc
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestUserDetailsService::class)
-class AbstractSecurityControllerTest : AbstractTest() {
+class AbstractSecurityControllerTest {
 
     @Autowired
     lateinit var mockMvc: MockMvc
