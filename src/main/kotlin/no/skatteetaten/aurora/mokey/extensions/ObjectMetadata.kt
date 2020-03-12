@@ -117,10 +117,6 @@ val Deployment.updatedBy: String?
 val ReplicaSet.revision: String?
     get() = safeMetadataAnnotations()["deployment.kubernetes.io/revision"]
 
-var ReplicaSet.deploymentPhase: String?
-    get() = safeMetadataAnnotations()[ANNOTATION_PHASE]
-    set(value) = safeMetadataAnnotations().set(ANNOTATION_PHASE, value)
-
 var ReplicationController.deploymentPhase: String?
     get() = safeMetadataAnnotations()[ANNOTATION_PHASE]
     set(value) = safeMetadataAnnotations().set(ANNOTATION_PHASE, value)

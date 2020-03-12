@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.api.model.apps.Deployment
+import io.fabric8.kubernetes.api.model.apps.DeploymentCondition
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.affiliation
@@ -155,19 +156,22 @@ class ApplicationDataServiceOpenShift(
             return applicationData(applicationDeployment, apd)
         }
 
+        val phase = findDeploymentPhase(deployment)
+
         val replicaSets =
             client.getReplicaSets(namespace, mapOf("app" to deployment.metadata.name)).sortedByDescending {
                 it.revision
             }
 
-        val latestReplicaSet = replicaSets.firstOrNull()
-
         val runningReplicaSet = replicaSets.firstOrNull {
             it.isRunning()
         }
 
-        val deployDetails = createDeployDetails(deployment, runningReplicaSet, latestReplicaSet?.deploymentPhase)
+        val deployDetails = createDeployDetails(deployment, runningReplicaSet, phase)
 
+        // TODO: We have more information here that is lost in translation. If there is a failing pod why is it failing. Should this be included?
+
+        // TODO: Should this include failed pods?
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, deployment.spec.selector.matchLabels)
 
         val imageDetails = runningReplicaSet?.let {
@@ -216,6 +220,27 @@ class ApplicationDataServiceOpenShift(
         )
     }
 
+    private fun findDeploymentPhase(deployment: Deployment): String {
+        val progressing = deployment.status.conditions.find { it.type == "Progressing" }
+
+        val phase = progressing?.let {
+            findStatus(it)
+        } ?: "Complete"
+        return phase
+    }
+
+    private fun findStatus(it: DeploymentCondition): String {
+        if (it.status.toLowerCase() == "false") {
+            return "Failed"
+        }
+
+        return if (it.reason == "ReplicaSetUpdated") {
+            "Ongoing"
+        } else {
+            "Complete"
+        }
+    }
+
     private fun createDeployDetails(
         dc: Deployment,
         runningRc: ReplicaSet?,
@@ -235,5 +260,5 @@ class ApplicationDataServiceOpenShift(
         this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
 
     fun ReplicaSet.isRunning() =
-        this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
+        this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
 }
