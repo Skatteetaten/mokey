@@ -79,15 +79,7 @@ class ApplicationDataServiceTest {
             "ApplicationDeployment",
             ApplicationDeployment::class.java
         )
-    }
 
-    @AfterEach
-    fun tearDown() {
-        HttpMock.clearAllHttpMocks()
-    }
-
-    @Test
-    fun `Initialize cache and read application data`() {
         val projects = newProjectList {
             items = listOf(ProjectDataBuilder("aurora-dev").build())
         }
@@ -129,11 +121,45 @@ class ApplicationDataServiceTest {
                 jsonResponse(replicationControllers)
             }
         }
+    }
 
+    @AfterEach
+    fun tearDown() {
+        HttpMock.clearAllHttpMocks()
+    }
+
+    @Test
+    fun `Initialize cache and read application data`() {
         dataService.cache()
         val applicationData = dataService.findAllApplicationData(listOf("aurora"))
+        val ad = dataService.findApplicationDataByApplicationDeploymentId(applicationData.first().applicationDeploymentId)
 
-        assertThat(applicationData).hasSize(1)
         assertThat(applicationData.first().affiliation).isEqualTo("aurora")
+        assertThat(ad?.affiliation).isEqualTo("aurora")
+    }
+
+    @Test
+    fun `Initialize cache and read public application data`() {
+        dataService.cache()
+        val publicData = dataService.findAllPublicApplicationData(listOf("aurora"))
+        val pd1 =
+            dataService.findPublicApplicationDataByApplicationDeploymentId(publicData.first().applicationDeploymentId)
+        val pd2 = dataService.findAllPublicApplicationDataByApplicationId(publicData.first().applicationId!!)
+
+        assertThat(publicData.first().affiliation).isEqualTo("aurora")
+        assertThat(pd1?.affiliation).isEqualTo("aurora")
+        assertThat(pd2.first().affiliation).isEqualTo("aurora")
+    }
+
+    @Test
+    fun `Initialize cache and find affiliations`() {
+        dataService.cacheAtStartup()
+        val visibleAffiliations = dataService.findAllVisibleAffiliations()
+        val allAffiliations = dataService.findAllAffiliations()
+
+        assertThat(visibleAffiliations).hasSize(1)
+        assertThat(allAffiliations).hasSize(1)
+        assertThat(visibleAffiliations.first()).isEqualTo("aurora")
+        assertThat(allAffiliations.first()).isEqualTo("aurora")
     }
 }
