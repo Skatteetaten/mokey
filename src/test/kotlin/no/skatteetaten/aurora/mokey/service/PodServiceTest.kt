@@ -1,26 +1,14 @@
 package no.skatteetaten.aurora.mokey.service
 
-/*
-TODO: fix
-import assertk.assertThat
-import assertk.assertions.hasSize
-import assertk.assertions.isEmpty
-import assertk.assertions.isEqualTo
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.mockk
-import no.skatteetaten.aurora.mokey.AuroraApplicationDeploymentDataBuilder
-import no.skatteetaten.aurora.mokey.ContainerStatusBuilder
-import no.skatteetaten.aurora.mokey.ContainerStatuses
-import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
-import no.skatteetaten.aurora.mokey.ManagementDataBuilder
-import no.skatteetaten.aurora.mokey.PodDataBuilder
-import no.skatteetaten.aurora.mokey.model.DeployDetails
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 
 class PodServiceTest {
 
+    fun `Get pod details`() {
+
+    }
+}
+
+/*
     private val openShiftService = mockk<OpenShiftService>()
     private val managementDataService = mockk<ManagementDataService>()
     private val podService = PodService(openShiftService, managementDataService)
