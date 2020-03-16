@@ -12,9 +12,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
-import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
-import no.skatteetaten.aurora.kubernetes.RetryConfiguration
-import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.HttpMock
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
@@ -32,19 +29,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
-import org.springframework.web.reactive.function.client.WebClient
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ApplicationDataServiceTest {
 
     private val port = SocketUtils.findAvailableTcpPort()
-    private val coroutinesClient = KubernetesCoroutinesClient(
-        KubernetesReactorClient(
-            WebClient.create("http://localhost:$port"), object : TokenFetcher {
-                override fun token() = "test-token"
-            }, RetryConfiguration()
-        )
-    )
+    private val coroutinesClient = KubernetesCoroutinesClient("http://localhost:$port", "test-token")
 
     private val calculator = mockk<AuroraStatusCalculator>()
     private val podService = mockk<PodService>()
@@ -132,7 +122,8 @@ class ApplicationDataServiceTest {
     fun `Initialize cache and read application data`() {
         dataService.cache()
         val applicationData = dataService.findAllApplicationData(listOf("aurora"))
-        val ad = dataService.findApplicationDataByApplicationDeploymentId(applicationData.first().applicationDeploymentId)
+        val ad =
+            dataService.findApplicationDataByApplicationDeploymentId(applicationData.first().applicationDeploymentId)
 
         assertThat(applicationData.first().affiliation).isEqualTo("aurora")
         assertThat(ad?.affiliation).isEqualTo("aurora")

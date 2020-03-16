@@ -503,7 +503,7 @@ class ApplicationDeploymentBuilder {
                 applicationDeploymentName = "test-mokey",
                 databases = emptyList(),
                 splunkIndex = null,
-                managementPath = null,
+                managementPath = ":8081/management",
                 releaseTo = null,
                 deployTag = null,
                 selector = emptyMap(),

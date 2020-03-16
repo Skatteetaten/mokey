@@ -7,9 +7,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
-import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
-import no.skatteetaten.aurora.kubernetes.RetryConfiguration
-import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.TestObjectMapperConfigurer
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.url
@@ -27,15 +24,7 @@ class ImageServiceTest {
 
     private val server = MockWebServer()
     private val client = OpenShiftServiceAccountClient(
-        KubernetesCoroutinesClient(
-            KubernetesReactorClient(
-                WebClient.create(server.url),
-                object : TokenFetcher {
-                    override fun token() = "test-token"
-                },
-                RetryConfiguration()
-            )
-        )
+        KubernetesCoroutinesClient(server.url, "test-token")
     )
 
     private val objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
