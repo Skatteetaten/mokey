@@ -48,6 +48,7 @@ import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_BOOBER_DEPLOYTAG
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.LABEL_DEPLOYTAG
+import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
@@ -455,6 +456,7 @@ data class ProjectDataBuilder(val pName: String = "affiliation-name") {
         newProject {
             metadata {
                 name = pName
+                namespace = "namespace"
             }
         }
 }
@@ -482,7 +484,7 @@ class ApplicationDeploymentBuilder {
         newApplicationDeployment {
             metadata {
                 name = "mokey"
-                labels = emptyMap()
+                labels = mapOf("affiliation" to "aurora")
                 namespace = "aurora-dev"
                 annotations = emptyMap()
             }
@@ -501,7 +503,7 @@ class ApplicationDeploymentBuilder {
                 applicationDeploymentName = "test-mokey",
                 databases = emptyList(),
                 splunkIndex = null,
-                managementPath = null,
+                managementPath = ":8081/management",
                 releaseTo = null,
                 deployTag = null,
                 selector = emptyMap(),
