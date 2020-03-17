@@ -49,7 +49,7 @@ class ApplicationConfig(
     val kubeernetesClientConfig: KubnernetesClientConfiguration
 ) : BeanPostProcessor {
 
-    @Qualifier("managmenetClient")
+    @Qualifier("managementClient")
     @Bean
     fun managementClient(
         builder: WebClient.Builder,

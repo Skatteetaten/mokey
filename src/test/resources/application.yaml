@@ -27,4 +27,9 @@ integrations:
         url: "http://localhost"
 
 kubernetes:
+    url: http://localhost
     tokenLocation: src/test/resources/test-token.txt
+
+mokey:
+    cachewarmup:
+        enabled: false

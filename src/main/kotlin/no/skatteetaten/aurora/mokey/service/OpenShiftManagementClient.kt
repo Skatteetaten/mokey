@@ -31,7 +31,7 @@ private val logger = KotlinLogging.logger {}
 
 @Service
 class OpenShiftManagementClient(
-    @Qualifier("managmenetClient") val client: KubernetesReactorClient,
+    @Qualifier("managementClient") val client: KubernetesReactorClient,
     @Value("\${mokey.management.cache:true}") val cacheManagement: Boolean
 ) {
 
