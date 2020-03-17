@@ -8,7 +8,6 @@ import com.fkorotkov.kubernetes.newPod
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.RetryConfiguration
-import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.HttpMock
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
-import org.springframework.web.reactive.function.client.WebClient
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
 
@@ -27,14 +25,11 @@ class ManagementDataServiceTest {
 
     private val port = SocketUtils.findAvailableTcpPort()
     private val service = ManagementDataService(
-        OpenShiftManagementClient(
-            KubernetesReactorClient(
-                WebClient.create("http://localhost:$port"), object : TokenFetcher {
-                    override fun token() = "test-token"
-                },
-                RetryConfiguration(times = 0)
-            ), false
-        )
+        OpenShiftManagementClient(KubernetesReactorClient(
+            "http://localhost:$port",
+            "test-token",
+            RetryConfiguration(times = 0)
+        ), false)
     )
 
     @AfterEach
