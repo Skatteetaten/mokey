@@ -13,7 +13,8 @@ import io.mockk.every
 import io.mockk.mockk
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.HttpMock
-import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
+import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.MockRules
+import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.initHttpMockServer
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
 import no.skatteetaten.aurora.mokey.AddressBuilder
 import no.skatteetaten.aurora.mokey.ApplicationDeploymentBuilder
@@ -34,6 +35,30 @@ import org.springframework.util.SocketUtils
 class ApplicationDataServiceTest {
 
     private val port = SocketUtils.findAvailableTcpPort()
+    private val server = initHttpMockServer {
+        rulePathEndsWith("projects") {
+            jsonResponse(newProjectList {
+                items = listOf(ProjectDataBuilder("aurora-dev").build())
+            })
+        }
+
+        rulePathContains("applicationdeployments") {
+            jsonResponse(newKubernetesList {
+                items = listOf(ApplicationDeploymentBuilder().build())
+            })
+        }
+
+        rulePathContains("deploymentconfigs") {
+            jsonResponse(DeploymentConfigDataBuilder().build())
+        }
+
+        rulePathContains("replicationcontrollers") {
+            jsonResponse(newReplicationControllerList {
+                items = listOf(ReplicationControllerDataBuilder().build())
+            })
+        }
+    }
+
     private val coroutinesClient = KubernetesCoroutinesClient("http://localhost:$port", "test-token")
 
     private val calculator = mockk<AuroraStatusCalculator>()
@@ -69,20 +94,6 @@ class ApplicationDataServiceTest {
             "ApplicationDeployment",
             ApplicationDeployment::class.java
         )
-
-        val projects = newProjectList {
-            items = listOf(ProjectDataBuilder("aurora-dev").build())
-        }
-
-        val applicationDeployments = newKubernetesList {
-            items = listOf(ApplicationDeploymentBuilder().build())
-        }
-
-        val dc = DeploymentConfigDataBuilder().build()
-        val replicationControllers = newReplicationControllerList {
-            items = listOf(ReplicationControllerDataBuilder().build())
-        }
-
         every { calculator.calculateAuroraStatus(any(), any(), any()) } returns AuroraStatusBuilder().build()
         coEvery { podService.getPodDetails(any(), any(), any()) } returns listOf(PodDetailsDataBuilder().build())
         coEvery { addressService.getAddresses(any(), any()) } returns listOf(AddressBuilder().build())
@@ -94,23 +105,7 @@ class ApplicationDataServiceTest {
             )
         } returns ImageDetailsDataBuilder().build()
 
-        httpMockServer(port) {
-            rule({ path?.endsWith("projects") }) {
-                jsonResponse(projects)
-            }
-
-            rule({ path?.contains("applicationdeployments") }) {
-                jsonResponse(applicationDeployments)
-            }
-
-            rule({ path?.contains("deploymentconfigs") }) {
-                jsonResponse(dc)
-            }
-
-            rule({ path?.contains("replicationcontrollers") }) {
-                jsonResponse(replicationControllers)
-            }
-        }
+        server.start(port)
     }
 
     @AfterEach
@@ -152,5 +147,34 @@ class ApplicationDataServiceTest {
         assertThat(allAffiliations).hasSize(1)
         assertThat(visibleAffiliations.first()).isEqualTo("aurora")
         assertThat(allAffiliations.first()).isEqualTo("aurora")
+    }
+
+    @Test
+    fun `Initialize cache, add entry and remove entry`() {
+        dataService.cacheAtStartup()
+        val affiliations = dataService.findAllAffiliations()
+        assertThat(affiliations).hasSize(1)
+
+        server.mockRules.clear() // clear all rules
+        registerProjectsResponse() // add response for /projects
+        registerEmptyResponses() // all other requests will return empty response
+
+        dataService.cache()
+        val updatedAffiliations = dataService.findAllAffiliations()
+        assertThat(updatedAffiliations).hasSize(0)
+    }
+
+    private fun registerProjectsResponse() {
+        server.mockRules.add(MockRules({ path?.endsWith("projects") }) {
+            jsonResponse(newProjectList {
+                items = listOf(ProjectDataBuilder("aurora-dev").build())
+            })
+        })
+    }
+
+    private fun registerEmptyResponses() {
+        server.mockRules.add(MockRules({ true }) {
+            jsonResponse()
+        })
     }
 }
