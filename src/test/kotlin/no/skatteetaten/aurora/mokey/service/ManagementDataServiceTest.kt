@@ -8,7 +8,6 @@ import com.fkorotkov.kubernetes.newPod
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.RetryConfiguration
-import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.HttpMock
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
-import org.springframework.web.reactive.function.client.WebClient
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
 
@@ -29,10 +27,9 @@ class ManagementDataServiceTest {
     private val service = ManagementDataService(
         OpenShiftManagementClient(
             KubernetesReactorClient(
-                WebClient.create("http://localhost:$port"), object : TokenFetcher {
-                    override fun token() = "test-token"
-                },
-                RetryConfiguration(times = 0)
+                baseUrl = "http://localhost:$port",
+                token = "test-token",
+                retryConfiguration = RetryConfiguration(times = 0)
             ), false
         )
     )
@@ -45,7 +42,7 @@ class ManagementDataServiceTest {
     @Test
     fun `management info should fail with invalid body`() {
         httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
+            rulePathEndsWith("links") {
                 jsonResponse(
                     HalResource(_links = Links().apply {
                         add("info", "/info")
@@ -53,7 +50,7 @@ class ManagementDataServiceTest {
                 )
             }
 
-            rule({ path?.endsWith("info") }) {
+            rulePathEndsWith("info") {
                 MockResponse().setBody("Foo")
             }
         }
@@ -68,7 +65,7 @@ class ManagementDataServiceTest {
     @Test
     fun `management health should fail with text response`() {
         httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
+            rulePathEndsWith("links") {
                 jsonResponse(
                     HalResource(_links = Links().apply {
                         add("health", "/health")
@@ -76,7 +73,7 @@ class ManagementDataServiceTest {
                 )
             }
 
-            rule({ path?.endsWith("health") }) {
+            rulePathEndsWith("health") {
                 MockResponse().setBody("Foo")
             }
         }
@@ -91,7 +88,7 @@ class ManagementDataServiceTest {
     @Test
     fun `management health should handle 401 as error`() {
         httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
+            rulePathEndsWith("links") {
                 jsonResponse(
                     HalResource(_links = Links().apply {
                         add("health", "/health")
@@ -99,7 +96,7 @@ class ManagementDataServiceTest {
                 )
             }
 
-            rule({ path?.endsWith("health") }) {
+            rulePathEndsWith("health") {
                 MockResponse().setBody("""Not authenticatd""").setResponseCode(401)
             }
         }
@@ -115,7 +112,7 @@ class ManagementDataServiceTest {
     @Test
     fun `management health should accept 503 status`() {
         httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
+            rulePathEndsWith("links") {
                 jsonResponse(
                     HalResource(_links = Links().apply {
                         add("health", "/health")
@@ -123,7 +120,7 @@ class ManagementDataServiceTest {
                 )
             }
 
-            rule({ path?.endsWith("health") }) {
+            rulePathEndsWith("health") {
                 jsonResponse("""{"status":"DOWN","details":{"diskSpace":{"status":"UP"}}}""").also {
                     it.setResponseCode(503)
                 }
@@ -140,7 +137,7 @@ class ManagementDataServiceTest {
     @Test
     fun `management health should fail with wrong status value`() {
         httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
+            rulePathEndsWith("links") {
                 jsonResponse(
                     HalResource(_links = Links().apply {
                         add("health", "/health")
@@ -148,7 +145,7 @@ class ManagementDataServiceTest {
                 )
             }
 
-            rule({ path?.endsWith("health") }) {
+            rulePathEndsWith("health") {
                 jsonResponse("""{"status":"FOOBAR","details":{"diskSpace":{"status":"UP"}}}""")
             }
         }
@@ -163,7 +160,7 @@ class ManagementDataServiceTest {
     @Test
     fun `management health should fail`() {
         httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
+            rulePathEndsWith("links") {
                 jsonResponse(
                     HalResource(_links = Links().apply {
                         add("health", "/health")
@@ -171,7 +168,7 @@ class ManagementDataServiceTest {
                 )
             }
 
-            rule({ path?.endsWith("health") }) {
+            rulePathEndsWith("health") {
                 jsonResponse("""{"stastus":"UP","details":{"diskSpace":{"status":"UP"}}}""")
             }
         }
@@ -187,7 +184,7 @@ class ManagementDataServiceTest {
     @Test
     fun `Request and create management data`() {
         httpMockServer(port) {
-            rule({ path?.endsWith("links") }) {
+            rulePathEndsWith("links") {
                 jsonResponse(
                     HalResource(_links = Links().apply {
                         add("info", "/info")
@@ -197,15 +194,15 @@ class ManagementDataServiceTest {
                 )
             }
 
-            rule({ path?.endsWith("info") }) {
+            rulePathEndsWith("info") {
                 jsonResponse("{}")
             }
 
-            rule({ path?.endsWith("env") }) {
+            rulePathEndsWith("env") {
                 jsonResponse("""{"activeProfiles":["openshift"]}""")
             }
 
-            rule({ path?.endsWith("health") }) {
+            rulePathEndsWith("health") {
                 jsonResponse("""{"status":"UP","details":{"diskSpace":{"status":"UP"}}}""")
             }
         }

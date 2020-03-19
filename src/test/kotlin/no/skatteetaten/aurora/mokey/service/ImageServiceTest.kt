@@ -71,4 +71,33 @@ class ImageServiceTest {
             }
         }
     }
+
+    @Test
+    fun `get cached or find, cache disabled`() {
+        val tag = ImageTagResourceBuilder().build()
+        val response = AuroraResponse(items = listOf(tag))
+
+        server.execute(response) {
+            runBlocking {
+                val imageDetails = imageService.getCachedOrFind("docker-registry/group/name@sha256:123hash")
+                assertThat(imageDetails?.dockerImageReference).isNotNull()
+                assertThat(imageDetails?.imageBuildTime).isNotNull()
+            }
+        }
+    }
+
+    @Test
+    fun `get cached or find, cache enabled`() {
+        val cacheEnabledImageService = ImageService(client, ImageRegistryService(imageRegistryClient), true)
+        val tag = ImageTagResourceBuilder().build()
+        val response = AuroraResponse(items = listOf(tag))
+
+        server.execute(response) {
+            runBlocking {
+                val imageDetails = cacheEnabledImageService.getCachedOrFind("docker-registry/group/name@sha256:123hash")
+                assertThat(imageDetails?.dockerImageReference).isNotNull()
+                assertThat(imageDetails?.imageBuildTime).isNotNull()
+            }
+        }
+    }
 }

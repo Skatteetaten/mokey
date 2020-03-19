@@ -9,8 +9,6 @@ import assertk.assertions.isTrue
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
-import no.skatteetaten.aurora.kubernetes.RetryConfiguration
-import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.url
@@ -32,7 +30,6 @@ import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.web.reactive.function.client.WebClient
 import java.io.File
 import java.time.Instant
 import java.util.stream.Stream
@@ -40,9 +37,7 @@ import java.util.stream.Stream
 class OpenShiftManagementClientTest {
     private val server = MockWebServer()
     private val client = OpenShiftManagementClient(
-        client = KubernetesReactorClient(WebClient.create(server.url), object : TokenFetcher {
-            override fun token() = "test-token"
-        }, RetryConfiguration(0)),
+        client = KubernetesReactorClient(server.url, "test-token"),
         cacheManagement = false
     )
 
