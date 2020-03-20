@@ -2,7 +2,6 @@ package no.skatteetaten.aurora.mokey.service
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.fabric8.openshift.api.model.Image
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import org.springframework.beans.factory.annotation.Value
@@ -66,30 +65,6 @@ class ImageService(
 
         return ImageDetails(image, null, imageBuildTime, env)
     }
-
-    suspend fun getImageDetailsFromImageStream(namespace: String, name: String, tagName: String): ImageDetails? {
-
-        return client.getImageStreamTag(namespace, name, tagName)?.let { istag ->
-            val dockerTagReference = istag.tag?.from?.name
-            val image = istag.image
-            val env = image.env
-            val imageBuildTime = (
-                env["IMAGE_BUILD_TIME"]
-                    ?: image?.dockerImageMetadata?.additionalProperties?.getOrDefault("Created", null) as String?
-                )?.let(DateParser::parseString)
-            ImageDetails(image.dockerImageReference, dockerTagReference, imageBuildTime, env)
-        }
-    }
-
-    val Image.env: Map<String, String>
-        get() = dockerImageMetadata?.additionalProperties?.let {
-            val config: Map<*, *> = it["Config"] as Map<*, *>
-            val envList = config["Env"] as List<String>
-            envList.map { env ->
-                val (key, value) = env.split("=")
-                key to value
-            }.toMap()
-        } ?: emptyMap()
 
     fun <K, V> Map<out K, V?>.filterNullValues(): Map<K, V> {
         val result = LinkedHashMap<K, V>()
