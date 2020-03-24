@@ -67,13 +67,13 @@ class MokeyApiTester {
         this.forEach { resource ->
             deployments.find { it.identifier == resource.identifier }?.let {
                 assertThat(it.affiliation).isEqualTo(resource.affiliation)
-                // assertThat(it.dockerImageRepo).isEqualTo(resource.dockerImageRepo)
+                assertThat(it.dockerImageRepo).isEqualTo(resource.dockerImageRepo)
                 assertThat(it.environment).isEqualTo(resource.environment)
                 assertThat(it.message).isEqualTo(resource.message)
                 assertThat(it.name).isEqualTo(resource.name)
                 assertThat(it.namespace).isEqualTo(resource.namespace)
                 assertThat(it.status.code).isEqualTo(resource.status.code)
-                // assertThat(it.version.auroraVersion).isEqualTo(resource.version.auroraVersion)
+                assertThat(it.version.auroraVersion).isEqualTo(resource.version.auroraVersion)
             } ?: fail("No ApplicationDeploymentResource found for ${resource.identifier}")
         }
     }
@@ -82,7 +82,7 @@ class MokeyApiTester {
         this.forEach { resource ->
             details.find { it.identifier == resource.identifier }?.let {
                 assertThat(it.updatedBy).isEqualTo(resource.updatedBy)
-                // assertThat(it.buildTime).isEqualTo(resource.buildTime)
+                assertThat(it.buildTime).isEqualTo(resource.buildTime)
             } ?: fail("No ApplicationDeploymentDetailsResource found for ${resource.identifier}")
         }
     }

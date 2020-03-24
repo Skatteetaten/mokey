@@ -178,7 +178,7 @@ class ApplicationDataServiceOpenShift(
         } else {
             val image = runningRc.spec.template.spec.containers[0].image
             if (image.substring(0, 2).toIntOrNull() != null) {
-                null
+                ImageDetails(image)
             } else {
                 try {
                     imageService.getCachedOrFind(image)

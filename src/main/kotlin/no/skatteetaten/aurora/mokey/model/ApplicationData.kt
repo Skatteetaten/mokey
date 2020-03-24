@@ -131,9 +131,9 @@ data class OpenShiftContainerExcerpt(
 
 data class ImageDetails(
     val dockerImageReference: String,
-    val dockerImageTagReference: String?,
-    val imageBuildTime: Instant?,
-    val environmentVariables: Map<String, String>
+    val dockerImageTagReference: String? = null,
+    val imageBuildTime: Instant? = null,
+    val environmentVariables: Map<String, String> = emptyMap()
 ) {
     val auroraVersion: String
         get() = environmentVariables["AURORA_VERSION"] ?: ""
