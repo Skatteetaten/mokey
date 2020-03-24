@@ -1,5 +1,8 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fkorotkov.kubernetes.apps.metadata
+import com.fkorotkov.kubernetes.apps.newDeployment
+import com.fkorotkov.kubernetes.apps.newReplicaSet
 import com.fkorotkov.kubernetes.metadata
 import com.fkorotkov.kubernetes.newPod
 import com.fkorotkov.kubernetes.newReplicationController
@@ -11,6 +14,8 @@ import com.fkorotkov.openshift.newRoute
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.ReplicationController
+import io.fabric8.kubernetes.api.model.apps.Deployment
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.ImageStreamTag
 import io.fabric8.openshift.api.model.Project
@@ -81,6 +86,24 @@ class OpenShiftServiceAccountClient(
 
     suspend fun getPods(namespace: String, labels: Map<String, String?>): List<Pod> {
         return client.getMany(newPod {
+            metadata {
+                this.namespace = namespace
+                this.labels = labels
+            }
+        })
+    }
+
+    suspend fun getDeployment(namespace: String?, openShiftName: String?): Deployment? {
+        return client.getOrNull(newDeployment {
+            metadata {
+                this.namespace = namespace
+                this.name = openShiftName
+            }
+        })
+    }
+
+    suspend fun getReplicaSets(namespace: String, labels: Map<String, String>): List<ReplicaSet> {
+        return client.getMany(newReplicaSet {
             metadata {
                 this.namespace = namespace
                 this.labels = labels

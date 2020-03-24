@@ -26,6 +26,7 @@ class ApplicationDeployment(
 data class ApplicationDeploymentSpec(
     val applicationId: String = "",
     val applicationName: String? = null,
+    val runnableType: String? = null,
     val applicationDeploymentId: String = "",
     val applicationDeploymentName: String? = null,
     val databases: List<String>? = null,

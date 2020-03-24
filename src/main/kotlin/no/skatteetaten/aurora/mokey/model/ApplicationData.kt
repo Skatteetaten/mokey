@@ -52,8 +52,6 @@ data class ApplicationData(
     val deployDetails: DeployDetails? = null,
     val addresses: List<Address> = emptyList(),
     val databases: List<String> = emptyList(),
-    val sprocketDone: String? = null,
-    val updatedBy: String? = null,
     val splunkIndex: String? = null,
     val deploymentCommand: ApplicationDeploymentCommand,
     val publicData: ApplicationPublicData
@@ -131,14 +129,14 @@ data class OpenShiftContainerExcerpt(
 
 data class ImageDetails(
     val dockerImageReference: String,
-    val dockerImageTagReference: String?,
-    val imageBuildTime: Instant?,
-    val environmentVariables: Map<String, String>
+    val dockerImageTagReference: String? = null,
+    val imageBuildTime: Instant? = null,
+    val environmentVariables: Map<String, String> = emptyMap()
 ) {
     val auroraVersion: String
-        get() = environmentVariables["AURORA_VERSION"] ?: ""
+    get() = environmentVariables["AURORA_VERSION"] ?: ""
     val dockerImageRepo: String?
-        get() = dockerImageReference.replace(Regex("@.*$"), "")
+    get() = dockerImageReference.replace(Regex("@.*$"), "")
 }
 
 data class DeployDetails(
@@ -147,8 +145,15 @@ data class DeployDetails(
     val deployment: String? = null,
     val phase: String? = null,
     val deployTag: String? = null,
-    val paused: Boolean = false
+    val paused: Boolean = false,
+    val updatedBy: String? = null
 ) {
     val lastDeployment: String?
         get() = this.phase?.toLowerCase()
 }
+
+data class DeploymentResult(
+    val details: DeployDetails,
+    val image: ImageDetails?,
+    val selector: Map<String, String>
+)
