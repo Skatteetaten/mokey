@@ -228,6 +228,8 @@ class ApplicationDataServiceOpenShift(
         val runnableType = applicationDeployment.spec.runnableType ?: "DeploymentConfig"
 
         if (runnableType == "Job" || runnableType == "CronJob") {
+            // TODO: What should we do here, should we find information about the job/cronjob and cache it somehow?
+            // TODO: Should we link the job to a service? Do we need more information in boober then?
             return createDisabledApplication(applicationDeployment)
         }
 
