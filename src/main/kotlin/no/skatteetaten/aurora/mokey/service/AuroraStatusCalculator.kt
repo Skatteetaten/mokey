@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import java.time.Instant
 import java.time.Instant.now
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
@@ -13,6 +14,8 @@ import no.skatteetaten.aurora.mokey.model.StatusCheckResult
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodDownCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodObserveCheck
 import org.springframework.stereotype.Service
+
+private val logger = KotlinLogging.logger {}
 
 @Service
 class AuroraStatusCalculator(val statusChecks: List<StatusCheck>) {
@@ -40,6 +43,10 @@ class AuroraStatusCalculator(val statusChecks: List<StatusCheck>) {
         val reports = results.filterNot { it.statusCheck.isOverridingAuroraStatus }.map(this::toReport)
         val reasons = results.filter { it.hasFailed }.map(this::toReport)
 
+        if (level != HEALTHY) {
+            val descriptions = reasons.joinToString(", ") { it.description }
+            logger.info("AuroraStatus level=$level reasons=$descriptions")
+        }
         return AuroraStatus(level, reasons, reports)
     }
 

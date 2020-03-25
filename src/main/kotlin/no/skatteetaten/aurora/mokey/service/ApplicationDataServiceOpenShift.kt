@@ -1,7 +1,10 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.ReplicationController
+import io.fabric8.openshift.api.model.DeploymentCondition
 import io.fabric8.openshift.api.model.DeploymentConfig
+import java.time.Duration
+import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -179,6 +182,10 @@ class ApplicationDataServiceOpenShift(
         val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
             ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
 
+        val newPhase = findDeploymentPhase(dc)
+        logger.info {
+            "Phase namespace=$namespace name=$openShiftName phase=${latestRc?.deploymentPhase} newPhase=$newPhase"
+        }
         val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
 
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
@@ -225,6 +232,10 @@ class ApplicationDataServiceOpenShift(
         )
     }
 
+    private fun findDeploymentPhase(dc: DeploymentConfig): String {
+        return dc.status.conditions.findPhase(Duration.ofMinutes(1L), Instant.now())
+    }
+
     private fun createDeployDetails(
         dc: DeploymentConfig,
         runningRc: ReplicationController?,
@@ -242,4 +253,41 @@ class ApplicationDataServiceOpenShift(
 
     fun ReplicationController.isRunning() =
         this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
+}
+
+fun List<DeploymentCondition>.findPhase(scalingLimit: Duration, time: Instant): String {
+    val progressing = this.find { it.type == "Progressing" } ?: return "NoDeploy"
+
+    val availabilityPhase = this.find { it.type == "Available" }?.findAvailableStatus(scalingLimit, time)
+    if (availabilityPhase != null) {
+        return availabilityPhase
+    }
+
+    return progressing.findProgressingStatus()
+}
+
+fun DeploymentCondition.findAvailableStatus(limit: Duration, time: Instant): String? {
+
+    if (this.status.toLowerCase() != "false") {
+        return null
+    }
+    val updatedAt = Instant.parse(this.lastUpdateTime)
+    val duration = Duration.between(updatedAt, time)
+    return if (duration > limit) {
+        // We have tried scaling over the limit
+        "ScalingTimeout"
+    } else {
+        "Scaling"
+    }
+}
+
+fun DeploymentCondition.findProgressingStatus(): String {
+    if (this.status.toLowerCase() == "false") {
+        return "DeployFailed"
+    }
+    return if (this.reason == "NewReplicationControllerAvailable") {
+        "Running"
+    } else {
+        "DeploymentProgressing"
+    }
 }
