@@ -3,6 +3,8 @@ package no.skatteetaten.aurora.mokey.service
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentCondition
 import io.fabric8.openshift.api.model.DeploymentConfig
+import java.time.Duration
+import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -24,8 +26,6 @@ import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import org.springframework.stereotype.Service
-import java.time.Duration
-import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
