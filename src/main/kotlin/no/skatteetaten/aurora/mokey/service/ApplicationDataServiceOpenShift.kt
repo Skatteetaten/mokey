@@ -209,9 +209,21 @@ class ApplicationDataServiceOpenShift(
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
         if (auroraStatus.level != AuroraStatusLevel.HEALTHY) {
-            val newPhase = findDeploymentPhase(dc)
+            // Hvis targetReplicas og aviableReplicas=0 er status Off
+            val newPhase =
+                if (deployDetails.targetReplicas == deployDetails.availableReplicas && deployDetails.availableReplicas == 0) {
+                    "OFF"
+                } else {
+                    findDeploymentPhase(dc)
+                }
+
             val descriptions = auroraStatus.reasons.joinToString(", ") { it.name }
-            logger.info("Status namespace=$namespace name=$openShiftName level=${auroraStatus.level} reasons=$descriptions phase=${latestRc?.deploymentPhase} newPhase=$newPhase")
+            val offIsWrong = auroraStatus.level == AuroraStatusLevel.OFF && newPhase != "OFF"
+            val phaseDifferent = latestRc?.deploymentPhase != newPhase
+
+            if (offIsWrong || phaseDifferent) {
+                logger.info("Status namespace=$namespace name=$openShiftName level=${auroraStatus.level} reasons=$descriptions phase=${latestRc?.deploymentPhase} newPhase=$newPhase")
+            }
         }
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
@@ -238,7 +250,7 @@ class ApplicationDataServiceOpenShift(
         )
     }
 
-    private fun findDeploymentPhase(dc: DeploymentConfig): String {
+    private fun findDeploymentPhase(dc: DeploymentConfig): String? {
         return dc.status.conditions.findPhase(Duration.ofMinutes(1L), Instant.now())
     }
 
@@ -261,8 +273,8 @@ class ApplicationDataServiceOpenShift(
         this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
 }
 
-fun List<DeploymentCondition>.findPhase(scalingLimit: Duration, time: Instant): String {
-    val progressing = this.find { it.type == "Progressing" } ?: return "NoDeploy"
+fun List<DeploymentCondition>.findPhase(scalingLimit: Duration, time: Instant): String? {
+    val progressing = this.find { it.type == "Progressing" } ?: return null // TODO nodeploy
 
     val availabilityPhase = this.find { it.type == "Available" }?.findAvailableStatus(scalingLimit, time)
     if (availabilityPhase != null) {
@@ -289,10 +301,10 @@ fun DeploymentCondition.findAvailableStatus(limit: Duration, time: Instant): Str
 
 fun DeploymentCondition.findProgressingStatus(): String {
     if (this.status.toLowerCase() == "false") {
-        return "DeployFailed"
+        return "Failed"
     }
     return if (this.reason == "NewReplicationControllerAvailable") {
-        "Running"
+        "Complete"
     } else {
         "DeploymentProgressing"
     }

@@ -10,6 +10,25 @@ import org.junit.jupiter.api.Test
 
 class AuroraPhaseCalculatorTest {
 
+    /*
+   venter på første apply
+ {
+                "lastTransitionTime": "2020-03-25T20:53:03Z",
+                "lastUpdateTime": "2020-03-25T20:53:03Z",
+                "message": "Deployment config does not have minimum availability.",
+                "status": "False",
+                "type": "Available"
+            },
+
+    {
+                "lastTransitionTime": "2020-03-25T20:53:28Z",
+                "lastUpdateTime": "2020-03-25T20:53:28Z",
+                "message": "replication controller \"aos-4314-mokey-1\" is waiting for pod \"aos-4314-mokey-1-deploy\" to run",
+                "status": "Unknown",
+                "type": "Progressing"
+            }
+
+     */
     @Test
     fun `should be complete if available and not deploying`() {
 
@@ -21,7 +40,7 @@ class AuroraPhaseCalculatorTest {
             createProgressingCondition(now)
         )
 
-        assertThat(conditions.findPhase(limit, now)).isEqualTo("Running")
+        assertThat(conditions.findPhase(limit, now)).isEqualTo("Complete")
     }
 
     @Test
@@ -34,8 +53,9 @@ class AuroraPhaseCalculatorTest {
             createAvailableCondition(now, true)
         )
 
-        assertThat(conditions.findPhase(limit, now)).isEqualTo("NoDeploy")
+        assertThat(conditions.findPhase(limit, now)).isEqualTo(null)
     }
+
     @Test
     fun `should be deploy failed if last deployment failed`() {
 
@@ -47,7 +67,7 @@ class AuroraPhaseCalculatorTest {
             createProgressingCondition(now, "Failed")
         )
 
-        assertThat(conditions.findPhase(limit, now)).isEqualTo("DeployFailed")
+        assertThat(conditions.findPhase(limit, now)).isEqualTo("Failed")
     }
 
     @Test
@@ -63,6 +83,7 @@ class AuroraPhaseCalculatorTest {
 
         assertThat(conditions.findPhase(limit, now)).isEqualTo("DeploymentProgressing")
     }
+
     @Test
     fun `should be failed scaling if still scaling after 1 minute`() {
 
