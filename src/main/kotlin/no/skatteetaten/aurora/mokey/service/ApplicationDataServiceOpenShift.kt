@@ -184,7 +184,7 @@ class ApplicationDataServiceOpenShift(
 
         val newPhase = findDeploymentPhase(dc)
         logger.info {
-            "Phase namespace=$namespace name=$openShiftName phase=${latestRc?.deploymentPhase} newPhase=$newPhase"
+            "Phase  namespace=$namespace name=$openShiftName phase=${latestRc?.deploymentPhase} newPhase=$newPhase"
         }
         val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
 
@@ -207,6 +207,10 @@ class ApplicationDataServiceOpenShift(
 
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
+        if (auroraStatus.level != AuroraStatusLevel.HEALTHY) {
+            val descriptions = auroraStatus.reasons.joinToString(", ") { it.description }
+            logger.info("Status namespace=$namespace name=$openShiftName level=${auroraStatus.level} reasons=$descriptions")
+        }
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
         val deployTag = deployDetails.deployTag.takeIf { !it.isNullOrEmpty() }
