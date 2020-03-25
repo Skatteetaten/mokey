@@ -22,6 +22,7 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
+import no.skatteetaten.aurora.mokey.model.ImageDetails
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
@@ -196,7 +197,11 @@ class ApplicationDataServiceOpenShift(
             }
         } else {
             val image = runningRc.spec.template.spec.containers[0].image
-            imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+            if (image.substring(0, 2).toIntOrNull() != null) {
+                ImageDetails(image, null, null, emptyMap())
+            } else {
+                imageService.getImageDetails(dc.metadata.namespace, dc.metadata.name, image)
+            }
         }
 
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
