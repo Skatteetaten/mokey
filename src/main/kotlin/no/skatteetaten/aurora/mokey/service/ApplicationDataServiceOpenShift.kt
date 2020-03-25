@@ -3,8 +3,6 @@ package no.skatteetaten.aurora.mokey.service
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentCondition
 import io.fabric8.openshift.api.model.DeploymentConfig
-import java.time.Duration
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -25,6 +23,8 @@ import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.Environment
 import org.springframework.stereotype.Service
+import java.time.Duration
+import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
@@ -182,10 +182,6 @@ class ApplicationDataServiceOpenShift(
         val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
             ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
 
-        val newPhase = findDeploymentPhase(dc)
-        logger.info {
-            "Phase  namespace=$namespace name=$openShiftName phase=${latestRc?.deploymentPhase} newPhase=$newPhase"
-        }
         val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
 
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
@@ -208,8 +204,9 @@ class ApplicationDataServiceOpenShift(
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
         if (auroraStatus.level != AuroraStatusLevel.HEALTHY) {
-            val descriptions = auroraStatus.reasons.joinToString(", ") { it.description }
-            logger.info("Status namespace=$namespace name=$openShiftName level=${auroraStatus.level} reasons=$descriptions")
+            val newPhase = findDeploymentPhase(dc)
+            val descriptions = auroraStatus.reasons.joinToString(", ") { it.name }
+            logger.info("Status namespace=$namespace name=$openShiftName level=${auroraStatus.level} reasons=$descriptions phase=${latestRc?.deploymentPhase} newPhase=$newPhase")
         }
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
