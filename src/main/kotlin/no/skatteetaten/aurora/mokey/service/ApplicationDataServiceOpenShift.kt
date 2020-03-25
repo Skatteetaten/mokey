@@ -208,20 +208,12 @@ class ApplicationDataServiceOpenShift(
 
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
-        if (auroraStatus.level != AuroraStatusLevel.HEALTHY) {
-            // Hvis targetReplicas og aviableReplicas=0 er status Off
-            val newPhase =
-                if (deployDetails.targetReplicas == deployDetails.availableReplicas && deployDetails.availableReplicas == 0) {
-                    "OFF"
-                } else {
-                    findDeploymentPhase(dc)
-                }
-
+        if (auroraStatus.level !in listOf(AuroraStatusLevel.OFF, AuroraStatusLevel.HEALTHY)) {
+            val newPhase = findDeploymentPhase(dc)
             val descriptions = auroraStatus.reasons.joinToString(", ") { it.name }
-            val offIsWrong = auroraStatus.level == AuroraStatusLevel.OFF && newPhase != "OFF"
             val phaseDifferent = latestRc?.deploymentPhase != newPhase
 
-            if (offIsWrong || phaseDifferent) {
+            if (phaseDifferent) {
                 logger.info("Status namespace=$namespace name=$openShiftName level=${auroraStatus.level} reasons=$descriptions phase=${latestRc?.deploymentPhase} newPhase=$newPhase")
             }
         }
@@ -277,11 +269,13 @@ fun List<DeploymentCondition>.findPhase(scalingLimit: Duration, time: Instant): 
     val progressing = this.find { it.type == "Progressing" } ?: return null // TODO nodeploy
 
     val availabilityPhase = this.find { it.type == "Available" }?.findAvailableStatus(scalingLimit, time)
-    if (availabilityPhase != null) {
-        return availabilityPhase
+
+    val progressingStatus = progressing.findProgressingStatus()
+    if (availabilityPhase == "ScalingTimeout" && progressingStatus == "Failed") {
+        return "Failed"
     }
 
-    return progressing.findProgressingStatus()
+    return availabilityPhase ?: progressingStatus
 }
 
 fun DeploymentCondition.findAvailableStatus(limit: Duration, time: Instant): String? {

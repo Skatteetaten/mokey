@@ -11,6 +11,25 @@ import org.junit.jupiter.api.Test
 class AuroraPhaseCalculatorTest {
 
     /*
+      Denne viser scaling timeout nå, men bør ikke være det
+    {
+        "lastTransitionTime": "2019-10-18T10:25:12Z",
+        "lastUpdateTime": "2019-10-18T10:25:12Z",
+        "message": "Deployment config does not have minimum availability.",
+        "status": "False",
+        "type": "Available"
+    },
+    {
+        "lastTransitionTime": "2020-02-06T16:01:11Z",
+        "lastUpdateTime": "2020-02-06T16:01:11Z",
+        "message": "replication controller \"testdatagenerator-73\" has failed progressing",
+        "reason": "ProgressDeadlineExceeded",
+        "status": "False",
+        "type": "Progressing"
+    }
+     */
+
+    /*
    venter på første apply
  {
                 "lastTransitionTime": "2020-03-25T20:53:03Z",
@@ -93,10 +112,25 @@ class AuroraPhaseCalculatorTest {
 
         val conditions = listOf(
             createAvailableCondition(now, true),
-            createProgressingCondition(now, "Failed")
+            createProgressingCondition(now)
         )
 
         assertThat(conditions.findPhase(limit, twoMinutesAfter)).isEqualTo("ScalingTimeout")
+    }
+
+    @Test
+    fun `should be failed if still scaling after 1 minute and last deploy failed`() {
+
+        val now = Instant.EPOCH
+        val twoMinutesAfter = now + Duration.ofMinutes(2L)
+        val limit = Duration.ofMinutes(1L)
+
+        val conditions = listOf(
+            createAvailableCondition(now, true),
+            createProgressingCondition(now, "Failed")
+        )
+
+        assertThat(conditions.findPhase(limit, twoMinutesAfter)).isEqualTo("Failed")
     }
 
     @Test
