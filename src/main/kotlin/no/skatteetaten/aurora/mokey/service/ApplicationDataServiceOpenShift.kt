@@ -206,16 +206,15 @@ class ApplicationDataServiceOpenShift(
 
         val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
 
+        val newDetails = deployDetails.copy(phase = findDeploymentPhase(dc))
+
+        val alternativeStatus = auroraStatusCalculator.calculateAuroraStatus(newDetails, pods)
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
-        if (auroraStatus.level !in listOf(AuroraStatusLevel.OFF, AuroraStatusLevel.HEALTHY)) {
-            val newPhase = findDeploymentPhase(dc)
-            val descriptions = auroraStatus.reasons.joinToString(", ") { it.name }
-            val phaseDifferent = latestRc?.deploymentPhase != newPhase
-
-            if (phaseDifferent) {
-                logger.info("Status namespace=$namespace name=$openShiftName level=${auroraStatus.level} reasons=$descriptions phase=${latestRc?.deploymentPhase} newPhase=$newPhase")
-            }
+        if (auroraStatus.level != alternativeStatus.level) {
+            val checks = auroraStatus.reasons.joinToString(", ") { it.name }
+            val altChecks = alternativeStatus.reasons.joinToString(", ") { it.name }
+            logger.info("Status namespace=$namespace name=$openShiftName level=${auroraStatus.level} alternateLevel=${alternativeStatus.level} checks=$checks altChecks=$altChecks")
         }
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
@@ -271,23 +270,24 @@ fun List<DeploymentCondition>.findPhase(scalingLimit: Duration, time: Instant): 
     val availabilityPhase = this.find { it.type == "Available" }?.findAvailableStatus(scalingLimit, time)
 
     val progressingStatus = progressing.findProgressingStatus()
-    if (availabilityPhase == "ScalingTimeout" && progressingStatus == "Failed") {
-        return "Failed"
+    if (progressingStatus != "Complete") {
+        return progressingStatus
     }
 
-    return availabilityPhase ?: progressingStatus
+    return availabilityPhase
 }
 
-fun DeploymentCondition.findAvailableStatus(limit: Duration, time: Instant): String? {
+fun DeploymentCondition.findAvailableStatus(limit: Duration, time: Instant): String {
 
     if (this.status.toLowerCase() != "false") {
-        return null
+        return "Complete"
     }
     val updatedAt = Instant.parse(this.lastUpdateTime)
     val duration = Duration.between(updatedAt, time)
     return if (duration > limit) {
         // We have tried scaling over the limit
-        "ScalingTimeout"
+        // TODO: This should really be Scaling Timeout
+        "Complete"
     } else {
         "Scaling"
     }
