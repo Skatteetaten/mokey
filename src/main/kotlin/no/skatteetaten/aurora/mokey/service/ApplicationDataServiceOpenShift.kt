@@ -183,7 +183,8 @@ class ApplicationDataServiceOpenShift(
         val runningRc = latestRc.takeIf { it?.isRunning() ?: false }
             ?: getRunningRc(namespace, openShiftName, dc.status.latestVersion)
 
-        val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
+        // val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
+        val deployDetails = createDeployDetails(dc, runningRc, findDeploymentPhase(dc))
 
         // Using dc.spec.selector to find matching pods. Should be selector from ApplicationDeployment, but since not
         // every pods has a name label we have to use selector from DeploymentConfig.
@@ -208,14 +209,20 @@ class ApplicationDataServiceOpenShift(
 
         val newDetails = deployDetails.copy(phase = findDeploymentPhase(dc))
 
-        val alternativeStatus = auroraStatusCalculator.calculateAuroraStatus(newDetails, pods)
+        // val alternativeStatus = auroraStatusCalculator.calculateAuroraStatus(newDetails, pods)
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
+        if (deployDetails.lastDeployment == "scaling") {
+            val checks = auroraStatus.reasons.joinToString(", ") { it.name }
+            logger.info("Scaling namespace=$namespace name=$openShiftName level=${auroraStatus.level} checks=$checks")
+        }
+        /*
         if (auroraStatus.level != alternativeStatus.level) {
             val checks = auroraStatus.reasons.joinToString(", ") { it.name }
             val altChecks = alternativeStatus.reasons.joinToString(", ") { it.name }
-            logger.info("Status namespace=$namespace name=$openShiftName level=${auroraStatus.level} alternateLevel=${alternativeStatus.level} checks=$checks altChecks=$altChecks")
         }
+
+         */
         val splunkIndex = applicationDeployment.spec.splunkIndex
 
         val deployTag = deployDetails.deployTag.takeIf { !it.isNullOrEmpty() }

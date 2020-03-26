@@ -11,6 +11,25 @@ import org.junit.jupiter.api.Test
 class AuroraPhaseCalculatorTest {
 
     /*
+    TODO: fixe at dette er nodeploy
+     {
+                "lastTransitionTime": "2017-11-22T09:50:25Z",
+                "lastUpdateTime": "2017-11-22T09:50:25Z",
+                "message": "Deployment config does not have minimum availability.",
+                "status": "False",
+                "type": "Available"
+            },
+            {
+                "lastTransitionTime": "2017-11-23T09:19:20Z",
+                "lastUpdateTime": "2017-11-23T09:19:20Z",
+                "message": "ReplicationController \"saksflyt-foedsel-1\" is invalid: spec.template.spec.containers[0].image: Required value",
+                "reason": "ReplicationControllerCreateError",
+                "status": "False",
+                "type": "Progressing"
+            }
+     */
+
+    /*
       Denne viser scaling timeout nå, men bør ikke være det
     {
         "lastTransitionTime": "2019-10-18T10:25:12Z",
