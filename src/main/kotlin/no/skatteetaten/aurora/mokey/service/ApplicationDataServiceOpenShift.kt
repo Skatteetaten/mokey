@@ -24,6 +24,8 @@ import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.pmapIO
 import org.springframework.stereotype.Service
+import java.time.Duration
+import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
@@ -146,82 +148,6 @@ class ApplicationDataServiceOpenShift(
         )
     }
 
-    private suspend fun createApplicationData2(applicationDeployment: ApplicationDeployment): ApplicationData {
-        logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
-        val namespace = applicationDeployment.metadata.namespace
-        val openShiftName = applicationDeployment.metadata.name
-
-        val deployment = client.getDeployment(namespace, openShiftName)
-
-        if (deployment == null) {
-            val auroraStatus = AuroraStatus(AuroraStatusLevel.OFF)
-            val apd = applicationPublicData(applicationDeployment, auroraStatus)
-            return applicationData(applicationDeployment, apd)
-        }
-
-        val phase = findDeploymentPhase(deployment)
-
-        val replicaSets =
-            client.getReplicaSets(namespace, mapOf("app" to deployment.metadata.name)).sortedByDescending {
-                it.revision
-            }
-
-        val runningReplicaSet = replicaSets.firstOrNull {
-            it.isRunning()
-        }
-
-        val deployDetails = createDeployDetails(deployment, runningReplicaSet, phase)
-
-        // TODO: We have more information here that is lost in translation. If there is a failing pod why is it failing. Should this be included?
-
-        // TODO: Should this include failed pods?
-        val pods = podService.getPodDetails(applicationDeployment, deployDetails, deployment.spec.selector.matchLabels)
-
-        val imageDetails = runningReplicaSet?.let {
-            val image = runningReplicaSet.spec.template.spec.containers[0].image
-            if (image.substring(0, 2).toIntOrNull() != null) {
-                null
-            } else {
-                try {
-                    imageService.getCachedOrFind(image)
-                } catch (e: Exception) {
-                    logger.warn(
-                        "Failed getting imageDetails for namespace=${deployment.metadata.namespace} name=${deployment.metadata.name} image=$image",
-                        e
-                    )
-                    null
-                }
-            }
-        }
-
-        val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
-
-        val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
-
-        val splunkIndex = applicationDeployment.spec.splunkIndex
-
-        val deployTag = deployDetails.deployTag.takeIf { !it.isNullOrEmpty() }
-            ?: (applicationDeployment.spec.deployTag.let { it } ?: "")
-
-        val apd = applicationPublicData(
-            applicationDeployment,
-            auroraStatus
-        ).copy(
-            auroraVersion = imageDetails?.auroraVersion,
-            dockerImageRepo = imageDetails?.dockerImageRepo,
-            deployTag = deployTag
-        )
-
-        return applicationData(applicationDeployment, apd).copy(
-            pods = pods,
-            imageDetails = imageDetails,
-            addresses = applicationAddresses,
-            splunkIndex = splunkIndex,
-            deployDetails = deployDetails
-        )
-    }
-
-    // TODO: Refactor
     private suspend fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
         logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
 
@@ -293,8 +219,9 @@ class ApplicationDataServiceOpenShift(
             it.isRunning()
         }
 
-        val deployDetails = createDeployDetails(dc, runningRc, latestRc?.deploymentPhase)
+        val deployDetails = createDeployDetails(dc, runningRc)
 
+        // TODO: Not really sure if this holds anymore, atleast not if we get a mix of Deployment and DC.
         // it is a lot faster to fetch from imageStreamTag from ocp rather then from cantus if it is up to date
         val imageDetails: ImageDetails? = if (runningRc == latestRc || runningRc == null) {
             // gets ImageDetails for the first Image that is found in the ImageChange triggers for the given DeploymentConfig
@@ -320,12 +247,45 @@ class ApplicationDataServiceOpenShift(
         return DeploymentResult(deployDetails, imageDetails, dc.spec.selector)
     }
 
+    private fun createDeployDetails(
+        dc: DeploymentConfig,
+        runningRc: ReplicationController?
+    ): DeployDetails {
+
+        // We cast here since these objects are exactly the same just in different package
+        val conditions = dc.status.conditions as List<DeploymentCondition>
+        val phase = conditions.findPhase(Duration.ofMinutes(1L), Instant.now())
+        return DeployDetails(
+            targetReplicas = dc.spec.replicas,
+            availableReplicas = dc.status.availableReplicas ?: 0,
+            deployment = runningRc?.metadata?.name,
+            deployTag = runningRc?.deployTag,
+            paused = dc.spec.paused ?: false,
+            phase = phase,
+            updatedBy = dc.updatedBy
+        )
+    }
+
+    fun createDeployDetails(
+        deployment: Deployment,
+        runningRc: ReplicaSet?
+    ): DeployDetails {
+        val phase = deployment.status.conditions.findPhase(Duration.ofMinutes(1L), Instant.now())
+        return DeployDetails(
+            targetReplicas = deployment.spec.replicas,
+            availableReplicas = deployment.status.availableReplicas ?: 0,
+            deployment = runningRc?.metadata?.name,
+            deployTag = runningRc?.deployTag,
+            paused = deployment.spec.paused ?: false,
+            phase = phase,
+            updatedBy = deployment.updatedBy
+        )
+    }
+
     private suspend fun findDeployResultForDeployment(
         deployment: Deployment,
         namespace: String
     ): DeploymentResult {
-        val phase = findDeploymentPhase(deployment)
-
         val replicaSets =
             client.getReplicaSets(namespace, mapOf("app" to deployment.metadata.name)).sortedByDescending {
                 it.revision
@@ -335,7 +295,7 @@ class ApplicationDataServiceOpenShift(
             it.isRunning()
         }
 
-        val deployDetails = createDeployDetails(deployment, runningReplicaSet, phase)
+        val deployDetails = createDeployDetails(deployment, runningReplicaSet)
 
         // TODO: We have more information here that is lost in translation. If there is a failing pod why is it failing. Should this be included?
         val imageDetails = runningReplicaSet?.let {
@@ -363,62 +323,50 @@ class ApplicationDataServiceOpenShift(
         return applicationData(applicationDeployment, apd)
     }
 
-    private fun createDeployDetails(
-        dc: DeploymentConfig,
-        runningRc: ReplicationController?,
-        deploymentPhase: String?
-    ): DeployDetails {
-        return DeployDetails(
-            targetReplicas = dc.spec.replicas,
-            availableReplicas = dc.status.availableReplicas ?: 0,
-            deployment = runningRc?.metadata?.name,
-            deployTag = runningRc?.deployTag,
-            paused = dc.spec.paused ?: false,
-            phase = deploymentPhase,
-            updatedBy = dc.updatedBy
-        )
-    }
-
-    private fun createDeployDetails(
-        deployment: Deployment,
-        runningRc: ReplicaSet?,
-        deploymentPhase: String?
-    ): DeployDetails {
-        return DeployDetails(
-            targetReplicas = deployment.spec.replicas,
-            availableReplicas = deployment.status.availableReplicas ?: 0,
-            deployment = runningRc?.metadata?.name,
-            deployTag = runningRc?.deployTag,
-            paused = deployment.spec.paused ?: false,
-            phase = deploymentPhase,
-            updatedBy = deployment.updatedBy
-        )
-    }
-
     fun ReplicationController.isRunning() =
         this.deploymentPhase == "Complete" && this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
 
     fun ReplicaSet.isRunning() =
         this.status.availableReplicas?.let { it > 0 } ?: false && this.status.replicas?.let { it > 0 } ?: false
+}
 
-    private fun findDeploymentPhase(deployment: Deployment): String {
-        val progressing = deployment.status.conditions.find { it.type == "Progressing" }
+fun List<DeploymentCondition>.findPhase(scalingLimit: Duration, time: Instant): String? {
+    val progressing = this.find { it.type == "Progressing" } ?: return null // TODO nodeploy
 
-        val phase = progressing?.let {
-            findStatus(it)
-        } ?: "Complete"
-        return phase
+    val availabilityPhase = this.find { it.type == "Available" }?.findAvailableStatus(scalingLimit, time)
+
+    val progressingStatus = progressing.findProgressingStatus()
+    if (progressingStatus != "Complete") {
+        return progressingStatus
     }
 
-    private fun findStatus(it: DeploymentCondition): String {
-        if (it.status.toLowerCase() == "false") {
-            return "Failed"
-        }
+    return availabilityPhase
+}
 
-        return if (it.reason == "ReplicaSetUpdated") {
-            "Ongoing"
-        } else {
-            "Complete"
-        }
+fun DeploymentCondition.findAvailableStatus(limit: Duration, time: Instant): String {
+
+    if (this.status.toLowerCase() != "false") {
+        return "Complete"
+    }
+    val updatedAt = Instant.parse(this.lastUpdateTime)
+    val duration = Duration.between(updatedAt, time)
+    return if (duration > limit) {
+        // We have tried scaling over the limit
+        // TODO: This should really be Scaling Timeout
+        "Complete"
+    } else {
+        "Scaling"
+    }
+}
+
+fun DeploymentCondition.findProgressingStatus(): String {
+    if (this.status.toLowerCase() == "false") {
+        return "Failed"
+    }
+    //TODO: double check this value
+    return if (this.reason == "NewReplicaSetAvailable" || this.reason == "NewReplicationControllerAvailable") {
+        "Complete"
+    } else {
+        "DeploymentProgressing"
     }
 }
