@@ -8,7 +8,7 @@ import no.skatteetaten.aurora.mockmvc.extensions.get
 import no.skatteetaten.aurora.mockmvc.extensions.responseJsonPath
 import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
-import no.skatteetaten.aurora.mokey.ProjectDataBuilder
+import no.skatteetaten.aurora.mokey.NamespaceDataBuilder
 import no.skatteetaten.aurora.mokey.service.OpenShiftUserClient
 import org.junit.jupiter.api.Test
 import org.springframework.security.test.context.support.WithUserDetails
@@ -21,7 +21,7 @@ class PermissionControllerTest : AbstractSecurityControllerTest() {
 
     @Test
     fun `Check permissions`() {
-        coEvery { openShiftUserClient.getProjectByNameOrNull("aurora") } returns ProjectDataBuilder().build()
+        coEvery { openShiftUserClient.getNamespaceByNameOrNull("aurora") } returns NamespaceDataBuilder().build()
         coEvery { openShiftUserClient.selfSubjectAccessReview(any()) } returns SelfSubjectAccessReviewBuilder().build()
 
         mockMvc.get(Path("/api/auth/permissions/aurora")) {

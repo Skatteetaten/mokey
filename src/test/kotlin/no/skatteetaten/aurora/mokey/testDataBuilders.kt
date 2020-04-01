@@ -4,6 +4,7 @@ import com.fkorotkov.kubernetes.metadata
 import com.fkorotkov.kubernetes.newContainer
 import com.fkorotkov.kubernetes.newContainerState
 import com.fkorotkov.kubernetes.newContainerStatus
+import com.fkorotkov.kubernetes.newNamespace
 import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
 import com.fkorotkov.kubernetes.newReplicationController
@@ -22,7 +23,6 @@ import com.fkorotkov.openshift.metadata
 import com.fkorotkov.openshift.newDeploymentConfig
 import com.fkorotkov.openshift.newDeploymentTriggerPolicy
 import com.fkorotkov.openshift.newImageStreamTag
-import com.fkorotkov.openshift.newProject
 import com.fkorotkov.openshift.newRoute
 import com.fkorotkov.openshift.newRouteIngress
 import com.fkorotkov.openshift.newRouteIngressCondition
@@ -450,10 +450,10 @@ data class ImageDetailsDataBuilder(
     fun build() = ImageDetails(dockerImageReference, dockerImageTagReference, Instant.now(), environmentVariables)
 }
 
-data class ProjectDataBuilder(val pName: String = "affiliation-name") {
+data class NamespaceDataBuilder(val pName: String = "affiliation-name") {
 
     fun build() =
-        newProject {
+        newNamespace {
             metadata {
                 name = pName
                 namespace = "namespace"

@@ -19,7 +19,7 @@ class PermissionController(
     @GetMapping("/{namespace}")
     fun checkPermissions(@PathVariable namespace: String): AuroraNamespacePermissions {
         return runBlocking {
-            client.getProjectByNameOrNull(namespace)?.let {
+            client.getNamespaceByNameOrNull(namespace)?.let {
                 AuroraNamespacePermissions(
                     namespace = namespace,
                     view = true,
@@ -35,7 +35,7 @@ class PermissionController(
                 resourceAttributes {
                     this.namespace = namespace
                     verb = "update"
-                    resource = "deploymentconfig"
+                    resource = "service"
                 }
             }
         }

@@ -4,8 +4,8 @@ import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import com.fkorotkov.kubernetes.newKubernetesList
+import com.fkorotkov.kubernetes.newNamespaceList
 import com.fkorotkov.kubernetes.newReplicationControllerList
-import com.fkorotkov.openshift.newProjectList
 import io.fabric8.kubernetes.api.model.KubernetesList
 import io.fabric8.kubernetes.internal.KubernetesDeserializer
 import io.mockk.coEvery
@@ -21,8 +21,8 @@ import no.skatteetaten.aurora.mokey.ApplicationDeploymentBuilder
 import no.skatteetaten.aurora.mokey.AuroraStatusBuilder
 import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
+import no.skatteetaten.aurora.mokey.NamespaceDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
-import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import org.junit.jupiter.api.AfterEach
@@ -36,9 +36,9 @@ class ApplicationDataServiceTest {
 
     private val port = SocketUtils.findAvailableTcpPort()
     private val server = initHttpMockServer {
-        rulePathEndsWith("projects") {
-            jsonResponse(newProjectList {
-                items = listOf(ProjectDataBuilder("aurora-dev").build())
+        rulePathEndsWith("namespaces") {
+            jsonResponse(newNamespaceList {
+                items = listOf(NamespaceDataBuilder("aurora-dev").build())
             })
         }
 
@@ -72,7 +72,8 @@ class ApplicationDataServiceTest {
             calculator,
             podService,
             addressService,
-            imageService
+            imageService,
+            true
         )
     private val dataService = ApplicationDataService(
         dataServiceOpenShift,
@@ -165,9 +166,9 @@ class ApplicationDataServiceTest {
     }
 
     private fun registerProjectsResponse() {
-        server.mockRules.add(MockRules({ path?.endsWith("projects") }) {
-            jsonResponse(newProjectList {
-                items = listOf(ProjectDataBuilder("aurora-dev").build())
+        server.mockRules.add(MockRules({ path?.endsWith("namespaces") }) {
+            jsonResponse(newNamespaceList {
+                items = listOf(NamespaceDataBuilder("aurora-dev").build())
             })
         })
     }

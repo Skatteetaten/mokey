@@ -23,6 +23,7 @@ import no.skatteetaten.aurora.mokey.model.DeploymentResult
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.pmapIO
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.Instant
@@ -35,12 +36,13 @@ class ApplicationDataServiceOpenShift(
     val auroraStatusCalculator: AuroraStatusCalculator,
     val podService: PodService,
     val addressService: AddressService,
-    val imageService: ImageService
+    val imageService: ImageService,
+    @Value("\${integrations.openshift:true}") val isOpenShift: Boolean
 ) {
 
     suspend fun findAndGroupAffiliations(affiliations: List<String> = emptyList()): Map<String, List<Environment>> {
         suspend fun findAllEnvironments(): List<Environment> {
-            return client.getAllProjects().map {
+            return client.getAllNamespace().map {
                 Environment.fromNamespace(it.metadata.name)
             }
         }
@@ -177,7 +179,11 @@ class ApplicationDataServiceOpenShift(
 
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, result.selector)
 
-        val applicationAddresses = addressService.getAddresses(namespace, openShiftName)
+        val applicationAddresses = if (isOpenShift) {
+            addressService.getAddresses(namespace, openShiftName)
+        } else {
+            addressService.getIngressAddresses(namespace, openShiftName)
+        }
 
         val auroraStatus = auroraStatusCalculator.calculateAuroraStatus(deployDetails, pods)
 
@@ -363,7 +369,7 @@ fun DeploymentCondition.findProgressingStatus(): String {
     if (this.status.toLowerCase() == "false") {
         return "Failed"
     }
-    //TODO: double check this value
+    // TODO: double check this value
     return if (this.reason == "NewReplicaSetAvailable" || this.reason == "NewReplicationControllerAvailable") {
         "Complete"
     } else {
