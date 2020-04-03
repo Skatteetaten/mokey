@@ -54,7 +54,10 @@ class OpenShiftManagementClient(
             return call.awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
         }
 
-        return call.onErrorContinue(
+        return call.timeout(
+                Duration.ofSeconds(5),
+                Mono.error(TimeoutException("Timed out getting health check for url=${endpoint.url}"))
+            ).onErrorContinue(
                 Predicate { it is WebClientResponseException && it.statusCode.is5xxServerError },
                 BiConsumer { t, u ->
                     val wre = t as WebClientResponseException
@@ -64,9 +67,6 @@ class OpenShiftManagementClient(
                     )
                     HttpResponse(wre.responseBodyAsString, wre.statusCode.value())
                 }
-            ).timeout(
-                Duration.ofSeconds(5),
-                Mono.error(TimeoutException("Timed out getting health check for url=${endpoint.url}"))
             )
             .awaitFirstOrNull() ?: throw IOException("No response for url=${endpoint.url}")
     }
