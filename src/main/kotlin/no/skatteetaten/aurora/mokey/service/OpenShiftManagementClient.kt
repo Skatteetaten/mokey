@@ -65,8 +65,8 @@ class OpenShiftManagementClient(
                     HttpResponse(wre.responseBodyAsString, wre.statusCode.value())
                 }
             ).timeout(
-                Duration.ofSeconds(2),
-                Mono.error(TimeoutException("Timed out getting management interface for url=${endpoint.url}"))
+                Duration.ofSeconds(5),
+                Mono.error(TimeoutException("Timed out getting health check for url=${endpoint.url}"))
             )
             .awaitFirstOrNull() ?: throw IOException("No response for url=${endpoint.url}")
     }

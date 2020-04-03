@@ -89,7 +89,7 @@ class ManagementDataServiceNetworkTest {
             runBlocking {
                 val managementData = service.load(PodDataBuilder().build(), ":8081/links")
                 assertThat(managementData.health?.errorMessage)
-                    .isEqualTo("Timed out getting management interface for url=namespaces/namespace/pods/name:8081/proxy/health")
+                    .isEqualTo("Timed out getting health check for url=namespaces/namespace/pods/name:8081/proxy/health")
             }
         }
     }
