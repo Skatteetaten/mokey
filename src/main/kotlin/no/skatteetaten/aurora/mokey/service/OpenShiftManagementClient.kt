@@ -59,7 +59,7 @@ class OpenShiftManagementClient(
                 BiConsumer { t, u ->
                     val wre = t as WebClientResponseException
                     logger.debug(
-                        "Response ${wre.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
+                        "Response ${wre.statusCode.value()} error url=${endpoint.url} status=HEALTH body={}",
                         wre.responseBodyAsString
                     )
                     HttpResponse(wre.responseBodyAsString, wre.statusCode.value())
