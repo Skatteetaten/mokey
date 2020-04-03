@@ -4,7 +4,7 @@ import io.fabric8.openshift.api.model.DeploymentCondition
 import java.time.Duration
 import java.time.Instant
 
-//this must be here since the same class is in different packages. It is the same as in ApplicationDataServiceOpenshift
+// this must be here since the same class is in different packages. It is the same as in ApplicationDataServiceOpenshift
 
 fun List<DeploymentCondition>.findOpenshiftPhase(scalingLimit: Duration, time: Instant): String? {
     val progressing = this.find { it.type == "Progressing" } ?: return null // TODO nodeploy
