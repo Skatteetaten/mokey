@@ -24,8 +24,6 @@ import reactor.core.publisher.Mono
 import java.io.IOException
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-import java.util.function.BiConsumer
-import java.util.function.Predicate
 
 private val logger = KotlinLogging.logger {}
 
@@ -41,34 +39,23 @@ class OpenShiftManagementClient(
         .maximumSize(100000)
         .build()
 
-    suspend fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): HttpResponse {
+    suspend fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): String {
 
         val call = client.proxyGet<String>(
             pod = endpoint.pod,
             port = endpoint.port,
             path = endpoint.path,
             headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
-        ).flatMap { Mono.just(HttpResponse(it, 200)) }
+        )
 
         if (endpoint.endpointType != EndpointType.HEALTH) {
             return call.awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
         }
 
         return call.timeout(
-                Duration.ofSeconds(5),
-                Mono.error(TimeoutException("Timed out getting health check for url=${endpoint.url}"))
-            ).onErrorContinue(
-                Predicate { it is WebClientResponseException && it.statusCode.is5xxServerError },
-                BiConsumer { t, u ->
-                    val wre = t as WebClientResponseException
-                    logger.debug(
-                        "Response ${wre.statusCode.value()} error url=${endpoint.url} status=HEALTH body={}",
-                        wre.responseBodyAsString
-                    )
-                    HttpResponse(wre.responseBodyAsString, wre.statusCode.value())
-                }
-            )
-            .awaitFirstOrNull() ?: throw IOException("No response for url=${endpoint.url}")
+            Duration.ofSeconds(5),
+            Mono.error(TimeoutException("Timed out getting health check for url=${endpoint.url}"))
+        ).awaitFirstOrNull() ?: throw IOException("No response for url=${endpoint.url}")
     }
 
     fun clearCache() = cache.invalidateAll()
@@ -108,16 +95,28 @@ class OpenShiftManagementClient(
         // If health we should run the code above
         val logger = KotlinLogging.logger {}
         val response = try {
-            proxyManagementInterfaceRaw(endpoint)
+            HttpResponse(proxyManagementInterfaceRaw(endpoint), 200)
         } catch (e: WebClientResponseException) {
-            // 401 this is an error
-            logger.debug("Response error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
-            return toManagementEndpointResult(
-                response = HttpResponse(e.responseBodyAsString, e.rawStatusCode),
-                resultCode = "ERROR_HTTP",
-                errorMessage = e.localizedMessage,
-                endpoint = endpoint
-            )
+            // This needs to be cleaned up after we have coverage of it all
+            val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
+            if (e.statusCode.is5xxServerError) {
+                // 503
+                logger.debug(
+                    "Respone ${e.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
+                    errorResponse.content
+                )
+                // This is the management call succeeeding but returning an error code in the 5x range, which is acceptable
+                errorResponse
+            } else {
+                // 401 this is an error
+                logger.debug("Respone error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
+                return toManagementEndpointResult(
+                    response = HttpResponse(e.responseBodyAsString, e.rawStatusCode),
+                    resultCode = "ERROR_HTTP",
+                    errorMessage = e.localizedMessage,
+                    endpoint = endpoint
+                )
+            }
         } catch (e: Exception) {
             // When there is no response
             logger.debug("Response other exception url=${endpoint.url} status=ERROR body={}", e.message, e)
