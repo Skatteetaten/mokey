@@ -259,8 +259,7 @@ class ApplicationDataServiceOpenShift(
     ): DeployDetails {
 
         // We cast here since these objects are exactly the same just in different package
-        val conditions = dc.status.conditions as List<DeploymentCondition>
-        val phase = conditions.findPhase(Duration.ofMinutes(1L), Instant.now())
+        val phase = dc.status.conditions.findOpenshiftPhase(Duration.ofMinutes(1L), Instant.now())
         return DeployDetails(
             targetReplicas = dc.spec.replicas,
             availableReplicas = dc.status.availableReplicas ?: 0,
