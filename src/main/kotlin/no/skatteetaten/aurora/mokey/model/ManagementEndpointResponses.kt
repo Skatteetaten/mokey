@@ -19,12 +19,18 @@ data class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val
     val url = "namespaces/${pod.metadata.namespace}/pods/${pod.metadata.name}:$port/proxy/$path"
 }
 
-// TODO: Info can have podlinks that are different for each pod, so we might need different cache key there.
 // TODO: We have to make sure that replication is correct here when we go to replicaset
-fun ManagementEndpoint.toCacheKey() =
-    ManagementCacheKey(this.pod.metadata.namespace, this.pod.metadata.name.substringBeforeLast("-"), this.endpointType)
+fun ManagementEndpoint.toCacheKey(): ManagementCacheKey {
+    val name = if (endpointType == EndpointType.INFO) {
+        this.pod.metadata.name
+    } else {
+        this.pod.metadata.name.substringBeforeLast("-")
+    }
 
-data class ManagementCacheKey(val namespace: String, val replicationName: String, val type: EndpointType)
+    return ManagementCacheKey(this.pod.metadata.namespace, name, this.endpointType)
+}
+
+data class ManagementCacheKey(val namespace: String, val name: String, val type: EndpointType)
 
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
