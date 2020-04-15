@@ -25,6 +25,7 @@ import no.skatteetaten.aurora.mokey.NamespaceDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -148,6 +149,25 @@ class ApplicationDataServiceTest {
         assertThat(allAffiliations).hasSize(1)
         assertThat(visibleAffiliations.first()).isEqualTo("aurora")
         assertThat(allAffiliations.first()).isEqualTo("aurora")
+    }
+
+    @Test
+    fun `Create disabled application for type Job`() {
+        // Not to happy with this, but how can I replace this specific rule?
+        server.mockRules.removeAt(1)
+
+        server.mockRules.add(MockRules({ path?.contains("applicationdeployments") }) {
+            jsonResponse(newKubernetesList {
+                items = listOf(ApplicationDeploymentBuilder("Job").build())
+            })
+        })
+
+        dataService.cacheAtStartup()
+
+        val affiliations = dataService.findAllAffiliations()
+        val applicationData = dataService.findAllApplicationData(listOf("aurora"))
+        assertThat(affiliations).hasSize(1)
+        assertThat(applicationData.first().auroraStatus.level).isEqualTo(AuroraStatusLevel.OFF)
     }
 
     @Test
