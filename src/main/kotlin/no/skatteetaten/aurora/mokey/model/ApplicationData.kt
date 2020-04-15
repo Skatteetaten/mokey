@@ -101,7 +101,7 @@ data class HttpResponse(
             content
         } catch (ignored: Exception) {
             content.take(100).let {
-                logger.warn { "Response is not json format: $it" }
+                logger.debug { "Response is not json format: $it" }
                 """{ "error": "Received content is not json", "content": "$it" }"""
             }
         }
