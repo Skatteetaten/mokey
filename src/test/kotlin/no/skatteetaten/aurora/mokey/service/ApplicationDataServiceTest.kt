@@ -153,14 +153,11 @@ class ApplicationDataServiceTest {
 
     @Test
     fun `Create disabled application for type Job`() {
-        // Not to happy with this, but how can I replace this specific rule?
-        server.mockRules.removeAt(1)
-
-        server.mockRules.add(MockRules({ path?.contains("applicationdeployments") }) {
+        server.updateRule("applicationdeployments") {
             jsonResponse(newKubernetesList {
                 items = listOf(ApplicationDeploymentBuilder("Job").build())
             })
-        })
+        }
 
         dataService.cacheAtStartup()
 
@@ -168,6 +165,19 @@ class ApplicationDataServiceTest {
         val applicationData = dataService.findAllApplicationData(listOf("aurora"))
         assertThat(affiliations).hasSize(1)
         assertThat(applicationData.first().auroraStatus.level).isEqualTo(AuroraStatusLevel.OFF)
+    }
+
+    @Test
+    fun `Initialize cache for runnableType not Deployment`() {
+        server.updateRule("applicationdeployments") {
+            jsonResponse(newKubernetesList {
+                items = listOf(ApplicationDeploymentBuilder("type").build())
+            })
+        }
+
+        dataService.cacheAtStartup()
+        val affiliations = dataService.findAllAffiliations()
+        assertThat(affiliations).hasSize(1)
     }
 
     @Test
@@ -186,16 +196,16 @@ class ApplicationDataServiceTest {
     }
 
     private fun registerProjectsResponse() {
-        server.mockRules.add(MockRules({ path?.endsWith("namespaces") }) {
+        server.mockRules.add(MockRules({ path?.endsWith("namespaces") }, {
             jsonResponse(newNamespaceList {
                 items = listOf(NamespaceDataBuilder("aurora-dev").build())
             })
-        })
+        }))
     }
 
     private fun registerEmptyResponses() {
-        server.mockRules.add(MockRules({ true }) {
+        server.mockRules.add(MockRules({ true }, {
             jsonResponse()
-        })
+        }))
     }
 }
