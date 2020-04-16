@@ -479,7 +479,7 @@ data class ImageStreamTagDataBuilder(
         }
 }
 
-class ApplicationDeploymentBuilder {
+data class ApplicationDeploymentBuilder(val runnableType: String? = null) {
     fun build(): ApplicationDeployment =
         newApplicationDeployment {
             metadata {
@@ -497,6 +497,7 @@ class ApplicationDeploymentBuilder {
                         environment = "aurora-dev"
                     )
                 ),
+                runnableType = runnableType,
                 applicationId = "123",
                 applicationName = "mokey",
                 applicationDeploymentId = "234",

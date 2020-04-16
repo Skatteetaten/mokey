@@ -25,6 +25,7 @@ import no.skatteetaten.aurora.mokey.NamespaceDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -151,6 +152,35 @@ class ApplicationDataServiceTest {
     }
 
     @Test
+    fun `Create disabled application for type Job`() {
+        server.updateRule("applicationdeployments") {
+            jsonResponse(newKubernetesList {
+                items = listOf(ApplicationDeploymentBuilder("Job").build())
+            })
+        }
+
+        dataService.cacheAtStartup()
+
+        val affiliations = dataService.findAllAffiliations()
+        val applicationData = dataService.findAllApplicationData(listOf("aurora"))
+        assertThat(affiliations).hasSize(1)
+        assertThat(applicationData.first().auroraStatus.level).isEqualTo(AuroraStatusLevel.OFF)
+    }
+
+    @Test
+    fun `Initialize cache for runnableType not Deployment`() {
+        server.updateRule("applicationdeployments") {
+            jsonResponse(newKubernetesList {
+                items = listOf(ApplicationDeploymentBuilder("type").build())
+            })
+        }
+
+        dataService.cacheAtStartup()
+        val affiliations = dataService.findAllAffiliations()
+        assertThat(affiliations).hasSize(1)
+    }
+
+    @Test
     fun `Initialize cache, add entry and remove entry`() {
         dataService.cacheAtStartup()
         val affiliations = dataService.findAllAffiliations()
@@ -166,16 +196,16 @@ class ApplicationDataServiceTest {
     }
 
     private fun registerProjectsResponse() {
-        server.mockRules.add(MockRules({ path?.endsWith("namespaces") }) {
+        server.mockRules.add(MockRules({ path?.endsWith("namespaces") }, {
             jsonResponse(newNamespaceList {
                 items = listOf(NamespaceDataBuilder("aurora-dev").build())
             })
-        })
+        }))
     }
 
     private fun registerEmptyResponses() {
-        server.mockRules.add(MockRules({ true }) {
+        server.mockRules.add(MockRules({ true }, {
             jsonResponse()
-        })
+        }))
     }
 }
