@@ -29,13 +29,13 @@ class PermissionController(
         }
     }
 
-    suspend fun canViewAndAdmin(namespace: String): Boolean {
+    suspend fun canViewAndAdmin(ns: String): Boolean {
         val review = newSelfSubjectAccessReview {
             spec {
                 resourceAttributes {
-                    this.namespace = namespace
+                    namespace = ns
                     verb = "update"
-                    resource = "service"
+                    resource = "services"
                 }
             }
         }
