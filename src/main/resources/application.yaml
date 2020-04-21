@@ -9,15 +9,10 @@ spring:
         active: local
 
 
-#logback:
-#    access:
-#        config: file:${logback.access.b3}
-
 logging:
     level:
         reactor.netty: ERROR
         no.skatteetaten.aurora: INFO
-        no.skatteetaten.aurora.kubernetes: DEBUG
         org:
             hibernate: WARN
             springframework: WARN
@@ -84,3 +79,7 @@ kubernetes:
 ---
 spring:
     profiles: openshift
+
+logback:
+    access:
+        config: file:${logback.access.b3}
