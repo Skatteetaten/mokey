@@ -6,6 +6,7 @@ import assertk.assertions.isEqualTo
 import com.fkorotkov.kubernetes.newKubernetesList
 import com.fkorotkov.kubernetes.newNamespaceList
 import com.fkorotkov.kubernetes.newReplicationControllerList
+import com.fkorotkov.openshift.newProjectList
 import io.fabric8.kubernetes.api.model.KubernetesList
 import io.fabric8.kubernetes.internal.KubernetesDeserializer
 import io.mockk.coEvery
@@ -23,6 +24,7 @@ import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
 import no.skatteetaten.aurora.mokey.ImageDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.NamespaceDataBuilder
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
+import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
@@ -40,6 +42,12 @@ class ApplicationDataServiceTest {
         rulePathEndsWith("namespaces") {
             jsonResponse(newNamespaceList {
                 items = listOf(NamespaceDataBuilder("aurora-dev").build())
+            })
+        }
+
+        rulePathEndsWith("projects") {
+            jsonResponse(newProjectList {
+                items = listOf(ProjectDataBuilder("aurora-dev").build())
             })
         }
 

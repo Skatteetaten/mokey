@@ -177,7 +177,7 @@ class ApplicationDataService(
 
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
-        val projectNames = runBlocking { client.getAllNamespace() }.map { it.metadata.name }
+        val projectNames = runBlocking { client.getAllProjects() }.map { it.metadata.name }
 
         return values.filter { projectNames.contains(it.namespace) }
     }

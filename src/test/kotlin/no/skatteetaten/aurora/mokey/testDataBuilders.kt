@@ -23,6 +23,7 @@ import com.fkorotkov.openshift.metadata
 import com.fkorotkov.openshift.newDeploymentConfig
 import com.fkorotkov.openshift.newDeploymentTriggerPolicy
 import com.fkorotkov.openshift.newImageStreamTag
+import com.fkorotkov.openshift.newProject
 import com.fkorotkov.openshift.newRoute
 import com.fkorotkov.openshift.newRouteIngress
 import com.fkorotkov.openshift.newRouteIngressCondition
@@ -448,6 +449,17 @@ data class ImageDetailsDataBuilder(
 ) {
 
     fun build() = ImageDetails(dockerImageReference, dockerImageTagReference, Instant.now(), environmentVariables)
+}
+
+data class ProjectDataBuilder(val pName: String = "affiliation-name") {
+
+    fun build() =
+        newProject {
+            metadata {
+                name = pName
+                namespace = "namespace"
+            }
+        }
 }
 
 data class NamespaceDataBuilder(val pName: String = "affiliation-name") {
