@@ -28,6 +28,7 @@ class PodService(
             logger.debug("Getting management result for pod=${pod.metadata.name}")
             val managementResult =
                 managementDataService.load(pod, applicationDeployment.spec.managementPath)
+            logger.debug("/Getting management result for pod=${pod.metadata.name}")
             createPodDetails(pod, managementResult, deployDetails)
         }
     }

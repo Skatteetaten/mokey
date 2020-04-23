@@ -202,6 +202,7 @@ class ApplicationDataServiceOpenShift(
             deployTag = deployTag
         )
 
+        logger.debug("/creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
         return applicationData(applicationDeployment, apd).copy(
             pods = pods,
             imageDetails = imageDetails,

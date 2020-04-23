@@ -9,7 +9,6 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.ResourceNotFoundException
-import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementCacheKey
 import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
@@ -20,9 +19,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClientResponseException
-import reactor.core.publisher.Mono
-import java.io.IOException
-import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 private val logger = KotlinLogging.logger {}
@@ -48,14 +44,16 @@ class OpenShiftManagementClient(
             headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
         )
 
-        if (endpoint.endpointType != EndpointType.HEALTH) {
-            return call.awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
-        }
+        // if (endpoint.endpointType != EndpointType.HEALTH) {
+        return call.awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
+        // }
 
+        /*
         return call.timeout(
             Duration.ofSeconds(5),
             Mono.error(TimeoutException("Timed out getting health check for url=${endpoint.url}"))
         ).awaitFirstOrNull() ?: throw IOException("No response for url=${endpoint.url}")
+         */
     }
 
     fun clearCache() = cache.invalidateAll()
@@ -102,14 +100,14 @@ class OpenShiftManagementClient(
             if (e.statusCode.is5xxServerError) {
                 // 503
                 logger.debug(
-                    "Respone ${e.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
+                    "Response ${e.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
                     errorResponse.content
                 )
                 // This is the management call succeeeding but returning an error code in the 5x range, which is acceptable
                 errorResponse
             } else {
                 // 401 this is an error
-                logger.debug("Respone error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
+                logger.debug("Response error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
                 return toManagementEndpointResult(
                     response = HttpResponse(e.responseBodyAsString, e.rawStatusCode),
                     resultCode = "ERROR_HTTP",
