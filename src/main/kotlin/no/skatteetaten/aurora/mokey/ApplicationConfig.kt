@@ -14,6 +14,7 @@ import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
+import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.kubernetes.defaultHeaders
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
@@ -30,6 +31,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import java.security.KeyStore
+import java.time.Duration
 
 enum class ServiceTypes {
     CANTUS
@@ -55,7 +57,10 @@ class ApplicationConfig(
         builder: WebClient.Builder,
         @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?
     ): KubernetesReactorClient {
-        return kubeernetesClientConfig.createServiceAccountReactorClient(builder, trustStore).apply {
+        return kubeernetesClientConfig.copy(
+            retry = RetryConfiguration(0),
+            timeout = kubeernetesClientConfig.timeout.copy(read = Duration.ofSeconds(2))
+        ).createServiceAccountReactorClient(builder, trustStore).apply {
             webClientBuilder.defaultHeaders(applicationName)
         }.build()
     }

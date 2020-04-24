@@ -46,7 +46,7 @@ openshift:
 
 kubernetes:
     timeout:
-        connect: 2s
+        connect: 1s
         read: 10s
     retry:
         time: 3

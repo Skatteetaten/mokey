@@ -9,7 +9,6 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.ResourceNotFoundException
-import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementCacheKey
 import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
@@ -20,9 +19,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClientResponseException
-import reactor.core.publisher.Mono
-import java.io.IOException
-import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 private val logger = KotlinLogging.logger {}
@@ -48,14 +44,16 @@ class OpenShiftManagementClient(
             headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
         )
 
-        if (endpoint.endpointType != EndpointType.HEALTH) {
+        // if (endpoint.endpointType != EndpointType.HEALTH) {
             return call.awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
-        }
+        // }
 
+        /*
         return call.timeout(
             Duration.ofSeconds(2),
             Mono.error(TimeoutException("Timed out getting health check for url=${endpoint.url}"))
         ).awaitFirstOrNull() ?: throw IOException("No response for url=${endpoint.url}")
+         */
     }
 
     fun clearCache() = cache.invalidateAll()
@@ -77,7 +75,7 @@ class OpenShiftManagementClient(
         return cachedResponse ?: findJsonResource<T>(endpoint).also {
             // TODO: do we need to fine tune this?
             if (!it.isSuccess && it.response?.code == 503) {
-                logger.debug("There is a 503 error that does not succeed")
+                logger.info("We did not cache this reponse there is a 503 error that does not succeed {}", it.response)
             } else {
                 logger.debug("Cached management interface $key")
                 cache.put(key, it)
