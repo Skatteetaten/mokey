@@ -99,15 +99,15 @@ class OpenShiftManagementClient(
             val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
             if (e.statusCode.is5xxServerError) {
                 // 503
-                logger.debug(
-                    "Response ${e.statusCode.value()} error url=${endpoint.url} status=ERROR body={}",
+                logger.info(
+                    "WebClientResponse ${e.statusCode.value()} url=${endpoint.url} status=ERROR body={}",
                     errorResponse.content
                 )
                 // This is the management call succeeeding but returning an error code in the 5x range, which is acceptable
                 errorResponse
             } else {
                 // 401 this is an error
-                logger.debug("Response error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
+                logger.info("Response error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
                 return toManagementEndpointResult(
                     response = HttpResponse(e.responseBodyAsString, e.rawStatusCode),
                     resultCode = "ERROR_HTTP",
