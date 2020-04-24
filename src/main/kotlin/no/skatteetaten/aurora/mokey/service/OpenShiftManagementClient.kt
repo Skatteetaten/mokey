@@ -98,7 +98,7 @@ class OpenShiftManagementClient(
             val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
             if (e.statusCode.is5xxServerError) {
                 // 503
-                logger.info(
+                logger.debug(
                     "WebClientResponse ${e.statusCode.value()} url=${endpoint.url} status=ERROR body={}",
                     errorResponse.content
                 )
