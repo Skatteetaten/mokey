@@ -17,7 +17,6 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
@@ -82,7 +81,6 @@ class ManagementDataServiceNetworkTest {
         assertThat(requests).hasSize(4)
     }
 
-    @Disabled
     @Test
     fun `Time out when no response is returned`() {
         val error = MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)
@@ -118,7 +116,6 @@ class ManagementDataServiceNetworkTest {
         }
     }
 
-    @Disabled
     @Test
     fun `Timeout given no response from health`() {
         val healthTimeoutResponse = MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)

@@ -8,7 +8,7 @@
   },
   "java": {
     "mainClass": "no.skatteetaten.aurora.mokey.MainKt",
-    "jvmOpts": "-Dspring.profiles.active=openshift",
+    "jvmOpts": "-Dspring.profiles.active=openshift -Dreactor.netty.pool.maxConnections=1000",
     "applicationArgs": "--logging.config=${LOGBACK_FILE}"
   }
 }
