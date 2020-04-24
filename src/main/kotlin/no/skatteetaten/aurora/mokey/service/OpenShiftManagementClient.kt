@@ -73,8 +73,7 @@ class OpenShiftManagementClient(
             logger.debug("Found cached response for $key")
         }
         return cachedResponse ?: findJsonResource<T>(endpoint).also {
-            // TODO: do we need to fine tune this?
-            if (!it.isSuccess && it.response?.code == 503) {
+            if (!it.isSuccess && it.response?.code == 503 && it.response.content.contains("Application is not available")) {
                 logger.info("We did not cache this reponse there is a 503 error that does not succeed {}", it.response)
             } else {
                 logger.debug("Cached management interface $key")
