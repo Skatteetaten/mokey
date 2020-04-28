@@ -7,8 +7,13 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
+import io.netty.channel.ChannelOption
+import io.netty.handler.timeout.ReadTimeoutHandler
+import io.netty.handler.timeout.WriteTimeoutHandler
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
+import no.skatteetaten.aurora.kubernetes.RetryConfiguration
+import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.url
@@ -17,13 +22,16 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
+import org.springframework.web.reactive.function.client.WebClient
+import reactor.netty.http.client.HttpClient
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
+import java.util.concurrent.TimeUnit
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ManagementDataServiceNetworkTest {
@@ -31,9 +39,32 @@ class ManagementDataServiceNetworkTest {
     private val server = MockWebServer()
     private val service = ManagementDataService(
         OpenShiftManagementClient(
-            KubernetesReactorClient(server.url, "test-token"), false
+            KubernetesReactorClient(
+                webClientWithTimeout(),
+                object : TokenFetcher {
+                    override fun token() = "test-token"
+                }, RetryConfiguration()
+            ),
+            false
         )
     )
+
+    private fun webClientWithTimeout(): WebClient {
+        return WebClient
+            .builder()
+            .baseUrl(server.url)
+            .clientConnector(
+                ReactorClientHttpConnector(HttpClient.create().compress(true)
+                    .tcpConfiguration {
+                        it.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 500)
+                            .doOnConnected { connection ->
+                                connection.addHandlerLast(ReadTimeoutHandler(500, TimeUnit.MILLISECONDS))
+                                connection.addHandlerLast(WriteTimeoutHandler(500, TimeUnit.MILLISECONDS))
+                            }
+                    }
+                ))
+            .build()
+    }
 
     private val linksResponse = jsonResponse(
         HalResource(_links = Links().apply {
@@ -82,20 +113,6 @@ class ManagementDataServiceNetworkTest {
         assertThat(requests).hasSize(4)
     }
 
-    @Disabled
-    @Test
-    fun `Time out when no response is returned`() {
-        val error = MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)
-
-        server.execute(linksResponse, error) {
-            runBlocking {
-                val managementData = service.load(PodDataBuilder().build(), ":8081/links")
-                assertThat(managementData.health?.errorMessage)
-                    .isEqualTo("Timed out getting health check for url=namespaces/namespace/pods/name:8081/proxy/health")
-            }
-        }
-    }
-
     @ParameterizedTest
     @EnumSource(
         value = SocketPolicy::class,
@@ -118,9 +135,8 @@ class ManagementDataServiceNetworkTest {
         }
     }
 
-    @Disabled
     @Test
-    fun `Timeout given no response from health`() {
+    fun `Timeout given no response from health throws ReadTimeoutException`() {
         val healthTimeoutResponse = MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)
 
         val requests = server.execute(linksResponse, healthTimeoutResponse) {
