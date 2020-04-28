@@ -102,7 +102,7 @@ class OpenShiftManagementClient(
                     "WebClientResponse ${e.statusCode.value()} url=${endpoint.url} status=ERROR body={}",
                     errorResponse.content
                 )
-                // This is the management call succeeeding but returning an error code in the 5x range, which is acceptable
+                // This is the management call succeeding but returning an error code in the 5x range, which is acceptable
                 errorResponse
             } else {
                 // 401 this is an error
