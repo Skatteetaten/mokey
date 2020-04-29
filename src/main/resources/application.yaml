@@ -49,7 +49,7 @@ kubernetes:
         connect: 1s
         read: 10s
     retry:
-        time: 3
+        times: 3
         min: 100ms
         max: 2s
 ---
