@@ -44,16 +44,7 @@ class OpenShiftManagementClient(
             headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
         )
 
-        // if (endpoint.endpointType != EndpointType.HEALTH) {
-            return call.awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
-        // }
-
-        /*
-        return call.timeout(
-            Duration.ofSeconds(2),
-            Mono.error(TimeoutException("Timed out getting health check for url=${endpoint.url}"))
-        ).awaitFirstOrNull() ?: throw IOException("No response for url=${endpoint.url}")
-         */
+        return call.awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
     }
 
     fun clearCache() = cache.invalidateAll()
@@ -73,8 +64,16 @@ class OpenShiftManagementClient(
             logger.debug("Found cached response for $key")
         }
         return cachedResponse ?: findJsonResource<T>(endpoint).also {
-            if (!it.isSuccess && it.response?.code == 503 && it.response.content.contains("Application is not available")) {
-                logger.info("We did not cache this reponse there is a 503 error that does not succeed {}", it.response)
+            if (!it.isSuccess && it.response?.code == 503 && (
+                    it.response.content.contains("Application is not available") ||
+                        it.response.content.contains("Error: 'dial tcp")
+                    )
+            ) {
+                logger.info(
+                    "We did not cache this reponse there is a 503 error that does not succeed url={} response={}",
+                    endpoint.url,
+                    it.response
+                )
             } else {
                 logger.debug("Cached management interface $key")
                 cache.put(key, it)
@@ -83,6 +82,19 @@ class OpenShiftManagementClient(
     }
 
     /*
+
+     Må ikke cache disse
+     "info" : {
+        "hasResponse" : true,
+        "textResponse" : "{ \"error\": \"Received content is not json\", \"content\": \"Error: 'dial tcp :8081: connect: connection refused'\nTrying to reach: 'http://:8081/info'\" }",
+        "httpCode" : 503,
+        "createdAt" : "2020-04-30T04:18:30.532683Z",
+        "url" : "namespaces/folk-robusthet/pods/dsf-synkronisering-45-mt4m5:8081/proxy/info",
+        "error" : {
+          "code" : "INVALID_JSON",
+          "message" : "Unrecognized token 'Error': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n at [Source: (String)\"Error: 'dial tcp :8081: connect: connection refused'\nTrying to reach: 'http://:8081/info'\"; line: 1, column: 6]"
+        }
+      },
       What if we want to find prometheus endpoint here that is not json?
 
       Refactoring suggestion, make the proxy call return an exception or an success rather then doing the parsing here
