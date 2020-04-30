@@ -64,7 +64,7 @@ class OpenShiftManagementClient(
             logger.debug("Found cached response for $key")
         }
         return cachedResponse ?: findJsonResource<T>(endpoint).also {
-            //We cannot cache this since somethings there are actual network errors
+            // We cannot cache this since somethings there are actual network errors
             if (!it.isSuccess && it.response?.code == 503) {
                 logger.debug(
                     "We did not cache this reponse there is a 503 error that does not succeed url={} response={}",
@@ -79,19 +79,6 @@ class OpenShiftManagementClient(
     }
 
     /*
-
-     Må ikke cache disse
-     "info" : {
-        "hasResponse" : true,
-        "textResponse" : "{ \"error\": \"Received content is not json\", \"content\": \"Error: 'dial tcp :8081: connect: connection refused'\nTrying to reach: 'http://:8081/info'\" }",
-        "httpCode" : 503,
-        "createdAt" : "2020-04-30T04:18:30.532683Z",
-        "url" : "namespaces/folk-robusthet/pods/dsf-synkronisering-45-mt4m5:8081/proxy/info",
-        "error" : {
-          "code" : "INVALID_JSON",
-          "message" : "Unrecognized token 'Error': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n at [Source: (String)\"Error: 'dial tcp :8081: connect: connection refused'\nTrying to reach: 'http://:8081/info'\"; line: 1, column: 6]"
-        }
-      },
       What if we want to find prometheus endpoint here that is not json?
 
       Refactoring suggestion, make the proxy call return an exception or an success rather then doing the parsing here
