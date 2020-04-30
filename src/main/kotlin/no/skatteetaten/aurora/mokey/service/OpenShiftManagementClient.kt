@@ -64,12 +64,9 @@ class OpenShiftManagementClient(
             logger.debug("Found cached response for $key")
         }
         return cachedResponse ?: findJsonResource<T>(endpoint).also {
-            if (!it.isSuccess && it.response?.code == 503 && (
-                    it.response.content.contains("Application is not available") ||
-                        it.response.content.contains("Error: 'dial tcp")
-                    )
-            ) {
-                logger.info(
+            //We cannot cache this since somethings there are actual network errors
+            if (!it.isSuccess && it.response?.code == 503) {
+                logger.debug(
                     "We did not cache this reponse there is a 503 error that does not succeed url={} response={}",
                     endpoint.url,
                     it.response
