@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.SerializationFeature
 import io.fabric8.kubernetes.api.model.KubernetesList
 import io.fabric8.kubernetes.internal.KubernetesDeserializer
-import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -20,49 +19,27 @@ import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
-import org.springframework.boot.actuate.metrics.web.client.RestTemplateExchangeTags
-import org.springframework.boot.actuate.metrics.web.client.RestTemplateExchangeTagsProvider
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpRequest
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
-import org.springframework.http.client.ClientHttpResponse
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
-import java.util.Arrays
 import java.util.concurrent.TimeUnit
 
 enum class ServiceTypes {
     CANTUS
 }
 
-@Component
-class AuroraRestTemplateTagsProvider : RestTemplateExchangeTagsProvider {
-
-    override fun getTags(
-        urlTemplate: String?,
-        request: HttpRequest,
-        response: ClientHttpResponse?
-    ): Iterable<Tag> {
-
-        return Arrays.asList(
-            RestTemplateExchangeTags.method(request),
-            RestTemplateExchangeTags.status(response),
-            RestTemplateExchangeTags.uri(urlTemplate)
-        )
-    }
-}
 
 @Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
@@ -80,10 +57,9 @@ class ApplicationConfig(
 
     @Bean
     fun restTemplate(
-        builder: RestTemplateBuilder,
         @Value("\${spring.application.name}") applicationName: String
     ): RestTemplate {
-        return builder.requestFactory { createRequestFactory(2, 2) }
+        return RestTemplateBuilder().requestFactory { createRequestFactory(2, 2) }
             .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
                 request.headers.apply {
                     // We want to get the V2 format of the actuator health response
