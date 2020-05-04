@@ -22,6 +22,8 @@ plugins {
 }
 
 dependencies {
+    implementation("com.squareup.okhttp3:okhttp:3.14.4")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.4")
     implementation("io.projectreactor.addons:reactor-extra:3.3.3.RELEASE")

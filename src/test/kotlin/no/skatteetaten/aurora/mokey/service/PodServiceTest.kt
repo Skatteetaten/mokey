@@ -6,7 +6,6 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
-import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.url
 import no.skatteetaten.aurora.mokey.ApplicationDeploymentBuilder
@@ -15,14 +14,17 @@ import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.DiscoveryLink
 import no.skatteetaten.aurora.mokey.model.DiscoveryResponse
 import okhttp3.mockwebserver.MockWebServer
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.springframework.web.client.RestTemplate
 
+@Disabled
 class PodServiceTest {
 
     private val server = MockWebServer()
     private val podService = PodService(
         OpenShiftServiceAccountClient(KubernetesCoroutinesClient(server.url, "test-token")),
-        ManagementDataService(OpenShiftManagementClient(KubernetesReactorClient(server.url, "test-token"), false))
+        ManagementDataService(OpenShiftManagementClient(RestTemplate(), false))
     )
 
     @Test

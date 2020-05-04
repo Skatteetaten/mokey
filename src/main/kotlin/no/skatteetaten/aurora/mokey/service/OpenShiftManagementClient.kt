@@ -5,19 +5,18 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import kotlinx.coroutines.reactive.awaitFirstOrNull
 import mu.KotlinLogging
-import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.ResourceNotFoundException
 import no.skatteetaten.aurora.mokey.model.HttpResponse
 import no.skatteetaten.aurora.mokey.model.ManagementCacheKey
 import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.toCacheKey
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.util.concurrent.TimeUnit
 
@@ -25,7 +24,7 @@ private val logger = KotlinLogging.logger {}
 
 @Service
 class OpenShiftManagementClient(
-    @Qualifier("managementClient") val client: KubernetesReactorClient,
+    val client: RestTemplate,
     @Value("\${mokey.management.cache:true}") val cacheManagement: Boolean
 ) {
 
@@ -35,16 +34,8 @@ class OpenShiftManagementClient(
         .maximumSize(100000)
         .build()
 
-    suspend fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): String {
-
-        val call = client.proxyGet<String>(
-            pod = endpoint.pod,
-            port = endpoint.port,
-            path = endpoint.path,
-            headers = mapOf(HttpHeaders.ACCEPT to "application/vnd.spring-boot.actuator.v2+json,application/json")
-        )
-
-        return call.awaitFirstOrNull() ?: throw ResourceNotFoundException("No response for url=${endpoint.url}")
+    fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): String {
+        return client.exchange(endpoint.url, HttpMethod.GET, HttpEntity.EMPTY, String::class.java).body ?: ""
     }
 
     fun clearCache() = cache.invalidateAll()

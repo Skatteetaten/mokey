@@ -11,9 +11,6 @@ import io.netty.channel.ChannelOption
 import io.netty.handler.timeout.ReadTimeoutHandler
 import io.netty.handler.timeout.WriteTimeoutHandler
 import kotlinx.coroutines.runBlocking
-import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
-import no.skatteetaten.aurora.kubernetes.RetryConfiguration
-import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.url
@@ -22,31 +19,27 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.http.client.HttpClient
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
 import java.util.concurrent.TimeUnit
 
+@Disabled
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ManagementDataServiceNetworkTest {
 
     private val server = MockWebServer()
     private val service = ManagementDataService(
-        OpenShiftManagementClient(
-            KubernetesReactorClient(
-                webClientWithTimeout(),
-                object : TokenFetcher {
-                    override fun token() = "test-token"
-                }, RetryConfiguration()
-            ),
-            false
-        )
+        OpenShiftManagementClient(RestTemplate(), true)
+
     )
 
     private fun webClientWithTimeout(): WebClient {

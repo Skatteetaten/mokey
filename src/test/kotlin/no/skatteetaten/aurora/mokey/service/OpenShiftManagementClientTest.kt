@@ -8,10 +8,8 @@ import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.runBlocking
-import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
-import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.url
 import no.skatteetaten.aurora.mokey.PodDataBuilder
 import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.HealthStatus
@@ -20,6 +18,7 @@ import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.intellij.lang.annotations.Language
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.params.ParameterizedTest
@@ -30,14 +29,16 @@ import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.web.client.RestTemplate
 import java.io.File
 import java.time.Instant
 import java.util.stream.Stream
 
+@Disabled
 class OpenShiftManagementClientTest {
     private val server = MockWebServer()
     private val client = OpenShiftManagementClient(
-        client = KubernetesReactorClient(server.url, "test-token"),
+        client = RestTemplate(),
         cacheManagement = false
     )
 

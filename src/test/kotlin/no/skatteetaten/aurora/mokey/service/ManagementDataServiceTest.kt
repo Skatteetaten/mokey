@@ -6,32 +6,27 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import com.fkorotkov.kubernetes.newPod
 import kotlinx.coroutines.runBlocking
-import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
-import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.HttpMock
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.httpMockServer
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
 import no.skatteetaten.aurora.mokey.PodDataBuilder
 import okhttp3.mockwebserver.MockResponse
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
+import org.springframework.web.client.RestTemplate
 import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
 
+@Disabled
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ManagementDataServiceTest {
 
     private val port = SocketUtils.findAvailableTcpPort()
     private val service = ManagementDataService(
-        OpenShiftManagementClient(
-            KubernetesReactorClient(
-                baseUrl = "http://localhost:$port",
-                token = "test-token",
-                retryConfiguration = RetryConfiguration(times = 0)
-            ), false
-        )
+        OpenShiftManagementClient(RestTemplate(), false)
     )
 
     @AfterEach

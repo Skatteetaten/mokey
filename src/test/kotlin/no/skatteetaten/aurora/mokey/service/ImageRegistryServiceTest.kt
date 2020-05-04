@@ -13,10 +13,12 @@ import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.setJsonFileAsBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.web.reactive.function.client.WebClient
 
+@Disabled
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ImageRegistryServiceTest {
     private val server = MockWebServer()
