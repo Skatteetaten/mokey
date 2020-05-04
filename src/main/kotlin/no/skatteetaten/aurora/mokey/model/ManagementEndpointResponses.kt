@@ -17,7 +17,7 @@ enum class EndpointType(val key: String) {
 
 data class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endpointType: EndpointType) {
     // val url = "namespaces/${pod.metadata.namespace}/pods/${pod.metadata.name}:$port/proxy/$path"
-    val url = "http://${pod.status.hostIP}$path"
+    val url = "http://${pod.status.hostIP}:$port/$path"
 }
 
 // TODO: We have to make sure that replication is correct here when we go to replicaset

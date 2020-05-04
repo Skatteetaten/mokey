@@ -40,7 +40,6 @@ enum class ServiceTypes {
     CANTUS
 }
 
-
 @Target(AnnotationTarget.TYPE, AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
 @Qualifier
