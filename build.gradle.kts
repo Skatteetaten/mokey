@@ -22,8 +22,7 @@ plugins {
 }
 
 dependencies {
-    implementation("com.squareup.okhttp3:okhttp:3.14.4")
-
+    implementation("com.squareup.okhttp3:okhttp:4.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.3.4")
     implementation("io.projectreactor.addons:reactor-extra:3.3.3.RELEASE")
@@ -45,8 +44,7 @@ dependencies {
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.21")
     testImplementation("com.nhaarman:mockito-kotlin:1.6.0")
     testImplementation("no.skatteetaten.aurora:mockmvc-extensions-kotlin:1.0.13")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.5.0")
-    testImplementation("com.squareup.okhttp3:okhttp:4.5.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.6.0")
     testImplementation("com.ninja-squad:springmockk:2.0.1")
 }
 

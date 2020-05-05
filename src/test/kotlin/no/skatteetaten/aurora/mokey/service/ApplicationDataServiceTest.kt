@@ -30,12 +30,10 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
 
-@Disabled
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ApplicationDataServiceTest {
 
