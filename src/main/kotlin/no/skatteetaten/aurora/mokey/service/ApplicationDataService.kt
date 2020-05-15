@@ -75,7 +75,13 @@ class ApplicationDataService(
         fixedDelayString = "\${mokey.crawler.rateSeconds:120000}",
         initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
     )
-    fun cache() = refreshCache(affiliations)
+    fun cache() {
+        kotlin.runCatching {
+            refreshCache(affiliations)
+        }.onFailure {
+            logger.error("Error in schedule ${it.localizedMessage}")
+        }
+    }
 
     fun refreshItem(applicationId: String) =
         findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
