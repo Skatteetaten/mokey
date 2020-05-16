@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
@@ -16,6 +17,8 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.security.KeyStore
 import java.util.regex.Pattern
+
+private val logger = KotlinLogging.logger {}
 
 @Component
 class BearerAuthenticationManager(
@@ -48,6 +51,8 @@ class BearerAuthenticationManager(
 
             val user = runBlocking {
                 client.get(newCurrentUser())
+            }.also {
+                logger.info("runBlocking completed Authenticate")
             }
 
             return PreAuthenticatedAuthenticationToken(user, token)

@@ -10,6 +10,7 @@ import com.fkorotkov.openshift.newProjectList
 import io.fabric8.kubernetes.api.model.KubernetesList
 import io.fabric8.kubernetes.internal.KubernetesDeserializer
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
@@ -33,6 +34,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
+import java.lang.IllegalArgumentException
+import java.lang.RuntimeException
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ApplicationDataServiceTest {
@@ -215,5 +218,22 @@ class ApplicationDataServiceTest {
         server.mockRules.add(MockRules({ true }, {
             jsonResponse()
         }))
+    }
+}
+
+class ApplicationDataServiceTryCatchTest {
+
+    @Test
+    fun `Catch exception in refresh cache`() {
+        val dataServiceOpenshift = mockk<ApplicationDataServiceOpenShift>()
+        coEvery { dataServiceOpenshift.findAndGroupAffiliations() } throws
+            RuntimeException(
+                "test test",
+                IllegalArgumentException("root cause message")
+            )
+        val service = ApplicationDataService(dataServiceOpenshift, mockk(), "", mockk())
+        service.cache()
+
+        coVerify { dataServiceOpenshift.findAndGroupAffiliations() }
     }
 }

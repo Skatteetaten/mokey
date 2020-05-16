@@ -38,6 +38,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     implementation("uk.q3c.rest:hal-kotlin:0.5.4.0.db32476")
     implementation("com.jayway.jsonpath:json-path:2.4.0")
+    implementation("org.apache.commons:commons-lang3:3.10")
 
     testImplementation("io.mockk:mockk:1.10.0")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.21")

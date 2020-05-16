@@ -4,11 +4,14 @@ import com.fkorotkov.kubernetes.authorization.newSelfSubjectAccessReview
 import com.fkorotkov.kubernetes.authorization.resourceAttributes
 import com.fkorotkov.kubernetes.authorization.spec
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.service.OpenShiftUserClient
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+
+private val logger = KotlinLogging.logger {}
 
 @RestController
 @RequestMapping("/api/auth/permissions")
@@ -26,6 +29,8 @@ class PermissionController(
                     admin = canViewAndAdmin(namespace)
                 )
             } ?: AuroraNamespacePermissions(namespace = namespace)
+        }.also {
+            logger.info("runBlocking completed checkPermissions namespace:$namespace")
         }
     }
 

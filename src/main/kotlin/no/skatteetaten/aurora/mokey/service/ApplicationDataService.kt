@@ -6,6 +6,7 @@ import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
+import org.apache.commons.lang3.exception.ExceptionUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -76,10 +77,11 @@ class ApplicationDataService(
         initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
     )
     fun cache() {
-        kotlin.runCatching {
+        try {
             refreshCache(affiliations)
-        }.onFailure {
-            logger.error("Error in schedule ${it.localizedMessage}")
+        } catch (e: Exception) {
+            val rootCauseMessage = ExceptionUtils.getRootCauseMessage(e)
+            logger.error("Error in schedule, type=${e::class.simpleName} msg=\"${e.localizedMessage}\" rootCause=\"$rootCauseMessage\"")
         }
     }
 
@@ -90,6 +92,8 @@ class ApplicationDataService(
                     current.namespace,
                     current.applicationDeploymentName
                 )
+            }.also {
+                logger.info("runBlocking completed refreshItem applicationId:$applicationId")
             }
             addCacheEntry(applicationId, data)
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
@@ -97,6 +101,8 @@ class ApplicationDataService(
     fun cacheAtStartup() {
         val affiliation = runBlocking(MDCContext()) {
             applicationDataService.findAndGroupAffiliations(affiliations)
+        }.also {
+            logger.info("runBlocking completed cacheAtStartup")
         }
         affiliation.forEach { refreshAffiliation(it.key, it.value) }
     }
@@ -121,6 +127,8 @@ class ApplicationDataService(
         val watch = StopWatch().also { it.start() }
         val affiliations = runBlocking(MDCContext()) {
             applicationDataService.findAndGroupAffiliations(affiliationInput)
+        }.also {
+            logger.info("runBlocking completed refreshCache affiliations:$affiliationInput")
         }
 
         affiliations.forEach { (affiliation, env) ->
@@ -155,6 +163,8 @@ class ApplicationDataService(
         val time = withStopWatch {
             applications += runBlocking(MDCContext()) {
                 applicationDataService.findAllApplicationDataForEnv(environments = env)
+            }.also {
+                logger.info("runBlocking completed refreshDeployments")
             }
         }
 
@@ -183,7 +193,9 @@ class ApplicationDataService(
 
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
-        val projectNames = runBlocking { client.getAllProjects() }.map { it.metadata.name }
+        val projectNames = runBlocking { client.getAllProjects() }
+            .also { logger.info("runBlocking completed getAllProjects") }
+            .map { it.metadata.name }
 
         return values.filter { projectNames.contains(it.namespace) }
     }
