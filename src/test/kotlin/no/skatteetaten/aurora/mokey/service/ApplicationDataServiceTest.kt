@@ -36,6 +36,7 @@ import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
 import java.lang.IllegalArgumentException
 import java.lang.RuntimeException
+import java.time.Duration
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ApplicationDataServiceTest {
@@ -91,7 +92,8 @@ class ApplicationDataServiceTest {
         dataServiceOpenShift,
         OpenShiftUserClient(coroutinesClient),
         "aurora",
-        mockk(relaxed = true)
+        mockk(relaxed = true),
+        Duration.ofMinutes(3)
     )
 
     @BeforeEach
@@ -231,7 +233,7 @@ class ApplicationDataServiceTryCatchTest {
                 "test test",
                 IllegalArgumentException("root cause message")
             )
-        val service = ApplicationDataService(dataServiceOpenshift, mockk(), "", mockk())
+        val service = ApplicationDataService(dataServiceOpenshift, mockk(), "", mockk(), Duration.ofMinutes(3))
         service.cache()
 
         coVerify { dataServiceOpenshift.findAndGroupAffiliations() }

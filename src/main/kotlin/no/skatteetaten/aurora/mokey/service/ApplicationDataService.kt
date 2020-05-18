@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
+import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
@@ -21,8 +23,8 @@ class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,
     val client: OpenShiftUserClient,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
-    val statusRegistry: ApplicationStatusRegistry
-
+    val statusRegistry: ApplicationStatusRegistry,
+    @Value("\${mokey.crawler.timeout:3m}") val crawlerTimeout: Duration
 ) {
     val affiliations: List<String>
         get() = if (affiliationsConfig.isBlank()) emptyList()
@@ -78,10 +80,11 @@ class ApplicationDataService(
     )
     fun cache() {
         kotlin.runCatching {
-            runBlocking {
-                refreshCache(affiliations)
+            runBlocking(MDCContext()) {
+                withTimeout(crawlerTimeout.toMillis()) {
+                    refreshCache(affiliations)
+                }
             }
-
         }.onFailure {
             val rootCauseMessage = ExceptionUtils.getRootCauseMessage(it)
             logger.error("Exception in schedule, type=${it::class.simpleName} msg=\"${it.localizedMessage}\" rootCause=\"$rootCauseMessage\"")
@@ -106,12 +109,12 @@ class ApplicationDataService(
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
 
     fun cacheAtStartup() {
-        val affiliation = runBlocking(MDCContext()) {
-            applicationDataService.findAndGroupAffiliations(affiliations)
+        runBlocking(MDCContext()) {
+            val affiliation = applicationDataService.findAndGroupAffiliations(affiliations)
+            affiliation.forEach { refreshAffiliation(it.key, it.value) }
         }.also {
             logger.info("runBlocking completed cacheAtStartup")
         }
-        affiliation.forEach { refreshAffiliation(it.key, it.value) }
     }
 
     private fun addCacheEntry(applicationId: String, data: ApplicationData) {
@@ -129,14 +132,10 @@ class ApplicationDataService(
         }
     }
 
-    fun refreshCache(affiliationInput: List<String> = emptyList()) {
+    suspend fun refreshCache(affiliationInput: List<String> = emptyList()) {
 
         val watch = StopWatch().also { it.start() }
-        val affiliations = runBlocking(MDCContext()) {
-            applicationDataService.findAndGroupAffiliations(affiliationInput)
-        }.also {
-            logger.info("runBlocking completed refreshCache affiliations:$affiliationInput")
-        }
+        val affiliations = applicationDataService.findAndGroupAffiliations(affiliationInput)
 
         affiliations.forEach { (affiliation, env) ->
             refreshAffiliation(affiliation, env)
@@ -148,7 +147,7 @@ class ApplicationDataService(
         logger.info("Crawler done total cached=${cache.keys.size} timeSeconds=$time")
     }
 
-    private fun refreshAffiliation(
+    private suspend fun refreshAffiliation(
         affiliation: String,
         env: List<Environment>
     ) {
@@ -162,17 +161,18 @@ class ApplicationDataService(
         }
     }
 
-    private fun refreshDeployments(
+    private suspend fun refreshDeployments(
         affiliation: String,
         env: List<Environment>
     ): List<ApplicationData> {
-        val applications = mutableListOf<ApplicationData>()
-        val time = withStopWatch {
-            applications += runBlocking(MDCContext()) {
-                applicationDataService.findAllApplicationDataForEnv(environments = env)
-            }.also {
-                logger.info("runBlocking completed refreshDeployments")
-            }
+        val watch = StopWatch().also {
+            it.start()
+        }
+
+        val applications = applicationDataService.findAllApplicationDataForEnv(environments = env)
+        watch.stop()
+        if(applications.isEmpty()) {
+            return applications
         }
 
         applications.forEach {
@@ -181,7 +181,7 @@ class ApplicationDataService(
         }
 
         if (applications.isNotEmpty()) {
-            logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${time.totalTimeSeconds}")
+            logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${watch.totalTimeMillis}")
         }
 
         return applications
