@@ -181,7 +181,7 @@ class ApplicationDataService(
         }
 
         if (applications.isNotEmpty()) {
-            logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${watch.totalTimeMillis}")
+            logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${watch.totalTimeSeconds}")
         }
 
         return applications
