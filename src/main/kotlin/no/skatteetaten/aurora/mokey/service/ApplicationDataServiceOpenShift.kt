@@ -104,6 +104,10 @@ class ApplicationDataServiceOpenShift(
                 "Failed getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace} message=${e.message}",
                 e
             )
+            /*if (e is WebClientResponseException.TooManyRequests) {
+                throw e
+            }*/
+
             MaybeApplicationData(applicationDeployment = it, error = e)
         }
     }
@@ -165,7 +169,9 @@ class ApplicationDataServiceOpenShift(
         val openShiftName = applicationDeployment.metadata.name
 
         val result = if (runnableType == "Deployment") {
-            val deployment = client.getDeployment(namespace, openShiftName) ?: return createDisabledApplication(applicationDeployment)
+            val deployment = client.getDeployment(namespace, openShiftName) ?: return createDisabledApplication(
+                applicationDeployment
+            )
             findDeployResultForDeployment(deployment, namespace)
         } else {
             val dc = client.getDeploymentConfig(namespace, openShiftName)

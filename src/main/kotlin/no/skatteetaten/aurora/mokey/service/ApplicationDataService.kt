@@ -171,7 +171,7 @@ class ApplicationDataService(
 
         val applications = applicationDataService.findAllApplicationDataForEnv(environments = env)
         watch.stop()
-        if(applications.isEmpty()) {
+        if (applications.isEmpty()) {
             return applications
         }
 
