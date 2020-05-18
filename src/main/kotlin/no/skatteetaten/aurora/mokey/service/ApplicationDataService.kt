@@ -77,11 +77,18 @@ class ApplicationDataService(
         initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
     )
     fun cache() {
-        try {
-            refreshCache(affiliations)
-        } catch (e: Exception) {
-            val rootCauseMessage = ExceptionUtils.getRootCauseMessage(e)
-            logger.error("Error in schedule, type=${e::class.simpleName} msg=\"${e.localizedMessage}\" rootCause=\"$rootCauseMessage\"")
+        kotlin.runCatching {
+            runBlocking {
+                refreshCache(affiliations)
+            }
+
+        }.onFailure {
+            val rootCauseMessage = ExceptionUtils.getRootCauseMessage(it)
+            logger.error("Exception in schedule, type=${it::class.simpleName} msg=\"${it.localizedMessage}\" rootCause=\"$rootCauseMessage\"")
+
+            if (it is Error) {
+                throw it
+            }
         }
     }
 
