@@ -95,10 +95,15 @@ class ApplicationDataServiceOpenShift(
                 applicationData = createApplicationData(it)
             )
         } catch (e: Exception) {
-            logger.info(
-                "Failed getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace} message=${e.message}",
-                e
-            )
+            if (e is InterruptedException) {
+                logger.info("Interrupted getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace}")
+            } else {
+                logger.info(
+                    "Failed getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace} message=${e.message}",
+                    e
+                )
+            }
+
             if (e is WebClientResponseException.TooManyRequests) {
                 throw e
             }
