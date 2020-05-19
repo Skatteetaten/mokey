@@ -114,8 +114,6 @@ class ApplicationDataService(
                     current.namespace,
                     current.applicationDeploymentName
                 )
-            }.also {
-                logger.info("runBlocking completed refreshItem applicationId:$applicationId")
             }
             addCacheEntry(applicationId, data)
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
@@ -124,8 +122,6 @@ class ApplicationDataService(
         runBlocking(MDCContext()) {
             val affiliation = applicationDataService.findAndGroupAffiliations(affiliations)
             affiliation.forEach { refreshAffiliation(it.key, it.value) }
-        }.also {
-            logger.info("runBlocking completed cacheAtStartup")
         }
     }
 
@@ -211,7 +207,6 @@ class ApplicationDataService(
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
         val projectNames = runBlocking { client.getAllProjects() }
-            .also { logger.info("runBlocking completed getAllProjects") }
             .map { it.metadata.name }
 
         return values.filter { projectNames.contains(it.namespace) }

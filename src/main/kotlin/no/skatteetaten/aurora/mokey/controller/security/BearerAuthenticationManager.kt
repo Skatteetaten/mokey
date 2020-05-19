@@ -51,8 +51,6 @@ class BearerAuthenticationManager(
 
             val user = runBlocking {
                 client.get(newCurrentUser())
-            }.also {
-                logger.info("runBlocking completed Authenticate")
             }
 
             return PreAuthenticatedAuthenticationToken(user, token)

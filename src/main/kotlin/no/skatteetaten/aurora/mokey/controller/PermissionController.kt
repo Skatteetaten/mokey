@@ -29,8 +29,6 @@ class PermissionController(
                     admin = canViewAndAdmin(namespace)
                 )
             } ?: AuroraNamespacePermissions(namespace = namespace)
-        }.also {
-            logger.info("runBlocking completed checkPermissions namespace:$namespace")
         }
     }
 
