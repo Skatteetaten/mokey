@@ -94,6 +94,9 @@ class ApplicationDataService(
                 is TimeoutCancellationException -> {
                     logger.warn("Timed out running crawler")
                 }
+                is InterruptedException -> {
+                    logger.info("Interrupted")
+                }
                 is Error -> {
                     throw it
                 }
