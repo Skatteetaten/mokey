@@ -25,6 +25,7 @@ import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.pmapIO
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.time.Duration
 import java.time.Instant
 
@@ -53,21 +54,7 @@ class ApplicationDataServiceOpenShift(
         }.groupBy { it.affiliation }
     }
 
-    suspend fun findAllApplicationDataForEnv(
-        environments: List<Environment>,
-        ids: List<String> = emptyList()
-    ): List<ApplicationData> {
-        return findAllApplicationDataByEnvironments(environments)
-            .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
-    }
-
-    private suspend fun findAllApplicationDataByEnvironments(environments: List<Environment>): List<ApplicationData> {
-
-        logger.debug("finding all applications in environments=$environments")
-        val applicationDeployments: List<ApplicationDeployment> = environments.flatMap { environment ->
-            logger.debug("Finding ApplicationDeployments in namespace={}", environment)
-            client.getApplicationDeployments(environment.namespace)
-        }
+    suspend fun findAllApplicationDataByEnvironments(applicationDeployments: List<ApplicationDeployment>): List<ApplicationData> {
 
         val results = applicationDeployments.pmapIO { tryCreateApplicationData(it) }
 
@@ -77,6 +64,14 @@ class ApplicationDataServiceOpenShift(
 
         logger.debug("Found deployments=${applicationDeployments.size} data=${data.size} result=${results.size} errors=${errors.size}")
         return data
+    }
+
+    suspend fun findAllApplicationDeployments(environments: List<Environment>): List<ApplicationDeployment> {
+        logger.debug("finding all applications in environments=$environments")
+        return environments.flatMap { environment ->
+            logger.debug("Finding ApplicationDeployments in namespace={}", environment)
+            client.getApplicationDeployments(environment.namespace)
+        }
     }
 
     suspend fun createSingleItem(namespace: String, name: String): ApplicationData {
@@ -104,9 +99,9 @@ class ApplicationDataServiceOpenShift(
                 "Failed getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace} message=${e.message}",
                 e
             )
-            /*if (e is WebClientResponseException.TooManyRequests) {
+            if (e is WebClientResponseException.TooManyRequests) {
                 throw e
-            }*/
+            }
 
             MaybeApplicationData(applicationDeployment = it, error = e)
         }

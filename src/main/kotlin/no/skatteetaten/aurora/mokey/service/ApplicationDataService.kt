@@ -1,10 +1,12 @@
 package no.skatteetaten.aurora.mokey.service
 
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import org.apache.commons.lang3.exception.ExceptionUtils
@@ -87,10 +89,17 @@ class ApplicationDataService(
             }
         }.onFailure {
             val rootCauseMessage = ExceptionUtils.getRootCauseMessage(it)
-            logger.error("Exception in schedule, type=${it::class.simpleName} msg=\"${it.localizedMessage}\" rootCause=\"$rootCauseMessage\"")
 
-            if (it is Error) {
-                throw it
+            when (it) {
+                is TimeoutCancellationException -> {
+                    logger.warn("Timed out running crawler")
+                }
+                is Error -> {
+                    throw it
+                }
+                else -> {
+                    logger.error("Exception in schedule, type=${it::class.simpleName} msg=\"${it.localizedMessage}\" rootCause=\"$rootCauseMessage\"")
+                }
             }
         }
     }
@@ -150,30 +159,28 @@ class ApplicationDataService(
     private suspend fun refreshAffiliation(
         affiliation: String,
         env: List<Environment>
-    ) {
-        val applications = refreshDeployments(affiliation, env)
+    ): List<ApplicationData> {
+
+        val applicationDeployments: List<ApplicationDeployment> =
+            applicationDataService.findAllApplicationDeployments(env)
+
         val previousKeys = findCacheKeysForGivenAffiliation(affiliation)
-        val newKeys = applications.map { it.applicationDeploymentId }
+        val newKeys = applicationDeployments.map { it.spec.applicationDeploymentId }
 
         (previousKeys - newKeys).forEach {
             logger.info("Remove application since it does not exist anymore applicationDeploymentId={}", it)
             removeCacheEntry(it)
         }
-    }
 
-    private suspend fun refreshDeployments(
-        affiliation: String,
-        env: List<Environment>
-    ): List<ApplicationData> {
+        if (applicationDeployments.isEmpty()) {
+            return emptyList()
+        }
+
         val watch = StopWatch().also {
             it.start()
         }
-
-        val applications = applicationDataService.findAllApplicationDataForEnv(environments = env)
+        val applications = applicationDataService.findAllApplicationDataByEnvironments(applicationDeployments)
         watch.stop()
-        if (applications.isEmpty()) {
-            return applications
-        }
 
         applications.forEach {
             logger.debug("Added cache for deploymentId=${it.applicationDeploymentId} name=${it.applicationDeploymentName} namespace=${it.namespace}")
