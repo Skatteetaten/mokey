@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment
 import io.fabric8.kubernetes.api.model.apps.DeploymentCondition
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet
 import io.fabric8.openshift.api.model.DeploymentConfig
+import kotlinx.coroutines.CancellationException
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.booberDeployId
@@ -98,7 +99,7 @@ class ApplicationDataServiceOpenShift(
             if (e is WebClientResponseException.TooManyRequests) {
                 throw e
             }
-            if (e is InterruptedException) {
+            if (e is InterruptedException || e is CancellationException) {
                 logger.info("Interrupted getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace}")
             } else {
                 logger.info(
