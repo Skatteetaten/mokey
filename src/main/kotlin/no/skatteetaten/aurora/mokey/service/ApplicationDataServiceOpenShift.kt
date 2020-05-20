@@ -107,7 +107,6 @@ class ApplicationDataServiceOpenShift(
                 )
             }
 
-
             MaybeApplicationData(applicationDeployment = it, error = e)
         }
     }
