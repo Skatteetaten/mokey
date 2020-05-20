@@ -95,6 +95,9 @@ class ApplicationDataServiceOpenShift(
                 applicationData = createApplicationData(it)
             )
         } catch (e: Exception) {
+            if (e is WebClientResponseException.TooManyRequests) {
+                throw e
+            }
             if (e is InterruptedException) {
                 logger.info("Interrupted getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace}")
             } else {
@@ -104,9 +107,6 @@ class ApplicationDataServiceOpenShift(
                 )
             }
 
-            if (e is WebClientResponseException.TooManyRequests) {
-                throw e
-            }
 
             MaybeApplicationData(applicationDeployment = it, error = e)
         }

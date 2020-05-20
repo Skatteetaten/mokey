@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
+import org.springframework.web.client.HttpClientErrorException
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
@@ -93,6 +94,9 @@ class ApplicationDataService(
             when (it) {
                 is TimeoutCancellationException -> {
                     logger.warn("Timed out running crawler")
+                }
+                is HttpClientErrorException.TooManyRequests -> {
+                    logger.info("Aborting due to too many requets")
                 }
                 is InterruptedException -> {
                     logger.info("Interrupted")
