@@ -27,7 +27,13 @@ class CacheWarmup(
         try {
             applicationDataService.cacheAtStartup()
         } catch (e: Exception) {
-            logger.error("Unable to refresh cache during initialization", e)
+            logger.info("failed cache during initialization, sleep for 10s and try again.")
+            Thread.sleep(10000)
+            try {
+                applicationDataService.cacheAtStartup()
+            } catch (e: Exception) {
+                logger.error("Unable to refresh cache during initialization", e)
+            }
         }
     }
 }
