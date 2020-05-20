@@ -21,7 +21,12 @@ class RefreshCacheController(val crawlService: ApplicationDataService) {
         }
 
         params.affiliations?.let {
-            runBlocking { crawlService.refreshCache(it) }
+            try {
+                runBlocking { crawlService.refreshCache(it) }
+            } catch (e: Exception) {
+                Thread.sleep(2000)
+                runBlocking { crawlService.refreshCache(it) }
+            }
         }
 
         params.applicationDeploymentId?.let {
