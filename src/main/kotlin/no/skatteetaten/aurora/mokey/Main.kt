@@ -27,7 +27,7 @@ class CacheWarmup(
         try {
             applicationDataService.cacheAtStartup()
         } catch (e: Exception) {
-            logger.info("failed cache during initialization, sleep for 10s and try again.")
+            logger.warn("failed cache during initialization, sleep for 10s and try again.")
             Thread.sleep(10000)
             try {
                 applicationDataService.cacheAtStartup()
