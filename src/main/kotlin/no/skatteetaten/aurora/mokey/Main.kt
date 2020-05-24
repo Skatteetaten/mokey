@@ -32,7 +32,12 @@ class CacheWarmup(
             try {
                 applicationDataService.cacheAtStartup()
             } catch (e: Exception) {
-                logger.error("Unable to refresh cache during initialization", e)
+                val errorMsg = "Unable to refresh cache during initialization"
+                if (e is Error) {
+                    logger.error(errorMsg, e)
+                } else {
+                    logger.error("$errorMsg, ${e.localizedMessage}")
+                }
             }
         }
     }
