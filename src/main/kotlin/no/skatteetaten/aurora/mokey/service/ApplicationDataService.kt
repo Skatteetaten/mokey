@@ -89,14 +89,12 @@ class ApplicationDataService(
                 }
             }
         }.onFailure {
-            val rootCauseMessage = ExceptionUtils.getRootCauseMessage(it)
-
             when (it) {
                 is TimeoutCancellationException -> {
                     logger.warn("Timed out running crawler")
                 }
                 is HttpClientErrorException.TooManyRequests -> {
-                    logger.info("Aborting due to too many requets")
+                    logger.info("Aborting due to too many requests, aborting the current crawl")
                 }
                 is InterruptedException -> {
                     logger.info("Interrupted")
@@ -105,7 +103,10 @@ class ApplicationDataService(
                     throw it
                 }
                 else -> {
-                    logger.error("Exception in schedule, type=${it::class.simpleName} msg=\"${it.localizedMessage}\" rootCause=\"$rootCauseMessage\"")
+                    val rootCause = ExceptionUtils.getRootCauseMessage(it)
+                    logger.error(
+                        "Exception in schedule, type=${it::class.simpleName} msg=\"${it.localizedMessage}\" rootCause=\"$rootCause\""
+                    )
                 }
             }
         }
