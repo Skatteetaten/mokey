@@ -100,6 +100,7 @@ class ApplicationDataService(
                     logger.info("Interrupted")
                 }
                 is Error -> {
+                    logger.error("Error when running crawler", it)
                     throw it
                 }
                 else -> {
