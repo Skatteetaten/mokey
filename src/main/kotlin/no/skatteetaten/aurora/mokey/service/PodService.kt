@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import io.fabric8.kubernetes.api.model.Pod
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.ManagementData
@@ -9,22 +10,25 @@ import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import org.springframework.stereotype.Service
 
+private val logger = KotlinLogging.logger {}
 @Service
 class PodService(
-    val openShiftService: OpenShiftService,
+    val client: OpenShiftServiceAccountClient,
     val managementDataService: ManagementDataService
 ) {
 
-    fun getPodDetails(
+    suspend fun getPodDetails(
         applicationDeployment: ApplicationDeployment,
         deployDetails: DeployDetails,
-        selector: Map<String, String> = applicationDeployment.spec.selector
+        selector: Map<String, String>
     ): List<PodDetails> {
 
-        val pods = openShiftService.pods(applicationDeployment.metadata.namespace, selector)
-        return pods.map { pod: Pod ->
+        logger.debug("Getting pods in namespace=${applicationDeployment.metadata.namespace} for selector=$selector")
+        return client.getPods(applicationDeployment.metadata.namespace, selector).map { pod: Pod ->
+            logger.debug("Getting management result for pod=${pod.metadata.name}")
             val managementResult =
-                managementDataService.load(pod.status.podIP, applicationDeployment.spec.managementPath)
+                managementDataService.load(pod, applicationDeployment.spec.managementPath)
+            logger.debug("/Getting management result for pod=${pod.metadata.name}")
             createPodDetails(pod, managementResult, deployDetails)
         }
     }

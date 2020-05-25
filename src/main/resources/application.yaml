@@ -8,14 +8,11 @@ spring:
     profiles:
         active: local
 
-logback:
-    access:
-        config: file:${logback.access.b3}
 
 logging:
     level:
-        no.skatteetaten.aurora:
-            mokey: INFO
+        reactor.netty: ERROR
+        no.skatteetaten.aurora: INFO
         org:
             hibernate: WARN
             springframework: WARN
@@ -23,6 +20,14 @@ logging:
                 coyote: WARN
                 catalina: WARN
                 velocity: WARN
+
+management:
+    metrics:
+        distribution:
+            minimum-expected-value:
+                http: 50ms
+            maximum-expected-value:
+                http: 3s
 
 integrations:
     boober:
@@ -34,35 +39,47 @@ integrations:
     cantus:
         url: "http://cantus"
 
-management:
-    metrics:
-        enable:
-            http:
-                client: false
-
 openshift:
     cluster: utv
     port: 8443
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
 
+kubernetes:
+    timeout:
+        connect: 1s
+        read: 10s
+    retry:
+        times: 3
+        min: 100ms
+        max: 2s
 ---
 spring:
     profiles: local
 
 mokey:
+    cachewarmup:
+        enabled: true
     cache:
-        affiliations: paas, aurora
-    openshift:
-        tokenLocation: file:/tmp/boober-token
+        affiliations: safir
 
+integrations:
+    cantus:
+        url: http://cantus.aurora.utv.paas.skead.no
 logging:
     pattern:
         console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
     level:
-        no.skatteetaten.aurora:
-            mokey: DEBUG
+        no.skatteetaten.aurora: DEBUG
+
+kubernetes:
+    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
+    tokenLocation: /tmp/reader-token
 
 ---
 spring:
     profiles: openshift
+
+logback:
+    access:
+        config: file:${logback.access.b3}

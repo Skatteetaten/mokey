@@ -1,40 +1,34 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import com.nhaarman.mockito_kotlin.any
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.every
 import no.skatteetaten.aurora.mockmvc.extensions.Path
 import no.skatteetaten.aurora.mockmvc.extensions.get
-import no.skatteetaten.aurora.mockmvc.extensions.mock.withContractResponse
 import no.skatteetaten.aurora.mockmvc.extensions.responseJsonPath
 import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
 import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
+import no.skatteetaten.aurora.mokey.ApplicationDeploymentDetailsResourceBuilder
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers
-import org.mockito.BDDMockito.given
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.security.test.context.support.WithUserDetails
 
 @WithUserDetails
 class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTest() {
 
-    @MockBean
+    @MockkBean(relaxed = true)
     private lateinit var applicationDataService: ApplicationDataService
 
-    @MockBean
+    @MockkBean
     private lateinit var assembler: ApplicationDeploymentDetailsResourceAssembler
 
     @Test
     fun `Return application deployment details by id`() {
-        given(applicationDataService.findApplicationDataByApplicationDeploymentId(ArgumentMatchers.anyString()))
-            .willReturn(ApplicationDataBuilder().build())
-
-        val applicationDeploymentDetails = given(assembler.toResource(any()))
-            .withContractResponse("applicationdeploymentdetails/applicationdeploymentdetails") { willReturn(content) }
-            .mockResponse
+        every { applicationDataService.findApplicationDataByApplicationDeploymentId(any()) } returns ApplicationDataBuilder().build()
+        every { assembler.toResource(any()) } returns ApplicationDeploymentDetailsResourceBuilder().build()
 
         mockMvc.get(Path("/api/auth/applicationdeploymentdetails/{id}", "123")) {
-            statusIsOk().responseJsonPath("$").equalsObject(applicationDeploymentDetails)
+            statusIsOk().responseJsonPath("$.identifier").equalsValue("123")
         }
     }
 
@@ -42,11 +36,11 @@ class ApplicationDeploymentDetailsControllerTest : AbstractSecurityControllerTes
     fun `Return application deployment details by affiliation`() {
         val applicationDatas = listOf(ApplicationDataBuilder().build())
 
-        given(applicationDataService.findAllApplicationData(any(), any()))
-            .willReturn(applicationDatas)
+        every { applicationDataService.findAllApplicationData(any(), any()) } returns applicationDatas
+        every { assembler.toResources(any()) } returns listOf(ApplicationDeploymentDetailsResourceBuilder().build())
 
         mockMvc.get(Path("/api/auth/applicationdeploymentdetails?affiliation=paas")) {
-            statusIsOk()
+            statusIsOk().responseJsonPath("$[0].identifier").equalsValue("123")
         }
     }
 }

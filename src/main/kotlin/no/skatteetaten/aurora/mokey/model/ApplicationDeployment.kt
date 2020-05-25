@@ -2,32 +2,44 @@ package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
-import io.fabric8.kubernetes.api.model.ObjectMeta
+import com.fasterxml.jackson.annotation.JsonPropertyOrder
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import no.skatteetaten.aurora.kubernetes.crd.SkatteetatenCRD
+
+fun newApplicationDeployment(block: ApplicationDeployment.() -> Unit = {}): ApplicationDeployment {
+    val instance = ApplicationDeployment()
+    instance.block()
+    return instance
+}
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class ApplicationDeployment(
-    val kind: String = "ApplicationDeployment",
-    val metadata: ObjectMeta,
-    val apiVersion: String = "skatteetaten.no/v1",
-    val spec: ApplicationDeploymentSpec
-)
+@JsonPropertyOrder(value = ["apiVersion", "kind", "metadata", "spec"])
+@JsonDeserialize(using = JsonDeserializer.None::class)
+class ApplicationDeployment(
+    var spec: ApplicationDeploymentSpec = ApplicationDeploymentSpec()
+) : SkatteetatenCRD("ApplicationDeployment")
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ApplicationDeploymentSpec(
-    val applicationId: String,
-    val applicationName: String?,
-    val applicationDeploymentId: String,
-    val applicationDeploymentName: String?,
-    val databases: List<String>?,
+    val applicationId: String = "",
+    val applicationName: String? = null,
+    val runnableType: String? = null,
+    val applicationDeploymentId: String = "",
+    val applicationDeploymentName: String? = null,
+    val databases: List<String>? = null,
     val splunkIndex: String? = null,
-    val managementPath: String?,
-    val releaseTo: String?,
-    val deployTag: String?,
-    val selector: Map<String, String>,
-    val command: ApplicationDeploymentCommand,
-    val message: String?
+    val managementPath: String? = null,
+    val releaseTo: String? = null,
+    val deployTag: String? = null,
+    val selector: Map<String, String> = emptyMap(),
+    val command: ApplicationDeploymentCommand = ApplicationDeploymentCommand(
+        applicationDeploymentRef = ApplicationDeploymentRef("env", "app"),
+            auroraConfig = AuroraConfigRef("demo", "master")
+    ),
+    val message: String? = null
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -44,12 +56,6 @@ data class AuroraConfigRef(
     val name: String,
     val refName: String,
     val resolvedRef: String? = null
-)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class ApplicationDeploymentList(
-    val items: List<ApplicationDeployment> = emptyList()
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

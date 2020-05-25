@@ -2,73 +2,102 @@ package no.skatteetaten.aurora.mokey.service
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import io.fabric8.openshift.api.model.Image
-import io.mockk.clearAllMocks
-import io.mockk.every
-import io.mockk.mockk
-import no.skatteetaten.aurora.mokey.DeploymentConfigDataBuilder
+import kotlinx.coroutines.runBlocking
+import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
+import no.skatteetaten.aurora.mockmvc.extensions.TestObjectMapperConfigurer
+import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
+import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.url
 import no.skatteetaten.aurora.mokey.ImageStreamTagDataBuilder
 import no.skatteetaten.aurora.mokey.ImageTagResourceBuilder
-import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
+import okhttp3.mockwebserver.MockWebServer
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.springframework.web.reactive.function.client.WebClient
 
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ImageServiceTest {
 
-    private val openShiftService = mockk<OpenShiftService>()
-    private val imageRegistryService = mockk<ImageRegistryService>()
+    private val server = MockWebServer()
+    private val client = OpenShiftServiceAccountClient(
+        KubernetesCoroutinesClient(server.url, "test-token")
+    )
 
-    private val imageService = ImageService(openShiftService, imageRegistryService)
+    private val objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+    private val imageRegistryClient = ImageRegistryClient(WebClient.create(server.url), objectMapper)
+    private val imageService = ImageService(client, ImageRegistryService(imageRegistryClient), false)
 
     @BeforeEach
     fun setUp() {
-        clearAllMocks()
+        TestObjectMapperConfigurer.objectMapper = objectMapper
+    }
+
+    @AfterEach
+    fun tearDown() {
+        TestObjectMapperConfigurer.reset()
+        kotlin.runCatching {
+            server.shutdown()
+        }
     }
 
     @Test
-    fun `get image details when running rc is not latest`() {
-        val replicationController = ReplicationControllerDataBuilder().build()
-        val imageTagResource = ImageTagResourceBuilder().build()
+    fun `get image details`() {
+        val tag = ImageTagResourceBuilder().build()
+        val response = AuroraResponse(items = listOf(tag))
 
-        every {
-            imageRegistryService.findTagsByName(
-                listOf("docker-registry/group/name/sha256:123hash")
-            )
-        } returns listOf(imageTagResource)
+        server.execute(response) {
+            runBlocking {
+                val imageDetails = imageService.getImageDetails("docker-registry/group/name@sha256:123hash")
 
-        val imageDetails = imageService.getImageDetails(
-            DeploymentConfigDataBuilder(dcDeployTag = "foobar:tag").dcNamespace,
-            "foobar",
-            replicationController.spec.template.spec.containers[0].image
-        )
-        assertThat(imageDetails?.dockerImageReference).isEqualTo("docker-registry/group/name@sha256:123hash")
-        assertThat(imageDetails?.auroraVersion).isEqualTo(imageTagResource.auroraVersion)
+                assertThat(imageDetails?.environmentVariables?.size).isEqualTo(5)
+                assertThat(imageDetails?.auroraVersion).isEqualTo(tag.auroraVersion)
+                assertThat(imageDetails?.imageBuildTime).isNotNull()
+            }
+        }
     }
 
     @Test
-    fun `get image details when running rc is latest`() {
-        val dcBuilder = DeploymentConfigDataBuilder(dcDeployTag = "foobar:tag")
-        val istBuilder = ImageStreamTagDataBuilder(env = mapOf("IMAGE_BUILD_TIME" to "2018-08-01T13:27:21Z"))
+    fun `get image details from image stream`() {
+        val imageStreamTag = ImageStreamTagDataBuilder().build()
 
-        every {
-            openShiftService.imageStreamTag(
-                dcBuilder.dcNamespace,
-                "foobar",
-                "default"
-            )
-        } returns istBuilder.build()
-
-        val imageDetails = imageService.getImageDetailsFromImageStream(dcBuilder.dcNamespace, "foobar", "default")
-        assertThat(imageDetails?.dockerImageReference).isEqualTo("dockerImageReference")
+        server.execute(imageStreamTag) {
+            runBlocking {
+                val imageDetails = imageService.getImageDetailsFromImageStream("namespace", "name", "tag")
+                assertThat(imageDetails?.dockerImageReference).isEqualTo("dockerImageReference")
+            }
+        }
     }
 
     @Test
-    fun `get image env`() {
-        val json = """{ "dockerImageMetadata": { "Config": { "Env": ["Path=/usr/local"] } } }""".trimIndent()
-        val image = jacksonObjectMapper().readValue<Image>(json)
-        assertThat(image.env.keys.first()).isEqualTo("Path")
-        assertThat(image.env.values.first()).isEqualTo("/usr/local")
+    fun `get cached or find, cache disabled`() {
+        val tag = ImageTagResourceBuilder().build()
+        val response = AuroraResponse(items = listOf(tag))
+
+        server.execute(response) {
+            runBlocking {
+                val imageDetails = imageService.getCachedOrFind("docker-registry/group/name@sha256:123hash")
+                assertThat(imageDetails?.dockerImageReference).isNotNull()
+                assertThat(imageDetails?.imageBuildTime).isNotNull()
+            }
+        }
+    }
+
+    @Test
+    fun `get cached or find, cache enabled`() {
+        val cacheEnabledImageService = ImageService(client, ImageRegistryService(imageRegistryClient), true)
+        val tag = ImageTagResourceBuilder().build()
+        val response = AuroraResponse(items = listOf(tag))
+
+        server.execute(response) {
+            runBlocking {
+                val imageDetails = cacheEnabledImageService.getCachedOrFind("docker-registry/group/name@sha256:123hash")
+                assertThat(imageDetails?.dockerImageReference).isNotNull()
+                assertThat(imageDetails?.imageBuildTime).isNotNull()
+            }
+        }
     }
 }

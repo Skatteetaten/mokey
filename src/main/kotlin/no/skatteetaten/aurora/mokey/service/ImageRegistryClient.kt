@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
-import java.time.Duration
-import java.time.Instant
 import mu.KotlinLogging
+import no.skatteetaten.aurora.kubernetes.RetryConfiguration
+import no.skatteetaten.aurora.kubernetes.retryWithLog
 import no.skatteetaten.aurora.mokey.ServiceTypes
 import no.skatteetaten.aurora.mokey.TargetService
 import org.springframework.stereotype.Service
@@ -19,6 +19,8 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import uk.q3c.rest.hal.HalResource
+import java.time.Duration
+import java.time.Instant
 
 data class ImageTagResource(
     val auroraVersion: String? = null,
@@ -64,6 +66,7 @@ data class TagUrlsWrapper(val tagUrls: List<String>)
 
 private val logger = KotlinLogging.logger { }
 
+// TODO: Could we make this simpler?
 @Service
 class ImageRegistryClient(
     @TargetService(ServiceTypes.CANTUS)
@@ -73,7 +76,7 @@ class ImageRegistryClient(
 
     final inline fun <reified T : Any> post(path: String, body: Any): Flux<T> =
         execute {
-            post().uri(path).body(BodyInserters.fromObject(body))
+            post().uri(path).body(BodyInserters.fromValue(body))
         }
 
     final inline fun <reified T : Any> execute(
@@ -81,11 +84,12 @@ class ImageRegistryClient(
     ): Flux<T> = fn(webClient)
         .retrieve()
         .bodyToMono<AuroraResponse<HalResource>>()
-        .retryBackoff(3, Duration.ofMillis(200))
+        .timeout(Duration.ofSeconds(5))
+        .retryWithLog(RetryConfiguration(3, Duration.ofMillis(200), Duration.ofSeconds(3)), false)
         .handleGenericError()
         .flatMapMany {
             if (it.success) {
-                it.items.map { item -> objectMapper.convertValue(item, T::class.java) }.toFlux<T>()
+                it.items.map { item -> objectMapper.convertValue(item, T::class.java) }.toFlux()
             } else {
                 throw ServiceException(message = it.message)
             }

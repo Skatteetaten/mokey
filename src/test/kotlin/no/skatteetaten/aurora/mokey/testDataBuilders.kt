@@ -4,6 +4,7 @@ import com.fkorotkov.kubernetes.metadata
 import com.fkorotkov.kubernetes.newContainer
 import com.fkorotkov.kubernetes.newContainerState
 import com.fkorotkov.kubernetes.newContainerStatus
+import com.fkorotkov.kubernetes.newNamespace
 import com.fkorotkov.kubernetes.newObjectMeta
 import com.fkorotkov.kubernetes.newPod
 import com.fkorotkov.kubernetes.newReplicationController
@@ -32,12 +33,23 @@ import com.fkorotkov.openshift.tls
 import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.openshift.api.model.DeploymentConfig
-import java.net.URI
-import java.time.Instant
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentCommandResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentDetailsResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentRefResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationDeploymentsWithDbResource
+import no.skatteetaten.aurora.mokey.controller.ApplicationResource
+import no.skatteetaten.aurora.mokey.controller.AuroraConfigRefResource
+import no.skatteetaten.aurora.mokey.controller.AuroraStatusResource
+import no.skatteetaten.aurora.mokey.controller.DeployDetailsResource
+import no.skatteetaten.aurora.mokey.controller.GitInfoResource
+import no.skatteetaten.aurora.mokey.controller.ImageDetailsResource
+import no.skatteetaten.aurora.mokey.controller.Version
 import no.skatteetaten.aurora.mokey.extensions.ANNOTATION_BOOBER_DEPLOYTAG
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.extensions.LABEL_CREATED
 import no.skatteetaten.aurora.mokey.extensions.LABEL_DEPLOYTAG
+import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.extensions.deploymentPhase
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
@@ -49,23 +61,82 @@ import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
 import no.skatteetaten.aurora.mokey.model.DeployDetails
+import no.skatteetaten.aurora.mokey.model.DiscoveryResponse
 import no.skatteetaten.aurora.mokey.model.EndpointType
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementData
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
-import no.skatteetaten.aurora.mokey.model.ManagementLinks
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
+import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
 import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
 import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import org.apache.commons.codec.digest.DigestUtils
+import uk.q3c.rest.hal.Links
+import java.net.URI
+import java.time.Instant
 
 const val DEFAULT_NAME = "app-name"
 const val DEFAULT_AFFILIATION = "affiliation"
 const val DEFAULT_ENV_NAME = "namespace"
+
+class ApplicationResourceBuilder {
+    fun build() = ApplicationResource(
+        id = "123",
+        name = "name",
+        applicationDeployments = listOf(ApplicationDeploymentResourceBuilder().build())
+    )
+}
+
+class ApplicationDeploymentResourceBuilder {
+    fun build() = ApplicationDeploymentResource(
+        id = "123",
+        affiliation = "aurora",
+        environment = "utv",
+        namespace = "aurora-dev",
+        name = "test",
+        status = AuroraStatusResource(""),
+        version = Version("123", "12345", null),
+        dockerImageRepo = "",
+        time = Instant.now(),
+        message = null
+    )
+}
+
+class ApplicationDeploymentDetailsResourceBuilder {
+    fun build() = ApplicationDeploymentDetailsResource(
+        id = "123",
+        updatedBy = "user",
+        buildTime = Instant.now(),
+        gitInfo = GitInfoResource(),
+        imageDetails = ImageDetailsResource(null, null, null),
+        podResources = emptyList(),
+        databases = emptyList(),
+        applicationDeploymentCommand = ApplicationDeploymentCommandResource(
+            applicationDeploymentRef = ApplicationDeploymentRefResource(
+                environment = "utv",
+                application = "test-app"
+            ),
+            auroraConfig = AuroraConfigRefResource("test-config", "ref")
+        ),
+        deployDetails = DeployDetailsResource(
+            targetReplicas = 1,
+            availableReplicas = 2,
+            paused = false
+        ),
+        serviceLinks = Links()
+    )
+}
+
+class ApplicationDeploymentsWithDbResourceBuilder {
+    fun build() = ApplicationDeploymentsWithDbResource(
+        databaseId = "123",
+        applicationDeployments = emptyList()
+    )
+}
 
 data class AuroraApplicationDeploymentDataBuilder(
     val appName: String = DEFAULT_NAME,
@@ -86,14 +157,15 @@ data class AuroraApplicationDeploymentDataBuilder(
     val appNamespace: String get() = "$affiliation-$envName"
 
     fun build(): ApplicationDeployment {
-        return ApplicationDeployment(
-            metadata = newObjectMeta {
+        return newApplicationDeployment {
+            metadata {
                 name = appName
                 namespace = appNamespace
                 labels = mapOf(
                     LABEL_AFFILIATION to affiliation
                 )
-            },
+            }
+
             spec = ApplicationDeploymentSpec(
                 command = ApplicationDeploymentCommand(
                     overrideFiles = overrides,
@@ -115,7 +187,7 @@ data class AuroraApplicationDeploymentDataBuilder(
                 selector = selector,
                 message = msg
             )
-        )
+        }
     }
 }
 
@@ -321,6 +393,7 @@ data class PodDataBuilder(
         newPod {
             metadata {
                 name = podName
+                namespace = "namespace"
                 labels = mapOf("replicaName" to "replicaName")
             }
             spec {
@@ -384,6 +457,18 @@ data class ProjectDataBuilder(val pName: String = "affiliation-name") {
         newProject {
             metadata {
                 name = pName
+                namespace = "namespace"
+            }
+        }
+}
+
+data class NamespaceDataBuilder(val pName: String = "affiliation-name") {
+
+    fun build() =
+        newNamespace {
+            metadata {
+                name = pName
+                namespace = "namespace"
             }
         }
 }
@@ -406,17 +491,15 @@ data class ImageStreamTagDataBuilder(
         }
 }
 
-class ApplicationDeploymentBuilder() {
+data class ApplicationDeploymentBuilder(val runnableType: String? = null) {
     fun build(): ApplicationDeployment =
-        ApplicationDeployment(
-            kind = "ApplicationDeployment",
-            metadata = newObjectMeta {
+        newApplicationDeployment {
+            metadata {
                 name = "mokey"
-                labels = emptyMap()
+                labels = mapOf("affiliation" to "aurora")
                 namespace = "aurora-dev"
                 annotations = emptyMap()
-            },
-            apiVersion = "skatteetaten.no/v1",
+            }
             spec = ApplicationDeploymentSpec(
                 command = ApplicationDeploymentCommand(
                     overrideFiles = emptyMap(),
@@ -426,26 +509,27 @@ class ApplicationDeploymentBuilder() {
                         environment = "aurora-dev"
                     )
                 ),
+                runnableType = runnableType,
                 applicationId = "123",
                 applicationName = "mokey",
                 applicationDeploymentId = "234",
                 applicationDeploymentName = "test-mokey",
                 databases = emptyList(),
                 splunkIndex = null,
-                managementPath = null,
+                managementPath = ":8081/management",
                 releaseTo = null,
                 deployTag = null,
                 selector = emptyMap(),
                 message = null
             )
-        )
+        }
 }
 
-class AddressBuilder() {
+class AddressBuilder {
     fun build() = ServiceAddress(url = URI("/mokey"), time = null)
 }
 
-class AuroraStatusBuilder() {
+class AuroraStatusBuilder {
     fun build() = AuroraStatus(level = HEALTHY)
 }
 
@@ -490,15 +574,17 @@ data class ApplicationDataBuilder(
                         ManagementEndpointResult(
                             endpointType = EndpointType.INFO,
                             resultCode = "",
-                            deserialized = InfoResponse(podLinks = mapOf(
-                                "test" to "http://localhost",
-                                "metrics" to "{metricsHostname}"
-                            ))
+                            deserialized = InfoResponse(
+                                podLinks = mapOf(
+                                    "test" to "http://localhost",
+                                    "metrics" to "{metricsHostname}"
+                                )
+                            )
                         ),
                         links = ManagementEndpointResult(
                             endpointType = EndpointType.INFO,
                             resultCode = "",
-                            deserialized = ManagementLinks(emptyMap())
+                            deserialized = DiscoveryResponse(emptyMap())
                         )
                     )
                 )

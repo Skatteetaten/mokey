@@ -3,10 +3,10 @@ package no.skatteetaten.aurora.mokey.model
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
-import java.time.Instant
-import no.skatteetaten.aurora.mokey.extensions.asMap
+import io.fabric8.kubernetes.api.model.Pod
 import no.skatteetaten.aurora.mokey.extensions.extract
 import no.skatteetaten.aurora.mokey.service.DateParser
+import java.time.Instant
 
 enum class EndpointType(val key: String) {
     HEALTH("health"),
@@ -15,33 +15,51 @@ enum class EndpointType(val key: String) {
     DISCOVERY("_links")
 }
 
-data class ManagementLinks(private val links: Map<String, String>) {
-
-    fun linkFor(endpointType: EndpointType): String? {
-        return links[endpointType.key]
-    }
-
-    companion object {
-        fun parseManagementResponse(response: JsonNode): ManagementLinks {
-            val asMap = response[EndpointType.DISCOVERY.key].asMap()
-            val links = asMap
-                .mapValues { it.value["href"].asText()!! }
-            return ManagementLinks(links)
-        }
-    }
+data class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endpointType: EndpointType) {
+    val url = "namespaces/${pod.metadata.namespace}/pods/${pod.metadata.name}:$port/proxy/$path"
 }
+
+// TODO: We have to make sure that replication is correct here when we go to replicaset
+fun ManagementEndpoint.toCacheKey(): ManagementCacheKey {
+    val name = if (endpointType == EndpointType.INFO) {
+        this.pod.metadata.name
+    } else {
+        this.pod.metadata.name.substringBeforeLast("-")
+    }
+
+    return ManagementCacheKey(this.pod.metadata.namespace, name, this.endpointType)
+}
+
+data class ManagementCacheKey(val namespace: String, val name: String, val type: EndpointType)
 
 enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
-data class HealthResponse(
-    val status: HealthStatus,
-    val parts: Map<String, HealthPart> = emptyMap()
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class DiscoveryResponse(
+    val _links: Map<String, DiscoveryLink>
 )
 
-data class HealthPart(
-    val status: HealthStatus = HealthStatus.UP,
-    val details: Map<String, JsonNode> = emptyMap()
-)
+fun DiscoveryResponse.createEndpoint(pod: Pod, port: Int, type: EndpointType): ManagementEndpoint? {
+    return this._links[type.key.toLowerCase()]?.path?.let {
+        ManagementEndpoint(pod, port, it, type)
+    }
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class DiscoveryLink(
+    val href: String
+) {
+
+    val path: String get() = href.replace("http://", "").substringAfter("/")
+}
+
+fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> {
+    return ManagementEndpointResult(
+        errorMessage = "Unknown endpoint link",
+        endpointType = this,
+        resultCode = "LINK_MISSING"
+    )
+}
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class InfoResponse(

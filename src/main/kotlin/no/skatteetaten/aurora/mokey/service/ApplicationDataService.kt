@@ -1,25 +1,32 @@
 package no.skatteetaten.aurora.mokey.service
 
-import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.slf4j.MDCContext
+import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationData
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
+import org.apache.commons.lang3.exception.ExceptionUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
+import org.springframework.web.reactive.function.client.WebClientResponseException
+import java.time.Duration
+import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
 
 @Service
 class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,
-    val openShiftService: OpenShiftService,
+    val client: OpenShiftUserClient,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
-    @Value("\${mokey.crawler.sleepSeconds:1}") val sleep: Long,
-    val statusRegistry: ApplicationStatusRegistry
-
+    val statusRegistry: ApplicationStatusRegistry,
+    @Value("\${mokey.crawler.timeout:3m}") val crawlerTimeout: Duration
 ) {
     val affiliations: List<String>
         get() = if (affiliationsConfig.isBlank()) emptyList()
@@ -73,17 +80,54 @@ class ApplicationDataService(
         fixedDelayString = "\${mokey.crawler.rateSeconds:120000}",
         initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
     )
-    fun cache() = refreshCache(affiliations)
+    fun cache() {
+        kotlin.runCatching {
+            runBlocking(MDCContext()) {
+                withTimeout(crawlerTimeout.toMillis()) {
+                    refreshCache(affiliations)
+                }
+            }
+        }.onFailure {
+            when (it) {
+                is TimeoutCancellationException -> {
+                    logger.warn("Timed out running crawler")
+                }
+                is WebClientResponseException.TooManyRequests -> {
+                    logger.warn("Aborting due to too many requests, aborting the current crawl")
+                }
+                is InterruptedException -> {
+                    logger.info("Interrupted")
+                }
+                is Error -> {
+                    logger.error("Error when running crawler", it)
+                    throw it
+                }
+                else -> {
+                    val rootCause = ExceptionUtils.getRootCauseMessage(it)
+                    logger.error(
+                        "Exception in schedule, type=${it::class.simpleName} msg=\"${it.localizedMessage}\" rootCause=\"$rootCause\""
+                    )
+                }
+            }
+        }
+    }
 
     fun refreshItem(applicationId: String) =
         findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
-            val data = applicationDataService.createSingleItem(current.namespace, current.applicationDeploymentName)
+            val data = runBlocking(MDCContext()) {
+                applicationDataService.createSingleItem(
+                    current.namespace,
+                    current.applicationDeploymentName
+                )
+            }
             addCacheEntry(applicationId, data)
         } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
 
     fun cacheAtStartup() {
-        applicationDataService.findAndGroupAffiliations(affiliations)
-            .forEach { refreshAffiliation(it.key, it.value) }
+        runBlocking(MDCContext()) {
+            val affiliation = applicationDataService.findAndGroupAffiliations(affiliations)
+            affiliation.forEach { refreshAffiliation(it.key, it.value) }
+        }
     }
 
     private fun addCacheEntry(applicationId: String, data: ApplicationData) {
@@ -101,23 +145,13 @@ class ApplicationDataService(
         }
     }
 
-    fun refreshCache(affiliationInput: List<String> = emptyList()) {
+    suspend fun refreshCache(affiliationInput: List<String> = emptyList()) {
 
         val watch = StopWatch().also { it.start() }
         val affiliations = applicationDataService.findAndGroupAffiliations(affiliationInput)
 
         affiliations.forEach { (affiliation, env) ->
-
-            val affiliationWatch = StopWatch().also { it.start() }
             refreshAffiliation(affiliation, env)
-            val affiliationTime = affiliationWatch.let {
-                it.stop()
-                it.totalTimeMillis
-            }
-
-            if (affiliationTime > 200) {
-                Thread.sleep(sleep * 1000)
-            }
         }
         val time: Double = watch.let {
             it.stop()
@@ -126,28 +160,31 @@ class ApplicationDataService(
         logger.info("Crawler done total cached=${cache.keys.size} timeSeconds=$time")
     }
 
-    private fun refreshAffiliation(
+    private suspend fun refreshAffiliation(
         affiliation: String,
         env: List<Environment>
-    ) {
-        val applications = refreshDeployments(affiliation, env)
+    ): List<ApplicationData> {
+
+        val applicationDeployments: List<ApplicationDeployment> =
+            applicationDataService.findAllApplicationDeployments(env)
+
         val previousKeys = findCacheKeysForGivenAffiliation(affiliation)
-        val newKeys = applications.map { it.applicationDeploymentId }
+        val newKeys = applicationDeployments.map { it.spec.applicationDeploymentId }
 
         (previousKeys - newKeys).forEach {
             logger.info("Remove application since it does not exist anymore applicationDeploymentId={}", it)
             removeCacheEntry(it)
         }
-    }
 
-    private fun refreshDeployments(
-        affiliation: String,
-        env: List<Environment>
-    ): List<ApplicationData> {
-        val applications = mutableListOf<ApplicationData>()
-        val time = withStopWatch {
-            applications += applicationDataService.findAllApplicationDataForEnv(environments = env)
+        if (applicationDeployments.isEmpty()) {
+            return emptyList()
         }
+
+        val watch = StopWatch().also {
+            it.start()
+        }
+        val applications = applicationDataService.findAllApplicationDataByEnvironments(applicationDeployments)
+        watch.stop()
 
         applications.forEach {
             logger.debug("Added cache for deploymentId=${it.applicationDeploymentId} name=${it.applicationDeploymentName} namespace=${it.namespace}")
@@ -155,7 +192,7 @@ class ApplicationDataService(
         }
 
         if (applications.isNotEmpty()) {
-            logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${time.totalTimeSeconds}")
+            logger.info("Apps cached affiliation=$affiliation apps=${applications.size} time=${watch.totalTimeSeconds}")
         }
 
         return applications
@@ -174,16 +211,9 @@ class ApplicationDataService(
 
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
-        val projectNames = openShiftService.projectsForUser().map { it.metadata.name }
+        val projectNames = runBlocking { client.getAllProjects() }
+            .map { it.metadata.name }
 
         return values.filter { projectNames.contains(it.namespace) }
-    }
-
-    private fun withStopWatch(block: () -> Unit): StopWatch {
-        return StopWatch().also {
-            it.start()
-            block()
-            it.stop()
-        }
     }
 }

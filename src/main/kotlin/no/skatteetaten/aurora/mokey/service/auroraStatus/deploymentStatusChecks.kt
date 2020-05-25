@@ -1,9 +1,5 @@
 package no.skatteetaten.aurora.mokey.service.auroraStatus
 
-import java.time.Duration
-import java.time.Instant
-import java.time.Instant.parse
-import java.time.format.DateTimeParseException
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.DOWN
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
@@ -16,6 +12,10 @@ import no.skatteetaten.aurora.mokey.model.StatusCheck
 import no.skatteetaten.aurora.mokey.model.StatusDescription
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.time.Duration
+import java.time.Instant
+import java.time.Instant.parse
+import java.time.format.DateTimeParseException
 
 private val logger = KotlinLogging.logger {}
 
@@ -243,7 +243,7 @@ fun List<PodDetails>.isRestartsAboveThreshold(threshold: Int): Boolean {
 fun List<PodDetails>.validateStatus(validator: (status: String) -> Boolean): Boolean {
     return this.any { pod ->
         pod.managementData.health?.deserialized?.let {
-            val status = it.status.name.toUpperCase()
+            val status = it.at("/status").textValue().toUpperCase()
             validator(status)
         } ?: false
     }

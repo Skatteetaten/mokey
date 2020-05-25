@@ -1,7 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
+import com.fkorotkov.kubernetes.newObjectMeta
+import com.fkorotkov.openshift.metadata
+import com.fkorotkov.openshift.newRoute
 import io.fabric8.kubernetes.api.model.Service
-import java.net.URI
 import no.skatteetaten.aurora.mokey.extensions.addIfNotNull
 import no.skatteetaten.aurora.mokey.extensions.created
 import no.skatteetaten.aurora.mokey.extensions.ensureStartWith
@@ -16,15 +18,52 @@ import no.skatteetaten.aurora.mokey.model.BigIPAddress
 import no.skatteetaten.aurora.mokey.model.RouteAddress
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import no.skatteetaten.aurora.mokey.model.WebSealAddress
+import java.net.URI
 
 @org.springframework.stereotype.Service
-class AddressService(val openShiftService: OpenShiftService) {
+class AddressService(
+    val openshiftClient: OpenShiftServiceAccountClient
+) {
 
-    fun getAddresses(namespace: String, name: String): List<Address> {
+    suspend fun getIngressAddresses(namespace: String, name: String): List<Address> {
 
-        val labels = mapOf("app" to name)
-        val services = openShiftService.services(namespace, labels)
-        val routes = openShiftService.routes(namespace, labels)
+        val metadata = newObjectMeta {
+            this.namespace = namespace
+            this.labels = mapOf("app" to name)
+        }
+        val services = openshiftClient.getServices(metadata)
+        val ingress = openshiftClient.getIngresses(metadata)
+
+        val serviceAddresses = services.map { ServiceAddress(URI.create("http://${it.metadata.name}"), it.created) }
+
+        val routeAddresses = ingress.flatMap {
+
+            val rule = it.spec.rules.first()
+
+            val host = rule.host
+
+            val path = rule.http.paths.first().path?.let { path ->
+                path.ensureStartWith("/")
+            } ?: ""
+            val success = true // TODO
+            val protocol = "http" // TODO: Http
+
+            val route = RouteAddress(URI.create("$protocol://${host}$path"), it.created, success, "OK")
+
+            listOf(route)
+        }
+
+        return serviceAddresses.addIfNotNull(routeAddresses)
+    }
+
+    suspend fun getAddresses(namespace: String, name: String): List<Address> {
+
+        val metadata = newObjectMeta {
+            this.namespace = namespace
+            this.labels = mapOf("app" to name)
+        }
+        val services = openshiftClient.getServices(metadata)
+        val routes = openshiftClient.getRoutes(metadata)
 
         val serviceAddresses = services.map { ServiceAddress(URI.create("http://${it.metadata.name}"), it.created) }
 
@@ -61,20 +100,25 @@ class AddressService(val openShiftService: OpenShiftService) {
         return serviceAddresses.addIfNotNull(routeAddresses).addIfNotNull(websealAddresses)
     }
 
-    private fun findWebsealAddresses(services: List<Service>, namespace: String): List<WebSealAddress> {
-        return services.filter { it.marjoryDone != null }.map {
-            openShiftService.route(namespace, "${it.metadata.name}-webseal")?.let {
+    private suspend fun findWebsealAddresses(services: List<Service>, namespace: String): List<WebSealAddress> {
+        return services.filter { it.marjoryDone != null }.mapNotNull {
+            openshiftClient.getRouteOrNull(newRoute {
+                metadata {
+                    this.namespace = namespace
+                    this.name = "${it.metadata.name}-webseal"
+                }
+            })?.let {
                 val status = it.status.ingress.first().conditions.first()
                 val success = status.success() && it.marjoryOpen
 
                 WebSealAddress(
-                    URI.create("https://${it.spec.host}"),
-                    it.marjoryDone,
-                    success,
-                    status.reason,
-                    it.marjoryRoles
+                    url = URI.create("https://${it.spec.host}"),
+                    time = it.marjoryDone,
+                    available = success,
+                    status = status.reason,
+                    roles = it.marjoryRoles
                 )
             }
-        }.filterNotNull()
+        }
     }
 }

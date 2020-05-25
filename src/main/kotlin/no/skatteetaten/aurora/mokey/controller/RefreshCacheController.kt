@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -20,7 +21,7 @@ class RefreshCacheController(val crawlService: ApplicationDataService) {
         }
 
         params.affiliations?.let {
-            crawlService.refreshCache(it)
+            runBlocking { crawlService.refreshCache(it) }
         }
 
         params.applicationDeploymentId?.let {

@@ -2,21 +2,17 @@ package no.skatteetaten.aurora.mokey.model
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import java.time.Instant
 import mu.KotlinLogging
 import uk.q3c.rest.hal.HalResource
+import java.time.Instant
+
+private val logger = KotlinLogging.logger {}
 
 data class GroupedApplicationData(
     val applicationId: String?,
     val name: String,
     val applications: List<ApplicationPublicData>
 ) {
-    constructor(application: ApplicationPublicData) : this(
-        application.applicationId,
-        application.applicationName,
-        listOf(application)
-    )
-
     companion object {
         fun create(applications: List<ApplicationPublicData>): List<GroupedApplicationData> =
             applications.groupBy { it.applicationId ?: it.applicationName }
@@ -56,8 +52,6 @@ data class ApplicationData(
     val deployDetails: DeployDetails? = null,
     val addresses: List<Address> = emptyList(),
     val databases: List<String> = emptyList(),
-    val sprocketDone: String? = null,
-    val updatedBy: String? = null,
     val splunkIndex: String? = null,
     val deploymentCommand: ApplicationDeploymentCommand,
     val publicData: ApplicationPublicData
@@ -78,9 +72,9 @@ data class PodDetails(
 )
 
 data class ManagementData(
-    val links: ManagementEndpointResult<ManagementLinks>,
+    val links: ManagementEndpointResult<DiscoveryResponse>,
     val info: ManagementEndpointResult<InfoResponse>? = null,
-    val health: ManagementEndpointResult<HealthResponse>? = null,
+    val health: ManagementEndpointResult<JsonNode>? = null,
     val env: ManagementEndpointResult<JsonNode>? = null
 )
 
@@ -97,19 +91,17 @@ data class ManagementEndpointResult<T>(
         get() = resultCode == "OK"
 }
 
-private val logger = KotlinLogging.logger {}
-
 data class HttpResponse(
     val content: String,
     val code: Int
 ) {
-    fun jsonContentOrError() =
+    fun jsonContentOrError(): String =
         try {
             jacksonObjectMapper().readTree(content)
             content
         } catch (ignored: Exception) {
             content.take(100).let {
-                logger.warn { "Response is not json format: $it" }
+                logger.debug { "Response is not json format: $it" }
                 """{ "error": "Received content is not json", "content": "$it" }"""
             }
         }
@@ -137,14 +129,14 @@ data class OpenShiftContainerExcerpt(
 
 data class ImageDetails(
     val dockerImageReference: String,
-    val dockerImageTagReference: String?,
-    val imageBuildTime: Instant?,
-    val environmentVariables: Map<String, String>
+    val dockerImageTagReference: String? = null,
+    val imageBuildTime: Instant? = null,
+    val environmentVariables: Map<String, String> = emptyMap()
 ) {
     val auroraVersion: String
-        get() = environmentVariables["AURORA_VERSION"] ?: ""
+    get() = environmentVariables["AURORA_VERSION"] ?: ""
     val dockerImageRepo: String?
-        get() = dockerImageReference.replace(Regex("@.*$"), "")
+    get() = dockerImageReference.replace(Regex("@.*$"), "")
 }
 
 data class DeployDetails(
@@ -153,8 +145,15 @@ data class DeployDetails(
     val deployment: String? = null,
     val phase: String? = null,
     val deployTag: String? = null,
-    val paused: Boolean = false
+    val paused: Boolean = false,
+    val updatedBy: String? = null
 ) {
     val lastDeployment: String?
         get() = this.phase?.toLowerCase()
 }
+
+data class DeploymentResult(
+    val details: DeployDetails,
+    val image: ImageDetails?,
+    val selector: Map<String, String>
+)

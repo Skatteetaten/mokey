@@ -5,6 +5,8 @@ import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
 import io.fabric8.kubernetes.api.model.ReplicationController
 import io.fabric8.kubernetes.api.model.Service
+import io.fabric8.kubernetes.api.model.apps.Deployment
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.Route
 import java.time.Instant
@@ -45,8 +47,15 @@ val DeploymentConfig.imageStreamNameAndTag: Pair<String, String>?
 var DeploymentConfig.managementPath: String?
     get() = safeMetadataAnnotations()[ANNOTATION_MANAGEMENT_PATH]
     set(value) = safeMetadataAnnotations().set(ANNOTATION_MANAGEMENT_PATH, value)
+var Deployment.managementPath: String?
+    get() = safeMetadataAnnotations()[ANNOTATION_MANAGEMENT_PATH]
+    set(value) = safeMetadataAnnotations().set(ANNOTATION_MANAGEMENT_PATH, value)
 
+// TODO: these can go away
 val DeploymentConfig.sprocketDone: String?
+    get() = safeMetadataAnnotations()[ANNOTATION_SPROCKET_DONE]
+
+val Deployment.sprocketDone: String?
     get() = safeMetadataAnnotations()[ANNOTATION_SPROCKET_DONE]
 
 val Route.marjoryDone: Instant?
@@ -89,11 +98,21 @@ val ReplicationController.deployTag: String
     get() = this.spec.template.safeMetadata().safeMetadataAnnotations()[ANNOTATION_BOOBER_DEPLOYTAG]
         ?: safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
 
+val ReplicaSet.deployTag: String
+    get() = this.spec.template.safeMetadata().safeMetadataAnnotations()[ANNOTATION_BOOBER_DEPLOYTAG]
+        ?: safeMetadataLabels()[LABEL_DEPLOYTAG] ?: ""
+
 val ObjectMeta.booberDeployId: String?
     get() = safeMetadataLabels()[LABEL_BOOBER_DEPLOY_ID]
 
 val DeploymentConfig.updatedBy: String?
     get() = safeMetadataLabels()[LABEL_UPDATED_BY]
+
+val Deployment.updatedBy: String?
+    get() = safeMetadataLabels()[LABEL_UPDATED_BY]
+
+val ReplicaSet.revision: String?
+    get() = safeMetadataAnnotations()["deployment.kubernetes.io/revision"]
 
 var ReplicationController.deploymentPhase: String?
     get() = safeMetadataAnnotations()[ANNOTATION_PHASE]

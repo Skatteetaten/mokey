@@ -1,35 +1,36 @@
 package no.skatteetaten.aurora.mokey
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import java.io.IOException
-import java.security.KeyManagementException
-import java.security.NoSuchAlgorithmException
-import java.util.concurrent.TimeUnit
+import io.fabric8.kubernetes.api.model.KubernetesList
+import io.fabric8.kubernetes.internal.KubernetesDeserializer
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
 import no.skatteetaten.aurora.filter.logging.AuroraHeaderFilter
 import no.skatteetaten.aurora.filter.logging.RequestKorrelasjon
-import no.skatteetaten.aurora.openshift.webclient.OpenShiftClientConfig
-import no.skatteetaten.aurora.openshift.webclient.readContent
-import okhttp3.OkHttpClient
+import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
+import no.skatteetaten.aurora.kubernetes.KubnernetesClientConfiguration
+import no.skatteetaten.aurora.kubernetes.RetryConfiguration
+import no.skatteetaten.aurora.kubernetes.TokenFetcher
+import no.skatteetaten.aurora.kubernetes.defaultHeaders
+import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
-import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
-import org.springframework.core.io.Resource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.http.client.ClientHttpRequestInterceptor
-import org.springframework.http.client.OkHttp3ClientHttpRequestFactory
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
-import org.springframework.web.client.RestTemplate
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import java.security.KeyStore
+import java.time.Duration
 
 enum class ServiceTypes {
     CANTUS
@@ -44,17 +45,26 @@ private val logger = KotlinLogging.logger {}
 
 @Configuration
 @EnableScheduling
-@Import(OpenShiftClientConfig::class)
-class ApplicationConfig : BeanPostProcessor {
+class ApplicationConfig(
+    @Value("\${spring.application.name}") val applicationName: String,
+    val kubeernetesClientConfig: KubnernetesClientConfiguration
+) : BeanPostProcessor {
 
-    override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
-        if (beanName == "_halObjectMapper" && bean is ObjectMapper) {
-            configureObjectMapper(bean)
-        }
-
-        return super.postProcessAfterInitialization(bean, beanName)
+    @Qualifier("managementClient")
+    @Bean
+    fun managementClient(
+        builder: WebClient.Builder,
+        @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?
+    ): KubernetesReactorClient {
+        return kubeernetesClientConfig.copy(
+            retry = RetryConfiguration(0),
+            timeout = kubeernetesClientConfig.timeout.copy(read = Duration.ofSeconds(2))
+        ).createServiceAccountReactorClient(builder, trustStore).apply {
+            webClientBuilder.defaultHeaders(applicationName)
+        }.build()
     }
 
+    // Management interface parsing needs this
     @Bean
     fun mapperBuilder(): Jackson2ObjectMapperBuilder = Jackson2ObjectMapperBuilder().apply {
         serializationInclusion(JsonInclude.Include.NON_NULL)
@@ -63,57 +73,51 @@ class ApplicationConfig : BeanPostProcessor {
     }
 
     @Bean
-    fun restTemplate(
-        builder: RestTemplateBuilder,
-        @Value("\${spring.application.name}") applicationName: String
-    ): RestTemplate {
-        return builder.requestFactory { createRequestFactory(2, 2) }
-            .additionalInterceptors(ClientHttpRequestInterceptor { request, body, execution ->
-                request.headers.apply {
-                    // We want to get the V2 format of the actuator health response
-                    set(HttpHeaders.ACCEPT, "application/vnd.spring-boot.actuator.v2+json,application/json")
-                    set("KlientID", applicationName)
-                }
+    fun tokenProvider(): TokenFetcher {
+        return object : TokenFetcher {
+            override fun token(): String {
+                return (SecurityContextHolder.getContext().authentication.principal as no.skatteetaten.aurora.mokey.controller.security.User).token
+            }
+        }
+    }
 
-                execution.execute(request, body)
-            }).build()
+    override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
+        KubernetesDeserializer.registerCustomKind(
+            "skatteetaten.no/v1",
+            "ApplicationDeploymentList",
+            KubernetesList::class.java
+        )
+
+        KubernetesDeserializer.registerCustomKind(
+            "skatteetaten.no/v1",
+            "ApplicationDeployment",
+            ApplicationDeployment::class.java
+        )
+        return super.postProcessAfterInitialization(bean, beanName)
     }
 
     @Bean
     @TargetService(ServiceTypes.CANTUS)
     fun webClientCantus(
         builder: WebClient.Builder,
-        @Value("\${integrations.cantus.url}") cantusUrl: String,
-        @Value("\${mokey.openshift.tokenLocation:file:/var/run/secrets/kubernetes.io/serviceaccount/token}") token: Resource
+        @Value("\${integrations.cantus.url}") cantusUrl: String
     ): WebClient {
         logger.info("Configuring Cantus WebClient with base Url={}", cantusUrl)
-        val b = webClientBuilder()
+        val b = builder
             .baseUrl(cantusUrl)
-            .exchangeStrategies(ExchangeStrategies.builder().codecs { it.defaultCodecs().apply {
-                maxInMemorySize(-1) // unlimited
-            } }.build())
-
-        try {
-            b.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer ${token.readContent()}")
-        } catch (e: IOException) {
-            logger.info("No token file found, will not add Authorization header to WebClient")
-        }
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .defaultHeader(AuroraHeaderFilter.KORRELASJONS_ID, RequestKorrelasjon.getId())
+            .defaultHeader("User-Agent", applicationName)
+            .exchangeStrategies(ExchangeStrategies.builder().codecs {
+                it.defaultCodecs().apply {
+                    maxInMemorySize(-1) // unlimited
+                }
+            }.build())
 
         return b.build()
     }
+}
 
-    fun webClientBuilder(ssl: Boolean = false) =
-        WebClient
-            .builder()
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .defaultHeader(AuroraHeaderFilter.KORRELASJONS_ID, RequestKorrelasjon.getId())
-
-    @Throws(NoSuchAlgorithmException::class, KeyManagementException::class)
-    private fun createRequestFactory(readTimeout: Long, connectionTimeout: Long): OkHttp3ClientHttpRequestFactory {
-        val okHttpClientBuilder = OkHttpClient().newBuilder()
-            .readTimeout(readTimeout, TimeUnit.SECONDS)
-            .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
-
-        return OkHttp3ClientHttpRequestFactory(okHttpClientBuilder.build())
-    }
+suspend fun <A, B> Iterable<A>.pmapIO(f: suspend (A) -> B): List<B> = coroutineScope {
+    map { async(MDCContext()) { f(it) } }.awaitAll()
 }
