@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
 
-// TODO: Split cache relevant functionality into its own service
 @Service
 class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,
@@ -216,13 +215,5 @@ class ApplicationDataService(
             .map { it.metadata.name }
 
         return values.filter { projectNames.contains(it.namespace) }
-    }
-
-    private fun withStopWatch(block: () -> Unit): StopWatch {
-        return StopWatch().also {
-            it.start()
-            block()
-            it.stop()
-        }
     }
 }
