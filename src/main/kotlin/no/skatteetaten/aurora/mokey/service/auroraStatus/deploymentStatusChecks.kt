@@ -230,6 +230,17 @@ class DeploymentInProgressCheck :
         !finalPhases.contains(app.lastDeployment)
 }
 
+@Component
+class ApplicationScaledDownCheck : StatusCheck(
+    StatusDescription(
+        ok = "Application is not scaled down.",
+        failed = "Application is scaled down by Destructor. Email has been sent to the creator"
+    ), OBSERVE
+) {
+
+    override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean = app.scaledDown != null
+}
+
 fun List<PodDetails>.isRestartsAboveThreshold(threshold: Int): Boolean {
     if (this.isEmpty()) {
         return false

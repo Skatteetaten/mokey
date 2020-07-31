@@ -80,7 +80,8 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
             deployment = it.deployment,
             phase = it.phase,
             deployTag = it.deployTag,
-            paused = it.paused
+            paused = it.paused,
+            scaledDown = it.scaledDown
         )
     }
 
