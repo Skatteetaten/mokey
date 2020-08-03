@@ -127,9 +127,7 @@ class AuroraStatusCalculatorTest {
             expected = AuroraStatus(
                 OBSERVE, toReport(tooFewPods)
             )
-        )
-
-        ,
+        ),
         APPLICATION_TURNED_OFF(
             availableReplicas = 0,
             targetReplicas = 0,
@@ -205,7 +203,6 @@ class AuroraStatusCalculatorTest {
             scaledDown = "CrashLoopBackOff",
             expected = AuroraStatus(OBSERVE, toReport(scaledDown))
         )
-
     }
 }
 
