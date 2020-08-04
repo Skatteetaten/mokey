@@ -146,7 +146,8 @@ data class DeployDetails(
     val phase: String? = null,
     val deployTag: String? = null,
     val paused: Boolean = false,
-    val updatedBy: String? = null
+    val updatedBy: String? = null,
+    val scaledDown: String? = null
 ) {
     val lastDeployment: String?
         get() = this.phase?.toLowerCase()

@@ -96,7 +96,8 @@ data class DeployDetailsResource(
     val deployment: String? = null,
     val phase: String? = null,
     val deployTag: String? = null,
-    val paused: Boolean
+    val paused: Boolean,
+    val scaledDown: String? = null
 )
 
 data class ContainerResource(

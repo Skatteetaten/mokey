@@ -277,7 +277,8 @@ class ApplicationDataServiceOpenShift(
             deployTag = runningRc?.deployTag,
             paused = dc.spec.paused ?: false,
             phase = phase,
-            updatedBy = dc.updatedBy
+            updatedBy = dc.updatedBy,
+            scaledDown = dc.metadata.labels["scale-down"]
         )
     }
 
@@ -293,7 +294,8 @@ class ApplicationDataServiceOpenShift(
             deployTag = runningRc?.deployTag,
             paused = deployment.spec.paused ?: false,
             phase = phase,
-            updatedBy = deployment.updatedBy
+            updatedBy = deployment.updatedBy,
+            scaledDown = deployment.metadata.labels["scale-down"]
         )
     }
 
