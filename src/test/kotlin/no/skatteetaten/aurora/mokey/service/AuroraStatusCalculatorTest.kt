@@ -210,7 +210,7 @@ fun toReport(vararg statusChecks: StatusCheck): List<StatusCheckReport> {
     return statusChecks.map {
         StatusCheckReport(
             name = it.name,
-            description = it.description.failed,
+            description = it.description.failed!!,
             hasFailed = true,
             failLevel = it.failLevel
         )

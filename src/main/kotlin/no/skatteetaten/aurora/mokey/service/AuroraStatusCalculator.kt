@@ -33,7 +33,8 @@ class AuroraStatusCalculator(val statusChecks: List<StatusCheck>) {
 
         val results = checks.map {
             val result = it.isFailing(app, pods, time)
-            StatusCheckResult(it, result)
+            val context= it.generateContext(app, pods, time)
+            StatusCheckResult(it, result, context)
         }
 
         val level = calculateAuroraStatusLevel(results)
