@@ -234,11 +234,16 @@ class DeploymentInProgressCheck :
 class ApplicationScaledDownCheck : StatusCheck(
     StatusDescription(
         ok = "Application is not scaled down.",
-        failed = "Application is scaled down by Destructor. Email has been sent to the creator"
+        failedFn = { context -> "Application is scaled down by Destructor reason=${context["reason"]}. Email has been sent to the creator" }
     ), OBSERVE
 ) {
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean = app.scaledDown != null
+    override fun generateContext(app: DeployDetails, pods: List<PodDetails>, time: Instant): Map<String, String> {
+       return app.scaledDown?.let {
+            mapOf("reason" to it)
+        } ?: emptyMap()
+    }
 }
 
 fun List<PodDetails>.isRestartsAboveThreshold(threshold: Int): Boolean {

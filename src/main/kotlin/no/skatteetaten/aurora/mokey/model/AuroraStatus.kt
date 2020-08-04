@@ -15,18 +15,38 @@ enum class AuroraStatusLevel(val level: Int) {
     HEALTHY(0)
 }
 
-data class StatusDescription(val ok: String, val failed: String)
+val emptyFn: (Map<String, String>) -> String = { context: Map<String, String> -> "" }
+
+data class StatusDescription(
+    val ok: String,
+    val failed: String? = "",
+    val failedFn: (context: Map<String, String>) -> String = emptyFn
+)
 
 abstract class StatusCheck(val description: StatusDescription, val failLevel: AuroraStatusLevel) {
     open val isOverridingAuroraStatus = false
     abstract fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean
+    open fun generateContext(app: DeployDetails, pods: List<PodDetails>, time: Instant): Map<String, String> {
+        return emptyMap()
+    }
+
     val name
         get() = this::class.simpleName ?: ""
 }
 
-data class StatusCheckResult(val statusCheck: StatusCheck, val hasFailed: Boolean) {
+data class StatusCheckResult(
+    val statusCheck: StatusCheck,
+    val hasFailed: Boolean,
+    val context: Map<String, String> = emptyMap()
+) {
     val description: String
-        get() = if (hasFailed) statusCheck.description.failed else statusCheck.description.ok
+        get() = if (hasFailed) {
+            if (context.isNotEmpty()) {
+                statusCheck.description.failedFn(context)
+            } else {
+                statusCheck.description.failed!!
+            }
+        } else statusCheck.description.ok
 }
 
 data class StatusCheckReport(

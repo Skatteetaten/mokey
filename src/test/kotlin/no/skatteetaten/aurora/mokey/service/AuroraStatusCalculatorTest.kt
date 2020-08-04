@@ -201,7 +201,12 @@ class AuroraStatusCalculatorTest {
         ),
         DESTRUCTOR_SCALED_DOWN(
             scaledDown = "CrashLoopBackOff",
-            expected = AuroraStatus(OBSERVE, toReport(scaledDown))
+            expected = AuroraStatus(OBSERVE, listOf(StatusCheckReport(
+                name= "ApplicationScaledDownCheck",
+                description = "Application is scaled down by Destructor reason=CrashLoopBackOff. Email has been sent to the creator",
+                failLevel = OBSERVE,
+                hasFailed = true
+            )))
         )
     }
 }
@@ -210,7 +215,7 @@ fun toReport(vararg statusChecks: StatusCheck): List<StatusCheckReport> {
     return statusChecks.map {
         StatusCheckReport(
             name = it.name,
-            description = it.description.failed,
+            description = it.description.failed!!,
             hasFailed = true,
             failLevel = it.failLevel
         )
