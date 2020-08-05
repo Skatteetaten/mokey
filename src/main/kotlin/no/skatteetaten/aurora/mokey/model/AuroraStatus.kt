@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.model
 
+import no.skatteetaten.aurora.mokey.service.auroraStatus.averageRestarts
 import java.time.Instant
 
 data class AuroraStatus(
@@ -23,10 +24,29 @@ data class StatusDescription(
     val failedFn: (context: Map<String, String>) -> String = emptyFn
 )
 
+data class StatusCheckContext(
+    val scaledDown: String?,
+    val averageRestarts: Int,
+    val readyPods: Int,
+    val observePods: Int,
+    val errorPods: Int,
+    val availableReplicas: Int,
+    val targetReplicas: Int
+)
+
 abstract class StatusCheck(val description: StatusDescription, val failLevel: AuroraStatusLevel) {
     open val isOverridingAuroraStatus = false
     abstract fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean
     open fun generateContext(app: DeployDetails, pods: List<PodDetails>, time: Instant): Map<String, String> {
+
+        val context = StatusCheckContext(
+           scaledDown = app.scaledDown,
+            targetReplicas = app.targetReplicas,
+            availableReplicas = app.availableReplicas,
+            averageRestarts = pods.averageRestarts(),
+
+
+        )
         return emptyMap()
     }
 

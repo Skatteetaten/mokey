@@ -211,7 +211,7 @@ class OffCheck : StatusCheck(
     override val isOverridingAuroraStatus = true
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
-        app.targetReplicas == 0 && app.availableReplicas == 0
+        app.targetReplicas == 0 && app.availableReplicas == 0 && app.scaledDown == null
 }
 
 @Component
@@ -238,12 +238,23 @@ class ApplicationScaledDownCheck : StatusCheck(
     ), OBSERVE
 ) {
 
+    override val isOverridingAuroraStatus = true
+
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean = app.scaledDown != null
     override fun generateContext(app: DeployDetails, pods: List<PodDetails>, time: Instant): Map<String, String> {
        return app.scaledDown?.let {
             mapOf("reason" to it)
         } ?: emptyMap()
     }
+}
+
+
+fun List<PodDetails>.averageRestarts(): Int {
+    if (this.isEmpty()) {
+        return 0
+    }
+    val totalRestarts = this.sumBy { it.openShiftPodExcerpt.containers.sumBy { c -> c.restartCount } }
+    return  totalRestarts / this.size
 }
 
 fun List<PodDetails>.isRestartsAboveThreshold(threshold: Int): Boolean {
@@ -263,4 +274,14 @@ fun List<PodDetails>.validateStatus(validator: (status: String) -> Boolean): Boo
             validator(status)
         } ?: false
     }
+}
+
+
+fun List<PodDetails>.filterPodsByManagementHealthStatus(validator: (status: String) -> Boolean): Int {
+    return this.filter { pod ->
+        pod.managementData.health?.deserialized?.let {
+            val status = it.at("/status").textValue().toUpperCase()
+            validator(status)
+        }  ?: false
+    }.size
 }
