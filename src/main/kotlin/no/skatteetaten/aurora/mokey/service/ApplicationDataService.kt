@@ -18,7 +18,6 @@ private val logger = KotlinLogging.logger {}
 @Service
 class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,
-    val client: OpenShiftUserClient,
     val serivceClient: OpenShiftServiceAccountClient,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
     val statusRegistry: ApplicationStatusRegistry
@@ -178,10 +177,14 @@ class ApplicationDataService(
 
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
+        logger.info("All values are={}", values)
         // TODO: Her vil vi alltid allowe dette
         // TODO: Hent alle view rolebindings og admin rolebindings lag map fra namespace til viewGroups og adminGroups
-        val projectNames = runBlocking { serivceClient.getAllNamespaces() }
-            .map { it.metadata.name }
+        val projectNames = runBlocking {
+            serivceClient.getAllNamespaces()
+                .map { it.metadata.name }
+        }
+        logger.debug("Projectnames are={}", projectNames)
 
         return values.filter { projectNames.contains(it.namespace) }
     }

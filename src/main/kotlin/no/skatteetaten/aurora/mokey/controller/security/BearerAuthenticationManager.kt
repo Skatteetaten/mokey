@@ -1,6 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.service.OpenShiftServiceAccountClient
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
@@ -9,6 +10,8 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.util.regex.Pattern
+
+private val logger = KotlinLogging.logger {}
 
 @Component
 class BearerAuthenticationManager(
@@ -32,8 +35,9 @@ class BearerAuthenticationManager(
         try {
             val token = getBearerTokenFromAuthentication(authentication)
             val user = runBlocking {
-                client.tokenRewivew(token)
+                client.tokenReview(token)
             }
+            logger.debug("Logged in with user={}", user)
             return PreAuthenticatedAuthenticationToken(user, token)
         } catch (e: WebClientResponseException.Unauthorized) {
             throw BadCredentialsException(e.localizedMessage, e)

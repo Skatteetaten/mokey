@@ -16,7 +16,7 @@ spring:
 logging:
     level:
         reactor.netty: ERROR
-        no.skatteetaten.aurora: INFO
+        no.skatteetaten.aurora: DEBUG
         no.skatteetaten.aurora.kubernetes: DEBUG
         org:
             hibernate: WARN
