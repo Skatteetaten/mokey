@@ -179,6 +179,7 @@ class ApplicationDataService(
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
         //TODO: Her vil vi alltid allowe dette
+        //TODO: Hent alle view rolebindings og admin rolebindings lag map fra namespace til viewGroups og adminGroups
         val projectNames = runBlocking { serivceClient.getAllNamespaces() }
             .map { it.metadata.name }
 
