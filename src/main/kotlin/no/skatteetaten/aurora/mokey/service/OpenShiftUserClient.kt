@@ -21,6 +21,4 @@ class OpenShiftUserClient(
 
     // TODO: Does this work on kubernetes?
     suspend fun selfSubjectAccessReview(review: SelfSubjectAccessReview): SelfSubjectAccessReview = client.post(review)
-
-    suspend fun getAllProjects(): List<Namespace> = client.getMany()
 }

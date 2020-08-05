@@ -14,7 +14,9 @@ import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.apps.Deployment
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet
+import io.fabric8.kubernetes.api.model.authentication.TokenReview
 import io.fabric8.kubernetes.api.model.extensions.Ingress
+import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.ClientTypes
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.TargetClient
@@ -22,16 +24,23 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
 import org.springframework.stereotype.Service
 
+private val logger = KotlinLogging.logger {}
+
 @Service
 class OpenShiftServiceAccountClient(
     @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient
 ) {
 
-    suspend fun tokenRewivew(authToken: String) = client.post(newTokenReview {
-        spec {
-            token = authToken
+    suspend fun tokenRewivew(authToken: String): TokenReview {
+
+        val body = newTokenReview {
+            spec {
+                token = authToken
+            }
         }
-    })
+        logger.info("{}", body)
+        return client.post(body)
+    }
 
     suspend fun getServices(metadata: ObjectMeta) =
         client.getMany(newService { this.metadata = metadata })

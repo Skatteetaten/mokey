@@ -19,6 +19,7 @@ private val logger = KotlinLogging.logger {}
 class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,
     val client: OpenShiftUserClient,
+    val serivceClient: OpenShiftServiceAccountClient,
     @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
     val statusRegistry: ApplicationStatusRegistry
 
@@ -177,7 +178,9 @@ class ApplicationDataService(
 
         val values = if (id != null) listOfNotNull(cache[id]) else cache.map { it.value }
 
-        val projectNames = runBlocking { client.getAllProjects() }.map { it.metadata.name }
+        //TODO: Her vil vi alltid allowe dette
+        val projectNames = runBlocking { serivceClient.getAllNamespaces() }
+            .map { it.metadata.name }
 
         return values.filter { projectNames.contains(it.namespace) }
     }
