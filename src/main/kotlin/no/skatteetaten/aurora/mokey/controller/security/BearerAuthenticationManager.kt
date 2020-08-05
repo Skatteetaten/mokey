@@ -31,7 +31,7 @@ class BearerAuthenticationManager(
     override fun authenticate(authentication: Authentication?): Authentication {
         try {
             val token = getBearerTokenFromAuthentication(authentication)
-            val user= runBlocking {
+            val user = runBlocking {
                 client.tokenRewivew(token)
             }
             return PreAuthenticatedAuthenticationToken(user, token)

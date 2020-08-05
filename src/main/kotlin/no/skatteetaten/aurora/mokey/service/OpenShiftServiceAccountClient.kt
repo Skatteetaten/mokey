@@ -27,9 +27,9 @@ class OpenShiftServiceAccountClient(
     @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient
 ) {
 
-    suspend fun tokenRewivew(authToken:String)= client.post(newTokenReview {
+    suspend fun tokenRewivew(authToken: String) = client.post(newTokenReview {
         spec {
-            token= authToken
+            token = authToken
         }
     })
 

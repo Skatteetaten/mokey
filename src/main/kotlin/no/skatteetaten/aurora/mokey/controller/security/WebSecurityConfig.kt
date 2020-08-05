@@ -3,7 +3,6 @@ package no.skatteetaten.aurora.mokey.controller.security
 import io.fabric8.kubernetes.api.model.authentication.TokenReview
 import javax.servlet.http.HttpServletRequest
 import mu.KotlinLogging
-import no.skatteetaten.aurora.mokey.service.OpenShiftServiceAccountClient
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
