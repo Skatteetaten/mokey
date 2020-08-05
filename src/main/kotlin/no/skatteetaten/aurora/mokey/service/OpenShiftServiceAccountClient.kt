@@ -3,6 +3,8 @@ package no.skatteetaten.aurora.mokey.service
 import com.fkorotkov.kubernetes.apps.metadata
 import com.fkorotkov.kubernetes.apps.newDeployment
 import com.fkorotkov.kubernetes.apps.newReplicaSet
+import com.fkorotkov.kubernetes.authentication.newTokenReview
+import com.fkorotkov.kubernetes.authentication.spec
 import com.fkorotkov.kubernetes.extensions.newIngress
 import com.fkorotkov.kubernetes.metadata
 import com.fkorotkov.kubernetes.newPod
@@ -24,6 +26,13 @@ import org.springframework.stereotype.Service
 class OpenShiftServiceAccountClient(
     @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient
 ) {
+
+    suspend fun tokenRewivew(authToken:String)= client.post(newTokenReview {
+        spec {
+            token= authToken
+        }
+    })
+
     suspend fun getServices(metadata: ObjectMeta) =
         client.getMany(newService { this.metadata = metadata })
 

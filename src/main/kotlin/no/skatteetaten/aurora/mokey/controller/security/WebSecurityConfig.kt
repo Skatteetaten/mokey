@@ -1,7 +1,9 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
+import io.fabric8.kubernetes.api.model.authentication.TokenReview
 import javax.servlet.http.HttpServletRequest
 import mu.KotlinLogging
+import no.skatteetaten.aurora.mokey.service.OpenShiftServiceAccountClient
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -41,9 +43,9 @@ class WebSecurityConfig(
     internal fun preAuthenticationProvider() = PreAuthenticatedAuthenticationProvider().apply {
         setPreAuthenticatedUserDetailsService { it: PreAuthenticatedAuthenticationToken ->
 
-            val principal = it.principal as io.fabric8.openshift.api.model.User
-            val fullName = principal.fullName
-            val username = principal.metadata.name
+            val principal = it.principal as TokenReview
+            val fullName = principal.status.user.username
+            val username = principal.status.user.username
 
             MDC.put("user", username)
             User(username, it.credentials as String, fullName).also {
