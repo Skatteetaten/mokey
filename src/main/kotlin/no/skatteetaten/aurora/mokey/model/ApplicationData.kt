@@ -138,7 +138,7 @@ data class ImageDetails(
     val auroraVersion: String
         get() = environmentVariables["AURORA_VERSION"] ?: ""
     val dockerImageRepo: String?
-        get() = dockerImageReference.replace(Regex("@.*$"), "")
+        get() = dockerImageReference.replace(Regex("@.*$"), "").substringBeforeLast(":")
 }
 
 data class DeployDetails(
