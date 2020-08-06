@@ -32,12 +32,14 @@ class BearerAuthenticationManager(
     }
 
     override fun authenticate(authentication: Authentication?): Authentication {
+        logger.info("Start authenticate")
         try {
             val token = getBearerTokenFromAuthentication(authentication)
+            logger.info("Fetched token")
             val user = runBlocking {
                 client.tokenReview(token)
             }
-            logger.debug("Logged in with user={}", user)
+            logger.info("Logged in with user={}", user)
             return PreAuthenticatedAuthenticationToken(user, token)
         } catch (e: WebClientResponseException.Unauthorized) {
             throw BadCredentialsException(e.localizedMessage, e)

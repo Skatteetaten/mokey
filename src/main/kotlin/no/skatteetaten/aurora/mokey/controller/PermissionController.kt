@@ -36,7 +36,7 @@ class PermissionController(
                 resourceAttributes {
                     this.namespace = namespace
                     verb = "update"
-                    resource = "deployment"
+                    resource = "services"
                 }
             }
         }

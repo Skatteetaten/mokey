@@ -9,9 +9,9 @@ spring:
         active: local
 
 
-#logback:
-#    access:
-#        config: file:${logback.access.b3}
+logback:
+    access:
+        config: file:${logback.access.b3}
 
 logging:
     level:

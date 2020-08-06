@@ -41,7 +41,7 @@ class WebSecurityConfig(
     @Bean
     internal fun preAuthenticationProvider() = PreAuthenticatedAuthenticationProvider().apply {
         setPreAuthenticatedUserDetailsService { it: PreAuthenticatedAuthenticationToken ->
-
+            logger.info("Processing token")
             val principal = it.principal as TokenReview
             val fullName = principal.status.user.username
             val username = principal.status.user.username
