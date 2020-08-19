@@ -211,7 +211,7 @@ class OffCheck : StatusCheck(
     override val isOverridingAuroraStatus = true
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean =
-        app.targetReplicas == 0 && app.availableReplicas == 0
+        app.targetReplicas == 0 && app.availableReplicas == 0 && app.scaledDown == null
 }
 
 @Component
@@ -231,12 +231,14 @@ class DeploymentInProgressCheck :
 }
 
 @Component
-class ApplicationScaledDownCheck : StatusCheck(
+class ApplicationStoppedDueToError : StatusCheck(
     StatusDescription(
         ok = "Application is not scaled down.",
-        failed = "Application is scaled down by Destructor. Email has been sent to the creator"
-    ), OBSERVE
+        failed = "Application is stopped by the Aurora Platform. Email has been sent with detailed information"
+    ), DOWN
 ) {
+
+    override val isOverridingAuroraStatus = true
 
     override fun isFailing(app: DeployDetails, pods: List<PodDetails>, time: Instant): Boolean = app.scaledDown != null
 }

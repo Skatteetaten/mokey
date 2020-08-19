@@ -15,7 +15,7 @@ import no.skatteetaten.aurora.mokey.model.StatusCheck
 import no.skatteetaten.aurora.mokey.model.StatusCheckReport
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodDownCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodObserveCheck
-import no.skatteetaten.aurora.mokey.service.auroraStatus.ApplicationScaledDownCheck
+import no.skatteetaten.aurora.mokey.service.auroraStatus.ApplicationStoppedDueToError
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AverageRestartErrorCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AverageRestartObserveCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.DeployFailedCheck
@@ -86,7 +86,7 @@ class AuroraStatusCalculatorTest {
         val averageRestartError = AverageRestartErrorCheck(averageRestartErrorThreshold)
         val averageRestartObserve = AverageRestartObserveCheck(averageRestartObserveThreshold)
         val differentDeployment = DifferentDeploymentCheck(hourThreshold)
-        val scaledDown = ApplicationScaledDownCheck()
+        val scaledDown = ApplicationStoppedDueToError()
     }
 
     enum class StatusCalculatorTestData(
@@ -200,8 +200,11 @@ class AuroraStatusCalculatorTest {
             expected = AuroraStatus(OBSERVE, toReport(averageRestartObserve))
         ),
         DESTRUCTOR_SCALED_DOWN(
+            availableReplicas = 0,
+            targetReplicas = 0,
+            pods = listOf(),
             scaledDown = "CrashLoopBackOff",
-            expected = AuroraStatus(OBSERVE, toReport(scaledDown))
+            expected = AuroraStatus(DOWN, toReport(scaledDown))
         )
     }
 }
