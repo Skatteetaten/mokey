@@ -234,7 +234,7 @@ class DeploymentInProgressCheck :
 class ApplicationStoppedDueToError : StatusCheck(
     StatusDescription(
         ok = "Application is not scaled down.",
-        failed = "Application is stopped by Destructor. Email has been sent to the creator"
+        failed = "Application is stopped by the AuroraPlattform. Email has been sent with detailed information"
     ), DOWN
 ) {
 
