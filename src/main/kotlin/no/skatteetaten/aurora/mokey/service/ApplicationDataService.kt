@@ -7,6 +7,7 @@ import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import org.apache.commons.lang3.exception.ExceptionUtils
@@ -39,6 +40,13 @@ class ApplicationDataService(
      */
     fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? {
         return cache[id]?.publicData
+    }
+
+    fun findPublicApplicationDataByApplicationDeploymentRef(applicationDeploymentRefs: List<ApplicationDeploymentRef>): List<ApplicationPublicData> {
+        return cache.filter {
+            val publicData = it.value.publicData
+            applicationDeploymentRefs.contains(ApplicationDeploymentRef(publicData.environment, publicData.applicationName))
+        }.ifEmpty { return emptyList() }.values.map { it.publicData }
     }
 
     fun findAllPublicApplicationDataByApplicationId(id: String): List<ApplicationPublicData> =

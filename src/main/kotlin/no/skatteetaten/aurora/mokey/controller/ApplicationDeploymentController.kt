@@ -1,5 +1,6 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.StatusCheckReport
@@ -7,6 +8,8 @@ import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.q3c.rest.hal.HalLink
@@ -28,6 +31,13 @@ class ApplicationDeploymentController(
             applicationDataService.findPublicApplicationDataByApplicationDeploymentId(id)
                 ?: throw NoSuchResourceException("Does not exist")
         return assembler.toResource(application)
+    }
+
+    @PostMapping
+    fun getApplicationDeploymentForRefs(@RequestBody applicationDeploymentRefs: List<ApplicationDeploymentRef>): List<ApplicationDeploymentResource> {
+        val applications =
+            applicationDataService.findPublicApplicationDataByApplicationDeploymentRef(applicationDeploymentRefs)
+        return assembler.toResources(applications)
     }
 }
 

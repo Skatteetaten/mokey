@@ -2,6 +2,7 @@ package no.skatteetaten.aurora.mokey.service
 
 import assertk.assertThat
 import assertk.assertions.hasSize
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import com.fkorotkov.kubernetes.newKubernetesList
 import com.fkorotkov.kubernetes.newNamespaceList
@@ -28,14 +29,13 @@ import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.ProjectDataBuilder
 import no.skatteetaten.aurora.mokey.ReplicationControllerDataBuilder
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.util.SocketUtils
-import java.lang.IllegalArgumentException
-import java.lang.RuntimeException
 import java.time.Duration
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
@@ -150,6 +150,30 @@ class ApplicationDataServiceTest {
         assertThat(publicData.first().affiliation).isEqualTo("aurora")
         assertThat(pd1?.affiliation).isEqualTo("aurora")
         assertThat(pd2.first().affiliation).isEqualTo("aurora")
+    }
+
+    @Test
+    fun `Read public application data with ApplicationDeploymentRef`() {
+        dataService.cache()
+        val publicData = dataService.findAllPublicApplicationData(listOf("aurora"))
+        val applicationDeploymentRef =
+            ApplicationDeploymentRef(publicData.first().environment, publicData.first().applicationName)
+
+        val pd1 =
+            dataService.findPublicApplicationDataByApplicationDeploymentRef(listOf(applicationDeploymentRef))
+        val pd2 = dataService.findAllPublicApplicationDataByApplicationId(publicData.first().applicationId!!)
+
+        assertThat(publicData.first().affiliation).isEqualTo("aurora")
+        assertThat(pd1.first().affiliation).isEqualTo("aurora")
+        assertThat(pd2.first().affiliation).isEqualTo("aurora")
+    }
+
+    @Test
+    fun `Return null if no ApplicationDeployment is found`() {
+        val applicationData = dataService.findPublicApplicationDataByApplicationDeploymentRef(
+            listOf(ApplicationDeploymentRef("unknown", "unknown"))
+        )
+        assertThat(applicationData).isEmpty()
     }
 
     @Test
