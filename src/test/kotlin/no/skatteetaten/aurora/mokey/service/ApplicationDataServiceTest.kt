@@ -169,7 +169,7 @@ class ApplicationDataServiceTest {
     }
 
     @Test
-    fun `Return null if no ApplicationDeployment is found`() {
+    fun `Return empty list if no ApplicationDeployment is found`() {
         val applicationData = dataService.findPublicApplicationDataByApplicationDeploymentRef(
             listOf(ApplicationDeploymentRef("unknown", "unknown"))
         )
