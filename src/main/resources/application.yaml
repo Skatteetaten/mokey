@@ -79,6 +79,10 @@ kubernetes:
 ---
 spring:
     profiles: openshift
+    zipkin:
+        enabled: false
+    sleuth:
+        enabled: false
 
 logback:
     access:
