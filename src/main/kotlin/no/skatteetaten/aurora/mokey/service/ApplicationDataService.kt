@@ -45,7 +45,7 @@ class ApplicationDataService(
     fun findPublicApplicationDataByApplicationDeploymentRef(applicationDeploymentRefs: List<ApplicationDeploymentRef>): List<ApplicationPublicData> {
         return cache.filter {
             val publicData = it.value.publicData
-            applicationDeploymentRefs.contains(ApplicationDeploymentRef(publicData.environment, publicData.applicationName))
+            applicationDeploymentRefs.contains(ApplicationDeploymentRef(publicData.environment, publicData.applicationDeploymentName))
         }.ifEmpty { return emptyList() }.values.map { it.publicData }
     }
 
