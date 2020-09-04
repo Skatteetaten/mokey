@@ -157,7 +157,7 @@ class ApplicationDataServiceTest {
         dataService.cache()
         val publicData = dataService.findAllPublicApplicationData(listOf("aurora"))
         val applicationDeploymentRef =
-            ApplicationDeploymentRef(publicData.first().environment, publicData.first().applicationName)
+            ApplicationDeploymentRef(publicData.first().environment, publicData.first().applicationDeploymentName)
 
         val pd1 =
             dataService.findPublicApplicationDataByApplicationDeploymentRef(listOf(applicationDeploymentRef))
