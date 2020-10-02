@@ -13,13 +13,18 @@ class LinkBuilderFactory(
     @Value("\${integrations.boober.url}") val booberApiUrl: String,
     @Value("\${integrations.metrics.url}") val metricsHostname: String,
     @Value("\${integrations.splunk.url}") val splunkHostname: String,
-    @Value("\${openshift.cluster}") val cluster: String
+    @Value("\${openshift.cluster}") val cluster: String,
+    @Value("\${openshift.majorVersion:3}") val openshiftVersion: Int
 ) {
     @Bean
-    fun linkBuilder(): LinkBuilder = LinkBuilder(booberApiUrl, expandParams)
+    fun linkBuilder(): LinkBuilder = LinkBuilder(booberApiUrl, expandParams, openshiftVersion)
 }
 
-class LinkBuilder(private val booberApiUrl: String, private val globalExpandParams: Map<String, String>) {
+class LinkBuilder(
+    private val booberApiUrl: String,
+    private val globalExpandParams: Map<String, String>,
+    private val openShiftVersion: Int = 3
+) {
 
     fun applyResult(auroraConfigName: String, deployId: String) =
         createLink(
@@ -116,16 +121,31 @@ class LinkBuilder(private val booberApiUrl: String, private val globalExpandPara
 
     // TODO: Should improve the way we create deep links to pods in the console.
     fun openShiftConsoleLinks(pod: String, project: String): List<Link> {
-        return listOf("details", "environment", "terminal", "events", "log").map {
-            val url = UriComponentsBuilder
-                .newInstance()
-                .scheme("https")
-                .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
-                .port(8443)
-                .pathSegment("console/project", project, "browse/pods", pod)
-                .queryParam("tab", it)
-                .build()
-                .toUriString()
+        return listOf("details", "environment", "terminal", "events", "logs").map {
+
+            val url = if (openShiftVersion == 3) {
+                UriComponentsBuilder
+                    .newInstance()
+                    .scheme("https")
+                    .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
+                    .port(8443)
+                    .pathSegment("console/project", project, "browse/pods", pod)
+                    .queryParam("tab", it)
+                    .build()
+                    .toUriString()
+            } else {
+                val tabSegment = when (it) {
+                    "details" -> ""
+                    else -> it
+                }
+                UriComponentsBuilder
+                    .newInstance()
+                    .scheme("https")
+                    .host("console-openshift-console.apps.${globalExpandParams["cluster"]}.paas.skead.no")
+                    .pathSegment("k8s/ns", project, "pods", pod, tabSegment)
+                    .build()
+                    .toUriString()
+            }
             Link("ocp_console_$it", url)
         }
     }

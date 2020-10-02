@@ -2,7 +2,6 @@ package no.skatteetaten.aurora.mokey.controller
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.nio.charset.Charset
@@ -122,10 +121,25 @@ class LinkBuilderTest {
 
         val links = linkBuilder.openShiftConsoleLinks("noodlenose-8981", "paas-test")
 
-        assertThat(links.find { it.rel == "ocp_console_details" }).isNotNull()
-        assertThat(links.find { it.rel == "ocp_console_environment" }).isNotNull()
-        assertThat(links.find { it.rel == "ocp_console_terminal" }).isNotNull()
-        assertThat(links.find { it.rel == "ocp_console_events" }).isNotNull()
-        assertThat(links.find { it.rel == "ocp_console_log" }).isNotNull()
+        val baseUrl = "https://utv-master.paas.skead.no:8443/console/project/paas-test/browse/pods/noodlenose-8981?tab"
+        assertThat(links.find { it.rel == "ocp_console_details" }?.href).isEqualTo("$baseUrl=details")
+        assertThat(links.find { it.rel == "ocp_console_environment" }?.href).isEqualTo("$baseUrl=environment")
+        assertThat(links.find { it.rel == "ocp_console_terminal" }?.href).isEqualTo("$baseUrl=terminal")
+        assertThat(links.find { it.rel == "ocp_console_events" }?.href).isEqualTo("$baseUrl=events")
+        assertThat(links.find { it.rel == "ocp_console_logs" }?.href).isEqualTo("$baseUrl=logs")
+    }
+
+    @Test
+    fun `should create OpenShift Console links openshift4`() {
+        val linkBuilder = LinkBuilder("", mapOf("cluster" to "utv"), 4)
+
+        val links = linkBuilder.openShiftConsoleLinks("noodlenose-8981", "paas-test")
+
+        val baseUrl = "https://console-openshift-console.apps.utv.paas.skead.no/k8s/ns/paas-test/pods/noodlenose-8981"
+        assertThat(links.find { it.rel == "ocp_console_details" }?.href).isEqualTo(baseUrl)
+        assertThat(links.find { it.rel == "ocp_console_environment" }?.href).isEqualTo("$baseUrl/environment")
+        assertThat(links.find { it.rel == "ocp_console_terminal" }?.href).isEqualTo("$baseUrl/terminal")
+        assertThat(links.find { it.rel == "ocp_console_events" }?.href).isEqualTo("$baseUrl/events")
+        assertThat(links.find { it.rel == "ocp_console_logs" }?.href).isEqualTo("$baseUrl/logs")
     }
 }
