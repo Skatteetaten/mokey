@@ -120,16 +120,16 @@ class ApplicationDataService(
         }
     }
 
-    fun refreshItem(applicationId: String) =
-        findApplicationDataByApplicationDeploymentId(applicationId)?.let { current ->
+    fun refreshItem(applicationDeploymentId: String) =
+        findApplicationDataByApplicationDeploymentId(applicationDeploymentId)?.let { current ->
             val data = runBlocking(MDCContext()) {
                 applicationDataService.createSingleItem(
                     current.namespace,
                     current.applicationDeploymentName
                 )
             }
-            addCacheEntry(applicationId, data)
-        } ?: throw IllegalArgumentException("ApplicationDeploymentId=$applicationId is not cached")
+            addCacheEntry(applicationDeploymentId, data)
+        } ?: throw IllegalArgumentException("ApplicationDeploymentId=$applicationDeploymentId is not cached")
 
     fun cacheAtStartup() {
         runBlocking(MDCContext()) {
