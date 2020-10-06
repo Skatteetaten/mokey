@@ -129,7 +129,7 @@ class ApplicationDataService(
                 )
             }
             addCacheEntry(applicationId, data)
-        } ?: throw IllegalArgumentException("ApplicationId=$applicationId is not cached")
+        } ?: throw IllegalArgumentException("ApplicationDeploymentId=$applicationId is not cached")
 
     fun cacheAtStartup() {
         runBlocking(MDCContext()) {
