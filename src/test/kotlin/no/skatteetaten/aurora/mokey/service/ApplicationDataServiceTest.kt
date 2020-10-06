@@ -4,6 +4,8 @@ import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFailure
+import assertk.assertions.isInstanceOf
 import com.fkorotkov.kubernetes.newKubernetesList
 import com.fkorotkov.kubernetes.newNamespaceList
 import com.fkorotkov.kubernetes.newReplicationControllerList
@@ -230,6 +232,11 @@ class ApplicationDataServiceTest {
         dataService.cache()
         val updatedAffiliations = dataService.findAllAffiliations()
         assertThat(updatedAffiliations).hasSize(0)
+    }
+
+    @Test
+    fun `Refresh cache with unknown applicationDeploymentId`() {
+        assertThat { dataService.refreshItem("abc") }.isFailure().isInstanceOf(IllegalArgumentException::class)
     }
 
     private fun registerProjectsResponse() {
