@@ -44,7 +44,7 @@ class ApplicationStatusRegistryTest {
     @Test
     fun `should register new metric`() {
         registry.add(data)
-        val gauge = meterRegistry.get("application_status").tag("app_id", "1337").gauge()
+        val gauge = meterRegistry.get("application_status").tag("app_name", "reference").gauge()
         assertThat(gauge).isNotNull()
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
@@ -53,7 +53,7 @@ class ApplicationStatusRegistryTest {
     @Test
     fun `should update metric with same tags, different health`() {
         registry.add(data)
-        val gauge = meterRegistry.get("application_status").tag("app_id", "1337").gauge()
+        val gauge = meterRegistry.get("application_status").tag("app_name", "reference").gauge()
         assertThat(gauge).isNotNull()
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
@@ -61,7 +61,7 @@ class ApplicationStatusRegistryTest {
         val newData = data.copy(auroraStatus = AuroraStatus(AuroraStatusLevel.OBSERVE))
         registry.update(data, newData)
 
-        val gauges = meterRegistry.get("application_status").tag("app_id", "1337").gauges()
+        val gauges = meterRegistry.get("application_status").tag("app_name", "reference").gauges()
         assertThat(gauges).isNotNull()
         assertThat(gauges.size).isEqualTo(1)
         assertThat(gauges.first().value()).isEqualTo(2.0)
@@ -71,7 +71,7 @@ class ApplicationStatusRegistryTest {
     @Test
     fun `should update metric with different tags`() {
         registry.add(data)
-        val gauge = meterRegistry.get("application_status").tag("app_id", "1337").gauge()
+        val gauge = meterRegistry.get("application_status").tag("app_name", "reference").gauge()
         assertThat(gauge).isNotNull()
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
@@ -79,7 +79,7 @@ class ApplicationStatusRegistryTest {
         val newData = data.copy(deployTag = "1.1")
         registry.update(data, newData)
 
-        val gauges = meterRegistry.get("application_status").tag("app_id", "1337").gauges()
+        val gauges = meterRegistry.get("application_status").tag("app_name", "reference").gauges()
         assertThat(gauges).isNotNull()
         assertThat(gauges.size).isEqualTo(1)
         assertThat(gauges.first().value()).isEqualTo(0.0)
@@ -89,14 +89,14 @@ class ApplicationStatusRegistryTest {
     @Test
     fun `should remove metric`() {
         registry.add(data)
-        val gauge = meterRegistry.get("application_status").tag("app_id", "1337").gauge()
+        val gauge = meterRegistry.get("application_status").tag("app_name", "reference").gauge()
         assertThat(gauge).isNotNull()
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
 
         registry.remove(data)
         assertThat {
-            meterRegistry.get("application_status").tag("app_id", "1337").gauges()
+            meterRegistry.get("application_status").tag("app_name", "reference").gauges()
         }.isFailure().all {
             isInstanceOf(MeterNotFoundException::class)
         }
