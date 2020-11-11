@@ -62,16 +62,13 @@ class ApplicationStatusRegistry(
 
     private fun createMetricsTags(data: ApplicationPublicData): List<Tag> {
         return listOf(
-            Tag.of("app_version", data.auroraVersion ?: ""),
             Tag.of("app_namespace", data.namespace),
             Tag.of("app_environment", data.environment),
             Tag.of("app_cluster", openshiftCluster),
             Tag.of("app_name", data.applicationDeploymentName),
-            Tag.of("app_id", data.applicationDeploymentId),
             Tag.of("app_source", openshiftCluster),
             Tag.of("app_type", "aurora-plattform"),
-            Tag.of("app_businessgroup", data.affiliation ?: ""),
-            Tag.of("app_version_strategy", data.deployTag)
+            Tag.of("app_businessgroup", data.affiliation ?: "")
         )
     }
 
