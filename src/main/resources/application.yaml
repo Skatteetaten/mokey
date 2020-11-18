@@ -7,6 +7,8 @@ info:
 spring:
     profiles:
         active: local
+    codec:
+        max-in-memory-size: -1 # Unlimited
 
 
 logging:
