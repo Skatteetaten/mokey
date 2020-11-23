@@ -48,6 +48,9 @@ class ApplicationStatusRegistryTest {
         assertThat(gauge).isNotNull()
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
+
+        val infoGauge = meterRegistry.get("application_info").tag("app_name", "reference").gauge()
+        assertThat(infoGauge).isNotNull()
     }
 
     @Test
@@ -66,6 +69,10 @@ class ApplicationStatusRegistryTest {
         assertThat(gauges.size).isEqualTo(1)
         assertThat(gauges.first().value()).isEqualTo(2.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
+
+        val infoGauges = meterRegistry.get("application_info").tag("app_name", "reference").gauges()
+        assertThat(infoGauges).isNotNull()
+        assertThat(infoGauges.size).isEqualTo(1)
     }
 
     @Test
@@ -76,6 +83,11 @@ class ApplicationStatusRegistryTest {
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
 
+        val infoGauges = meterRegistry.get("application_info").tag("app_name", "reference").gauges()
+        assertThat(infoGauges).isNotNull()
+        assertThat(infoGauges.size).isEqualTo(1)
+        assertThat(infoGauges.first().id.getTag("app_version_strategy")).isEqualTo("1")
+
         val newData = data.copy(deployTag = "1.1")
         registry.update(data, newData)
 
@@ -84,6 +96,11 @@ class ApplicationStatusRegistryTest {
         assertThat(gauges.size).isEqualTo(1)
         assertThat(gauges.first().value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
+
+        val infoGaugesAfter = meterRegistry.get("application_info").tag("app_name", "reference").gauges()
+        assertThat(infoGaugesAfter).isNotNull()
+        assertThat(infoGaugesAfter.size).isEqualTo(1)
+        assertThat(infoGaugesAfter.first().id.getTag("app_version_strategy")).isEqualTo("1.1")
     }
 
     @Test
@@ -97,6 +114,12 @@ class ApplicationStatusRegistryTest {
         registry.remove(data)
         assertThat {
             meterRegistry.get("application_status").tag("app_name", "reference").gauges()
+        }.isFailure().all {
+            isInstanceOf(MeterNotFoundException::class)
+        }
+
+        assertThat {
+            meterRegistry.get("application_info").tag("app_name", "reference").gauges()
         }.isFailure().all {
             isInstanceOf(MeterNotFoundException::class)
         }
