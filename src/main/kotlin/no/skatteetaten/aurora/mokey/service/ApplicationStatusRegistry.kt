@@ -42,14 +42,30 @@ class ApplicationStatusRegistry(
             meterRegistry.remove(oldMeter)
             addToRegistry(newMeter, data.auroraStatus)
         }
+
+        val oldInfoMeter = createInfoMeterId(old)
+        val newInfoMeter = createInfoMeterId(data)
+
+        if (oldInfoMeter != newInfoMeter) {
+            meterRegistry.remove(oldInfoMeter)
+            meterRegistry.gauge(newInfoMeter.name, newInfoMeter.tags, AtomicInteger(0))
+        }
     }
 
-    fun add(data: ApplicationPublicData) = addToRegistry(createMeterId(data), data.auroraStatus)
+    fun add(data: ApplicationPublicData) {
+        addToRegistry(createMeterId(data), data.auroraStatus)
+
+        val infoMeter = createInfoMeterId(data)
+        meterRegistry.gauge(infoMeter.name, infoMeter.tags, AtomicInteger(0))
+    }
 
     fun remove(data: ApplicationPublicData) {
         val meterId = createMeterId(data)
+        val infoMeterId = createInfoMeterId(data)
         logger.info("Application is gone deleting meter={}", meterId)
         meterRegistry.remove(meterId)
+        meterCache.remove(meterId)
+        meterRegistry.remove(infoMeterId)
         meterCache.remove(meterId)
     }
 
@@ -78,6 +94,29 @@ class ApplicationStatusRegistry(
             Tags.of(createMetricsTags(data)),
             null,
             "Status metric for applications. 0=OK, 1=OFF, 2=OBSERVE, 3=DOWN",
+            Meter.Type.GAUGE
+        )
+
+    private fun createInfoMeterId(data: ApplicationPublicData) =
+        Id(
+            "application_info",
+            Tags.of(listOf(
+                    Tag.of("app_id", data.applicationDeploymentId ?: ""),
+                    Tag.of("app_application_id", data.applicationId ?: ""),
+                    Tag.of("app_version", data.auroraVersion ?: ""),
+                    Tag.of("app_namespace", data.namespace),
+                    Tag.of("app_environment", data.environment),
+                    Tag.of("app_cluster", openshiftCluster),
+                    Tag.of("app_name", data.applicationDeploymentName),
+                    Tag.of("app_source", openshiftCluster),
+                    Tag.of("app_type", "aurora-plattform"),
+                    Tag.of("app_businessgroup", data.affiliation ?: ""),
+                    Tag.of("app_version_strategy", data.deployTag),
+                    Tag.of("app_message", data.message ?: ""),
+                    Tag.of("app_release_to", data.releaseTo ?: "")
+            )),
+            null,
+            "Info tag for application",
             Meter.Type.GAUGE
         )
 }
