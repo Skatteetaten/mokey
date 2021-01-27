@@ -33,6 +33,8 @@ class ApplicationDataService(
         get() = if (affiliationsConfig.isBlank()) emptyList()
         else affiliationsConfig.split(",").map { it.trim() }
 
+    // OVERFORING Cachen er i minne, som gjør at man egentlig ikke kan kjøre i flere instanser
+    // TODO: Bør vurdere å ikke ha cachen i minne hvis man skal fortsette med det? Legge det i CRD ApplicationDeploymentStatus
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     /*
@@ -84,6 +86,7 @@ class ApplicationDataService(
             .filter { if (affiliations.isEmpty()) true else affiliations.contains(it.affiliation) }
             .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
+    // OVERFORING  Vi bruker intern scehduling av cache, aller helst bør vi reagere på endringer ikke crawle
     @Scheduled(
         fixedDelayString = "\${mokey.crawler.rateSeconds:120000}",
         initialDelayString = "\${mokey.crawler.delaySeconds:120000}"
@@ -158,6 +161,7 @@ class ApplicationDataService(
         val watch = StopWatch().also { it.start() }
         val affiliations = applicationDataService.findAndGroupAffiliations(affiliationInput)
 
+        // Her blir det ikke gjort i paralell bevist man behandler hver affiliation for seg selv etter hverandre
         affiliations.forEach { (affiliation, env) ->
             refreshAffiliation(affiliation, env)
         }
@@ -177,6 +181,8 @@ class ApplicationDataService(
             applicationDataService.findAllApplicationDeployments(env)
 
         val previousKeys = findCacheKeysForGivenAffiliation(affiliation)
+        // OVERFORING : Legg merke til at i denne løsningen så sender vi ikke inn forrige cachet resultat til algoritmen det ville muligens kunne hjulpet veldig hvis man f.eks vet at det ikke er gjort en ny deploy/config endring
+
         val newKeys = applicationDeployments.map { it.spec.applicationDeploymentId }
 
         (previousKeys - newKeys).forEach {

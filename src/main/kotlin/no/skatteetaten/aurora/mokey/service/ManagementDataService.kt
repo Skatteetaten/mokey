@@ -52,10 +52,13 @@ class ManagementDataService(
             client.getCachedOrFind<JsonNode>(it)
         } ?: EndpointType.ENV.missingResult()
 
+        // OVERFORING !! Dette er grunnen til at man må crawle, vi må hente ned denne hele tiden siden den endres hele tiden
+        // OVERFORING Dette burde være en metrikk
         val health = discoveryResult.createEndpoint(pod, port, EndpointType.HEALTH)?.let {
             client.findJsonResource<JsonNode>(it).healthResult()
         } ?: EndpointType.HEALTH.missingResult()
 
+        // OVERFORING Her burde vi lagre lenkene til disse pekerne og la brukeren kunne klikke på dem i gui for å hente de ut
         return ManagementData(
             links = discoveryResponse,
             info = info,

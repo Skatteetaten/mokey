@@ -23,6 +23,7 @@ class CacheWarmup(
     val applicationDataService: ApplicationDataService
 ) : InitializingBean {
 
+    // OVERFORING her starter cache warmup, dette er fordi vi har cachen i minne og ikke distribuert
     override fun afterPropertiesSet() {
         try {
             applicationDataService.cacheAtStartup()

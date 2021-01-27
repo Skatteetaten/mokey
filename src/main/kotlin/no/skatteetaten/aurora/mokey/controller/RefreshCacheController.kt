@@ -20,6 +20,7 @@ class RefreshCacheController(val crawlService: ApplicationDataService) {
             throw IllegalArgumentException("Must specify one of: ['affiliations', 'applicationDeploymentId'] as parameter to refresh.")
         }
 
+        // OVERFORING her starter refresh av cache for 1 affiliation fra consollet
         params.affiliations?.let {
             runBlocking { crawlService.refreshCache(it) }
         }

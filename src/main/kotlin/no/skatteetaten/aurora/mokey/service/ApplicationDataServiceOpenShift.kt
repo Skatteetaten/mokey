@@ -58,6 +58,7 @@ class ApplicationDataServiceOpenShift(
 
     suspend fun findAllApplicationDataByEnvironments(applicationDeployments: List<ApplicationDeployment>): List<ApplicationData> {
 
+        // OVERFORING Vi kjører i paralell crawling av hver applikasjon
         val results = applicationDeployments.pmapIO { tryCreateApplicationData(it) }
 
         val errors = results.mapNotNull { it.error }
@@ -157,6 +158,7 @@ class ApplicationDataServiceOpenShift(
         )
     }
 
+    // OVERFORING her laget vi application data gitt en ApplicationDeployment
     private suspend fun createApplicationData(applicationDeployment: ApplicationDeployment): ApplicationData {
         logger.debug("creating application data for deployment=${applicationDeployment.metadata.name} namespace ${applicationDeployment.metadata.namespace}")
 
@@ -188,6 +190,7 @@ class ApplicationDataServiceOpenShift(
 
         val pods = podService.getPodDetails(applicationDeployment, deployDetails, result.selector)
 
+        // OVERFORING AOS-4428 dette er feil her og bør gjøres på en annen måte.
         val applicationAddresses = if (isOpenShift) {
             addressService.getAddresses(namespace, openShiftName)
         } else {
@@ -225,6 +228,7 @@ class ApplicationDataServiceOpenShift(
         namespace: String,
         dc: DeploymentConfig
     ): DeploymentResult {
+        // OVERFORING AOS-4430 dette steget er ikke nødvendig, man kan utlede det man trenger uten dette.
         val replicationControllers =
             client.getReplicationControllers(namespace, mapOf("app" to dc.metadata.name)).sortedByDescending {
                 it.metadata.name.substringAfterLast("-").toInt()
@@ -235,6 +239,7 @@ class ApplicationDataServiceOpenShift(
             it.isRunning()
         }
 
+        // OVERFORING dette er data som boober burde legge inn i ApplicationDeployment, unntatt det fra status
         val deployDetails = createDeployDetails(dc, runningRc)
 
         // TODO: Not really sure if this holds anymore, atleast not if we get a mix of Deployment and DC.
@@ -314,6 +319,7 @@ class ApplicationDataServiceOpenShift(
 
         val deployDetails = createDeployDetails(deployment, runningReplicaSet)
 
+        // OVERFORING her henter vi fra IS, det kan vi ikke fremover AOS-4429
         // TODO: We have more information here that is lost in translation. If there is a failing pod why is it failing. Should this be included?
         val imageDetails = runningReplicaSet?.let {
             val image = runningReplicaSet.spec.template.spec.containers[0].image
