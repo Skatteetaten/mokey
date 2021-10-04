@@ -5,12 +5,16 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
+import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
+import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
+import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentSpec
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import org.apache.commons.lang3.exception.ExceptionUtils
+import org.bouncycastle.asn1.x500.style.RFC4519Style.name
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -42,11 +46,45 @@ class ApplicationDataService(
         return cache[id]?.publicData
     }
 
-    fun findPublicApplicationDataByApplicationDeploymentRef(applicationDeploymentRefs: List<ApplicationDeploymentRef>): List<ApplicationPublicData> {
-        return cache.filter {
+    fun findPublicApplicationDataByApplicationDeploymentRef(
+        applicationDeploymentRefs: List<ApplicationDeploymentRef>,
+        cached: Boolean = true
+    ): List<ApplicationPublicData> {
+        val cachedElements = cache.filter {
             val publicData = it.value.publicData
-            applicationDeploymentRefs.contains(ApplicationDeploymentRef(publicData.environment, publicData.applicationDeploymentName))
-        }.ifEmpty { return emptyList() }.values.map { it.publicData }
+            applicationDeploymentRefs.contains(ApplicationDeploymentRef(
+                publicData.environment,
+                publicData.applicationDeploymentName
+            ))
+        }.values
+
+        return when (cached) {
+            true -> cachedElements.map { it.publicData }
+            false -> {
+                val deployments = cachedElements.map {
+                    val deployment = ApplicationDeployment(
+                        spec = ApplicationDeploymentSpec(
+                            applicationName = it.applicationName,
+                            applicationDeploymentId = it.applicationDeploymentId,
+                            applicationDeploymentName = it.applicationDeploymentName
+                        )
+                    )
+                    deployment.metadata {
+                        name = it.applicationName
+                        namespace = it.namespace
+                        labels = mapOf(
+                            LABEL_AFFILIATION to it.affiliation
+                        )
+                    }
+
+                    deployment
+                }
+
+                runBlocking {
+                    applicationDataService.findAllApplicationDataByEnvironments(deployments).map { it.publicData }
+                }
+            }
+        }
     }
 
     fun findAllPublicApplicationDataByApplicationId(id: String): List<ApplicationPublicData> =

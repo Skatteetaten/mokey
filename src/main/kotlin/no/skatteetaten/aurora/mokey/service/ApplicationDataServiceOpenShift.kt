@@ -25,6 +25,7 @@ import no.skatteetaten.aurora.mokey.model.Environment
 import no.skatteetaten.aurora.mokey.model.ImageDetails
 import no.skatteetaten.aurora.mokey.pmapIO
 import org.apache.commons.lang3.exception.ExceptionUtils
+import org.bouncycastle.crypto.tls.ConnectionEnd.client
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClientResponseException
@@ -97,18 +98,21 @@ class ApplicationDataServiceOpenShift(
                 applicationData = createApplicationData(it)
             )
         } catch (e: Exception) {
-            if (e is WebClientResponseException.TooManyRequests) {
-                throw e
-            }
-            if (e is InterruptedException || e is CancellationException) {
-                logger.info("Interrupted getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace}")
-            } else {
-                val cause = e.cause?.let { it::class.simpleName }
-                val rootCause = ExceptionUtils.getRootCause(e)?.let { it::class.simpleName }
-                logger.info(
-                    "Failed getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace} message=${e.message} cause=$cause rootCause=$rootCause",
-                    e
-                )
+            when (e) {
+                is WebClientResponseException.TooManyRequests -> {
+                    throw e
+                }
+                is InterruptedException, is CancellationException -> {
+                    logger.info("Interrupted getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace}")
+                }
+                else -> {
+                    val cause = e.cause?.let { it::class.simpleName }
+                    val rootCause = ExceptionUtils.getRootCause(e)?.let { it::class.simpleName }
+                    logger.info(
+                        "Failed getting deployment name=${it.metadata.name}, namespace=${it.metadata.namespace} message=${e.message} cause=$cause rootCause=$rootCause",
+                        e
+                    )
+                }
             }
 
             MaybeApplicationData(applicationDeployment = it, error = e)
