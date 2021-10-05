@@ -186,8 +186,7 @@ class ApplicationDataServiceTest {
         val pd2 = dataService.findAllPublicApplicationDataByApplicationId(publicData.first().applicationId!!)
 
         assertThat(publicData.first().affiliation).isEqualTo("aurora")
-        assertThat(pd1.first().affiliation).isEqualTo("aurora")
-        assertThat(pd2.first().affiliation).isEqualTo("aurora")
+        assertThat(pd1).isEqualTo(pd2)
 
         coVerify(exactly = 2) { dataServiceOpenShift.findAllApplicationDataByEnvironments(any()) }
     }

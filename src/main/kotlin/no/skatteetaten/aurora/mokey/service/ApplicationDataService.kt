@@ -64,6 +64,7 @@ class ApplicationDataService(
                 val deployments = cachedElements.map {
                     val deployment = ApplicationDeployment(
                         spec = ApplicationDeploymentSpec(
+                            applicationId = it.applicationId ?: "",
                             applicationName = it.applicationName,
                             applicationDeploymentId = it.applicationDeploymentId,
                             applicationDeploymentName = it.applicationDeploymentName
@@ -81,7 +82,11 @@ class ApplicationDataService(
                 }
 
                 runBlocking {
-                    applicationDataService.findAllApplicationDataByEnvironments(deployments).map { it.publicData }
+                    applicationDataService.findAllApplicationDataByEnvironments(deployments).onEach {
+                        addCacheEntry(it.applicationDeploymentId, it)
+                    }.map {
+                        it.publicData
+                    }
                 }
             }
         }
