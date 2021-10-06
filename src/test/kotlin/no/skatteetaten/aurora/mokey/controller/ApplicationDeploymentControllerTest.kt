@@ -1,5 +1,7 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import assertk.assertThat
+import assertk.assertions.isFalse
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import no.skatteetaten.aurora.mockmvc.extensions.Path
@@ -37,7 +39,7 @@ class ApplicationDeploymentControllerTest : AbstractSecurityControllerTest() {
     }
 
     @Test
-    fun `Return application deployments by refs`() {
+    fun `Return application deployments by refs cached`() {
         every { applicationDataService.findPublicApplicationDataByApplicationDeploymentRef(any()) } returns listOf(
             ApplicationDataBuilder().build().publicData
         )
@@ -47,6 +49,28 @@ class ApplicationDeploymentControllerTest : AbstractSecurityControllerTest() {
             path = Path("/api/applicationdeployment"),
             body = listOf(ApplicationDeploymentRef("environment", "application")),
         headers = HttpHeaders().contentTypeJson()
+        ) {
+            statusIsOk().responseJsonPath("$[0].identifier").equalsValue("123")
+        }
+    }
+
+    @Test
+    fun `Return application deployments by refs uncached`() {
+        every {
+            applicationDataService.findPublicApplicationDataByApplicationDeploymentRef(any(), any())
+        } answers {
+            assertThat(secondArg<Boolean>()).isFalse()
+
+            listOf(
+                ApplicationDataBuilder().build().publicData
+            )
+        }
+        every { assembler.toResources(any()) } returns listOf(ApplicationDeploymentResourceBuilder().build())
+
+        mockMvc.post(
+            path = Path("/api/applicationdeployment?cached=false"),
+            body = listOf(ApplicationDeploymentRef("environment", "application")),
+            headers = HttpHeaders().contentTypeJson()
         ) {
             statusIsOk().responseJsonPath("$[0].identifier").equalsValue("123")
         }

@@ -1,7 +1,5 @@
 package no.skatteetaten.aurora.mokey.service
 
-import java.time.Instant
-import java.time.Instant.now
 import no.skatteetaten.aurora.mokey.model.AuroraStatus
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel
 import no.skatteetaten.aurora.mokey.model.AuroraStatusLevel.HEALTHY
@@ -13,6 +11,8 @@ import no.skatteetaten.aurora.mokey.model.StatusCheckResult
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodDownCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.AnyPodObserveCheck
 import org.springframework.stereotype.Service
+import java.time.Instant
+import java.time.Instant.now
 
 @Service
 class AuroraStatusCalculator(val statusChecks: List<StatusCheck>) {
