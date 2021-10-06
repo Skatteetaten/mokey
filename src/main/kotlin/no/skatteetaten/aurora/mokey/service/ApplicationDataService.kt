@@ -6,7 +6,6 @@ import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
-import no.skatteetaten.aurora.mokey.extensions.affiliation
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
@@ -14,7 +13,6 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentSpec
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.bouncycastle.asn1.x500.style.RFC4519Style.name
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service

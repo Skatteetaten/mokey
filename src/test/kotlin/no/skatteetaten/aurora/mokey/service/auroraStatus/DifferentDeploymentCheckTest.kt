@@ -4,10 +4,10 @@ import assertk.assertThat
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import io.mockk.mockk
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 class DifferentDeploymentCheckTest {
     private val differentDeploymentCheck = DifferentDeploymentCheck(20L)
