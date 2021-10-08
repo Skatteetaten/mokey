@@ -16,6 +16,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -90,13 +91,15 @@ class ApplicationDataServiceTest {
     private val podService = mockk<PodService>()
     private val addressService = mockk<AddressService>()
     private val imageService = mockk<ImageService>()
-    private val dataServiceOpenShift = ApplicationDataServiceOpenShift(
-        OpenShiftServiceAccountClient(coroutinesClient),
-        calculator,
-        podService,
-        addressService,
-        imageService,
-        true
+    private val dataServiceOpenShift = spyk(
+        ApplicationDataServiceOpenShift(
+            OpenShiftServiceAccountClient(coroutinesClient),
+            calculator,
+            podService,
+            addressService,
+            imageService,
+            true,
+        )
     )
     private val dataService = ApplicationDataService(
         dataServiceOpenShift,
@@ -175,7 +178,29 @@ class ApplicationDataServiceTest {
     }
 
     @Test
-    fun `Read public application data with ApplicationDeploymentRef`() {
+    fun `Read public application data cached with ApplicationDeploymentRef`() {
+        runBlocking {
+            dataService.cache()
+
+            delay(2000)
+
+            val publicData = dataService.findAllPublicApplicationData(listOf("aurora"))
+            val applicationDeploymentRef =
+                ApplicationDeploymentRef(publicData.first().environment, publicData.first().applicationDeploymentName)
+
+            val pd1 = dataService.findPublicApplicationDataByApplicationDeploymentRef(listOf(applicationDeploymentRef))
+            val pd2 = dataService.findAllPublicApplicationDataByApplicationId(publicData.first().applicationId!!)
+
+            assertThat(publicData.first().affiliation).isEqualTo("aurora")
+            assertThat(pd1.first().affiliation).isEqualTo("aurora")
+            assertThat(pd2.first().affiliation).isEqualTo("aurora")
+
+            coVerify(exactly = 1) { dataServiceOpenShift.findAllApplicationDataByEnvironments(any()) }
+        }
+    }
+
+    @Test
+    fun `Read public application data uncached with ApplicationDeploymentRef`() {
         runBlocking {
             dataService.cache()
 
@@ -187,22 +212,27 @@ class ApplicationDataServiceTest {
                 publicData.first().applicationDeploymentName
             )
             val pd1 = dataService.findPublicApplicationDataByApplicationDeploymentRef(
-                listOf(applicationDeploymentRef)
+                applicationDeploymentRefs = listOf(applicationDeploymentRef),
+                cached = false
             )
             val pd2 = dataService.findAllPublicApplicationDataByApplicationId(publicData.first().applicationId!!)
 
             assertThat(publicData.first().affiliation).isEqualTo("aurora")
-            assertThat(pd1.first().affiliation).isEqualTo("aurora")
-            assertThat(pd2.first().affiliation).isEqualTo("aurora")
+            assertThat(pd1).isEqualTo(pd2)
+
+            coVerify(exactly = 2) { dataServiceOpenShift.findAllApplicationDataByEnvironments(any()) }
         }
     }
 
     @Test
     fun `Return empty list if no ApplicationDeployment is found`() {
-        val applicationData = dataService.findPublicApplicationDataByApplicationDeploymentRef(
-            listOf(ApplicationDeploymentRef("unknown", "unknown"))
-        )
-        assertThat(applicationData).isEmpty()
+        runBlocking {
+            val applicationData = dataService.findPublicApplicationDataByApplicationDeploymentRef(
+                listOf(ApplicationDeploymentRef("unknown", "unknown"))
+            )
+
+            assertThat(applicationData).isEmpty()
+        }
     }
 
     @Test

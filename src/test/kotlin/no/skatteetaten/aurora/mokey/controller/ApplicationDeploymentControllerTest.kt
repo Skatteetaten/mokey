@@ -1,6 +1,9 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import assertk.assertThat
+import assertk.assertions.isFalse
 import com.ninjasquad.springmockk.MockkBean
+import io.mockk.coEvery
 import io.mockk.every
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
 import no.skatteetaten.aurora.mokey.ApplicationDeploymentResourceBuilder
@@ -58,8 +61,8 @@ class ApplicationDeploymentControllerTest {
     }
 
     @Test
-    fun `Return application deployments by refs`() {
-        every { applicationDataService.findPublicApplicationDataByApplicationDeploymentRef(any()) } returns listOf(
+    fun `Return application deployments by refs cached`() {
+        coEvery { applicationDataService.findPublicApplicationDataByApplicationDeploymentRef(any()) } returns listOf(
             ApplicationDataBuilder().build().publicData
         )
         every { assembler.toResources(any()) } returns listOf(ApplicationDeploymentResourceBuilder().build())
@@ -67,6 +70,36 @@ class ApplicationDeploymentControllerTest {
         webTestClient
             .post()
             .uri("/api/applicationdeployment")
+            .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+            .body(fromValue(listOf(ApplicationDeploymentRef("environment", "application"))))
+            .exchange()
+            .expectStatus()
+            .isOk
+            .expectBody()
+            .jsonPath("$[0].identifier").isEqualTo("123")
+    }
+
+    @Test
+    fun `Return application deployments by refs uncached`() {
+        coEvery {
+            applicationDataService.findPublicApplicationDataByApplicationDeploymentRef(any(), any())
+        } answers {
+            assertThat(secondArg<Boolean>()).isFalse()
+
+            listOf(
+                ApplicationDataBuilder().build().publicData
+            )
+        }
+        every { assembler.toResources(any()) } returns listOf(ApplicationDeploymentResourceBuilder().build())
+
+        webTestClient
+            .post()
+            .uri {
+                it
+                    .path("/api/applicationdeployment")
+                    .queryParam("cached", false)
+                    .build()
+            }
             .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
             .body(fromValue(listOf(ApplicationDeploymentRef("environment", "application"))))
             .exchange()
