@@ -18,37 +18,28 @@ import no.skatteetaten.aurora.mokey.model.BigIPAddress
 import no.skatteetaten.aurora.mokey.model.RouteAddress
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
 import no.skatteetaten.aurora.mokey.model.WebSealAddress
-import java.net.URI
+import java.net.URI.create
 
 @org.springframework.stereotype.Service
-class AddressService(
-    val openshiftClient: OpenShiftServiceAccountClient
-) {
-
-    suspend fun getIngressAddresses(namespace: String, name: String): List<Address> {
-
+class AddressService(val openshiftClient: OpenShiftServiceAccountClient) {
+    suspend fun getIngressAddresses(
+        namespace: String,
+        name: String,
+    ): List<Address> {
         val metadata = newObjectMeta {
             this.namespace = namespace
             this.labels = mapOf("app" to name)
         }
         val services = openshiftClient.getServices(metadata)
         val ingress = openshiftClient.getIngresses(metadata)
-
-        val serviceAddresses = services.map { ServiceAddress(URI.create("http://${it.metadata.name}"), it.created) }
-
+        val serviceAddresses = services.map { ServiceAddress(create("http://${it.metadata.name}"), it.created) }
         val routeAddresses = ingress.flatMap {
-
             val rule = it.spec.rules.first()
-
             val host = rule.host
-
-            val path = rule.http.paths.first().path?.let { path ->
-                path.ensureStartWith("/")
-            } ?: ""
-            val success = true // TODO
-            val protocol = "http" // TODO: Http
-
-            val route = RouteAddress(URI.create("$protocol://${host}$path"), it.created, success, "OK")
+            val path = rule.http.paths.first().path?.ensureStartWith("/") ?: ""
+            val success = true
+            val protocol = "http"
+            val route = RouteAddress(create("$protocol://${host}$path"), it.created, success, "OK")
 
             listOf(route)
         }
@@ -57,68 +48,59 @@ class AddressService(
     }
 
     suspend fun getAddresses(namespace: String, name: String): List<Address> {
-
         val metadata = newObjectMeta {
             this.namespace = namespace
             this.labels = mapOf("app" to name)
         }
         val services = openshiftClient.getServices(metadata)
         val routes = openshiftClient.getRoutes(metadata)
-
-        val serviceAddresses = services.map { ServiceAddress(URI.create("http://${it.metadata.name}"), it.created) }
-
+        val serviceAddresses = services.map { ServiceAddress(create("http://${it.metadata.name}"), it.created) }
         val routeAddresses = routes.flatMap {
-
-            val path = it.spec.path?.let {
-                it.ensureStartWith("/")
-            } ?: ""
+            val path = it.spec.path?.ensureStartWith("/") ?: ""
             val status = it.status.ingress.first().conditions.first()
             val success = status.type == "Admitted" && status.status == "True"
-            val protocol = if (it.spec.tls != null) {
-                "https"
-            } else {
-                "http"
+            val protocol = when {
+                it.spec.tls != null -> "https"
+                else -> "http"
             }
-
-            val route = RouteAddress(URI.create("$protocol://${it.spec.host}$path"), it.created, success, status.reason)
-
+            val route = RouteAddress(create("$protocol://${it.spec.host}$path"), it.created, success, status.reason)
             val bigIpRoute = it.wembleyHost?.let { host ->
                 val service = it.wembleyService
-
                 val wembleyDoneTime = it.created
-                // TODO: SITS-120
-                // val wembleyDoneTime=it.wembleyDone
-
                 val done = success && wembleyDoneTime != null
-                BigIPAddress(URI.create("https://$host/$service"), wembleyDoneTime, done, "")
+
+                BigIPAddress(create("https://$host/$service"), wembleyDoneTime, done, "")
             }
+
             listOf(route).addIfNotNull(bigIpRoute)
         }
-
         val websealAddresses = findWebsealAddresses(services, namespace)
 
         return serviceAddresses.addIfNotNull(routeAddresses).addIfNotNull(websealAddresses)
     }
 
-    private suspend fun findWebsealAddresses(services: List<Service>, namespace: String): List<WebSealAddress> {
-        return services.filter { it.marjoryDone != null }.mapNotNull {
-            openshiftClient.getRouteOrNull(newRoute {
+    private suspend fun findWebsealAddresses(
+        services: List<Service>,
+        namespace: String,
+    ): List<WebSealAddress> = services.filter { it.marjoryDone != null }.mapNotNull {
+        openshiftClient.getRouteOrNull(
+            newRoute {
                 metadata {
                     this.namespace = namespace
                     this.name = "${it.metadata.name}-webseal"
                 }
-            })?.let {
-                val status = it.status.ingress.first().conditions.first()
-                val success = status.success() && it.marjoryOpen
-
-                WebSealAddress(
-                    url = URI.create("https://${it.spec.host}"),
-                    time = it.marjoryDone,
-                    available = success,
-                    status = status.reason,
-                    roles = it.marjoryRoles
-                )
             }
+        )?.let {
+            val status = it.status.ingress.first().conditions.first()
+            val success = status.success() && it.marjoryOpen
+
+            WebSealAddress(
+                url = create("https://${it.spec.host}"),
+                time = it.marjoryDone,
+                available = success,
+                status = status.reason,
+                roles = it.marjoryRoles
+            )
         }
     }
 }

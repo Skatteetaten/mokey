@@ -3,32 +3,47 @@ package no.skatteetaten.aurora.mokey.controller
 import com.ninjasquad.springmockk.MockkBean
 import io.fabric8.kubernetes.api.model.authorization.SelfSubjectAccessReviewBuilder
 import io.mockk.coEvery
-import no.skatteetaten.aurora.mockmvc.extensions.Path
-import no.skatteetaten.aurora.mockmvc.extensions.get
-import no.skatteetaten.aurora.mockmvc.extensions.responseJsonPath
-import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
-import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.NamespaceDataBuilder
+import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.OpenShiftUserClient
+import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
+import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
 import org.junit.jupiter.api.Test
-import org.springframework.security.test.context.support.WithUserDetails
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
+import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.test.web.reactive.server.WebTestClient
 
-@WithUserDetails
-class PermissionControllerTest : AbstractSecurityControllerTest() {
+@Suppress("unused")
+@WithMockUser("test", roles = ["test"])
+@WebFluxTest(WebSecurityConfig::class, PermissionController::class)
+class PermissionControllerTest {
+    @MockkBean
+    private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
+
+    @MockkBean
+    private lateinit var securityContextRepository: AuroraSecurityContextRepository
 
     @MockkBean
     private lateinit var openShiftUserClient: OpenShiftUserClient
+
+    @Autowired
+    private lateinit var webTestClient: WebTestClient
 
     @Test
     fun `Check permissions`() {
         coEvery { openShiftUserClient.getNamespaceByNameOrNull("aurora") } returns NamespaceDataBuilder().build()
         coEvery { openShiftUserClient.selfSubjectAccessReview(any()) } returns SelfSubjectAccessReviewBuilder().build()
 
-        mockMvc.get(Path("/api/auth/permissions/aurora")) {
-            statusIsOk()
-                .responseJsonPath("$.view").isTrue()
-                .responseJsonPath("$.admin").isFalse()
-                .responseJsonPath("$.namespace").equalsValue("aurora")
-        }
+        webTestClient
+            .get()
+            .uri("/api/auth/permissions/aurora")
+            .exchange()
+            .expectStatus()
+            .isOk
+            .expectBody()
+            .jsonPath("$.view").isEqualTo(true)
+            .jsonPath("$.admin").isEqualTo(false)
+            .jsonPath("$.namespace").isEqualTo("aurora")
     }
 }

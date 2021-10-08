@@ -2,23 +2,37 @@ package no.skatteetaten.aurora.mokey.controller
 
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
-import no.skatteetaten.aurora.mockmvc.extensions.Path
-import no.skatteetaten.aurora.mockmvc.extensions.get
-import no.skatteetaten.aurora.mockmvc.extensions.responseJsonPath
-import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
-import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
 import no.skatteetaten.aurora.mokey.ApplicationResourceBuilder
+import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
+import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
+import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.test.web.reactive.server.WebTestClient
 
-class ApplicationControllerTest : AbstractSecurityControllerTest() {
+@Suppress("unused")
+@WithMockUser("test", roles = ["test"])
+@ExperimentalStdlibApi
+@WebFluxTest(WebSecurityConfig::class, ApplicationController::class)
+class ApplicationControllerTest {
+    @MockkBean
+    private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
+
+    @MockkBean
+    private lateinit var securityContextRepository: AuroraSecurityContextRepository
 
     @MockkBean(relaxed = true)
     private lateinit var applicationDataService: ApplicationDataService
 
     @MockkBean
     private lateinit var assembler: ApplicationResourceAssembler
+
+    @Autowired
+    private lateinit var webTestClient: WebTestClient
 
     private val applicationData = ApplicationDataBuilder().build()
 
@@ -27,9 +41,18 @@ class ApplicationControllerTest : AbstractSecurityControllerTest() {
         every { applicationDataService.findAllPublicApplicationDataByApplicationId(any()) } returns listOf(applicationData.publicData)
         every { assembler.toResource(any()) } returns ApplicationResourceBuilder().build()
 
-        mockMvc.get(Path("/api/application/{id}", "abc123")) {
-            statusIsOk().responseJsonPath("$.identifier").equalsValue("123")
-        }
+        webTestClient
+            .get()
+            .uri {
+                it
+                    .path("/api/application/{id}")
+                    .build("abc123")
+            }
+            .exchange()
+            .expectStatus()
+            .isOk
+            .expectBody()
+            .jsonPath("$.identifier").isEqualTo("123")
     }
 
     @Test
@@ -37,8 +60,18 @@ class ApplicationControllerTest : AbstractSecurityControllerTest() {
         every { applicationDataService.findAllPublicApplicationData(any(), any()) } returns listOf(applicationData.publicData)
         every { assembler.toResources(any()) } returns listOf(ApplicationResourceBuilder().build())
 
-        mockMvc.get(Path("/api/application?affiliation=paas")) {
-            statusIsOk().responseJsonPath("$.length()").equalsValue(1)
-        }
+        webTestClient
+            .get()
+            .uri {
+                it
+                    .path("/api/application")
+                    .queryParam("affiliation", "paas")
+                    .build()
+            }
+            .exchange()
+            .expectStatus()
+            .isOk
+            .expectBody()
+            .jsonPath("$.length()").isEqualTo(1)
     }
 }

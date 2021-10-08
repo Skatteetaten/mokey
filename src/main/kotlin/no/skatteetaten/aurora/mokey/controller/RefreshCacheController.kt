@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import kotlinx.coroutines.runBlocking
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -12,20 +11,13 @@ data class RefreshParams(val applicationDeploymentId: String?, val affiliations:
 @RestController
 @RequestMapping("/api/auth/refresh")
 class RefreshCacheController(val crawlService: ApplicationDataService) {
-
     @PostMapping
-    fun refreshCache(@RequestBody params: RefreshParams) {
-
-        if ((params.applicationDeploymentId ?: params.affiliations) == null) {
-            throw IllegalArgumentException("Must specify one of: ['affiliations', 'applicationDeploymentId'] as parameter to refresh.")
+    suspend fun refreshCache(@RequestBody params: RefreshParams) {
+        require((params.applicationDeploymentId ?: params.affiliations) != null) {
+            "Must specify one of: ['affiliations', 'applicationDeploymentId'] as parameter to refresh."
         }
 
-        params.affiliations?.let {
-            runBlocking { crawlService.refreshCache(it) }
-        }
-
-        params.applicationDeploymentId?.let {
-            crawlService.refreshItem(it)
-        }
+        params.affiliations?.let { crawlService.refreshCache(it) }
+        params.applicationDeploymentId?.let { crawlService.refreshItem(it) }
     }
 }

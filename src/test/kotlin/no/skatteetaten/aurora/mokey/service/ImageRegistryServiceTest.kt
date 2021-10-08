@@ -21,8 +21,10 @@ import org.springframework.web.reactive.function.client.WebClient
 class ImageRegistryServiceTest {
     private val server = MockWebServer()
     private val webClient = WebClient.create(server.url("/").toString())
-    private val imageRegistryClient =
-        ImageRegistryClient(webClient, jacksonObjectMapper().registerModule(JavaTimeModule()))
+    private val imageRegistryClient = ImageRegistryClient(
+        webClient,
+        jacksonObjectMapper().registerModule(JavaTimeModule())
+    )
     private val imageRegistryService = ImageRegistryService(imageRegistryClient)
     private val tagUrls = listOf("localhost/sha256:1", "localhost/sha256:2")
 

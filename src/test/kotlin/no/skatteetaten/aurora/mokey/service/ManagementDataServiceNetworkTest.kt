@@ -35,26 +35,26 @@ import java.util.concurrent.TimeUnit
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ManagementDataServiceNetworkTest {
-
     private val server = MockWebServer()
     private val service = ManagementDataService(
         OpenShiftManagementClient(
             KubernetesReactorClient(
                 webClientWithTimeout(),
                 object : TokenFetcher {
-                    override fun token() = "test-token"
-                }, RetryConfiguration()
+                    override fun token(audience: String?) = "test-token"
+                },
+                RetryConfiguration()
             ),
-            false
+            false,
         )
     )
 
-    private fun webClientWithTimeout(): WebClient {
-        return WebClient
-            .builder()
-            .baseUrl(server.url)
-            .clientConnector(
-                ReactorClientHttpConnector(HttpClient.create().compress(true)
+    private fun webClientWithTimeout(): WebClient = WebClient
+        .builder()
+        .baseUrl(server.url)
+        .clientConnector(
+            ReactorClientHttpConnector(
+                HttpClient.create().compress(true)
                     .tcpConfiguration {
                         it.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 500)
                             .doOnConnected { connection ->
@@ -62,14 +62,16 @@ class ManagementDataServiceNetworkTest {
                                 connection.addHandlerLast(WriteTimeoutHandler(500, TimeUnit.MILLISECONDS))
                             }
                     }
-                ))
-            .build()
-    }
+            )
+        )
+        .build()
 
     private val linksResponse = jsonResponse(
-        HalResource(_links = Links().apply {
-            add("health", "/health")
-        })
+        HalResource(
+            _links = Links().apply {
+                add("health", "/health")
+            }
+        )
     )
 
     @AfterEach
@@ -83,7 +85,6 @@ class ManagementDataServiceNetworkTest {
     fun `Retry on network failure`() {
         val healthErrorResponse = MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST)
         val healthOkResponse = jsonResponse("""{"status":"UP","details":{"diskSpace":{"status":"UP"}}}""")
-
         val requests = server.execute(linksResponse, healthErrorResponse, healthErrorResponse, healthOkResponse) {
             val managementData = runBlocking {
                 service.load(PodDataBuilder().build(), ":8081/links")
@@ -100,7 +101,6 @@ class ManagementDataServiceNetworkTest {
     fun `Retry for disconnect after request`() {
         val error = MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST)
         val ok = jsonResponse("""{"status":"UP","details":{"diskSpace":{"status":"UP"}}}""")
-
         val requests = server.execute(linksResponse, error, error, ok) {
             val managementData = runBlocking {
                 service.load(PodDataBuilder().build(), ":8081/links")
@@ -117,20 +117,25 @@ class ManagementDataServiceNetworkTest {
     @EnumSource(
         value = SocketPolicy::class,
         mode = EnumSource.Mode.EXCLUDE,
-        names = ["DISCONNECT_AFTER_REQUEST", "NO_RESPONSE"]
+        names = ["DISCONNECT_AFTER_REQUEST", "NO_RESPONSE"],
     )
     fun `Throw IOException when null is returned`(socketPolicy: SocketPolicy) {
         val error = MockResponse().setSocketPolicy(socketPolicy)
 
         server.execute(linksResponse, error) {
             runBlocking {
-                val managementData = service.load(newPod {
-                    metadata = newObjectMeta {
-                        name = "name1"
-                        namespace = "namespace1"
-                    }
-                }, ":8081/links")
-                assertThat(managementData.health?.errorMessage).isEqualTo("No response for url=namespaces/namespace1/pods/name1:8081/proxy/health")
+                val managementData = service.load(
+                    newPod {
+                        metadata = newObjectMeta {
+                            name = "name1"
+                            namespace = "namespace1"
+                        }
+                    },
+                    ":8081/links",
+                )
+                assertThat(managementData.health?.errorMessage).isEqualTo(
+                    "No response for url=namespaces/namespace1/pods/name1:8081/proxy/health"
+                )
             }
         }
     }
@@ -138,7 +143,6 @@ class ManagementDataServiceNetworkTest {
     @Test
     fun `Timeout given no response from health throws ReadTimeoutException`() {
         val healthTimeoutResponse = MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)
-
         val requests = server.execute(linksResponse, healthTimeoutResponse) {
             val managementData = runBlocking {
                 service.load(PodDataBuilder().build(), ":8081/links")

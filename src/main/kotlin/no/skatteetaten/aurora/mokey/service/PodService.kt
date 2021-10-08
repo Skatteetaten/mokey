@@ -14,21 +14,22 @@ private val logger = KotlinLogging.logger {}
 @Service
 class PodService(
     val client: OpenShiftServiceAccountClient,
-    val managementDataService: ManagementDataService
+    val managementDataService: ManagementDataService,
 ) {
-
     suspend fun getPodDetails(
         applicationDeployment: ApplicationDeployment,
         deployDetails: DeployDetails,
-        selector: Map<String, String>
+        selector: Map<String, String>,
     ): List<PodDetails> {
-
         logger.debug("Getting pods in namespace=${applicationDeployment.metadata.namespace} for selector=$selector")
+
         return client.getPods(applicationDeployment.metadata.namespace, selector).map { pod: Pod ->
             logger.debug("Getting management result for pod=${pod.metadata.name}")
-            val managementResult =
-                managementDataService.load(pod, applicationDeployment.spec.managementPath)
+
+            val managementResult = managementDataService.load(pod, applicationDeployment.spec.managementPath)
+
             logger.debug("/Getting management result for pod=${pod.metadata.name}")
+
             createPodDetails(pod, managementResult, deployDetails)
         }
     }
@@ -37,17 +38,16 @@ class PodService(
         fun createPodDetails(
             pod: Pod,
             managementResult: ManagementData,
-            deployDetails: DeployDetails
+            deployDetails: DeployDetails,
         ): PodDetails {
             val containers = pod.spec.containers.mapNotNull { container ->
                 createContainerExcerpt(pod, container.name)
             }
-
             val podDeployment = pod.metadata.labels["deployment"]
             val deployTag = pod.metadata.labels["deployTag"]
-
             val latestDeployment = podDeployment == deployDetails.deployment
             val latestDeployTag = deployTag == deployDetails.deployTag
+
             return PodDetails(
                 OpenShiftPodExcerpt(
                     name = pod.metadata.name,
@@ -60,29 +60,28 @@ class PodService(
                     latestReplicaName = latestDeployment,
                     containers = containers
                 ),
-                managementResult
+                managementResult,
             )
         }
 
         private fun createContainerExcerpt(
             pod: Pod,
-            containerName: String
+            containerName: String,
         ): OpenShiftContainerExcerpt? {
             val status = pod.status.containerStatuses.firstOrNull { it.name == containerName } ?: return null
-
             val state = status.state.terminated?.let {
                 "terminated"
             } ?: status.state.waiting?.let {
                 "waiting"
             } ?: "running"
-
             val image = status.imageID.substringAfterLast("docker-pullable://")
+
             return OpenShiftContainerExcerpt(
                 name = containerName,
                 image = image,
                 ready = status.ready,
                 restartCount = status.restartCount,
-                state = state
+                state = state,
             )
         }
     }

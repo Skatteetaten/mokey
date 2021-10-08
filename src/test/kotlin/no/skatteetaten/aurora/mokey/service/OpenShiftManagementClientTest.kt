@@ -13,7 +13,8 @@ import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.execute
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.jsonResponse
 import no.skatteetaten.aurora.mockmvc.extensions.mockwebserver.url
 import no.skatteetaten.aurora.mokey.PodDataBuilder
-import no.skatteetaten.aurora.mokey.model.EndpointType
+import no.skatteetaten.aurora.mokey.model.EndpointType.HEALTH
+import no.skatteetaten.aurora.mokey.model.EndpointType.INFO
 import no.skatteetaten.aurora.mokey.model.HealthStatus
 import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpoint
@@ -29,9 +30,10 @@ import org.junit.jupiter.params.provider.ArgumentsSource
 import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatus.OK
 import org.springframework.http.MediaType
 import java.io.File
-import java.time.Instant
+import java.time.Instant.parse
 import java.util.stream.Stream
 
 class OpenShiftManagementClientTest {
@@ -60,14 +62,20 @@ class OpenShiftManagementClientTest {
             "database": "Oracle",
             "hello": "Hello"
           }
-        }""".trimIndent()
+        }
+        """.trimIndent()
 
         server.execute(json) {
             runBlocking {
-                val managementEndpoint = ManagementEndpoint(PodDataBuilder().build(), 8080, "test", EndpointType.HEALTH)
+                val managementEndpoint = ManagementEndpoint(
+                    PodDataBuilder().build(),
+                    8080,
+                    "test",
+                    HEALTH
+                )
                 val resource = client.findJsonResource<JsonNode>(managementEndpoint)
 
-                assertThat(resource.endpointType).isEqualTo(EndpointType.HEALTH)
+                assertThat(resource.endpointType).isEqualTo(HEALTH)
                 assertThat(resource.resultCode).isEqualTo("OK")
             }
         }
@@ -78,14 +86,20 @@ class OpenShiftManagementClientTest {
         val json = loadJson("info_variant1.json")
 
         server.execute(json) {
-            val managementEndpoint = ManagementEndpoint(PodDataBuilder().build(), 8080, "test", EndpointType.INFO)
+            val managementEndpoint = ManagementEndpoint(
+                PodDataBuilder().build(),
+                8080,
+                "test",
+                INFO
+            )
+
             runBlocking {
                 val response = client.findJsonResource<InfoResponse>(managementEndpoint)
                 val infoResponse = response.deserialized!!
 
                 assertThat(infoResponse.commitId).isEqualTo("5df5258")
-                assertThat(infoResponse.commitTime).isEqualTo(Instant.parse("2018-03-23T10:53:31Z"))
-                assertThat(infoResponse.buildTime).isEqualTo(Instant.parse("2018-03-23T10:55:40Z"))
+                assertThat(infoResponse.commitTime).isEqualTo(parse("2018-03-23T10:53:31Z"))
+                assertThat(infoResponse.buildTime).isEqualTo(parse("2018-03-23T10:55:40Z"))
             }
         }
     }
@@ -95,14 +109,20 @@ class OpenShiftManagementClientTest {
         val json = loadJson("info_variant2.json")
 
         server.execute(json) {
-            val managementEndpoint = ManagementEndpoint(PodDataBuilder().build(), 8080, "test", EndpointType.INFO)
+            val managementEndpoint = ManagementEndpoint(
+                PodDataBuilder().build(),
+                8080,
+                "test",
+                INFO
+            )
+
             runBlocking {
                 val response = client.findJsonResource<InfoResponse>(managementEndpoint)
                 val infoResponse = response.deserialized!!
 
                 assertThat(infoResponse.commitId).isEqualTo("37473fd")
-                assertThat(infoResponse.commitTime).isEqualTo(Instant.parse("2018-03-26T11:31:39Z"))
-                assertThat(infoResponse.buildTime).isEqualTo(Instant.parse("2018-03-26T11:36:21Z"))
+                assertThat(infoResponse.commitTime).isEqualTo(parse("2018-03-26T11:31:39Z"))
+                assertThat(infoResponse.buildTime).isEqualTo(parse("2018-03-26T11:36:21Z"))
             }
         }
     }
@@ -115,18 +135,24 @@ class OpenShiftManagementClientTest {
         mediaType: MediaType,
         responseCode: HttpStatus
     ) {
-        val managementEndpoint = ManagementEndpoint(PodDataBuilder().build(), 8080, "test", EndpointType.HEALTH)
+        val managementEndpoint = ManagementEndpoint(
+            PodDataBuilder().build(),
+            8080,
+            "test",
+            HEALTH
+        )
         val mockResponse = MockResponse().apply {
             setResponseCode(responseCode.value())
             setBody(response)
             addHeader(HttpHeaders.CONTENT_TYPE, mediaType)
         }
+
         server.execute(mockResponse) {
             runBlocking {
                 val resource = client.findJsonResource<JsonNode>(managementEndpoint).healthResult()
 
                 assertThat(resource.isSuccess).isFalse()
-                assertThat(resource.endpointType).isEqualTo(EndpointType.HEALTH)
+                assertThat(resource.endpointType).isEqualTo(HEALTH)
                 assertThat(resource.resultCode).isNotNull()
                 assertThat(resource.errorMessage).isNotNull()
                 assertThat(resource.createdAt).isNotNull()
@@ -137,14 +163,20 @@ class OpenShiftManagementClientTest {
     @ParameterizedTest(name = "Handles {0} correctly")
     @EnumSource(value = HealthStatus::class)
     fun `Handle health status`(healthStatus: HealthStatus) {
-        val managementEndpoint = ManagementEndpoint(PodDataBuilder().build(), 8080, "test", EndpointType.HEALTH)
+        val managementEndpoint = ManagementEndpoint(
+            PodDataBuilder().build(),
+            8080,
+            "test",
+            HEALTH
+        )
         val mockResponse = jsonResponse("""{ "status": "${healthStatus.name}" }""")
+
         server.execute(mockResponse) {
             runBlocking {
                 val resource = client.findJsonResource<JsonNode>(managementEndpoint).healthResult()
 
                 assertThat(resource.isSuccess).isTrue()
-                assertThat(resource.endpointType).isEqualTo(EndpointType.HEALTH)
+                assertThat(resource.endpointType).isEqualTo(HEALTH)
                 assertThat(resource.resultCode).isEqualTo("OK")
                 assertThat(resource.errorMessage).isNull()
                 assertThat(resource.createdAt).isNotNull()
@@ -152,19 +184,20 @@ class OpenShiftManagementClientTest {
         }
     }
 
+    @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     private fun loadJson(fileName: String): String {
         val folder = this::class.java.getResource("${this::class.simpleName}/$fileName")
+
         return File(folder.toURI()).readText()
     }
 
     class ErrorCases : ArgumentsProvider {
-        fun args(
+        private fun args(
             description: String,
             response: String,
             mediaType: MediaType,
-            responseCode: HttpStatus = HttpStatus.OK
-        ) =
-            Arguments.of(description, response, mediaType, responseCode)
+            responseCode: HttpStatus = OK,
+        ): Arguments = Arguments.of(description, response, mediaType, responseCode)
 
         override fun provideArguments(context: ExtensionContext?): Stream<out Arguments> = Stream.of(
             args("Empty response", "", MediaType.APPLICATION_JSON),
@@ -187,7 +220,7 @@ class OpenShiftManagementClientTest {
                 "<html><body><h1>hello</h1></body></html>",
                 MediaType.APPLICATION_JSON,
                 HttpStatus.INTERNAL_SERVER_ERROR
-            )
+            ),
         )
     }
 }

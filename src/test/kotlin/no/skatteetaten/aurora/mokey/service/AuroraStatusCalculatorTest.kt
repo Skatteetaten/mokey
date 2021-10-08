@@ -32,8 +32,7 @@ import java.time.Duration
 import java.time.Instant
 
 class AuroraStatusCalculatorTest {
-
-    val calculator = AuroraStatusCalculator(
+    private val calculator = AuroraStatusCalculator(
         listOf(
             anyPodDown,
             anyPodObserve,
@@ -50,7 +49,7 @@ class AuroraStatusCalculatorTest {
             scaledDown
         )
     )
-    val time = Instant.EPOCH
+    val time: Instant = Instant.EPOCH
 
     @ParameterizedTest
     @EnumSource(StatusCalculatorTestData::class)
@@ -70,9 +69,9 @@ class AuroraStatusCalculatorTest {
     }
 
     companion object {
-        val averageRestartErrorThreshold = 100
-        val averageRestartObserveThreshold = 20
-        val hourThreshold = 20L
+        const val averageRestartErrorThreshold = 100
+        const val averageRestartObserveThreshold = 20
+        private const val hourThreshold = 20L
 
         val anyPodDown = AnyPodDownCheck()
         val anyPodObserve = AnyPodObserveCheck()
@@ -98,7 +97,7 @@ class AuroraStatusCalculatorTest {
             PodDetailsDataBuilder(deployment = "name-1", startTime = Instant.EPOCH).build(),
             PodDetailsDataBuilder(deployment = "name-2", startTime = Instant.EPOCH).build()
         ),
-        val expected: AuroraStatus
+        val expected: AuroraStatus,
     ) {
 
         LAST_DEPLOYMENT_FAILED_UNAVAILABLE(
@@ -209,13 +208,11 @@ class AuroraStatusCalculatorTest {
     }
 }
 
-fun toReport(vararg statusChecks: StatusCheck): List<StatusCheckReport> {
-    return statusChecks.map {
-        StatusCheckReport(
-            name = it.name,
-            description = it.description.failed,
-            hasFailed = true,
-            failLevel = it.failLevel
-        )
-    }
+fun toReport(vararg statusChecks: StatusCheck): List<StatusCheckReport> = statusChecks.map {
+    StatusCheckReport(
+        name = it.name,
+        description = it.description.failed,
+        hasFailed = true,
+        failLevel = it.failLevel
+    )
 }

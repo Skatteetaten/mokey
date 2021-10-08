@@ -18,26 +18,32 @@ import uk.q3c.rest.hal.HalLink
 @RequestMapping(ApplicationDeploymentController.path)
 class ApplicationDeploymentController(
     private val applicationDataService: ApplicationDataService,
-    private val assembler: ApplicationDeploymentResourceAssembler
+    private val assembler: ApplicationDeploymentResourceAssembler,
 ) {
-
-    companion object {
-        const val path = "/api/applicationdeployment"
-    }
-
+    @ExperimentalStdlibApi
     @GetMapping("/{id}")
     fun get(@PathVariable id: String): ApplicationDeploymentResource {
-        val application =
-            applicationDataService.findPublicApplicationDataByApplicationDeploymentId(id)
-                ?: throw NoSuchResourceException("Does not exist")
+        val application = applicationDataService.findPublicApplicationDataByApplicationDeploymentId(
+            id
+        ) ?: throw NoSuchResourceException("Does not exist")
+
         return assembler.toResource(application)
     }
 
+    @ExperimentalStdlibApi
     @PostMapping
-    fun getApplicationDeploymentForRefs(@RequestBody applicationDeploymentRefs: List<ApplicationDeploymentRef>): List<ApplicationDeploymentResource> {
-        val applications =
-            applicationDataService.findPublicApplicationDataByApplicationDeploymentRef(applicationDeploymentRefs)
+    fun getApplicationDeploymentForRefs(
+        @RequestBody applicationDeploymentRefs: List<ApplicationDeploymentRef>,
+    ): List<ApplicationDeploymentResource> {
+        val applications = applicationDataService.findPublicApplicationDataByApplicationDeploymentRef(
+            applicationDeploymentRefs
+        )
+
         return assembler.toResources(applications)
+    }
+
+    companion object {
+        const val path = "/api/applicationdeployment"
     }
 }
 
@@ -45,31 +51,37 @@ class ApplicationDeploymentController(
 class ApplicationDeploymentResourceAssembler :
     ResourceAssemblerSupport<ApplicationPublicData, ApplicationDeploymentResource>() {
 
-    override fun toResource(applicationData: ApplicationPublicData): ApplicationDeploymentResource {
-        val environment = Environment.fromNamespace(applicationData.namespace, applicationData.affiliation)
+    @ExperimentalStdlibApi
+    override fun toResource(entity: ApplicationPublicData): ApplicationDeploymentResource {
+        val environment = Environment.fromNamespace(entity.namespace, entity.affiliation)
+
         return ApplicationDeploymentResource(
-            id = applicationData.applicationDeploymentId,
-            affiliation = applicationData.affiliation,
+            id = entity.applicationDeploymentId,
+            affiliation = entity.affiliation,
             environment = environment.name,
             namespace = environment.namespace,
-            name = applicationData.applicationDeploymentName,
-            status = applicationData.auroraStatus.let { status ->
+            name = entity.applicationDeploymentName,
+            status = entity.auroraStatus.let { status ->
                 AuroraStatusResource(
                     code = status.level.name,
                     reasons = toStatusCheckReportResource(status.reasons),
                     reports = toStatusCheckReportResource(status.reports)
                 )
             },
-            version = Version(applicationData.deployTag, applicationData.auroraVersion, applicationData.releaseTo),
-            time = applicationData.time,
-            dockerImageRepo = applicationData.dockerImageRepo,
-            message = applicationData.message
+            version = Version(entity.deployTag, entity.auroraVersion, entity.releaseTo),
+            time = entity.time,
+            dockerImageRepo = entity.dockerImageRepo,
+            message = entity.message
         ).apply {
-            link(resourceClassNameToRelName(ApplicationDeploymentDetailsResource::class),
-                HalLink("${ApplicationDeploymentDetailsController.path}/${applicationData.applicationDeploymentId}"))
+            link(
+                resourceClassNameToRelName(ApplicationDeploymentDetailsResource::class),
+                HalLink("${ApplicationDeploymentDetailsController.path}/${entity.applicationDeploymentId}")
+            )
 
-            link(resourceClassNameToRelName(ApplicationResource::class),
-                HalLink("${ApplicationController.path}/${applicationData.applicationId}"))
+            link(
+                resourceClassNameToRelName(ApplicationResource::class),
+                HalLink("${ApplicationController.path}/${entity.applicationId}")
+            )
         }
     }
 

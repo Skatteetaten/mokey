@@ -22,22 +22,23 @@ import io.fabric8.kubernetes.api.model.extensions.Ingress
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.ImageStreamTag
 import io.fabric8.openshift.api.model.Route
-import no.skatteetaten.aurora.kubernetes.ClientTypes
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
-import no.skatteetaten.aurora.kubernetes.TargetClient
+import no.skatteetaten.aurora.kubernetes.config.ClientTypes.SERVICE_ACCOUNT
+import no.skatteetaten.aurora.kubernetes.config.TargetClient
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
 import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
 import org.springframework.stereotype.Service
 
+@Suppress("SpringJavaInjectionPointsAutowiringInspection")
 @Service
-class OpenShiftServiceAccountClient(
-    @TargetClient(ClientTypes.SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient
-) {
-    suspend fun getServices(metadata: ObjectMeta) =
-        client.getMany(newService { this.metadata = metadata })
+class OpenShiftServiceAccountClient(@TargetClient(SERVICE_ACCOUNT) val client: KubernetesCoroutinesClient) {
+    suspend fun getServices(metadata: ObjectMeta) = client.getMany(newService { this.metadata = metadata })
 
-    suspend fun getIngresses(metadata: ObjectMeta): List<Ingress> =
-        client.getMany(newIngress { this.metadata = metadata })
+    suspend fun getIngresses(metadata: ObjectMeta): List<Ingress> = client.getMany(
+        newIngress {
+            this.metadata = metadata
+        }
+    )
 
     suspend fun getRoutes(metadata: ObjectMeta): List<Route> = client.getMany(newRoute { this.metadata = metadata })
 
@@ -45,74 +46,77 @@ class OpenShiftServiceAccountClient(
 
     suspend fun getAllNamespace(): List<Namespace> = client.getMany(null)
 
-    suspend fun getApplicationDeployments(namespace: String): List<ApplicationDeployment> {
-        return client.getMany(newApplicationDeployment {
+    suspend fun getApplicationDeployments(namespace: String): List<ApplicationDeployment> = client.getMany(
+        newApplicationDeployment {
             metadata {
                 this.namespace = namespace
             }
-        })
-    }
+        }
+    )
 
-    suspend fun getApplicationDeployment(name: String, namespace: String): ApplicationDeployment {
-        return client.get(newApplicationDeployment {
+    suspend fun getApplicationDeployment(name: String, namespace: String): ApplicationDeployment = client.get(
+        newApplicationDeployment {
             metadata {
                 this.name = name
                 this.namespace = namespace
             }
-        })
-    }
+        }
+    )
 
-    suspend fun getReplicationControllers(namespace: String, labels: Map<String, String>): List<ReplicationController> {
-        return client.getMany(newReplicationController {
+    suspend fun getReplicationControllers(
+        namespace: String,
+        labels: Map<String, String>
+    ): List<ReplicationController> = client.getMany(
+        newReplicationController {
             metadata {
                 this.namespace = namespace
                 this.labels = labels
             }
-        })
-    }
+        }
+    )
 
-    suspend fun getDeploymentConfig(namespace: String?, openShiftName: String?): DeploymentConfig? {
-        return client.getOrNull(newDeploymentConfig {
+    suspend fun getDeploymentConfig(namespace: String?, openShiftName: String?): DeploymentConfig? = client.getOrNull(
+        newDeploymentConfig {
             metadata {
                 this.namespace = namespace
                 this.name = openShiftName
             }
-        })
-    }
+        }
+    )
 
-    suspend fun getImageStreamTag(namespace: String, name: String, tagName: String): ImageStreamTag? {
-        return client.getOrNull(newImageStreamTag {
+    suspend fun getImageStreamTag(namespace: String, name: String, tagName: String): ImageStreamTag? = client.getOrNull(
+        newImageStreamTag {
             metadata {
                 this.namespace = namespace
                 this.name = "$name:$tagName"
             }
-        })
-    }
+        }
+    )
 
-    suspend fun getPods(namespace: String, labels: Map<String, String?>): List<Pod> {
-        return client.getMany(newPod {
+    suspend fun getPods(namespace: String, labels: Map<String, String?>): List<Pod> = client.getMany(
+        newPod {
             metadata {
                 this.namespace = namespace
                 this.labels = labels
             }
-        })
-    }
+        }
+    )
 
-    suspend fun getDeployment(namespace: String?, openShiftName: String?): Deployment? {
-        return client.getOrNull(newDeployment {
+    suspend fun getDeployment(namespace: String?, openShiftName: String?): Deployment? = client.getOrNull(
+        newDeployment {
             metadata {
                 this.namespace = namespace
                 this.name = openShiftName
             }
-        })
-    }
+        }
+    )
 
-    suspend fun getReplicaSets(namespace: String, labels: Map<String, String>): List<ReplicaSet> {
-        return client.getMany(newReplicaSet {
+    suspend fun getReplicaSets(namespace: String, labels: Map<String, String>): List<ReplicaSet> = client.getMany(
+        newReplicaSet {
             metadata {
                 this.namespace = namespace
                 this.labels = labels
             }
-        })
-    }
+        }
+    )
 }

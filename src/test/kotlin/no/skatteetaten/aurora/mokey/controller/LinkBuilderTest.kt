@@ -4,15 +4,14 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import java.nio.charset.Charset
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.AuroraConfigRef
 import org.junit.jupiter.api.Test
 import org.springframework.web.util.UriUtils
+import java.nio.charset.Charset
 
 class LinkBuilderTest {
-
     @Test
     fun `should expand placeholders correctly`() {
         val linkBuilder = LinkBuilder("", mapOf("metricsHostname" to "http://metrics.skead.no", "cluster" to "utv"))

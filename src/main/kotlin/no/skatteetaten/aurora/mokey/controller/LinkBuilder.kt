@@ -5,8 +5,8 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import org.springframework.web.util.UriComponentsBuilder
+import org.springframework.web.util.UriComponentsBuilder.fromHttpUrl
 
 @Configuration
 class LinkBuilderFactory(
@@ -25,17 +25,18 @@ class LinkBuilder(
     private val globalExpandParams: Map<String, String>,
     private val openShiftVersion: Int = 3
 ) {
-
-    fun applyResult(auroraConfigName: String, deployId: String) =
-        createLink(
-            UriComponentsBuilder
-                .fromHttpUrl(booberApiUrl)
-                .path("/v1/apply-result/$auroraConfigName/$deployId")
-                .build().toUriString(), "ApplyResult"
-        )
+    fun applyResult(
+        auroraConfigName: String,
+        deployId: String,
+    ) = createLink(
+        fromHttpUrl(booberApiUrl)
+            .path("/v1/apply-result/$auroraConfigName/$deployId")
+            .build().toUriString(),
+        "ApplyResult"
+    )
 
     fun apply(deploymentCommand: ApplicationDeploymentCommand): Link {
-        val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
+        val uriComponents = fromHttpUrl(booberApiUrl)
             .pathSegment("v1", "apply", deploymentCommand.auroraConfig.name)
             .queryParam("reference", deploymentCommand.auroraConfig.refName).build()
             .encode()
@@ -45,16 +46,25 @@ class LinkBuilder(
     }
 
     fun auroraConfigFile(deploymentCommand: ApplicationDeploymentCommand): List<Link> {
-
-        val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
-            .pathSegment("v1", "auroraconfig", deploymentCommand.auroraConfig.name, "{fileName}")
-
+        val uriComponents = fromHttpUrl(booberApiUrl)
+            .pathSegment(
+                "v1",
+                "auroraconfig",
+                deploymentCommand.auroraConfig.name,
+                "{fileName}"
+            )
         val currentLink =
-            uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.refName).build()
+            uriComponents.cloneBuilder().queryParam(
+                "reference",
+                deploymentCommand.auroraConfig.refName
+            ).build()
                 .encode()
                 .toUriString()
         val deployedLink =
-            uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.resolvedRef).build()
+            uriComponents.cloneBuilder().queryParam(
+                "reference",
+                deploymentCommand.auroraConfig.resolvedRef
+            ).build()
                 .encode()
                 .toUriString()
 
@@ -65,20 +75,22 @@ class LinkBuilder(
     }
 
     fun files(deploymentCommand: ApplicationDeploymentCommand): List<Link> {
-
-        val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
+        val uriComponents = fromHttpUrl(booberApiUrl)
             .pathSegment("v1", "auroraconfig", deploymentCommand.auroraConfig.name)
             .queryParam("environment", deploymentCommand.applicationDeploymentRef.environment)
             .queryParam("application", deploymentCommand.applicationDeploymentRef.application)
-
-        val currentLink =
-            uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.refName).build()
-                .encode()
-                .toUriString()
-        val deployedLink =
-            uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.resolvedRef).build()
-                .encode()
-                .toUriString()
+        val currentLink = uriComponents.cloneBuilder().queryParam(
+            "reference",
+            deploymentCommand.auroraConfig.refName
+        ).build()
+            .encode()
+            .toUriString()
+        val deployedLink = uriComponents.cloneBuilder().queryParam(
+            "reference",
+            deploymentCommand.auroraConfig.resolvedRef
+        ).build()
+            .encode()
+            .toUriString()
 
         return listOf(
             createLink(currentLink, "FilesCurrent"),
@@ -90,28 +102,30 @@ class LinkBuilder(
         val overridesQueryParam = deploymentCommand.overrideFiles.takeIf { it.isNotEmpty() }?.let {
             jacksonObjectMapper().writeValueAsString(it)
         }
-
-        val uriComponents = UriComponentsBuilder.fromHttpUrl(booberApiUrl)
-            .pathSegment(
-                "v1",
-                "auroradeployspec",
-                deploymentCommand.auroraConfig.name,
-                deploymentCommand.applicationDeploymentRef.environment,
-                deploymentCommand.applicationDeploymentRef.application
-            )
+        val uriComponents = fromHttpUrl(booberApiUrl).pathSegment(
+            "v1",
+            "auroradeployspec",
+            deploymentCommand.auroraConfig.name,
+            deploymentCommand.applicationDeploymentRef.environment,
+            deploymentCommand.applicationDeploymentRef.application
+        )
 
         overridesQueryParam?.let {
             uriComponents.queryParam("overrides", it)
         }
 
-        val currentLink =
-            uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.refName).build()
-                .encode()
-                .toUriString()
-        val deployedLink =
-            uriComponents.cloneBuilder().queryParam("reference", deploymentCommand.auroraConfig.resolvedRef).build()
-                .encode()
-                .toUriString()
+        val currentLink = uriComponents.cloneBuilder().queryParam(
+            "reference",
+            deploymentCommand.auroraConfig.refName
+        ).build()
+            .encode()
+            .toUriString()
+        val deployedLink = uriComponents.cloneBuilder().queryParam(
+            "reference",
+            deploymentCommand.auroraConfig.resolvedRef
+        ).build()
+            .encode()
+            .toUriString()
 
         return listOf(
             createLink(currentLink, "DeploymentSpecCurrent"),
@@ -119,45 +133,58 @@ class LinkBuilder(
         )
     }
 
-    // TODO: Should improve the way we create deep links to pods in the console.
-    fun openShiftConsoleLinks(pod: String, project: String): List<Link> {
-        return listOf("details", "environment", "terminal", "events", "logs").map {
-
-            val url = if (openShiftVersion == 3) {
-                UriComponentsBuilder
-                    .newInstance()
-                    .scheme("https")
-                    .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
-                    .port(8443)
-                    .pathSegment("console/project", project, "browse/pods", pod)
-                    .queryParam("tab", it)
-                    .build()
-                    .toUriString()
-            } else {
-                val tabSegment = when (it) {
-                    "details" -> ""
-                    else -> it
+    fun openShiftConsoleLinks(pod: String, project: String): List<Link> = listOf(
+        "details",
+        "environment",
+        "terminal",
+        "events",
+        "logs",
+    ).map {
+        Link(
+            "ocp_console_$it",
+            when (openShiftVersion) {
+                3 -> {
+                    UriComponentsBuilder
+                        .newInstance()
+                        .scheme("https")
+                        .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
+                        .port(8443)
+                        .pathSegment("console/project", project, "browse/pods", pod)
+                        .queryParam("tab", it)
+                        .build()
+                        .toUriString()
                 }
-                UriComponentsBuilder
-                    .newInstance()
-                    .scheme("https")
-                    .host("console-openshift-console.apps.${globalExpandParams["cluster"]}.paas.skead.no")
-                    .pathSegment("k8s/ns", project, "pods", pod, tabSegment)
-                    .build()
-                    .toUriString()
+                else -> {
+                    val tabSegment = when (it) {
+                        "details" -> ""
+                        else -> it
+                    }
+                    UriComponentsBuilder
+                        .newInstance()
+                        .scheme("https")
+                        .host("console-openshift-console.apps.${globalExpandParams["cluster"]}.paas.skead.no")
+                        .pathSegment("k8s/ns", project, "pods", pod, tabSegment)
+                        .build()
+                        .toUriString()
+                }
             }
-            Link("ocp_console_$it", url)
-        }
+        )
     }
 
-    fun createMokeyLink(rel: String, href: String): Link {
-        val baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString()
-        return Link(rel, "$baseUrl$href")
-    }
+    fun createMokeyLink(
+        rel: String,
+        href: String,
+    ): Link =
+        Link(rel, "${fromHttpUrl("http://mokey").toUriString()}$href")
 
-    fun createLink(linkString: String, rel: String, expandParams: Map<String, String> = mapOf()): Link {
+    fun createLink(
+        linkString: String,
+        rel: String,
+        expandParams: Map<String, String> = mapOf(),
+    ): Link {
         val expanded = (globalExpandParams + expandParams).entries
             .fold(linkString) { acc, e -> acc.replace("""{${e.key}}""", e.value) }
+
         return Link(rel, expanded)
     }
 }

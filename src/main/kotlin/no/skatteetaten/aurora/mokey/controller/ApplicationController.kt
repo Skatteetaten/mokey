@@ -9,42 +9,49 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
+@ExperimentalStdlibApi
 @RestController
 @RequestMapping(ApplicationController.path)
 class ApplicationController(
     private val applicationDataService: ApplicationDataService,
     private val assembler: ApplicationResourceAssembler
 ) {
-
-    companion object {
-        const val path = "/api/application"
-    }
-
     @GetMapping("/{applicationId}")
-    fun getApplication(@PathVariable applicationId: String): ApplicationResource? =
-        applicationDataService.findAllPublicApplicationDataByApplicationId(applicationId)
-            .let { GroupedApplicationData.create(it).firstOrNull()?.let(assembler::toResource) }
+    fun getApplication(
+        @PathVariable applicationId: String,
+    ): ApplicationResource? = applicationDataService.findAllPublicApplicationDataByApplicationId(applicationId).let {
+        GroupedApplicationData
+            .create(it)
+            .firstOrNull()
+            ?.let(assembler::toResource)
+    }
 
     @GetMapping
     fun getApplications(
         @RequestParam(required = false, defaultValue = "", name = "affiliation") affiliation: List<String>,
-        @RequestParam(required = false, defaultValue = "", name = "id") id: List<String>
+        @RequestParam(required = false, defaultValue = "", name = "id") id: List<String>,
     ): List<ApplicationResource> {
         val allApplicationData = applicationDataService.findAllPublicApplicationData(affiliation, id)
+
         return assembler.toResources(GroupedApplicationData.create(allApplicationData))
+    }
+
+    companion object {
+        const val path = "/api/application"
     }
 }
 
 @Component
 class ApplicationResourceAssembler : ResourceAssemblerSupport<GroupedApplicationData, ApplicationResource>() {
-
     private val applicationDeploymentAssembler = ApplicationDeploymentResourceAssembler()
 
-    override fun toResource(data: GroupedApplicationData): ApplicationResource {
-        val applicationDeployments = data.applications.map(applicationDeploymentAssembler::toResource)
+    @ExperimentalStdlibApi
+    override fun toResource(entity: GroupedApplicationData): ApplicationResource {
+        val applicationDeployments = entity.applications.map(applicationDeploymentAssembler::toResource)
+
         return ApplicationResource(
-            data.applicationId,
-            data.name,
+            entity.applicationId,
+            entity.name,
             applicationDeployments
         )
     }

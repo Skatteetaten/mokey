@@ -5,8 +5,9 @@ info:
         metrics: "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}&var-instance={podName}"
 
 spring:
-    profiles:
-        active: local
+    config:
+        activate:
+            on-profile: default
     codec:
         max-in-memory-size: -1 # Unlimited
 
@@ -54,10 +55,10 @@ kubernetes:
         times: 3
         min: 100ms
         max: 2s
+mokey:
+    cachewarmup:
+        enabled: false
 ---
-spring:
-    profiles: local
-
 mokey:
     cachewarmup:
         enabled: true
@@ -77,14 +78,19 @@ logging:
 kubernetes:
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
     tokenLocation: /tmp/reader-token
-
+spring:
+    config:
+        activate:
+            on-profile: local
 ---
 spring:
-    profiles: openshift
     zipkin:
         enabled: false
     sleuth:
         enabled: false
+    config:
+        activate:
+            on-profile: openshift
 
 logback:
     access:

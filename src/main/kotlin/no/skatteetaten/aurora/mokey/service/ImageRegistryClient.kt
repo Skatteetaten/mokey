@@ -1,7 +1,7 @@
 package no.skatteetaten.aurora.mokey.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.jayway.jsonpath.Configuration
+import com.jayway.jsonpath.Configuration.defaultConfiguration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
 import mu.KotlinLogging
@@ -19,7 +19,8 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import uk.q3c.rest.hal.HalResource
-import java.time.Duration
+import java.time.Duration.ofMillis
+import java.time.Duration.ofSeconds
 import java.time.Instant
 
 data class ImageTagResource(
@@ -30,12 +31,12 @@ data class ImageTagResource(
     val dockerDigest: String,
     val java: JavaImage? = null,
     val node: NodeJsImage? = null,
-    val requestUrl: String
+    val requestUrl: String,
 ) : HalResource()
 
 data class ImageBuildTimeline(
     val buildStarted: Instant?,
-    val buildEnded: Instant?
+    val buildEnded: Instant?,
 )
 
 data class NodeJsImage(val nodeJsVersion: String)
@@ -44,12 +45,12 @@ data class JavaImage(
     val major: String,
     val minor: String,
     val build: String,
-    val jolokia: String?
+    val jolokia: String?,
 )
 
 data class CantusFailure(
     val url: String,
-    val errorMessage: String
+    val errorMessage: String,
 )
 
 data class AuroraResponse<T : HalResource?>(
@@ -59,64 +60,69 @@ data class AuroraResponse<T : HalResource?>(
     val message: String = "OK",
     val failureCount: Int = failure.size,
     val successCount: Int = items.size,
-    val count: Int = failureCount + successCount
+    val count: Int = failureCount + successCount,
 ) : HalResource()
 
 data class TagUrlsWrapper(val tagUrls: List<String>)
 
 private val logger = KotlinLogging.logger { }
 
-// TODO: Could we make this simpler?
 @Service
 class ImageRegistryClient(
     @TargetService(ServiceTypes.CANTUS)
     val webClient: WebClient,
-    val objectMapper: ObjectMapper
+    val objectMapper: ObjectMapper,
 ) {
-
-    final inline fun <reified T : Any> post(path: String, body: Any): Flux<T> =
-        execute {
-            post().uri(path).body(BodyInserters.fromValue(body))
-        }
+    final inline fun <reified T : Any> post(path: String, body: Any): Flux<T> = execute {
+        post().uri(path).body(BodyInserters.fromValue(body))
+    }
 
     final inline fun <reified T : Any> execute(
-        fn: WebClient.() -> WebClient.RequestHeadersSpec<*>
+        fn: WebClient.() -> WebClient.RequestHeadersSpec<*>,
     ): Flux<T> = fn(webClient)
         .retrieve()
         .bodyToMono<AuroraResponse<HalResource>>()
-        .timeout(Duration.ofSeconds(5))
-        .retryWithLog(RetryConfiguration(3, Duration.ofMillis(200), Duration.ofSeconds(3)), false)
+        .timeout(ofSeconds(5))
+        .retryWithLog(
+            RetryConfiguration(
+                3,
+                ofMillis(200),
+                ofSeconds(3)
+            ),
+            false
+        )
         .handleGenericError()
         .flatMapMany {
-            if (it.success) {
-                it.items.map { item -> objectMapper.convertValue(item, T::class.java) }.toFlux()
-            } else {
-                throw ServiceException(message = it.message)
+            when {
+                it.success -> it.items.map {
+                    item ->
+                    objectMapper.convertValue(item, T::class.java)
+                }.toFlux()
+                else -> throw ServiceException(message = it.message)
             }
         }
 
-    fun <T> Mono<T>.handleGenericError(): Mono<T> =
-        this.handleError("cantus")
-            .switchIfEmpty(ServiceException("Empty resource from Image Registry").toMono())
+    fun <T> Mono<T>.handleGenericError(): Mono<T> = this.handleError("cantus").switchIfEmpty(
+        ServiceException("Empty resource from Image Registry").toMono()
+    )
 
-    fun <T> Mono<T>.handleError(sourceSystem: String?) =
-        this.doOnError {
-            when (it) {
-                is WebClientResponseException -> {
-                    val errorMessage = "Error in response, status=${it.rawStatusCode} message=${it.statusText}"
-                    val message = it.readResponse() ?: errorMessage
+    fun <T> Mono<T>.handleError(sourceSystem: String?) = this.doOnError {
+        when (it) {
+            is WebClientResponseException -> {
+                val errorMessage = "Error in response, status=${it.rawStatusCode} message=${it.statusText}"
+                val message = it.readResponse() ?: errorMessage
 
-                    throw ServiceException(
-                        message = message,
-                        cause = it
-                    )
-                }
-                else -> throw ServiceException(
-                    message = it.message ?: "",
+                throw ServiceException(
+                    message = message,
                     cause = it
                 )
             }
+            else -> throw ServiceException(
+                message = it.message ?: "",
+                cause = it
+            )
         }
+    }
 }
 
 private fun WebClientResponseException.readResponse(): String? {
@@ -125,8 +131,10 @@ private fun WebClientResponseException.readResponse(): String? {
     }
 
     val body = this.responseBodyAsString
+
     logger.debug { "Error response body: $body" }
 
-    val json = JsonPath.parse(body, Configuration.defaultConfiguration().addOptions(Option.SUPPRESS_EXCEPTIONS))
+    val json = JsonPath.parse(body, defaultConfiguration().addOptions(Option.SUPPRESS_EXCEPTIONS))
+
     return json.read<String>("$.message") ?: json.read<String>("$.items[0]")
 }

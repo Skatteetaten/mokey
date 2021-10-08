@@ -18,27 +18,37 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.Test
 
 class PodServiceTest {
-
     private val server = MockWebServer()
     private val podService = PodService(
         OpenShiftServiceAccountClient(KubernetesCoroutinesClient(server.url, "test-token")),
-        ManagementDataService(OpenShiftManagementClient(KubernetesReactorClient(server.url, "test-token"), false))
+        ManagementDataService(
+            OpenShiftManagementClient(
+                KubernetesReactorClient(
+                    server.url,
+                    "test-token"
+                ),
+                false
+            )
+        ),
     )
 
     @Test
     fun `Get pod details`() {
         server.execute(
             listOf(PodDataBuilder().build()),
-            DiscoveryResponse(mapOf("discovery" to DiscoveryLink("/discovery")))
+            DiscoveryResponse(mapOf("discovery" to DiscoveryLink("/discovery"))),
         ) {
             runBlocking {
                 val podDetails = podService.getPodDetails(
                     ApplicationDeploymentBuilder().build(),
                     DeployDetails(0, 0),
-                    emptyMap()
+                    emptyMap(),
                 )
+
                 assertThat(podDetails).hasSize(1)
+
                 val first = podDetails.first()
+
                 assertThat(first.openShiftPodExcerpt.name).isEqualTo("name")
                 assertThat(first.managementData.links.resultCode).isEqualTo("OK")
                 assertThat(first.managementData.links.createdAt).isNotNull()

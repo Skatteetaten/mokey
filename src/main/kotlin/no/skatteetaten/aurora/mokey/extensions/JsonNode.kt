@@ -2,20 +2,21 @@ package no.skatteetaten.aurora.mokey.extensions
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.MissingNode
+import com.fasterxml.jackson.databind.node.MissingNode.getInstance
 
 fun JsonNode.extract(vararg pathAlternatives: String): JsonNode? {
-    var valueNode: JsonNode = MissingNode.getInstance()
+    var valueNode: JsonNode = getInstance()
+
     for (alt in pathAlternatives) {
         valueNode = this.at(alt)
-        if (valueNode !is MissingNode) {
-            break
-        }
+
+        if (valueNode !is MissingNode) break
 
         valueNode = this.getExact(alt)
-        if (valueNode !is MissingNode) {
-            break
-        }
+
+        if (valueNode !is MissingNode) break
     }
+
     return if (valueNode !is MissingNode) valueNode else null
 }
 
@@ -29,5 +30,6 @@ fun JsonNode.getExact(path: String): JsonNode {
     } catch (ex: Exception) {
         null
     }
-    return value ?: MissingNode.getInstance()
+
+    return value ?: getInstance()
 }

@@ -2,8 +2,6 @@ package no.skatteetaten.aurora.mokey.service
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import java.time.Duration
-import java.time.Instant
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
 import no.skatteetaten.aurora.mokey.model.DeployDetails
 import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
@@ -11,33 +9,35 @@ import no.skatteetaten.aurora.mokey.service.auroraStatus.PodNotReadyCheck
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import java.time.Duration
+import java.time.Duration.ofMinutes
+import java.time.Instant
+import java.time.Instant.EPOCH
 
 val testExcerpt = OpenShiftContainerExcerpt(
     name = "name-java",
     state = "running",
     image = "docker....",
     restartCount = 0,
-    ready = true
+    ready = true,
 )
 
-val now = Instant.EPOCH + Duration.ofMinutes(10)
+val now: Instant = EPOCH + ofMinutes(10)
 
 class PodNotReadyCheckTest {
-
-    val app = DeployDetails(
+    private val app = DeployDetails(
         targetReplicas = 1,
         availableReplicas = 1,
         deployment = "foo-1",
         phase = "Running",
-        deployTag = "1"
+        deployTag = "1",
     )
-
-    val check = PodNotReadyCheck(Duration.ofMinutes(5))
+    private val check = PodNotReadyCheck(ofMinutes(5))
 
     enum class PodNotReadyCheckDataSource(
         val triggered: Boolean = true,
         val containers: List<OpenShiftContainerExcerpt>,
-        val started: Instant? = Instant.EPOCH
+        val started: Instant? = EPOCH,
     ) {
         SINGLE_READY(triggered = false, containers = listOf(testExcerpt)),
         SINGLE_UNREADY(triggered = true, containers = listOf(testExcerpt.copy(ready = false))),
@@ -53,9 +53,9 @@ class PodNotReadyCheckTest {
     @ParameterizedTest
     @EnumSource(PodNotReadyCheckDataSource::class)
     fun `pod not ready check`(test: PodNotReadyCheckDataSource) {
-
         val pods = listOf(PodDetailsDataBuilder(startTime = test.started, containers = test.containers).build())
         val status = check.isFailing(app, pods, now)
+
         assertThat(status).isEqualTo(test.triggered)
     }
 
@@ -69,6 +69,7 @@ class PodNotReadyCheckTest {
             ).build()
         )
         val status = check.isFailing(app, pods, now)
+
         assertThat(status).isEqualTo(false)
     }
 }
