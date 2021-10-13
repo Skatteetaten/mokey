@@ -1,0 +1,10 @@
+openshift:
+    cluster: utv
+    port: 8443
+integrations:
+    boober:
+        url: http://boober.aurora.utv.paas.skead.no
+    metrics:
+        url: http://metrics.skead.no
+    splunk:
+        url: http://splunk.skead.no
