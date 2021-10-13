@@ -22,8 +22,8 @@ class WebSecurityConfig(
         .logout().disable()
         .authenticationManager(authenticationManager)
         .securityContextRepository(securityContextRepository)
-        .authorizeExchange().pathMatchers("/actuator", "/actuator/**").permitAll()
-        .anyExchange().authenticated()
+        .authorizeExchange().pathMatchers("/api/auth/**").authenticated()
+        .anyExchange().permitAll()
         .and()
         .build()
 }
