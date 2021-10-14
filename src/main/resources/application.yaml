@@ -59,30 +59,6 @@ mokey:
     cachewarmup:
         enabled: false
 ---
-mokey:
-    cachewarmup:
-        enabled: true
-    cache:
-        affiliations: safir
-
-integrations:
-    cantus:
-        url: http://cantus.aurora.utv.paas.skead.no
-logging:
-    pattern:
-        console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
-    # add mokey.openshift.token to ~/.spring-boot-devtools.properties
-    level:
-        no.skatteetaten.aurora: DEBUG
-
-kubernetes:
-    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
-    tokenLocation: /tmp/reader-token
-spring:
-    config:
-        activate:
-            on-profile: local
----
 spring:
     zipkin:
         enabled: false

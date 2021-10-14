@@ -5,9 +5,12 @@ import com.fkorotkov.kubernetes.newNamespace
 import io.fabric8.kubernetes.api.model.Namespace
 import io.fabric8.kubernetes.api.model.authorization.SelfSubjectAccessReview
 import io.fabric8.openshift.api.model.Project
+import kotlinx.coroutines.reactive.awaitFirst
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.config.ClientTypes.USER_TOKEN
 import no.skatteetaten.aurora.kubernetes.config.TargetClient
+import no.skatteetaten.aurora.springboot.getToken
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.stereotype.Service
 
 @Suppress("SpringJavaInjectionPointsAutowiringInspection")
@@ -24,5 +27,5 @@ class OpenShiftUserClient(@TargetClient(USER_TOKEN) val client: KubernetesCorout
     suspend fun selfSubjectAccessReview(review: SelfSubjectAccessReview): SelfSubjectAccessReview = client.post(review)
 
     // This will not work on kubernets, and you cannot fetch all namespaces either...
-    suspend fun getAllProjects(): List<Project> = client.getMany()
+    suspend fun getAllProjects(): List<Project> = client.getMany(token = ReactiveSecurityContextHolder.getContext().awaitFirst().authentication.getToken())
 }

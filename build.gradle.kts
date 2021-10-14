@@ -9,7 +9,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.5.2")
     implementation("io.projectreactor.addons:reactor-extra:3.4.5")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.3.12")
+    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:feature_AOS_5997-SNAPSHOT")
     implementation("no.skatteetaten.aurora.springboot:aurora-spring-security-starter:1.6.2")
     implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
     implementation("uk.q3c.rest:hal-kotlin:0.5.4.0.db32476")

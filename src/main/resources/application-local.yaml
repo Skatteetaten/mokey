@@ -8,3 +8,22 @@ integrations:
         url: http://metrics.skead.no
     splunk:
         url: http://splunk.skead.no
+    cantus:
+        url: https://cantus-aurora.utv.paas.skead.no
+
+mokey:
+    cachewarmup:
+        enabled: true
+    cache:
+        affiliations: safir
+
+logging:
+    pattern:
+        console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
+    # add mokey.openshift.token to ~/.spring-boot-devtools.properties
+    level:
+        no.skatteetaten.aurora: DEBUG
+
+kubernetes:
+    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
+    tokenLocation: /tmp/reader-token
