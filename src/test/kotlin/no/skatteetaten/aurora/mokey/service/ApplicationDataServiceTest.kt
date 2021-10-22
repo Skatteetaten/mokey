@@ -175,18 +175,16 @@ class ApplicationDataServiceTest {
     fun `Read public application data uncached with ApplicationDeploymentRef`() {
         dataService.cache()
         val publicData = dataService.findAllPublicApplicationData(listOf("aurora"))
-        val applicationDeploymentRef = ApplicationDeploymentRef(
-            publicData.first().environment,
-            publicData.first().applicationDeploymentName
-        )
+        val applicationDeploymentRef =
+            ApplicationDeploymentRef(publicData.first().environment, publicData.first().applicationDeploymentName)
+
         val pd1 = dataService.findPublicApplicationDataByApplicationDeploymentRef(
-            applicationDeploymentRefs = listOf(applicationDeploymentRef),
-            cached = false
+            listOf(applicationDeploymentRef),
+            false
         )
-        val pd2 = dataService.findAllPublicApplicationDataByApplicationId(publicData.first().applicationId!!)
 
         assertThat(publicData.first().affiliation).isEqualTo("aurora")
-        assertThat(pd1).isEqualTo(pd2)
+        assertThat(pd1.first().affiliation).isEqualTo("aurora")
 
         coVerify(exactly = 2) { dataServiceOpenShift.findAllApplicationDataByEnvironments(any()) }
     }
