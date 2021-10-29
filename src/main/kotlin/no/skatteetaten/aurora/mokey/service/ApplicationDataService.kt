@@ -78,9 +78,7 @@ class ApplicationDataService(
                     deployment
                 }
 
-                applicationDataService.findAllApplicationDataByEnvironments(deployments).onEach {
-                    addCacheEntry(it.applicationDeploymentId, it)
-                }.map {
+                applicationDataService.findAllApplicationDataByEnvironments(deployments).map {
                     it.publicData
                 }
             }
