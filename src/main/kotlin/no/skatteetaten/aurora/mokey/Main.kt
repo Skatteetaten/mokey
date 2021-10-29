@@ -41,18 +41,7 @@ class CacheWarmup(
 
                         warmUp(attempt + 1)
                     }
-                    else -> {
-                        val errorMsg = "Unable to refresh cache during initialization"
-
-                        when (it) {
-                            is Error -> {
-                                logger.error(errorMsg, it)
-                            }
-                            else -> {
-                                logger.error("$errorMsg, ${it.localizedMessage}")
-                            }
-                        }
-                    }
+                    else -> logger.error(it) { "Unable to refresh cache during initialization" }
                 }
             }
         }
