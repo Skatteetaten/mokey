@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.util.UriComponentsBuilder
 import org.springframework.web.util.UriComponentsBuilder.fromHttpUrl
+import java.nio.file.Files.createLink
 
 @Configuration
 class LinkBuilderFactory(
@@ -147,7 +148,7 @@ class LinkBuilder(
                     UriComponentsBuilder
                         .newInstance()
                         .scheme("https")
-                        .host(globalExpandParams["cluster"] + "-master.paas.skead.no")
+                        .host(clusterHost())
                         .port(8443)
                         .pathSegment("console/project", project, "browse/pods", pod)
                         .queryParam("tab", it)
@@ -169,6 +170,11 @@ class LinkBuilder(
                 }
             }
         )
+    }
+
+    private fun clusterHost(): String = when (val cluster = globalExpandParams["cluster"]) {
+        "utv04" -> "$cluster.paas.skead.no"
+        else -> "$cluster-master.paas.skead.no"
     }
 
     fun createMokeyLink(
