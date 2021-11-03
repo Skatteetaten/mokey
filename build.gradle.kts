@@ -20,9 +20,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk:1.12.0")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
-    testImplementation("no.skatteetaten.aurora:mockwebserver-extensions-kotlin:1.1.8") {
-        exclude(group = "no.skatteetaten.aurora.springboot", module = "aurora-spring-boot-mvc-starter")
-    }
+    testImplementation("no.skatteetaten.aurora:mockwebserver-extensions-kotlin:1.2.0")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.9.2")
     testImplementation("com.squareup.okhttp3:okhttp:4.9.2")
     testImplementation("com.ninja-squad:springmockk:3.0.1")
