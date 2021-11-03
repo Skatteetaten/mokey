@@ -8,12 +8,15 @@ import io.fabric8.kubernetes.internal.KubernetesDeserializer
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesConfiguration
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.RetryConfiguration
+import no.skatteetaten.aurora.kubernetes.TokenFetcher
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.springboot.getToken
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
@@ -23,6 +26,7 @@ import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import java.security.KeyStore
@@ -41,16 +45,24 @@ private val logger = KotlinLogging.logger {}
 
 @Configuration
 @EnableScheduling
-class ApplicationConfig(val kubeernetesClientConfig: KubernetesConfiguration) : BeanPostProcessor {
+class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : BeanPostProcessor {
+
+    @Bean
+    fun tokenFetcher(): TokenFetcher = object : TokenFetcher {
+        override suspend fun coToken(audience: String?): String {
+            return ReactiveSecurityContextHolder.getContext().awaitFirst().authentication.getToken()
+        }
+    }
+
     @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     @Qualifier("managementClient")
     @Bean
     fun managementClient(
         builder: WebClient.Builder,
         @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?,
-    ): KubernetesReactorClient = kubeernetesClientConfig.copy(
+    ): KubernetesReactorClient = kubernetesClientConfig.copy(
         retry = RetryConfiguration(0),
-        timeout = kubeernetesClientConfig.timeout.copy(read = Duration.ofSeconds(2))
+        timeout = kubernetesClientConfig.timeout.copy(read = Duration.ofSeconds(2))
     ).createServiceAccountReactorClient(builder, trustStore).build()
 
     // Management interface parsing needs this

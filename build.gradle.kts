@@ -9,7 +9,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.5.2")
     implementation("io.projectreactor.addons:reactor-extra:3.4.5")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.3.18")
+    implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.3.20")
     implementation("no.skatteetaten.aurora.springboot:aurora-spring-security-starter:1.6.2")
     implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
     implementation("uk.q3c.rest:hal-kotlin:0.5.4.0.db32476")
@@ -20,7 +20,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk:1.12.0")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
-    testImplementation("no.skatteetaten.aurora:mockwebserver-extensions-kotlin:1.1.8")
+    testImplementation("no.skatteetaten.aurora:mockwebserver-extensions-kotlin:1.1.8") {
+        exclude(group = "no.skatteetaten.aurora.springboot", module = "aurora-spring-boot-mvc-starter")
+    }
     testImplementation("com.squareup.okhttp3:mockwebserver:4.9.2")
     testImplementation("com.squareup.okhttp3:okhttp:4.9.2")
     testImplementation("com.ninja-squad:springmockk:3.0.1")

@@ -35,7 +35,7 @@ class CacheWarmup(
             }.getOrElse {
                 when {
                     attempt < 4 -> {
-                        logger.warn("failed cache during initialization, sleep for 10s and try again.")
+                        logger.warn(it) { "failed cache during initialization, sleep for 10s and try again." }
 
                         sleep(10000)
 
