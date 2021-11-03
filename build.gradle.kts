@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("idea")
-    id("no.skatteetaten.gradle.aurora") version "4.3.20"
+    id("no.skatteetaten.gradle.aurora") version "4.3.22"
 }
 
 dependencies {
@@ -10,7 +10,7 @@ dependencies {
     implementation("io.projectreactor.addons:reactor-extra:3.4.5")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.3.20")
-    implementation("no.skatteetaten.aurora.springboot:aurora-spring-security-starter:1.6.2")
+    implementation("no.skatteetaten.aurora.springboot:aurora-spring-security-starter:1.6.3")
     implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
     implementation("uk.q3c.rest:hal-kotlin:0.5.4.0.db32476")
     implementation("com.jayway.jsonpath:json-path:2.6.0")
