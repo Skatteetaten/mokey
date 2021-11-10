@@ -1,10 +1,8 @@
 package no.skatteetaten.aurora.mokey.service
 
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
@@ -121,7 +119,7 @@ class ApplicationDataService(
     )
     fun cache() {
         runCatching {
-            GlobalScope.launch(IO) {
+            runBlocking {
                 withTimeout(crawlerTimeout.toMillis()) {
                     refreshCache(affiliations)
                 }
