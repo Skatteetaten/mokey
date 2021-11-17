@@ -58,12 +58,21 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
     @Qualifier("managementClient")
     @Bean
     fun managementClient(
-        builder: WebClient.Builder,
-        @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?,
-    ): KubernetesReactorClient = kubernetesClientConfig.copy(
-        retry = RetryConfiguration(0),
-        timeout = kubernetesClientConfig.timeout.copy(read = Duration.ofSeconds(2))
-    ).createServiceAccountReactorClient(builder, trustStore).build()
+            builder: WebClient.Builder,
+            @Qualifier("kubernetesClientWebClient") trustStore: KeyStore?,
+    ): KubernetesReactorClient = builder
+            .exchangeStrategies(
+                    ExchangeStrategies.builder().codecs {
+                        it.defaultCodecs().apply {
+                            maxInMemorySize(-1) // unlimited
+                        }
+                    }.build())
+            .let {
+                kubernetesClientConfig.copy(
+                        retry = RetryConfiguration(0),
+                        timeout = kubernetesClientConfig.timeout.copy(read = Duration.ofSeconds(2))
+                ).createServiceAccountReactorClient(it, trustStore).build()
+            }
 
     // Management interface parsing needs this
     @Bean
@@ -75,14 +84,14 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
 
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any? {
         KubernetesDeserializer.registerCustomKind(
-            "skatteetaten.no/v1",
-            "ApplicationDeploymentList",
-            KubernetesList::class.java
+                "skatteetaten.no/v1",
+                "ApplicationDeploymentList",
+                KubernetesList::class.java
         )
         KubernetesDeserializer.registerCustomKind(
-            "skatteetaten.no/v1",
-            "ApplicationDeployment",
-            ApplicationDeployment::class.java
+                "skatteetaten.no/v1",
+                "ApplicationDeployment",
+                ApplicationDeployment::class.java
         )
 
         return super.postProcessAfterInitialization(bean, beanName)
@@ -91,21 +100,21 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
     @Bean
     @TargetService(ServiceTypes.CANTUS)
     fun webClientCantus(
-        builder: WebClient.Builder,
-        @Value("\${integrations.cantus.url}") cantusUrl: String,
+            builder: WebClient.Builder,
+            @Value("\${integrations.cantus.url}") cantusUrl: String,
     ): WebClient {
         logger.info("Configuring Cantus WebClient with base Url={}", cantusUrl)
 
         return builder
-            .baseUrl(cantusUrl)
-            .defaultHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .exchangeStrategies(
-                ExchangeStrategies.builder().codecs {
-                    it.defaultCodecs().apply {
-                        maxInMemorySize(-1) // unlimited
-                    }
-                }.build()
-            ).build()
+                .baseUrl(cantusUrl)
+                .defaultHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+                .exchangeStrategies(
+                        ExchangeStrategies.builder().codecs {
+                            it.defaultCodecs().apply {
+                                maxInMemorySize(-1) // unlimited
+                            }
+                        }.build()
+                ).build()
     }
 }
 
