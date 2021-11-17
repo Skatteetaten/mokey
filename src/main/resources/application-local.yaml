@@ -23,6 +23,7 @@ logging:
     # add mokey.openshift.token to ~/.spring-boot-devtools.properties
     level:
         no.skatteetaten.aurora: DEBUG
+        reactor.netty.http.client: ERROR
 
 kubernetes:
     url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
