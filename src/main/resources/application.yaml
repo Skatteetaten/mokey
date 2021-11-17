@@ -62,6 +62,8 @@ mokey:
 spring:
     sleuth:
         enabled: false
+    codec:
+        max-in-memory-size: -1 # Unlimited
     config:
         activate:
             on-profile: openshift
