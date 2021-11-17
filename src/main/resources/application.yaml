@@ -14,7 +14,7 @@ spring:
 
 logging:
     level:
-        reactor.netty: ERROR
+        reactor.netty.http.client: ERROR
         no.skatteetaten.aurora: INFO
         org:
             hibernate: WARN
