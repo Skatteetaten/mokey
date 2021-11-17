@@ -60,8 +60,6 @@ mokey:
         enabled: false
 ---
 spring:
-    zipkin:
-        enabled: false
     sleuth:
         enabled: false
     config:
@@ -71,3 +69,5 @@ spring:
 logback:
     access:
         config: file:${logback.access.b3}
+
+logging.level.reactor.netty.http.client: ERROR
