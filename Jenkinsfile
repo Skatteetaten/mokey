@@ -8,6 +8,7 @@ def overrides = [
     checkstyle : false,
     javaVersion: 11,
     jiraFiksetIKomponentversjon: true,
+    compilePropertiesIq: "-x test",
     chatRoom: "#aos-notifications",
     versionStrategy: [
       [ branch: 'master', versionHint: '3' ]
