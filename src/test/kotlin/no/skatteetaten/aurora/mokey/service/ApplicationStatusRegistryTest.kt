@@ -17,8 +17,7 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 
 class ApplicationStatusRegistryTest {
-
-    val data = ApplicationPublicData(
+    private val data = ApplicationPublicData(
         applicationId = "123-456",
         applicationDeploymentId = "1337",
         applicationName = "reference",
@@ -32,9 +31,9 @@ class ApplicationStatusRegistryTest {
         environment = "test",
         releaseTo = null
     )
-
     private lateinit var registry: ApplicationStatusRegistry
     private lateinit var meterRegistry: MeterRegistry
+
     @BeforeEach
     fun setup() {
         meterRegistry = SimpleMeterRegistry()
@@ -44,12 +43,15 @@ class ApplicationStatusRegistryTest {
     @Test
     fun `should register new metric`() {
         registry.add(data)
+
         val gauge = meterRegistry.get("application_status").tag("app_name", "reference").gauge()
+
         assertThat(gauge).isNotNull()
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
 
         val infoGauge = meterRegistry.get("application_info").tag("app_name", "reference").gauge()
+
         assertThat(infoGauge).isNotNull()
     }
 
@@ -57,6 +59,7 @@ class ApplicationStatusRegistryTest {
     fun `should update metric with same tags, different health`() {
         registry.add(data)
         val gauge = meterRegistry.get("application_status").tag("app_name", "reference").gauge()
+
         assertThat(gauge).isNotNull()
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
@@ -65,12 +68,14 @@ class ApplicationStatusRegistryTest {
         registry.update(data, newData)
 
         val gauges = meterRegistry.get("application_status").tag("app_name", "reference").gauges()
+
         assertThat(gauges).isNotNull()
         assertThat(gauges.size).isEqualTo(1)
         assertThat(gauges.first().value()).isEqualTo(2.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
 
         val infoGauges = meterRegistry.get("application_info").tag("app_name", "reference").gauges()
+
         assertThat(infoGauges).isNotNull()
         assertThat(infoGauges.size).isEqualTo(1)
     }
@@ -79,11 +84,13 @@ class ApplicationStatusRegistryTest {
     fun `should update metric with different tags`() {
         registry.add(data)
         val gauge = meterRegistry.get("application_status").tag("app_name", "reference").gauge()
+
         assertThat(gauge).isNotNull()
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
 
         val infoGauges = meterRegistry.get("application_info").tag("app_name", "reference").gauges()
+
         assertThat(infoGauges).isNotNull()
         assertThat(infoGauges.size).isEqualTo(1)
         assertThat(infoGauges.first().id.getTag("app_version_strategy")).isEqualTo("1")
@@ -92,12 +99,17 @@ class ApplicationStatusRegistryTest {
         registry.update(data, newData)
 
         val gauges = meterRegistry.get("application_status").tag("app_name", "reference").gauges()
+
         assertThat(gauges).isNotNull()
         assertThat(gauges.size).isEqualTo(1)
         assertThat(gauges.first().value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
 
-        val infoGaugesAfter = meterRegistry.get("application_info").tag("app_name", "reference").gauges()
+        val infoGaugesAfter = meterRegistry.get("application_info").tag(
+            "app_name",
+            "reference"
+        ).gauges()
+
         assertThat(infoGaugesAfter).isNotNull()
         assertThat(infoGaugesAfter.size).isEqualTo(1)
         assertThat(infoGaugesAfter.first().id.getTag("app_version_strategy")).isEqualTo("1.1")
@@ -107,17 +119,18 @@ class ApplicationStatusRegistryTest {
     fun `should remove metric`() {
         registry.add(data)
         val gauge = meterRegistry.get("application_status").tag("app_name", "reference").gauge()
+
         assertThat(gauge).isNotNull()
         assertThat(gauge.value()).isEqualTo(0.0)
         assertThat(registry.meterCache.size).isEqualTo(1)
 
         registry.remove(data)
+
         assertThat {
             meterRegistry.get("application_status").tag("app_name", "reference").gauges()
         }.isFailure().all {
             isInstanceOf(MeterNotFoundException::class)
         }
-
         assertThat {
             meterRegistry.get("application_info").tag("app_name", "reference").gauges()
         }.isFailure().all {

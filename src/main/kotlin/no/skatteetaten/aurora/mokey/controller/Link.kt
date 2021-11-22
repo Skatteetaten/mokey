@@ -5,7 +5,6 @@ import uk.q3c.rest.hal.HalResource
 import uk.q3c.rest.hal.Links
 
 data class Link(val rel: String, val href: String) {
-
     val halLink: HalLink
         get() = HalLink(href)
 }
@@ -13,7 +12,7 @@ data class Link(val rel: String, val href: String) {
 fun HalResource.link(link: Link) = this.link(link.rel, link.halLink)
 
 fun List<Link>.toLinks() = Links().also {
-    this.forEach { link ->
+    forEach { link ->
         it.add(link.rel, link.halLink)
     }
 }

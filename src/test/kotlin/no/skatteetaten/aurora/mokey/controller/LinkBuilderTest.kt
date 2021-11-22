@@ -12,7 +12,6 @@ import org.springframework.web.util.UriUtils
 import java.nio.charset.Charset
 
 class LinkBuilderTest {
-
     @Test
     fun `should expand placeholders correctly`() {
         val linkBuilder = LinkBuilder("", mapOf("metricsHostname" to "http://metrics.skead.no", "cluster" to "utv"))

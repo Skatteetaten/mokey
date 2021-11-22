@@ -22,7 +22,6 @@ import uk.q3c.rest.hal.Links
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ManagementDataServiceTest {
-
     private val port = SocketUtils.findAvailableTcpPort()
     private val service = ManagementDataService(
         OpenShiftManagementClient(
@@ -30,7 +29,8 @@ class ManagementDataServiceTest {
                 baseUrl = "http://localhost:$port",
                 token = "test-token",
                 retryConfiguration = RetryConfiguration(times = 0)
-            ), false
+            ),
+            false
         )
     )
 
@@ -44,9 +44,11 @@ class ManagementDataServiceTest {
         httpMockServer(port) {
             rulePathEndsWith("links") {
                 jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("info", "/info")
-                    })
+                    HalResource(
+                        _links = Links().apply {
+                            add("info", "/info")
+                        }
+                    )
                 )
             }
 
@@ -54,10 +56,10 @@ class ManagementDataServiceTest {
                 MockResponse().setBody("Foo")
             }
         }
-
         val managementData = runBlocking {
             service.load(PodDataBuilder().build(), ":8081/links")
         }
+
         assertThat(managementData).isNotNull()
         assertThat(managementData.info?.resultCode).isEqualTo("INVALID_JSON")
     }
@@ -67,9 +69,11 @@ class ManagementDataServiceTest {
         httpMockServer(port) {
             rulePathEndsWith("links") {
                 jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("health", "/health")
-                    })
+                    HalResource(
+                        _links = Links().apply {
+                            add("health", "/health")
+                        }
+                    )
                 )
             }
 
@@ -77,10 +81,10 @@ class ManagementDataServiceTest {
                 MockResponse().setBody("Foo")
             }
         }
-
         val managementData = runBlocking {
             service.load(PodDataBuilder().build(), ":8081/links")
         }
+
         assertThat(managementData).isNotNull()
         assertThat(managementData.health?.resultCode).isEqualTo("INVALID_JSON")
     }
@@ -90,9 +94,11 @@ class ManagementDataServiceTest {
         httpMockServer(port) {
             rulePathEndsWith("links") {
                 jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("health", "/health")
-                    })
+                    HalResource(
+                        _links = Links().apply {
+                            add("health", "/health")
+                        }
+                    )
                 )
             }
 
@@ -100,10 +106,10 @@ class ManagementDataServiceTest {
                 MockResponse().setBody("""Not authenticatd""").setResponseCode(401)
             }
         }
-
         val managementData = runBlocking {
             service.load(PodDataBuilder().build(), ":8081/links")
         }
+
         assertThat(managementData).isNotNull()
         assertThat(managementData.health?.resultCode).isEqualTo("ERROR_HTTP")
         assertThat(managementData.health?.response?.code).isEqualTo(401)
@@ -114,9 +120,11 @@ class ManagementDataServiceTest {
         httpMockServer(port) {
             rulePathEndsWith("links") {
                 jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("health", "/health")
-                    })
+                    HalResource(
+                        _links = Links().apply {
+                            add("health", "/health")
+                        }
+                    )
                 )
             }
 
@@ -126,10 +134,10 @@ class ManagementDataServiceTest {
                 }
             }
         }
-
         val managementData = runBlocking {
             service.load(PodDataBuilder().build(), ":8081/links")
         }
+
         assertThat(managementData).isNotNull()
         assertThat(managementData.health?.response?.code).isEqualTo(503)
     }
@@ -139,9 +147,11 @@ class ManagementDataServiceTest {
         httpMockServer(port) {
             rulePathEndsWith("links") {
                 jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("health", "/health")
-                    })
+                    HalResource(
+                        _links = Links().apply {
+                            add("health", "/health")
+                        }
+                    )
                 )
             }
 
@@ -149,10 +159,10 @@ class ManagementDataServiceTest {
                 jsonResponse("""{"status":"FOOBAR","details":{"diskSpace":{"status":"UP"}}}""")
             }
         }
-
         val managementData = runBlocking {
             service.load(PodDataBuilder().build(), ":8081/links")
         }
+
         assertThat(managementData).isNotNull()
         assertThat(managementData.health?.errorMessage).isEqualTo("Invalid format, status is not valid HealthStatus value")
     }
@@ -162,9 +172,11 @@ class ManagementDataServiceTest {
         httpMockServer(port) {
             rulePathEndsWith("links") {
                 jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("health", "/health")
-                    })
+                    HalResource(
+                        _links = Links().apply {
+                            add("health", "/health")
+                        }
+                    )
                 )
             }
 
@@ -172,7 +184,6 @@ class ManagementDataServiceTest {
                 jsonResponse("""{"stastus":"UP","details":{"diskSpace":{"status":"UP"}}}""")
             }
         }
-
         val managementData = runBlocking {
             service.load(PodDataBuilder().build(), ":8081/links")
         }
@@ -186,11 +197,13 @@ class ManagementDataServiceTest {
         httpMockServer(port) {
             rulePathEndsWith("links") {
                 jsonResponse(
-                    HalResource(_links = Links().apply {
-                        add("info", "/info")
-                        add("health", "/health")
-                        add("env", "/env")
-                    })
+                    HalResource(
+                        _links = Links().apply {
+                            add("info", "/info")
+                            add("health", "/health")
+                            add("env", "/env")
+                        }
+                    )
                 )
             }
 
@@ -206,7 +219,6 @@ class ManagementDataServiceTest {
                 jsonResponse("""{"status":"UP","details":{"diskSpace":{"status":"UP"}}}""")
             }
         }
-
         val managementData = runBlocking {
             service.load(PodDataBuilder().build(), ":8081/links")
         }
@@ -228,7 +240,6 @@ class ManagementDataServiceTest {
 
     @Test
     fun `should fail if managementPath is not set`() {
-
         val managementData = runBlocking {
             service.load(newPod {}, null)
         }

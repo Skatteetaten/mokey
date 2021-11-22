@@ -5,14 +5,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
 import io.fabric8.kubernetes.api.model.Pod
 import no.skatteetaten.aurora.mokey.extensions.extract
-import no.skatteetaten.aurora.mokey.service.DateParser
+import no.skatteetaten.aurora.mokey.service.DateParser.parseString
 import java.time.Instant
+import java.util.Locale.getDefault
 
 enum class EndpointType(val key: String) {
     HEALTH("health"),
     INFO("info"),
     ENV("env"),
-    DISCOVERY("_links")
+    DISCOVERY("_links"),
 }
 
 data class ManagementEndpoint(val pod: Pod, val port: Int, val path: String, val endpointType: EndpointType) {
@@ -36,30 +37,29 @@ enum class HealthStatus { UP, OBSERVE, COMMENT, UNKNOWN, OUT_OF_SERVICE, DOWN }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class DiscoveryResponse(
-    val _links: Map<String, DiscoveryLink>
+    val _links: Map<String, DiscoveryLink>,
 )
 
-fun DiscoveryResponse.createEndpoint(pod: Pod, port: Int, type: EndpointType): ManagementEndpoint? {
-    return this._links[type.key.toLowerCase()]?.path?.let {
-        ManagementEndpoint(pod, port, it, type)
-    }
+fun DiscoveryResponse.createEndpoint(
+    pod: Pod,
+    port: Int,
+    type: EndpointType,
+): ManagementEndpoint? = this._links[type.key.lowercase(getDefault())]?.path?.let {
+    ManagementEndpoint(pod, port, it, type)
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class DiscoveryLink(
-    val href: String
+    val href: String,
 ) {
-
     val path: String get() = href.replace("http://", "").substringAfter("/")
 }
 
-fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> {
-    return ManagementEndpointResult(
-        errorMessage = "Unknown endpoint link",
-        endpointType = this,
-        resultCode = "LINK_MISSING"
-    )
-}
+fun <T : Any> EndpointType.missingResult(): ManagementEndpointResult<T> = ManagementEndpointResult(
+    errorMessage = "Unknown endpoint link",
+    endpointType = this,
+    resultCode = "LINK_MISSING"
+)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class InfoResponse(
@@ -68,7 +68,7 @@ data class InfoResponse(
     val dependencies: Map<String, String> = mapOf(),
     var commitId: String? = null,
     var commitTime: Instant? = null,
-    var buildTime: Instant? = null
+    var buildTime: Instant? = null,
 ) {
 
     @JsonAnySetter(enabled = true)
@@ -85,6 +85,7 @@ data class InfoResponse(
 
     private fun extractInstant(value: JsonNode, vararg pathAlternatives: String): Instant? {
         val timeString: String? = value.extract(*pathAlternatives)?.textValue()
-        return timeString?.let { DateParser.parseString(it) }
+
+        return timeString?.let { parseString(it) }
     }
 }

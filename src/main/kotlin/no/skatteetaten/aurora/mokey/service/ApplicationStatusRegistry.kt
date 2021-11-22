@@ -1,9 +1,10 @@
 package no.skatteetaten.aurora.mokey.service
 
-import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.Meter.Id
+import io.micrometer.core.instrument.Meter.Type.GAUGE
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
+import io.micrometer.core.instrument.Tag.of
 import io.micrometer.core.instrument.Tags
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
@@ -18,9 +19,8 @@ private val logger = KotlinLogging.logger {}
 @Service
 class ApplicationStatusRegistry(
     val meterRegistry: MeterRegistry,
-    @Value("\${openshift.cluster}") val openshiftCluster: String
+    @Value("\${openshift.cluster}") val openshiftCluster: String,
 ) {
-
     val meterCache = ConcurrentHashMap<Id, AtomicInteger>()
 
     /*
@@ -31,16 +31,17 @@ class ApplicationStatusRegistry(
      * meter registry.
      */
     fun update(old: ApplicationPublicData, data: ApplicationPublicData) {
-
         val oldMeter = createMeterId(old)
         val newMeter = createMeterId(data)
 
-        if (oldMeter == newMeter) {
-            meterCache[oldMeter]?.set(data.auroraStatus.level.level)
-        } else {
-            meterCache.remove(oldMeter)
-            meterRegistry.remove(oldMeter)
-            addToRegistry(newMeter, data.auroraStatus)
+        when (oldMeter) {
+            newMeter -> meterCache[oldMeter]?.set(data.auroraStatus.level.level)
+            else -> {
+                meterCache.remove(oldMeter)
+                meterRegistry.remove(oldMeter)
+
+                addToRegistry(newMeter, data.auroraStatus)
+            }
         }
 
         val oldInfoMeter = createInfoMeterId(old)
@@ -56,13 +57,16 @@ class ApplicationStatusRegistry(
         addToRegistry(createMeterId(data), data.auroraStatus)
 
         val infoMeter = createInfoMeterId(data)
+
         meterRegistry.gauge(infoMeter.name, infoMeter.tags, AtomicInteger(0))
     }
 
     fun remove(data: ApplicationPublicData) {
         val meterId = createMeterId(data)
         val infoMeterId = createInfoMeterId(data)
+
         logger.info("Application is gone deleting meter={}", meterId)
+
         meterRegistry.remove(meterId)
         meterCache.remove(meterId)
         meterRegistry.remove(infoMeterId)
@@ -76,47 +80,45 @@ class ApplicationStatusRegistry(
             }
     }
 
-    private fun createMetricsTags(data: ApplicationPublicData): List<Tag> {
-        return listOf(
-            Tag.of("app_namespace", data.namespace),
-            Tag.of("app_environment", data.environment),
-            Tag.of("app_cluster", openshiftCluster),
-            Tag.of("app_name", data.applicationDeploymentName),
-            Tag.of("app_source", openshiftCluster),
-            Tag.of("app_type", "aurora-plattform"),
-            Tag.of("app_businessgroup", data.affiliation ?: "")
-        )
-    }
+    private fun createMetricsTags(data: ApplicationPublicData): List<Tag> = listOf(
+        of("app_namespace", data.namespace),
+        of("app_environment", data.environment),
+        of("app_cluster", openshiftCluster),
+        of("app_name", data.applicationDeploymentName),
+        of("app_source", openshiftCluster),
+        of("app_type", "aurora-plattform"),
+        of("app_businessgroup", data.affiliation ?: "")
+    )
 
-    private fun createMeterId(data: ApplicationPublicData) =
-        Id(
-            "application_status",
-            Tags.of(createMetricsTags(data)),
-            null,
-            "Status metric for applications. 0=OK, 1=OFF, 2=OBSERVE, 3=DOWN",
-            Meter.Type.GAUGE
-        )
+    private fun createMeterId(data: ApplicationPublicData) = Id(
+        "application_status",
+        Tags.of(createMetricsTags(data)),
+        null,
+        "Status metric for applications. 0=OK, 1=OFF, 2=OBSERVE, 3=DOWN",
+        GAUGE
+    )
 
-    private fun createInfoMeterId(data: ApplicationPublicData) =
-        Id(
-            "application_info",
-            Tags.of(listOf(
-                    Tag.of("app_id", data.applicationDeploymentId ?: ""),
-                    Tag.of("app_application_id", data.applicationId ?: ""),
-                    Tag.of("app_version", data.auroraVersion ?: ""),
-                    Tag.of("app_namespace", data.namespace),
-                    Tag.of("app_environment", data.environment),
-                    Tag.of("app_cluster", openshiftCluster),
-                    Tag.of("app_name", data.applicationDeploymentName),
-                    Tag.of("app_source", openshiftCluster),
-                    Tag.of("app_type", "aurora-plattform"),
-                    Tag.of("app_businessgroup", data.affiliation ?: ""),
-                    Tag.of("app_version_strategy", data.deployTag),
-                    Tag.of("app_message", data.message ?: ""),
-                    Tag.of("app_release_to", data.releaseTo ?: "")
-            )),
-            null,
-            "Info tag for application",
-            Meter.Type.GAUGE
-        )
+    private fun createInfoMeterId(data: ApplicationPublicData) = Id(
+        "application_info",
+        Tags.of(
+            listOf(
+                of("app_id", data.applicationDeploymentId),
+                of("app_application_id", data.applicationId ?: ""),
+                of("app_version", data.auroraVersion ?: ""),
+                of("app_namespace", data.namespace),
+                of("app_environment", data.environment),
+                of("app_cluster", openshiftCluster),
+                of("app_name", data.applicationDeploymentName),
+                of("app_source", openshiftCluster),
+                of("app_type", "aurora-plattform"),
+                of("app_businessgroup", data.affiliation ?: ""),
+                of("app_version_strategy", data.deployTag),
+                of("app_message", data.message ?: ""),
+                of("app_release_to", data.releaseTo ?: "")
+            )
+        ),
+        null,
+        "Info tag for application",
+        GAUGE
+    )
 }

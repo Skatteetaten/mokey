@@ -11,6 +11,7 @@ class HttpResponseTest {
     fun `Return empty string for non-json response`() {
         val html = "<html></html>"
         val response = HttpResponse(html, 200)
+
         assertThat(response.jsonContentOrError()).contains(html)
     }
 
@@ -18,6 +19,7 @@ class HttpResponseTest {
     fun `Return string for json response`() {
         val json = """{ "key":"value" }"""
         val response = HttpResponse(json, 200)
+
         assertThat(response.jsonContentOrError()).isEqualTo(json)
     }
 }

@@ -14,14 +14,14 @@ data class ServiceAddress(
     override val url: URI,
     override val time: Instant?,
     override val available: Boolean = true,
-    override val status: String? = null
+    override val status: String? = null,
 ) : Address
 
 data class RouteAddress(
     override val url: URI,
     override val time: Instant?,
     override val available: Boolean = false,
-    override val status: String?
+    override val status: String?,
 ) : Address
 
 data class WebSealAddress(
@@ -29,7 +29,7 @@ data class WebSealAddress(
     override val time: Instant?,
     override val available: Boolean = false,
     override val status: String?,
-    val roles: List<String>
+    val roles: List<String>,
 ) : Address
 
 /*
@@ -45,5 +45,5 @@ data class BigIPAddress(
     override val url: URI,
     override val time: Instant?,
     override val available: Boolean = false,
-    override val status: String?
+    override val status: String?,
 ) : Address

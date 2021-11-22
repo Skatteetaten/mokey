@@ -9,14 +9,14 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
 
+private val logger = KotlinLogging.logger {}
+
 @Service
 class ImageService(
     val client: OpenShiftServiceAccountClient,
     val imageRegistryService: ImageRegistryService,
-    @Value("\${mokey.cantus.cache:true}") val cacheManagement: Boolean
+    @Value("\${mokey.cantus.cache:true}") val cacheManagement: Boolean,
 ) {
-
-    // Does this need to be an async cache?
     val cache: Cache<String, ImageDetails?> = Caffeine.newBuilder()
         .expireAfterAccess(10, TimeUnit.MINUTES)
         .maximumSize(10000)
@@ -25,18 +25,18 @@ class ImageService(
     fun clearCache() = cache.invalidateAll()
 
     suspend fun getCachedOrFind(
-        image: String
+        image: String,
     ): ImageDetails? {
-        val logger = KotlinLogging.logger {}
-
         if (!cacheManagement) {
             logger.trace("cache disabled")
+
             return getImageDetails(image)
         }
 
         val cachedResponse = (cache.getIfPresent(image))?.also {
             logger.debug("Found cached response for $image")
         }
+
         return cachedResponse ?: getImageDetails(image)?.also {
             logger.debug("Cached management interface $image")
             cache.put(image, it)
@@ -67,37 +67,44 @@ class ImageService(
         return ImageDetails(image, null, imageBuildTime, env)
     }
 
-    suspend fun getImageDetailsFromImageStream(namespace: String, name: String, tagName: String): ImageDetails? {
-
-        return client.getImageStreamTag(namespace, name, tagName)?.let { istag ->
-            val dockerTagReference = istag.tag?.from?.name
-            val image = istag.image
-            val env = image.env
-            val imageBuildTime = (
-                env["IMAGE_BUILD_TIME"]
-                    ?: image?.dockerImageMetadata?.additionalProperties?.getOrDefault("Created", null) as String?
-                )?.let(DateParser::parseString)
-            ImageDetails(image.dockerImageReference, dockerTagReference, imageBuildTime, env)
-        }
+    suspend fun getImageDetailsFromImageStream(
+        namespace: String,
+        name: String,
+        tagName: String,
+    ): ImageDetails? = client.getImageStreamTag(namespace, name, tagName)?.let { istag ->
+        val dockerTagReference = istag.tag?.from?.name
+        val image = istag.image
+        val env = image.env
+        val imageBuildTime = (
+            env["IMAGE_BUILD_TIME"] ?: image?.dockerImageMetadata?.additionalProperties?.getOrDefault(
+                "Created",
+                null
+            ) as String?
+            )?.let(DateParser::parseString)
+        ImageDetails(image.dockerImageReference, dockerTagReference, imageBuildTime, env)
     }
 
+    @Suppress("UNCHECKED_CAST")
     val Image.env: Map<String, String>
         get() = dockerImageMetadata?.additionalProperties?.let {
             val config: Map<*, *> = it["Config"] as Map<*, *>
             val envList = config["Env"] as List<String>
-            envList.map { env ->
+
+            envList.associate { env ->
                 val (key, value) = env.split("=")
                 key to value
-            }.toMap()
+            }
         } ?: emptyMap()
 
     fun <K, V> Map<out K, V?>.filterNullValues(): Map<K, V> {
         val result = LinkedHashMap<K, V>()
+
         for (entry in this) {
             entry.value?.let {
                 result[entry.key] = it
             }
         }
+
         return result
     }
 }

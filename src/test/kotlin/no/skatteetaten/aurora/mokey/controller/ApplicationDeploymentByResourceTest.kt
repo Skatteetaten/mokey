@@ -1,22 +1,32 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.ninjasquad.springmockk.MockkBean
+import io.mockk.coEvery
 import io.mockk.every
-import no.skatteetaten.aurora.mockmvc.extensions.Path
-import no.skatteetaten.aurora.mockmvc.extensions.contentType
-import no.skatteetaten.aurora.mockmvc.extensions.post
-import no.skatteetaten.aurora.mockmvc.extensions.responseJsonPath
-import no.skatteetaten.aurora.mockmvc.extensions.statusIsOk
-import no.skatteetaten.aurora.mokey.AbstractSecurityControllerTest
 import no.skatteetaten.aurora.mokey.ApplicationDataBuilder
 import no.skatteetaten.aurora.mokey.ApplicationDeploymentsWithDbResourceBuilder
+import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
+import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
 import org.junit.jupiter.api.Test
-import org.springframework.http.HttpHeaders
-import org.springframework.security.test.context.support.WithUserDetails
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
+import org.springframework.context.annotation.Import
+import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.web.reactive.function.BodyInserters.fromValue
 
-@WithUserDetails
-class ApplicationDeploymentByResourceTest : AbstractSecurityControllerTest() {
+@Suppress("unused")
+@ExperimentalStdlibApi
+@WebFluxTest(WebSecurityConfig::class, ApplicationDeploymentByResourceController::class)
+@Import(ApplicationDataService::class)
+class ApplicationDeploymentByResourceTest {
+    @MockkBean
+    private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
+
+    @MockkBean
+    private lateinit var securityContextRepository: AuroraSecurityContextRepository
 
     @MockkBean(relaxed = true)
     private lateinit var applicationDataService: ApplicationDataService
@@ -24,17 +34,23 @@ class ApplicationDeploymentByResourceTest : AbstractSecurityControllerTest() {
     @MockkBean
     private lateinit var assembler: ApplicationDeploymentsWithDbResourceAssembler
 
+    @Autowired
+    private lateinit var webTestClient: WebTestClient
+
+    @WithMockUser("test", roles = ["test"])
     @Test
     fun `Return application deployment by resource`() {
-        every { applicationDataService.getFromCacheForUser() } returns listOf(ApplicationDataBuilder().build())
+        coEvery { applicationDataService.getFromCacheForUser() } returns listOf(ApplicationDataBuilder().build())
         every { assembler.toResources(any()) } returns listOf(ApplicationDeploymentsWithDbResourceBuilder().build())
 
-        mockMvc.post(
-            path = Path("/api/auth/applicationdeploymentbyresource/databases"),
-            headers = HttpHeaders().contentType(),
-            body = listOf("123", "456")
-        ) {
-            statusIsOk().responseJsonPath("$[0].identifier").equalsValue("123")
-        }
+        webTestClient
+            .post()
+            .uri("/api/auth/applicationdeploymentbyresource/databases")
+            .body(fromValue(listOf("123", 456)))
+            .exchange()
+            .expectStatus()
+            .isOk
+            .expectBody()
+            .jsonPath("$[0].identifier").isEqualTo("123")
     }
 }

@@ -18,9 +18,9 @@ class JsonNodeTest {
         )
 
         val id = git.extract("/commit.id.abbrev", "/commit/id", "/commit.id.short")
-        assertThat(id?.asText()).isEqualTo("jd342h4")
-
         val time = git.extract("/commit.time/v1", "/commit.time", "/commit/time")
+
+        assertThat(id?.asText()).isEqualTo("jd342h4")
         assertThat(time?.asText()).isEqualTo("03.04.2019 @ 16:30:27 CEST")
     }
 
@@ -33,6 +33,7 @@ class JsonNodeTest {
         )
 
         val time = git.extract("/commit.time/v1")
+
         assertThat(time?.asText()).isEqualTo("03.04.2019 @ 16:30:27 CEST")
     }
 }

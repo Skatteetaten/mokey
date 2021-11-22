@@ -5,7 +5,6 @@ import assertk.assertions.isEqualTo
 import org.junit.jupiter.api.Test
 
 class DataParserTest {
-
     @Test
     fun `it should parse a given time into an instant`() {
         val instant = DateParser.parseString("03.04.2019 @ 16:17:35 CEST")

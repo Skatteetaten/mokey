@@ -1,61 +1,29 @@
 package no.skatteetaten.aurora.mokey.controller.security
 
-import mu.KotlinLogging
-import org.slf4j.MDC
-import org.springframework.beans.factory.annotation.Value
+import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
+import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
 import org.springframework.context.annotation.Bean
-import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
-import org.springframework.security.config.http.SessionCreationPolicy
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken
-import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter
-import org.springframework.security.web.util.matcher.RequestMatcher
-import javax.servlet.http.HttpServletRequest
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
+import org.springframework.security.config.web.server.ServerHttpSecurity
+import org.springframework.security.web.server.SecurityWebFilterChain
 
-private val logger = KotlinLogging.logger {}
-
-@EnableWebSecurity
+@EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
 class WebSecurityConfig(
-    val authenticationManager: BearerAuthenticationManager,
-    @Value("\${management.server.port}") val managementPort: Int
-) : WebSecurityConfigurerAdapter() {
-
-    override fun configure(http: HttpSecurity) {
-
-        http.csrf().disable()
-        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-
-        http.authenticationProvider(preAuthenticationProvider())
-            .addFilter(requestHeaderAuthenticationFilter())
-            .authorizeRequests()
-            .requestMatchers(forPort(managementPort)).permitAll()
-            .antMatchers("/api/auth/**").authenticated()
-            .anyRequest().permitAll()
-    }
-
-    private fun forPort(port: Int) = RequestMatcher { request: HttpServletRequest -> port == request.localPort }
-
+    private val authenticationManager: OpenShiftAuthenticationManager,
+    private val securityContextRepository: AuroraSecurityContextRepository
+) {
     @Bean
-    internal fun preAuthenticationProvider() = PreAuthenticatedAuthenticationProvider().apply {
-        setPreAuthenticatedUserDetailsService { it: PreAuthenticatedAuthenticationToken ->
-
-            val principal = it.principal as io.fabric8.openshift.api.model.User
-            val fullName = principal.fullName
-            val username = principal.metadata.name
-
-            MDC.put("user", username)
-            User(username, it.credentials as String, fullName).also {
-                logger.debug("Logged in user username=$username, name='$fullName' tokenSnippet=${it.tokenSnippet}")
-            }
-        }
-    }
-
-    @Bean
-    internal fun requestHeaderAuthenticationFilter() = RequestHeaderAuthenticationFilter().apply {
-        setPrincipalRequestHeader("Authorization")
-        setExceptionIfHeaderMissing(false)
-        setAuthenticationManager(authenticationManager)
-    }
+    fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain = http
+        .httpBasic().disable()
+        .formLogin().disable()
+        .csrf().disable()
+        .logout().disable()
+        .authenticationManager(authenticationManager)
+        .securityContextRepository(securityContextRepository)
+        .authorizeExchange().pathMatchers("/api/auth/**").authenticated()
+        .anyExchange().permitAll()
+        .and()
+        .build()
 }

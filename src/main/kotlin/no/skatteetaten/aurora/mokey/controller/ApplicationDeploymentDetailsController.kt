@@ -1,6 +1,5 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import no.skatteetaten.aurora.mokey.controller.security.User
 import no.skatteetaten.aurora.mokey.model.ApplicationData
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentCommand
 import no.skatteetaten.aurora.mokey.model.DeployDetails
@@ -9,7 +8,6 @@ import no.skatteetaten.aurora.mokey.model.InfoResponse
 import no.skatteetaten.aurora.mokey.model.ManagementEndpointResult
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
-import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -18,90 +16,89 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.q3c.rest.hal.HalLink
 
+@ExperimentalStdlibApi
 @RestController
 @RequestMapping(ApplicationDeploymentDetailsController.path)
 class ApplicationDeploymentDetailsController(
     val applicationDataService: ApplicationDataService,
-    val assembler: ApplicationDeploymentDetailsResourceAssembler
+    val assembler: ApplicationDeploymentDetailsResourceAssembler,
 ) {
+    @GetMapping("/{id}")
+    suspend fun get(
+        @PathVariable id: String,
+    ): ApplicationDeploymentDetailsResource? = applicationDataService.findApplicationDataByApplicationDeploymentId(id)
+        ?.let(assembler::toResource)
+        ?: throw NoSuchResourceException("Does not exist")
+
+    @GetMapping
+    suspend fun getAll(
+        @RequestParam(required = false, defaultValue = "", name = "affiliation") affiliation: List<String>,
+        @RequestParam(required = false, defaultValue = "", name = "id") id: List<String>,
+    ): List<ApplicationDeploymentDetailsResource> = assembler.toResources(
+        applicationDataService.findAllApplicationData(affiliation, id)
+    )
 
     companion object {
         const val path = "/api/auth/applicationdeploymentdetails"
     }
-
-    @GetMapping("/{id}")
-    fun get(@PathVariable id: String, @AuthenticationPrincipal user: User): ApplicationDeploymentDetailsResource? =
-        applicationDataService.findApplicationDataByApplicationDeploymentId(id)
-            ?.let(assembler::toResource)
-            ?: throw NoSuchResourceException("Does not exist")
-
-    @GetMapping
-    fun getAll(
-        @RequestParam(required = false, defaultValue = "", name = "affiliation") affiliation: List<String>,
-        @RequestParam(required = false, defaultValue = "", name = "id") id: List<String>
-    ): List<ApplicationDeploymentDetailsResource> =
-        assembler.toResources(applicationDataService.findAllApplicationData(affiliation, id))
 }
 
 @Component
-class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder) :
-    ResourceAssemblerSupport<ApplicationData, ApplicationDeploymentDetailsResource>() {
-
-    override fun toResource(applicationData: ApplicationData): ApplicationDeploymentDetailsResource {
-
-        val infoResponse = applicationData.firstInfoResponse
-        val serviceLinks = applicationData.firstInfoResponse?.serviceLinks
-            ?.map { createServiceLink(applicationData, it.value, it.key) }
+class ApplicationDeploymentDetailsResourceAssembler(
+    val linkBuilder: LinkBuilder
+) : ResourceAssemblerSupport<ApplicationData, ApplicationDeploymentDetailsResource>() {
+    @ExperimentalStdlibApi
+    override fun toResource(entity: ApplicationData): ApplicationDeploymentDetailsResource {
+        val infoResponse = entity.firstInfoResponse
+        val serviceLinks = entity.firstInfoResponse?.serviceLinks
+            ?.map { createServiceLink(entity, it.value, it.key) }
             ?: emptyList()
 
         return ApplicationDeploymentDetailsResource(
-            id = applicationData.applicationDeploymentId,
-            updatedBy = applicationData.deployDetails?.updatedBy,
+            id = entity.applicationDeploymentId,
+            updatedBy = entity.deployDetails?.updatedBy,
             buildTime = infoResponse?.buildTime,
             gitInfo = toGitInfoResource(infoResponse),
-            imageDetails = applicationData.imageDetails?.let { toImageDetailsResource(it) },
-            deployDetails = applicationData.deployDetails?.let { toDeployDetailsResource(it) },
-            podResources = applicationData.pods.map { toPodResource(applicationData, it) },
+            imageDetails = entity.imageDetails?.let { toImageDetailsResource(it) },
+            deployDetails = entity.deployDetails?.let { toDeployDetailsResource(it) },
+            podResources = entity.pods.map { toPodResource(entity, it) },
             dependencies = infoResponse?.dependencies ?: emptyMap(),
-            applicationDeploymentCommand = toDeploymentCommandResource(applicationData.deploymentCommand),
-            databases = applicationData.databases,
+            applicationDeploymentCommand = toDeploymentCommandResource(entity.deploymentCommand),
+            databases = entity.databases,
             serviceLinks = serviceLinks.toLinks()
         ).apply {
-            createApplicationLinks(applicationData).forEach { (rel, href) ->
+            createApplicationLinks(entity).forEach { (rel, href) ->
                 link(rel, HalLink(href))
             }
         }
     }
 
-    private fun toDeployDetailsResource(it: DeployDetails): DeployDetailsResource? {
-        return DeployDetailsResource(
-            targetReplicas = it.targetReplicas,
-            availableReplicas = it.availableReplicas,
-            deployment = it.deployment,
-            phase = it.phase,
-            deployTag = it.deployTag,
-            paused = it.paused,
-            scaledDown = it.scaledDown
-        )
-    }
+    private fun toDeployDetailsResource(it: DeployDetails): DeployDetailsResource = DeployDetailsResource(
+        targetReplicas = it.targetReplicas,
+        availableReplicas = it.availableReplicas,
+        deployment = it.deployment,
+        phase = it.phase,
+        deployTag = it.deployTag,
+        paused = it.paused,
+        scaledDown = it.scaledDown,
+    )
 
-    private fun toImageDetailsResource(imageDetails: ImageDetails) =
-        ImageDetailsResource(
-            imageDetails.imageBuildTime,
-            imageDetails.dockerImageReference,
-            imageDetails.dockerImageTagReference
-        )
+    private fun toImageDetailsResource(imageDetails: ImageDetails) = ImageDetailsResource(
+        imageDetails.imageBuildTime,
+        imageDetails.dockerImageReference,
+        imageDetails.dockerImageTagReference,
+    )
 
-    private fun toPodResource(applicationData: ApplicationData, podDetails: PodDetails): PodResource {
+    private fun toPodResource(
+        applicationData: ApplicationData,
+        podDetails: PodDetails,
+    ): PodResource {
         val pod = podDetails.openShiftPodExcerpt
-
         val podLinks = podDetails.managementData.let { managementData ->
             val podManagementLinks = managementData.info?.deserialized?.podLinks
             podManagementLinks?.map { createPodLink(applicationData, podDetails, it.value, it.key) }
         } ?: emptyList()
-
         val consoleLinks = linkBuilder.openShiftConsoleLinks(pod.name, applicationData.namespace)
-
         val managementResponsesResource = podDetails.managementData.let { managementData ->
             val links = toHttpResponseResource(managementData.links)
             val health = managementData.health?.let { toHttpResponseResource(managementData.health) }
@@ -126,9 +123,9 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
                     state = it.state,
                     restartCount = it.restartCount,
                     image = it.image,
-                    ready = it.ready
+                    ready = it.ready,
                 )
-            }
+            },
         ).apply {
             podLinks.forEach {
                 this.link(it.rel, HalLink(it.href))
@@ -140,110 +137,110 @@ class ApplicationDeploymentDetailsResourceAssembler(val linkBuilder: LinkBuilder
         }
     }
 
-    private fun <T> toHttpResponseResource(result: ManagementEndpointResult<T>): HttpResponseResource {
-        return result.response?.let { response ->
-            HttpResponseResource(
-                hasResponse = true,
-                textResponse = response.jsonContentOrError(),
-                httpCode = response.code,
-                createdAt = result.createdAt,
-                url = result.url,
-                error = if (!result.isSuccess) {
-                    ManagementEndpointErrorResource(
-                        message = result.errorMessage,
-                        code = result.resultCode
-                    )
-                } else {
-                    null
-                }
-            )
-        } ?: HttpResponseResource(
-            hasResponse = false,
+    private fun <T> toHttpResponseResource(
+        result: ManagementEndpointResult<T>,
+    ): HttpResponseResource = result.response?.let { response ->
+        HttpResponseResource(
+            hasResponse = true,
+            textResponse = response.jsonContentOrError(),
+            httpCode = response.code,
             createdAt = result.createdAt,
             url = result.url,
             error = if (!result.isSuccess) {
                 ManagementEndpointErrorResource(
                     message = result.errorMessage,
-                    code = result.resultCode
+                    code = result.resultCode,
                 )
             } else {
                 null
+            },
+        )
+    } ?: HttpResponseResource(
+        hasResponse = false,
+        createdAt = result.createdAt,
+        url = result.url,
+        error = if (!result.isSuccess) {
+            ManagementEndpointErrorResource(
+                message = result.errorMessage,
+                code = result.resultCode,
+            )
+        } else {
+            null
+        },
+    )
+
+    private fun toGitInfoResource(aPod: InfoResponse?) = GitInfoResource(aPod?.commitId, aPod?.commitTime)
+
+    private fun toDeploymentCommandResource(
+        deploymentCommand: ApplicationDeploymentCommand
+    ) = ApplicationDeploymentCommandResource(
+        overrideFiles = deploymentCommand.overrideFiles,
+        applicationDeploymentRef = ApplicationDeploymentRefResource(
+            deploymentCommand.applicationDeploymentRef.environment,
+            deploymentCommand.applicationDeploymentRef.application,
+        ),
+        auroraConfig = AuroraConfigRefResource(
+            deploymentCommand.auroraConfig.name,
+            deploymentCommand.auroraConfig.refName,
+            deploymentCommand.auroraConfig.resolvedRef,
+        ),
+    )
+
+    @ExperimentalStdlibApi
+    private fun createApplicationLinks(applicationData: ApplicationData): List<Link> = buildList {
+        addAll(
+            applicationData.addresses.map {
+                linkBuilder.createLink(it.url.toString(), it::class.simpleName!!)
             }
         )
-    }
-
-    private fun toGitInfoResource(aPod: InfoResponse?) =
-        GitInfoResource(aPod?.commitId, aPod?.commitTime)
-
-    private fun toDeploymentCommandResource(deploymentCommand: ApplicationDeploymentCommand) =
-        ApplicationDeploymentCommandResource(
-            overrideFiles = deploymentCommand.overrideFiles,
-            applicationDeploymentRef = ApplicationDeploymentRefResource(
-                deploymentCommand.applicationDeploymentRef.environment,
-                deploymentCommand.applicationDeploymentRef.application
-            ),
-            auroraConfig = AuroraConfigRefResource(
-                deploymentCommand.auroraConfig.name,
-                deploymentCommand.auroraConfig.refName,
-                deploymentCommand.auroraConfig.resolvedRef
-            )
-        )
-
-    private fun createApplicationLinks(applicationData: ApplicationData): List<Link> {
-
-        val links = mutableListOf<Link>()
-
-        applicationData.addresses.forEach {
-            val p = linkBuilder.createLink(it.url.toString(), it::class.simpleName!!)
-            links.add(p)
-        }
-
-        val deploymentSpecLinks = linkBuilder.deploymentSpec(applicationData.deploymentCommand)
-        links.addAll(deploymentSpecLinks)
-
-        val filesLinks = linkBuilder.files(applicationData.deploymentCommand)
-        links.addAll(filesLinks)
+        addAll(linkBuilder.deploymentSpec(applicationData.deploymentCommand))
+        addAll(linkBuilder.files(applicationData.deploymentCommand))
 
         if (applicationData.booberDeployId != null) {
             val applyResultLink = linkBuilder.applyResult(
                 applicationData.deploymentCommand.auroraConfig.name,
-                applicationData.booberDeployId
+                applicationData.booberDeployId,
             )
 
-            links.add(applyResultLink)
+            add(applyResultLink)
         }
 
-        val applyLink = linkBuilder.apply(deploymentCommand = applicationData.deploymentCommand)
-        links.add(applyLink)
-
-        val auroraConfigFileLinks = linkBuilder.auroraConfigFile(deploymentCommand = applicationData.deploymentCommand)
-        links.addAll(auroraConfigFileLinks)
-
-        val applicationDeploymentRel = linkBuilder.createMokeyLink(
-            "ApplicationDeployment",
-            "${ApplicationDeploymentController.path}/${applicationData.applicationDeploymentId}"
+        add(linkBuilder.apply(deploymentCommand = applicationData.deploymentCommand))
+        addAll(linkBuilder.auroraConfigFile(deploymentCommand = applicationData.deploymentCommand))
+        add(
+            linkBuilder.createMokeyLink(
+                "ApplicationDeployment",
+                "${ApplicationDeploymentController.path}/${applicationData.applicationDeploymentId}",
+            )
         )
-        links.add(applicationDeploymentRel)
-
-        val applicationRel = linkBuilder.createMokeyLink("Application", "${ApplicationController.path}/${applicationData.applicationId}")
-        links.add(applicationRel)
-
-        return links
+        add(
+            linkBuilder.createMokeyLink(
+                "Application",
+                "${ApplicationController.path}/${applicationData.applicationId}",
+            )
+        )
     }
 
-    private fun createServiceLink(applicationData: ApplicationData, link: String, rel: String) =
-        linkBuilder.createLink(link, rel, applicationData.expandParams)
+    private fun createServiceLink(
+        applicationData: ApplicationData,
+        link: String,
+        rel: String,
+    ) = linkBuilder.createLink(
+        link,
+        rel,
+        applicationData.expandParams,
+    )
 
     private fun createPodLink(
         applicationData: ApplicationData,
         podDetails: PodDetails,
         link: String,
-        rel: String
-    ): Link {
-        val podExpandParams = podDetails.expandParams
-        val applicationExpandParams = applicationData.expandParams
-        return linkBuilder.createLink(link, rel, applicationExpandParams + podExpandParams)
-    }
+        rel: String,
+    ): Link = linkBuilder.createLink(
+        link,
+        rel,
+        applicationData.expandParams + podDetails.expandParams,
+    )
 }
 
 private val ApplicationData.firstInfoResponse: InfoResponse?

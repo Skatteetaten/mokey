@@ -8,12 +8,9 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api")
 class AffiliationController(val applicationDataService: ApplicationDataService) {
-
     @GetMapping("/affiliation")
-    fun getAffiliations(): List<String> =
-        applicationDataService.findAllAffiliations()
+    suspend fun getAffiliations(): List<String> = applicationDataService.findAllAffiliations()
 
     @GetMapping("/auth/affiliation")
-    fun getVisibleAffiliations(): List<String> =
-        applicationDataService.findAllVisibleAffiliations()
+    suspend fun getVisibleAffiliations(): List<String> = applicationDataService.findAllVisibleAffiliations()
 }

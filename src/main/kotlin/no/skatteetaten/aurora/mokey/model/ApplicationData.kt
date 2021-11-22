@@ -5,24 +5,26 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import mu.KotlinLogging
 import uk.q3c.rest.hal.HalResource
 import java.time.Instant
+import java.util.Locale.getDefault
 
 private val logger = KotlinLogging.logger {}
 
 data class GroupedApplicationData(
     val applicationId: String?,
     val name: String,
-    val applications: List<ApplicationPublicData>
+    val applications: List<ApplicationPublicData>,
 ) {
     companion object {
-        fun create(applications: List<ApplicationPublicData>): List<GroupedApplicationData> =
-            applications.groupBy { it.applicationId ?: it.applicationName }
-                .map {
-                    GroupedApplicationData(
-                        it.value.first().applicationId,
-                        it.value.first().applicationName,
-                        it.value
-                    )
-                }
+        fun create(
+            applications: List<ApplicationPublicData>
+        ): List<GroupedApplicationData> = applications.groupBy { it.applicationId ?: it.applicationName }
+            .map {
+                GroupedApplicationData(
+                    it.value.first().applicationId,
+                    it.value.first().applicationName,
+                    it.value,
+                )
+            }
     }
 }
 
@@ -41,7 +43,7 @@ data class ApplicationPublicData(
     val time: Instant = Instant.now(),
     val paused: Boolean = false,
     val message: String? = null,
-    val environment: String
+    val environment: String,
 ) : HalResource()
 
 data class ApplicationData(
@@ -54,10 +56,11 @@ data class ApplicationData(
     val databases: List<String> = emptyList(),
     val splunkIndex: String? = null,
     val deploymentCommand: ApplicationDeploymentCommand,
-    val publicData: ApplicationPublicData
+    val publicData: ApplicationPublicData,
 ) {
     val applicationId get() = publicData.applicationId
     val applicationDeploymentId get() = publicData.applicationDeploymentId
+    @Suppress("unused")
     val applicationName get() = publicData.applicationName
     val applicationDeploymentName get() = publicData.applicationDeploymentName
     val auroraStatus get() = publicData.auroraStatus
@@ -68,14 +71,14 @@ data class ApplicationData(
 
 data class PodDetails(
     val openShiftPodExcerpt: OpenShiftPodExcerpt,
-    val managementData: ManagementData
+    val managementData: ManagementData,
 )
 
 data class ManagementData(
     val links: ManagementEndpointResult<DiscoveryResponse>,
     val info: ManagementEndpointResult<InfoResponse>? = null,
     val health: ManagementEndpointResult<JsonNode>? = null,
-    val env: ManagementEndpointResult<JsonNode>? = null
+    val env: ManagementEndpointResult<JsonNode>? = null,
 )
 
 data class ManagementEndpointResult<T>(
@@ -85,7 +88,7 @@ data class ManagementEndpointResult<T>(
     val deserialized: T? = null,
     val response: HttpResponse? = null,
     val errorMessage: String? = null,
-    val url: String? = null
+    val url: String? = null,
 ) {
     val isSuccess: Boolean
         get() = resultCode == "OK"
@@ -93,7 +96,7 @@ data class ManagementEndpointResult<T>(
 
 data class HttpResponse(
     val content: String,
-    val code: Int
+    val code: Int,
 ) {
     fun jsonContentOrError(): String =
         try {
@@ -116,7 +119,7 @@ data class OpenShiftPodExcerpt(
     val deployTag: String?,
     val containers: List<OpenShiftContainerExcerpt>,
     val latestDeployTag: Boolean,
-    val latestReplicaName: Boolean
+    val latestReplicaName: Boolean,
 )
 
 data class OpenShiftContainerExcerpt(
@@ -124,19 +127,19 @@ data class OpenShiftContainerExcerpt(
     val state: String,
     val image: String,
     val restartCount: Int = 0,
-    val ready: Boolean = false
+    val ready: Boolean = false,
 )
 
 data class ImageDetails(
     val dockerImageReference: String,
     val dockerImageTagReference: String? = null,
     val imageBuildTime: Instant? = null,
-    val environmentVariables: Map<String, String> = emptyMap()
+    val environmentVariables: Map<String, String> = emptyMap(),
 ) {
     val auroraVersion: String
-    get() = environmentVariables["AURORA_VERSION"] ?: ""
-    val dockerImageRepo: String?
-    get() = dockerImageReference.replace(Regex("@.*$"), "")
+        get() = environmentVariables["AURORA_VERSION"] ?: ""
+    val dockerImageRepo: String
+        get() = dockerImageReference.replace(Regex("@.*$"), "")
 }
 
 data class DeployDetails(
@@ -147,14 +150,14 @@ data class DeployDetails(
     val deployTag: String? = null,
     val paused: Boolean = false,
     val updatedBy: String? = null,
-    val scaledDown: String? = null
+    val scaledDown: String? = null,
 ) {
     val lastDeployment: String?
-        get() = this.phase?.toLowerCase()
+        get() = this.phase?.lowercase(getDefault())
 }
 
 data class DeploymentResult(
     val details: DeployDetails,
     val image: ImageDetails?,
-    val selector: Map<String, String>
+    val selector: Map<String, String>,
 )

@@ -21,22 +21,17 @@ import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.util.concurrent.TimeUnit
 
-private val logger = KotlinLogging.logger {}
-
 @Service
 class OpenShiftManagementClient(
     @Qualifier("managementClient") val client: KubernetesReactorClient,
-    @Value("\${mokey.management.cache:true}") val cacheManagement: Boolean
+    @Value("\${mokey.management.cache:true}") val cacheManagement: Boolean,
 ) {
-
-    // Does this need to be an async cache?
     val cache: Cache<ManagementCacheKey, ManagementEndpointResult<*>> = Caffeine.newBuilder()
         .expireAfterAccess(10, TimeUnit.MINUTES)
         .maximumSize(100000)
         .build()
 
     suspend fun proxyManagementInterfaceRaw(endpoint: ManagementEndpoint): String {
-
         val call = client.proxyGet<String>(
             pod = endpoint.pod,
             port = endpoint.port,
@@ -50,12 +45,13 @@ class OpenShiftManagementClient(
     fun clearCache() = cache.invalidateAll()
 
     final suspend inline fun <reified T : Any> getCachedOrFind(
-        endpoint: ManagementEndpoint
+        endpoint: ManagementEndpoint,
     ): ManagementEndpointResult<T> {
         val logger = KotlinLogging.logger {}
 
         if (!cacheManagement) {
             logger.trace("cache disabled")
+
             return findJsonResource(endpoint)
         }
 
@@ -63,17 +59,21 @@ class OpenShiftManagementClient(
         val cachedResponse = (cache.getIfPresent(key) as ManagementEndpointResult<T>?)?.also {
             logger.debug("Found cached response for $key")
         }
+
         return cachedResponse ?: findJsonResource<T>(endpoint).also {
-            // We cannot cache this since somethings there are actual network errors
-            if (!it.isSuccess && it.response?.code == 503) {
-                logger.debug(
-                    "We did not cache this reponse there is a 503 error that does not succeed url={} response={}",
-                    endpoint.url,
-                    it.response
-                )
-            } else {
-                logger.debug("Cached management interface $key")
-                cache.put(key, it)
+            when {
+                !it.isSuccess && it.response?.code == 503 -> {
+                    logger.debug(
+                        "We did not cache this reponse there is a 503 error that does not succeed url={} response={}",
+                        endpoint.url,
+                        it.response
+                    )
+                }
+                else -> {
+                    logger.debug("Cached management interface $key")
+
+                    cache.put(key, it)
+                }
             }
         }
     }
@@ -83,46 +83,59 @@ class OpenShiftManagementClient(
 
       Refactoring suggestion, make the proxy call return an exception or an success rather then doing the parsing here
      */
-    final suspend inline fun <reified S : Any> findJsonResource(endpoint: ManagementEndpoint): ManagementEndpointResult<S> {
-
-        // If health we should run the code above
+    final suspend inline fun <reified S : Any> findJsonResource(
+        endpoint: ManagementEndpoint
+    ): ManagementEndpointResult<S> {
         val logger = KotlinLogging.logger {}
-        val response = try {
+        val response = runCatching {
             HttpResponse(proxyManagementInterfaceRaw(endpoint), 200)
-        } catch (e: WebClientResponseException) {
-            // This needs to be cleaned up after we have coverage of it all
-            val errorResponse = HttpResponse(String(e.responseBodyAsByteArray), e.statusCode.value())
-            if (e.statusCode.is5xxServerError) {
-                // 503
-                logger.debug(
-                    "WebClientResponse ${e.statusCode.value()} url=${endpoint.url} status=ERROR body={}",
-                    errorResponse.content
-                )
-                // This is the management call succeeding but returning an error code in the 5x range, which is acceptable
-                errorResponse
-            } else {
-                // 401 this is an error
-                logger.info("Response error url=${endpoint.url} status=ERROR body={}", e.responseBodyAsString)
-                return toManagementEndpointResult(
-                    response = HttpResponse(e.responseBodyAsString, e.rawStatusCode),
-                    resultCode = "ERROR_HTTP",
-                    errorMessage = e.localizedMessage,
-                    endpoint = endpoint
-                )
-            }
-        } catch (e: Exception) {
-            // When there is no response
-            logger.debug("Response other exception url=${endpoint.url} status=ERROR body={}", e.message, e)
-            return toManagementEndpointResultAsError(exception = e, endpoint = endpoint)
-        }
+        }.getOrElse {
+            when (it) {
+                is WebClientResponseException -> {
+                    val errorResponse = HttpResponse(String(it.responseBodyAsByteArray), it.statusCode.value())
 
-        // this scales poorly if we want to call prometheus here, we should just get proxy method to return the body parsed
-        val deserialized: S = try {
+                    if (it.statusCode.is5xxServerError) {
+                        // 503
+                        logger.debug(
+                            "WebClientResponse ${it.statusCode.value()} url=${endpoint.url} status=ERROR body={}",
+                            errorResponse.content
+                        )
+                        // This is the management call succeeding but returning an error code in the 5x range, which is acceptable
+                        errorResponse
+                    } else {
+                        // 401 this is an error
+                        logger.info("Response error url=${endpoint.url} status=ERROR body={}", it.responseBodyAsString)
+
+                        return toManagementEndpointResult(
+                            response = HttpResponse(it.responseBodyAsString, it.rawStatusCode),
+                            resultCode = "ERROR_HTTP",
+                            errorMessage = it.localizedMessage,
+                            endpoint = endpoint
+                        )
+                    }
+                }
+                else -> {
+                    logger.debug("Response other exception url=${endpoint.url} status=ERROR body={}", it.message, it)
+
+                    return toManagementEndpointResultAsError(exception = it as Exception, endpoint = endpoint)
+                }
+            }
+        }
+        val deserialized: S = runCatching<S> {
             jacksonObjectMapper().readValue(response.content)
-        } catch (e: Exception) {
-            // invalid body
-            logger.debug("Jackson serialization exception for url=${endpoint.url} content='${response.content}' message=${e.message}")
-            return toManagementEndpointResultAsError(exception = e, response = response, endpoint = endpoint)
+        }.getOrElse {
+            logger.debug(
+                "Jackson serialization exception for " +
+                    "url=${endpoint.url} " +
+                    "content='${response.content}' " +
+                    "message=${it.message}"
+            )
+
+            return toManagementEndpointResultAsError(
+                exception = it as Exception,
+                response = response,
+                endpoint = endpoint
+            )
         }
 
         return toManagementEndpointResult(
@@ -138,22 +151,20 @@ class OpenShiftManagementClient(
         response: HttpResponse? = null,
         resultCode: String,
         errorMessage: String? = null,
-        endpoint: ManagementEndpoint
-    ): ManagementEndpointResult<T> {
-        return ManagementEndpointResult(
-            deserialized = deserialized,
-            response = response,
-            resultCode = resultCode,
-            errorMessage = errorMessage,
-            endpointType = endpoint.endpointType,
-            url = endpoint.url
-        )
-    }
+        endpoint: ManagementEndpoint,
+    ): ManagementEndpointResult<T> = ManagementEndpointResult(
+        deserialized = deserialized,
+        response = response,
+        resultCode = resultCode,
+        errorMessage = errorMessage,
+        endpointType = endpoint.endpointType,
+        url = endpoint.url,
+    )
 
     fun <S : Any> toManagementEndpointResultAsError(
         exception: Exception,
         response: HttpResponse? = null,
-        endpoint: ManagementEndpoint
+        endpoint: ManagementEndpoint,
     ): ManagementEndpointResult<S> {
         val resultCode = when (exception) {
             is JsonParseException -> "INVALID_JSON"
@@ -166,7 +177,7 @@ class OpenShiftManagementClient(
             response = response,
             resultCode = resultCode,
             errorMessage = exception.message,
-            endpoint = endpoint
+            endpoint = endpoint,
         )
     }
 }

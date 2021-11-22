@@ -5,15 +5,16 @@ info:
         metrics: "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}&var-instance={podName}"
 
 spring:
-    profiles:
-        active: local
+    config:
+        activate:
+            on-profile: default
     codec:
         max-in-memory-size: -1 # Unlimited
 
 
 logging:
     level:
-        reactor.netty: ERROR
+        reactor.netty.http.client: ERROR
         no.skatteetaten.aurora: INFO
         org:
             hibernate: WARN
@@ -54,38 +55,21 @@ kubernetes:
         times: 3
         min: 100ms
         max: 2s
----
-spring:
-    profiles: local
-
 mokey:
     cachewarmup:
-        enabled: true
-    cache:
-        affiliations: safir
-
-integrations:
-    cantus:
-        url: http://cantus.aurora.utv.paas.skead.no
-logging:
-    pattern:
-        console: "%d [%-9.9thread] %highlight(%-5level) %cyan(%logger:%L) %X - %msg %n%rEx{full}"
-    # add mokey.openshift.token to ~/.spring-boot-devtools.properties
-    level:
-        no.skatteetaten.aurora: DEBUG
-
-kubernetes:
-    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
-    tokenLocation: /tmp/reader-token
-
+        enabled: false
 ---
 spring:
-    profiles: openshift
-    zipkin:
-        enabled: false
     sleuth:
         enabled: false
+    codec:
+        max-in-memory-size: -1 # Unlimited
+    config:
+        activate:
+            on-profile: openshift
 
 logback:
     access:
         config: file:${logback.access.b3}
+
+logging.level.reactor.netty.http.client: ERROR

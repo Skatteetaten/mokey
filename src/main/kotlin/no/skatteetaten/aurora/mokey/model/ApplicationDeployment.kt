@@ -10,6 +10,7 @@ import no.skatteetaten.aurora.kubernetes.crd.SkatteetatenCRD
 fun newApplicationDeployment(block: ApplicationDeployment.() -> Unit = {}): ApplicationDeployment {
     val instance = ApplicationDeployment()
     instance.block()
+
     return instance
 }
 
@@ -37,9 +38,9 @@ data class ApplicationDeploymentSpec(
     val selector: Map<String, String> = emptyMap(),
     val command: ApplicationDeploymentCommand = ApplicationDeploymentCommand(
         applicationDeploymentRef = ApplicationDeploymentRef("env", "app"),
-            auroraConfig = AuroraConfigRef("demo", "master")
+        auroraConfig = AuroraConfigRef("demo", "master")
     ),
-    val message: String? = null
+    val message: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -47,7 +48,7 @@ data class ApplicationDeploymentSpec(
 data class ApplicationDeploymentCommand(
     val overrideFiles: Map<String, String> = emptyMap(),
     val applicationDeploymentRef: ApplicationDeploymentRef,
-    val auroraConfig: AuroraConfigRef
+    val auroraConfig: AuroraConfigRef,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -55,7 +56,7 @@ data class ApplicationDeploymentCommand(
 data class AuroraConfigRef(
     val name: String,
     val refName: String,
-    val resolvedRef: String? = null
+    val resolvedRef: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
