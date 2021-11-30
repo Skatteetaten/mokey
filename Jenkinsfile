@@ -10,6 +10,7 @@ def overrides = [
     jiraFiksetIKomponentversjon: true,
     compilePropertiesIq: "-x test",
     chatRoom: "#aos-notifications",
+    uploadLeveransepakke: true,
     versionStrategy: [
       [ branch: 'master', versionHint: '3' ]
     ]
