@@ -8,12 +8,19 @@ import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.get
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
+import org.springframework.context.ApplicationContext
+import org.springframework.restdocs.RestDocumentationContextProvider
+import org.springframework.restdocs.RestDocumentationExtension
+import org.springframework.restdocs.webtestclient.WebTestClientRestDocumentation.documentationConfiguration
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.reactive.server.WebTestClient
 
+@ExtendWith(RestDocumentationExtension::class)
 @Suppress("unused")
 @WithMockUser("test", roles = ["test"])
 @ExperimentalStdlibApi
@@ -31,10 +38,16 @@ class ApplicationControllerTest {
     @MockkBean
     private lateinit var assembler: ApplicationResourceAssembler
 
-    @Autowired
     private lateinit var webTestClient: WebTestClient
 
     private val applicationData = ApplicationDataBuilder().build()
+
+    @BeforeEach
+    fun setUp(applicationContext: ApplicationContext, restDocumentation: RestDocumentationContextProvider) {
+        webTestClient = WebTestClient.bindToApplicationContext(applicationContext).configureClient()
+            .filter(documentationConfiguration(restDocumentation))
+            .build()
+    }
 
     @Test
     fun `Return application by id`() {
@@ -42,17 +55,13 @@ class ApplicationControllerTest {
         every { assembler.toResource(any()) } returns ApplicationResourceBuilder().build()
 
         webTestClient
-            .get()
-            .uri {
-                it
-                    .path("/api/application/{id}")
-                    .build("abc123")
+            .get("/api/application/abc123") {
+                exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .jsonPath("$.identifier").isEqualTo("123")
             }
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$.identifier").isEqualTo("123")
     }
 
     @Test

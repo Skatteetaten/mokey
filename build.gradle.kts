@@ -24,6 +24,8 @@ dependencies {
     testImplementation("com.squareup.okhttp3:mockwebserver:4.9.2")
     testImplementation("com.squareup.okhttp3:okhttp:4.9.2")
     testImplementation("com.ninja-squad:springmockk:3.0.1")
+
+    testImplementation("no.skatteetaten.aurora.springboot:webtestclient-extensions-kotlin:local-snapshot")
 }
 
 aurora {
