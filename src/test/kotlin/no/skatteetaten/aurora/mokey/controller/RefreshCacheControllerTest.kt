@@ -7,6 +7,7 @@ import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.TestStubSetup
 import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.contentTypeJson
 import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.post
 import org.junit.jupiter.api.BeforeEach

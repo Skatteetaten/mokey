@@ -12,6 +12,7 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.TestStubSetup
 import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.contentTypeJson
 import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.get
 import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.post

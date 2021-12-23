@@ -16,7 +16,7 @@ dependencies {
     implementation("com.jayway.jsonpath:json-path:2.6.0")
     implementation("org.apache.commons:commons-lang3:3.12.0")
 
-    testImplementation("no.skatteetaten.aurora.springboot:webtestclient-extensions-kotlin:1.0.0")
+    testImplementation("no.skatteetaten.aurora.springboot:webtestclient-extensions-kotlin:1.1.0")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.mockk:mockk:1.12.1")
