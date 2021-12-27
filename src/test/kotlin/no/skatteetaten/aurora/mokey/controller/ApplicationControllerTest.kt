@@ -8,17 +8,17 @@ import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.TestStubSetup
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.get
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.reactive.server.WebTestClient
 
 @Suppress("unused")
 @WithMockUser("test", roles = ["test"])
 @ExperimentalStdlibApi
 @WebFluxTest(WebSecurityConfig::class, ApplicationController::class)
-class ApplicationControllerTest {
+class ApplicationControllerTest : TestStubSetup() {
     @MockkBean
     private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
 
@@ -31,9 +31,6 @@ class ApplicationControllerTest {
     @MockkBean
     private lateinit var assembler: ApplicationResourceAssembler
 
-    @Autowired
-    private lateinit var webTestClient: WebTestClient
-
     private val applicationData = ApplicationDataBuilder().build()
 
     @Test
@@ -42,17 +39,13 @@ class ApplicationControllerTest {
         every { assembler.toResource(any()) } returns ApplicationResourceBuilder().build()
 
         webTestClient
-            .get()
-            .uri {
-                it
-                    .path("/api/application/{id}")
-                    .build("abc123")
+            .get("/api/application/abc123") {
+                exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .jsonPath("$.identifier").isEqualTo("123")
             }
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$.identifier").isEqualTo("123")
     }
 
     @Test
@@ -61,17 +54,14 @@ class ApplicationControllerTest {
         every { assembler.toResources(any()) } returns listOf(ApplicationResourceBuilder().build())
 
         webTestClient
-            .get()
-            .uri {
-                it
-                    .path("/api/application")
-                    .queryParam("affiliation", "paas")
-                    .build()
+            .get(path = "/api/application", uriBuilder = {
+                queryParam("affiliation", "paas")
+            }) {
+                exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .jsonPath("$.length()").isEqualTo(1)
             }
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$.length()").isEqualTo(1)
     }
 }

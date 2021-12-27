@@ -12,20 +12,20 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.TestStubSetup
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.contentTypeJson
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.get
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.post
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
-import org.springframework.http.HttpHeaders.CONTENT_TYPE
-import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters.fromValue
 
 @Suppress("unused")
 @WithMockUser("test", roles = ["test"])
 @ExperimentalStdlibApi
 @WebFluxTest(WebSecurityConfig::class, ApplicationDeploymentController::class)
-class ApplicationDeploymentControllerTest {
+class ApplicationDeploymentControllerTest : TestStubSetup() {
     @MockkBean
     private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
 
@@ -38,26 +38,19 @@ class ApplicationDeploymentControllerTest {
     @MockkBean
     private lateinit var assembler: ApplicationDeploymentResourceAssembler
 
-    @Autowired
-    private lateinit var webTestClient: WebTestClient
-
     @Test
     fun `Return application deployment by id`() {
         every { applicationDataService.findPublicApplicationDataByApplicationDeploymentId(any()) } returns ApplicationDataBuilder().build().publicData
         every { assembler.toResource(any()) } returns ApplicationDeploymentResourceBuilder().build()
 
         webTestClient
-            .get()
-            .uri {
-                it
-                    .path("/api/applicationdeployment/{id}")
-                    .build("123")
+            .get("/api/applicationdeployment/123") {
+                exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .jsonPath("$.identifier").isEqualTo("123")
             }
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$.identifier").isEqualTo("123")
     }
 
     @Test
@@ -68,15 +61,15 @@ class ApplicationDeploymentControllerTest {
         every { assembler.toResources(any()) } returns listOf(ApplicationDeploymentResourceBuilder().build())
 
         webTestClient
-            .post()
-            .uri("/api/applicationdeployment")
-            .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .body(fromValue(listOf(ApplicationDeploymentRef("environment", "application"))))
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$[0].identifier").isEqualTo("123")
+            .post("/api/applicationdeployment") {
+                contentTypeJson()
+                    .body(fromValue(listOf(ApplicationDeploymentRef("environment", "application"))))
+                    .exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .jsonPath("$[0].identifier").isEqualTo("123")
+            }
     }
 
     @Test
@@ -93,20 +86,15 @@ class ApplicationDeploymentControllerTest {
         every { assembler.toResources(any()) } returns listOf(ApplicationDeploymentResourceBuilder().build())
 
         webTestClient
-            .post()
-            .uri {
-                it
-                    .path("/api/applicationdeployment")
-                    .queryParam("cached", false)
-                    .build()
+            .post("/api/applicationdeployment?cached=false") {
+                contentTypeJson()
+                    .body(fromValue(listOf(ApplicationDeploymentRef("environment", "application"))))
+                    .exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .jsonPath("$[0].identifier").isEqualTo("123")
             }
-            .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-            .body(fromValue(listOf(ApplicationDeploymentRef("environment", "application"))))
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$[0].identifier").isEqualTo("123")
     }
 
     @Test
@@ -114,10 +102,10 @@ class ApplicationDeploymentControllerTest {
         every { applicationDataService.findPublicApplicationDataByApplicationDeploymentId(any()) } returns null
 
         webTestClient
-            .get()
-            .uri("/api/applicationdeployment/id-not-found")
-            .exchange()
-            .expectStatus()
-            .isNotFound
+            .get("/api/applicationdeployment/id-not-found") {
+                exchange()
+                    .expectStatus()
+                    .isNotFound
+            }
     }
 }

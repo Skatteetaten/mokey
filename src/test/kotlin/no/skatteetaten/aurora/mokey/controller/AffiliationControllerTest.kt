@@ -7,16 +7,16 @@ import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.TestStubSetup
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.get
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.reactive.server.WebTestClient
 
 @Suppress("unused")
 @WithMockUser("test", roles = ["test"])
 @WebFluxTest(WebSecurityConfig::class, AffiliationController::class)
-class AffiliationControllerTest {
+class AffiliationControllerTest : TestStubSetup() {
     @MockkBean
     private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
 
@@ -26,20 +26,17 @@ class AffiliationControllerTest {
     @MockkBean(relaxed = true)
     private lateinit var applicationDataService: ApplicationDataService
 
-    @Autowired
-    private lateinit var webTestClient: WebTestClient
-
     @Test
     fun `Return list of affiliations`() {
         every { applicationDataService.findAllAffiliations() } returns listOf("paas", "affiliation1", "affiliation2")
 
         webTestClient
-            .get()
-            .uri("/api/affiliation")
-            .exchange()
-            .expectStatus().isOk
-            .expectBody()
-            .jsonPath("$.length()").isEqualTo(3)
+            .get("/api/affiliation") {
+                exchange()
+                    .expectStatus().isOk
+                    .expectBody()
+                    .jsonPath("$.length()").isEqualTo(3)
+            }
     }
 
     @WithMockUser("test", roles = ["test"])
@@ -51,12 +48,11 @@ class AffiliationControllerTest {
             "affiliation2"
         )
 
-        webTestClient
-            .get()
-            .uri("/api/auth/affiliation")
-            .exchange()
-            .expectStatus().isOk
-            .expectBody()
-            .jsonPath("$.length()").isEqualTo(3)
+        webTestClient.get("/api/auth/affiliation") {
+            exchange()
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.length()").isEqualTo(3)
+        }
     }
 }

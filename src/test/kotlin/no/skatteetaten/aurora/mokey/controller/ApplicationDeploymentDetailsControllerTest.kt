@@ -9,17 +9,17 @@ import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.TestStubSetup
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.get
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.reactive.server.WebTestClient
 
 @Suppress("unused")
 @WithMockUser("test", roles = ["test"])
 @ExperimentalStdlibApi
 @WebFluxTest(WebSecurityConfig::class, ApplicationDeploymentDetailsController::class)
-class ApplicationDeploymentDetailsControllerTest {
+class ApplicationDeploymentDetailsControllerTest : TestStubSetup() {
     @MockkBean
     private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
 
@@ -32,26 +32,19 @@ class ApplicationDeploymentDetailsControllerTest {
     @MockkBean
     private lateinit var assembler: ApplicationDeploymentDetailsResourceAssembler
 
-    @Autowired
-    private lateinit var webTestClient: WebTestClient
-
     @Test
     fun `Return application deployment details by id`() {
         coEvery { applicationDataService.findApplicationDataByApplicationDeploymentId(any()) } returns ApplicationDataBuilder().build()
         every { assembler.toResource(any()) } returns ApplicationDeploymentDetailsResourceBuilder().build()
 
         webTestClient
-            .get()
-            .uri {
-                it
-                    .path("/api/auth/applicationdeploymentdetails/{id}")
-                    .build("123")
+            .get("/api/auth/applicationdeploymentdetails/123") {
+                exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .jsonPath("$.identifier").isEqualTo("123")
             }
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$.identifier").isEqualTo("123")
     }
 
     @Test
@@ -61,18 +54,12 @@ class ApplicationDeploymentDetailsControllerTest {
         coEvery { applicationDataService.findAllApplicationData(any(), any()) } returns applicationDatas
         every { assembler.toResources(any()) } returns listOf(ApplicationDeploymentDetailsResourceBuilder().build())
 
-        webTestClient
-            .get()
-            .uri {
-                it
-                    .path("/api/auth/applicationdeploymentdetails")
-                    .queryParam("affiliation", "paas")
-                    .build()
-            }
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$[0].identifier").isEqualTo("123")
+        webTestClient.get("/api/auth/applicationdeploymentdetails?affiliation=paas") {
+            exchange()
+                .expectStatus()
+                .isOk
+                .expectBody()
+                .jsonPath("$[0].identifier").isEqualTo("123")
+        }
     }
 }

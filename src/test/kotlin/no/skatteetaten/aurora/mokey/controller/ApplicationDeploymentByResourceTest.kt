@@ -9,19 +9,19 @@ import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.TestStubSetup
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.post
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.Import
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters.fromValue
 
 @Suppress("unused")
 @ExperimentalStdlibApi
 @WebFluxTest(WebSecurityConfig::class, ApplicationDeploymentByResourceController::class)
 @Import(ApplicationDataService::class)
-class ApplicationDeploymentByResourceTest {
+class ApplicationDeploymentByResourceTest : TestStubSetup() {
     @MockkBean
     private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
 
@@ -34,9 +34,6 @@ class ApplicationDeploymentByResourceTest {
     @MockkBean
     private lateinit var assembler: ApplicationDeploymentsWithDbResourceAssembler
 
-    @Autowired
-    private lateinit var webTestClient: WebTestClient
-
     @WithMockUser("test", roles = ["test"])
     @Test
     fun `Return application deployment by resource`() {
@@ -44,13 +41,13 @@ class ApplicationDeploymentByResourceTest {
         every { assembler.toResources(any()) } returns listOf(ApplicationDeploymentsWithDbResourceBuilder().build())
 
         webTestClient
-            .post()
-            .uri("/api/auth/applicationdeploymentbyresource/databases")
-            .body(fromValue(listOf("123", 456)))
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$[0].identifier").isEqualTo("123")
+            .post("/api/auth/applicationdeploymentbyresource/databases") {
+                body(fromValue(listOf("123", 456)))
+                    .exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .jsonPath("$[0].identifier").isEqualTo("123")
+            }
     }
 }

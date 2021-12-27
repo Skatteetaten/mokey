@@ -8,16 +8,16 @@ import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
 import no.skatteetaten.aurora.mokey.service.OpenShiftUserClient
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.TestStubSetup
+import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.get
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.reactive.server.WebTestClient
 
 @Suppress("unused")
 @WithMockUser("test", roles = ["test"])
 @WebFluxTest(WebSecurityConfig::class, PermissionController::class)
-class PermissionControllerTest {
+class PermissionControllerTest : TestStubSetup() {
     @MockkBean
     private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
 
@@ -27,23 +27,20 @@ class PermissionControllerTest {
     @MockkBean
     private lateinit var openShiftUserClient: OpenShiftUserClient
 
-    @Autowired
-    private lateinit var webTestClient: WebTestClient
-
     @Test
     fun `Check permissions`() {
         coEvery { openShiftUserClient.getNamespaceByNameOrNull("aurora") } returns NamespaceDataBuilder().build()
         coEvery { openShiftUserClient.selfSubjectAccessReview(any()) } returns SelfSubjectAccessReviewBuilder().build()
 
         webTestClient
-            .get()
-            .uri("/api/auth/permissions/aurora")
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBody()
-            .jsonPath("$.view").isEqualTo(true)
-            .jsonPath("$.admin").isEqualTo(false)
-            .jsonPath("$.namespace").isEqualTo("aurora")
+            .get("/api/auth/permissions/aurora") {
+                exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .jsonPath("$.view").isEqualTo(true)
+                    .jsonPath("$.admin").isEqualTo(false)
+                    .jsonPath("$.namespace").isEqualTo("aurora")
+            }
     }
 }
