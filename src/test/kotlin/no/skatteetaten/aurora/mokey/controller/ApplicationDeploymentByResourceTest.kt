@@ -42,7 +42,7 @@ class ApplicationDeploymentByResourceTest : TestStubSetup() {
 
         webTestClient
             .post("/api/auth/applicationdeploymentbyresource/databases") {
-                body(fromValue(listOf("123", 456)))
+                body(fromValue(listOf("123", "456")))
                     .exchange()
                     .expectStatus()
                     .isOk
