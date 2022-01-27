@@ -5,8 +5,6 @@ import com.jayway.jsonpath.Configuration.defaultConfiguration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
 import mu.KotlinLogging
-import no.skatteetaten.aurora.kubernetes.RetryConfiguration
-import no.skatteetaten.aurora.kubernetes.retryWithLog
 import no.skatteetaten.aurora.mokey.ServiceTypes
 import no.skatteetaten.aurora.mokey.TargetService
 import org.springframework.stereotype.Service
@@ -19,7 +17,6 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import uk.q3c.rest.hal.HalResource
-import java.time.Duration.ofMillis
 import java.time.Duration.ofSeconds
 import java.time.Instant
 
@@ -83,14 +80,6 @@ class ImageRegistryClient(
         .retrieve()
         .bodyToMono<AuroraResponse<HalResource>>()
         .timeout(ofSeconds(5))
-        .retryWithLog(
-            RetryConfiguration(
-                3,
-                ofMillis(200),
-                ofSeconds(3)
-            ),
-            false
-        )
         .handleGenericError()
         .flatMapMany {
             when {

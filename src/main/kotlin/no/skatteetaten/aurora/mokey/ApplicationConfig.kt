@@ -1,10 +1,14 @@
 package no.skatteetaten.aurora.mokey
 
+import brave.Tracing
+import brave.propagation.CurrentTraceContext
 import com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL
 import com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT
 import com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS
 import io.fabric8.kubernetes.api.model.KubernetesList
 import io.fabric8.kubernetes.internal.KubernetesDeserializer
+import kotlinx.coroutines.ThreadContextElement
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -31,6 +35,9 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import java.security.KeyStore
 import java.time.Duration
+import java.util.concurrent.Executors
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 
 enum class ServiceTypes {
     CANTUS
@@ -110,6 +117,24 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
     }
 }
 
+// Implemented based on https://github.com/openzipkin/brave/issues/820#issuecomment-447614394
+private class TracingContextElement : ThreadContextElement<CurrentTraceContext.Scope?>,
+    AbstractCoroutineContextElement(Key) {
+    private val currentTraceContext: CurrentTraceContext? = Tracing.current()?.currentTraceContext()
+    private val initial = currentTraceContext?.get()
+
+    companion object Key : CoroutineContext.Key<TracingContextElement>
+
+    override fun updateThreadContext(context: CoroutineContext): CurrentTraceContext.Scope? {
+        return currentTraceContext?.maybeScope(initial)
+    }
+
+    override fun restoreThreadContext(context: CoroutineContext, oldState: CurrentTraceContext.Scope?) {
+        oldState?.close()
+    }
+}
+
+private val dispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
 suspend fun <A, B> Iterable<A>.pmapIO(f: suspend (A) -> B): List<B> = coroutineScope {
-    map { async(MDCContext()) { f(it) } }.awaitAll()
+    map { async(dispatcher + MDCContext() + TracingContextElement()) { f(it) } }.awaitAll()
 }
