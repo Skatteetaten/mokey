@@ -28,11 +28,14 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.netty.http.client.HttpClient
+import reactor.netty.resources.ConnectionProvider
 import java.security.KeyStore
 import java.time.Duration
 import java.util.concurrent.Executors
@@ -107,6 +110,16 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
         return builder
             .baseUrl(cantusUrl)
             .defaultHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+            .clientConnector(
+                ReactorClientHttpConnector(
+                    HttpClient.create(
+                        ConnectionProvider
+                            .builder("cantus-connection-provider")
+                            .pendingAcquireMaxCount(1500)
+                            .metrics(true).build()
+                    )
+                )
+            )
             .exchangeStrategies(
                 ExchangeStrategies.builder().codecs {
                     it.defaultCodecs().apply {
