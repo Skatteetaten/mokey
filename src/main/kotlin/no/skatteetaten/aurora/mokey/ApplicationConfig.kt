@@ -115,7 +115,7 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
                     HttpClient.create(
                         ConnectionProvider
                             .builder("cantus-connection-provider")
-                            .pendingAcquireMaxCount(1500)
+                            .pendingAcquireMaxCount(2000)
                             .metrics(true).build()
                     )
                 )
