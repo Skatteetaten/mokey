@@ -30,7 +30,7 @@ import org.springframework.stereotype.Service
 
 @Suppress("SpringJavaInjectionPointsAutowiringInspection")
 @Service
-class OpenShiftServiceAccountClient(@Qualifier("managementClient") val client: KubernetesCoroutinesClient) {
+class OpenShiftServiceAccountClient(@Qualifier("managementCoroutinesClient") val client: KubernetesCoroutinesClient) {
     suspend fun getServices(metadata: ObjectMeta) = client.getMany(newService { this.metadata = metadata })
 
     suspend fun getIngresses(metadata: ObjectMeta): List<Ingress> = client.getMany(

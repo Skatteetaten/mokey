@@ -16,6 +16,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.slf4j.MDCContext
 import mu.KotlinLogging
 import no.skatteetaten.aurora.kubernetes.KubernetesConfiguration
+import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.kubernetes.TokenFetcher
@@ -57,7 +58,7 @@ private val logger = KotlinLogging.logger {}
 @EnableScheduling
 class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : BeanPostProcessor {
 
-    @Bean
+    // @Bean
     fun tokenFetcher(): TokenFetcher = object : TokenFetcher {
         override suspend fun coToken(audience: String?): String {
             return ReactiveSecurityContextHolder.getContext().awaitFirst().authentication.getToken()
@@ -75,6 +76,13 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
             retry = RetryConfiguration(0),
             timeout = kubernetesClientConfig.timeout.copy(read = Duration.ofSeconds(2))
         ).createServiceAccountReactorClient(builder, trustStore).build()
+
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
+    @Qualifier("managementCoroutinesClient")
+    @Bean
+    fun managementCoroutinesClient(
+        @Qualifier("managementClient") kubernetesReactorClient: KubernetesReactorClient
+    ): KubernetesCoroutinesClient = KubernetesCoroutinesClient(kubernetesReactorClient, null)
 
     // Management interface parsing needs this
     @Bean
