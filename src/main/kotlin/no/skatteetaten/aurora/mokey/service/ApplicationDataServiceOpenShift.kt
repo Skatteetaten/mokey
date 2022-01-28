@@ -60,8 +60,8 @@ class ApplicationDataServiceOpenShift(
     suspend fun findAllApplicationDataByEnvironments(
         applicationDeployments: List<ApplicationDeployment>,
     ): List<ApplicationData> {
-        val results = applicationDeployments.chunked(100).map {
-            applicationDeployments.pmapIO { tryCreateApplicationData(it) }
+        val results = applicationDeployments.chunked(500).map { ads ->
+            ads.pmapIO { ad -> tryCreateApplicationData(ad) }
         }.flatten()
 
         val errors = results.mapNotNull { it.error }

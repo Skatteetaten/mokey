@@ -155,7 +155,7 @@ private class TracingContextElement : ThreadContextElement<CurrentTraceContext.S
     }
 }
 
-private val dispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+private val dispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
 suspend fun <A, B> Iterable<A>.pmapIO(f: suspend (A) -> B): List<B> = coroutineScope {
     map { async(dispatcher + MDCContext() + TracingContextElement()) { f(it) } }.awaitAll()
 }
