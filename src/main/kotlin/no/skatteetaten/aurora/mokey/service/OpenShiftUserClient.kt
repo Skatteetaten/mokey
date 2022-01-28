@@ -5,7 +5,7 @@ import com.fkorotkov.kubernetes.newNamespace
 import io.fabric8.kubernetes.api.model.Namespace
 import io.fabric8.kubernetes.api.model.authorization.SelfSubjectAccessReview
 import io.fabric8.openshift.api.model.Project
-import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.springboot.getToken
 import org.springframework.beans.factory.annotation.Qualifier
@@ -32,5 +32,5 @@ class OpenShiftUserClient(@Qualifier("managementCoroutinesClient") val client: K
     // This will not work on kubernets, and you cannot fetch all namespaces either...
     suspend fun getAllProjects(): List<Project> = client.getMany(token = getToken())
 
-    private suspend fun getToken() = ReactiveSecurityContextHolder.getContext().awaitFirst().authentication.getToken()
+    private suspend fun getToken() = ReactiveSecurityContextHolder.getContext().awaitFirstOrNull()?.authentication?.getToken()
 }
