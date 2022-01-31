@@ -123,7 +123,7 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
                     HttpClient.create(
                         ConnectionProvider
                             .builder("cantus-connection-provider")
-                            .pendingAcquireMaxCount(2000)
+                            .pendingAcquireMaxCount(1500)
                             .metrics(true).build()
                     )
                 )
@@ -136,6 +136,18 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
                 }.build()
             ).build()
     }
+}
+
+@Configuration
+class KubernetesWebClientConfiguration {
+    @Bean
+    fun kubernetesHttpClient() = HttpClient.create(
+        ConnectionProvider
+            .builder("mokey-kubernetes-client-connection-provider")
+            .pendingAcquireMaxCount(1500)
+            .metrics(true)
+            .build()
+    )
 }
 
 // Implemented based on https://github.com/openzipkin/brave/issues/820#issuecomment-447614394
