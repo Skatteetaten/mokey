@@ -58,13 +58,6 @@ private val logger = KotlinLogging.logger {}
 @EnableScheduling
 class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : BeanPostProcessor {
 
-    // @Bean
-    fun tokenFetcher(): TokenFetcher = object : TokenFetcher {
-        override suspend fun coToken(audience: String?): String {
-            return ReactiveSecurityContextHolder.getContext().awaitFirst().authentication.getToken()
-        }
-    }
-
     @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     @Qualifier("managementClient")
     @Bean
