@@ -112,7 +112,7 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
                     HttpClient.create(
                         ConnectionProvider
                             .builder("cantus-connection-provider")
-                            .pendingAcquireMaxCount(1500)
+                            .pendingAcquireMaxCount(1000)
                             .metrics(true).build()
                     )
                 )
@@ -133,7 +133,7 @@ class KubernetesWebClientConfiguration {
     fun kubernetesHttpClient() = HttpClient.create(
         ConnectionProvider
             .builder("mokey-kubernetes-client-connection-provider")
-            .pendingAcquireMaxCount(1500)
+            .pendingAcquireMaxCount(1000)
             .metrics(true)
             .build()
     )
