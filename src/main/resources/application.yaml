@@ -33,6 +33,12 @@ management:
                 http: 50ms
             maximum-expected-value:
                 http: 3s
+        export:
+            prometheus:
+                pushgateway:
+                    enabled: true
+                    job: mokey-job
+                    base-url: https://cortex.sits.no/api/v1/push
 
 integrations:
     boober:
