@@ -26,5 +26,6 @@ logging:
         reactor.netty.http.client: ERROR
 
 kubernetes:
-    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
+    url: https://api.utv04.paas.skead.no:6443
+    # url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
     tokenLocation: /tmp/reader-token

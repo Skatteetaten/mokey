@@ -2,9 +2,15 @@ plugins {
     id("java")
     id("idea")
     id("no.skatteetaten.gradle.aurora") version "4.4.9"
+    id("com.google.protobuf") version "0.8.18"
 }
 
 dependencies {
+    implementation("io.prometheus:simpleclient_pushgateway")
+    implementation("com.google.protobuf:protobuf-java:3.19.4")
+    implementation("com.google.protobuf:protobuf-java-util:3.19.4")
+    implementation("org.xerial.snappy:snappy-java:1.1.8.4")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.6.0")
     implementation("io.projectreactor.addons:reactor-extra:3.4.6")

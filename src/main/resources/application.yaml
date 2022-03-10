@@ -27,6 +27,10 @@ logging:
                 velocity: WARN
 
 management:
+    endpoints:
+        web:
+            exposure:
+                include: info,health,prometheus,env,loggers,metrics,liveness,conditions
     metrics:
         distribution:
             minimum-expected-value:
