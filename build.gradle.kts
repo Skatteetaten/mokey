@@ -26,6 +26,9 @@ dependencies {
     testImplementation("com.squareup.okhttp3:okhttp:4.9.3")
     testImplementation("com.ninja-squad:springmockk:3.1.0")
 
+    // M1 Mac configuration
+    runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.1.75.Final:osx-aarch_64")
+
     // TODO: These below here are fixed because of IQ violations
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
 }
