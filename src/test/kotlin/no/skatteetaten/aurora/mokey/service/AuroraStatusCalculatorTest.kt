@@ -1,5 +1,9 @@
 package no.skatteetaten.aurora.mokey.service
 
+import java.time.Duration
+import java.time.Instant
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import no.skatteetaten.aurora.mokey.PodDetailsDataBuilder
@@ -25,11 +29,6 @@ import no.skatteetaten.aurora.mokey.service.auroraStatus.NoAvailablePodsCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.NoDeploymentCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.OffCheck
 import no.skatteetaten.aurora.mokey.service.auroraStatus.TooFewPodsCheck
-import no.skatteetaten.aurora.mokey.service.auroraStatus.TooManyPodsCheck
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-import java.time.Duration
-import java.time.Instant
 
 class AuroraStatusCalculatorTest {
     private val calculator = AuroraStatusCalculator(
@@ -41,7 +40,6 @@ class AuroraStatusCalculatorTest {
             off,
             deployFailed,
             deploymentInProgress,
-            tooManyPods,
             tooFewPods,
             averageRestartError,
             averageRestartObserve,
@@ -80,7 +78,6 @@ class AuroraStatusCalculatorTest {
         val off = OffCheck()
         val deployFailed = DeployFailedCheck()
         val deploymentInProgress = DeploymentInProgressCheck()
-        val tooManyPods = TooManyPodsCheck()
         val tooFewPods = TooFewPodsCheck()
         val averageRestartError = AverageRestartErrorCheck(averageRestartErrorThreshold)
         val averageRestartObserve = AverageRestartObserveCheck(averageRestartObserveThreshold)
@@ -132,10 +129,6 @@ class AuroraStatusCalculatorTest {
             targetReplicas = 0,
             pods = listOf(),
             expected = AuroraStatus(OFF, toReport(off))
-        ),
-        TOO_MANY_PODS(
-            targetReplicas = 1,
-            expected = AuroraStatus(OBSERVE, toReport(tooManyPods))
         ),
         APPLICATION_IS_HEALTHY(
             expected = AuroraStatus(HEALTHY)
