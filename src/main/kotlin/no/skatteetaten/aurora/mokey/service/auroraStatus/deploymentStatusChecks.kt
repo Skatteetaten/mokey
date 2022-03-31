@@ -192,21 +192,6 @@ class DeployFailedCheck : StatusCheck(
 }
 
 @Component
-class TooManyPodsCheck : StatusCheck(
-    StatusDescription(
-        ok = "There are not too many pods.",
-        failed = "There are more pods than expected."
-    ),
-    OBSERVE,
-) {
-    override fun isFailing(
-        app: DeployDetails,
-        pods: List<PodDetails>,
-        time: Instant,
-    ): Boolean = app.targetReplicas < pods.size
-}
-
-@Component
 class TooFewPodsCheck : StatusCheck(
     StatusDescription(
         ok = "There are not too few pods.",
