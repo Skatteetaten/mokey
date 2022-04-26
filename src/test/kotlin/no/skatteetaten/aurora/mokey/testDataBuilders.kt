@@ -69,7 +69,12 @@ import no.skatteetaten.aurora.mokey.model.OpenShiftContainerExcerpt
 import no.skatteetaten.aurora.mokey.model.OpenShiftPodExcerpt
 import no.skatteetaten.aurora.mokey.model.PodDetails
 import no.skatteetaten.aurora.mokey.model.ServiceAddress
+import no.skatteetaten.aurora.mokey.model.StorageGridObjectArea
+import no.skatteetaten.aurora.mokey.model.StorageGridObjectAreaSpec
+import no.skatteetaten.aurora.mokey.model.StorageGridObjectAreaStatus
+import no.skatteetaten.aurora.mokey.model.StorageGridObjectAreaStatusResult
 import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.newStorageGridObjectArea
 import no.skatteetaten.aurora.mokey.service.ImageBuildTimeline
 import no.skatteetaten.aurora.mokey.service.ImageTagResource
 import uk.q3c.rest.hal.Links
@@ -525,4 +530,33 @@ data class ApplicationDataBuilder(
             environment = envName
         )
     )
+}
+
+data class StorageGridObjectAreaBuilder(
+    val namespace: String = "aup",
+    val success: Boolean = true,
+    val message: String = "Successfully provisioned"
+) {
+    fun build(): StorageGridObjectArea = newStorageGridObjectArea {
+        metadata {
+            name = "referanse-referanse-java2"
+            labels = mapOf()
+            namespace = this@StorageGridObjectAreaBuilder.namespace
+            creationTimestamp = "2022-01-24T12:49:16Z"
+        }
+        spec = StorageGridObjectAreaSpec(
+            applicationDeploymentId = "2o523s5257",
+            bucketPostfix = "paas-bucket-u-default",
+            objectArea = "referanse-java2",
+            tryReuseCredentials = false
+        )
+        status = StorageGridObjectAreaStatus(
+            result = StorageGridObjectAreaStatusResult(
+                message = message,
+                reason = "SGOAProvisioned",
+                success = success
+            ),
+            retryCount = 0
+        )
+    }
 }

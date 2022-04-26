@@ -161,3 +161,14 @@ data class DeploymentResult(
     val image: ImageDetails?,
     val selector: Map<String, String>,
 )
+
+data class StorageGridObjectAreaDetails(
+    val name: String,
+    val namespace: String,
+    val creationTimestamp: String,
+    val bucketPostfix: String,
+    val objectArea: String,
+    val message: String,
+    val reason: String,
+    val success: Boolean,
+)

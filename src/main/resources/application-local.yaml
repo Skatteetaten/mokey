@@ -1,15 +1,15 @@
 openshift:
-    cluster: utv
-    port: 8443
+    cluster: utv01
+    port: 6443
 integrations:
     boober:
-        url: http://boober.aurora.utv.paas.skead.no
+        url: https://boober-aup.apps.utv01.paas.skead.no
     metrics:
         url: http://metrics.skead.no
     splunk:
         url: http://splunk.skead.no
     cantus:
-        url: https://cantus-aurora.utv.paas.skead.no
+        url: https://cantus-aup.apps.utv01.paas.skead.no
 
 mokey:
     cachewarmup:
@@ -26,5 +26,5 @@ logging:
         reactor.netty.http.client: ERROR
 
 kubernetes:
-    url: https://${openshift.cluster}-master.paas.skead.no:${openshift.port}
+    url: https://api.${openshift.cluster}.paas.skead.no:${openshift.port}
     tokenLocation: /tmp/reader-token
