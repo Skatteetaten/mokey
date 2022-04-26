@@ -1,9 +1,12 @@
 package no.skatteetaten.aurora.mokey.controller
 
+import com.fkorotkov.kubernetes.newObjectMeta
+import com.fkorotkov.openshift.newProject
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import no.skatteetaten.aurora.mokey.StorageGridObjectAreaBuilder
 import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
+import no.skatteetaten.aurora.mokey.service.OpenShiftUserClient
 import no.skatteetaten.aurora.mokey.service.StorageGridObjectAreaService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
@@ -15,8 +18,9 @@ import org.springframework.security.test.context.support.WithMockUser
 
 @Suppress("unused")
 @WithMockUser("test", roles = ["test"])
-@WebFluxTest(WebSecurityConfig::class, StorageGridObjectAreaController::class)
+@WebFluxTest(WebSecurityConfig::class, StorageGridObjectAreaController::class, StorageGridObjectAreaService::class)
 class StorageGridObjectAreaControllerTest : TestStubSetup() {
+
     @MockkBean
     private lateinit var openShiftAuthenticationManager: OpenShiftAuthenticationManager
 
@@ -24,13 +28,21 @@ class StorageGridObjectAreaControllerTest : TestStubSetup() {
     private lateinit var securityContextRepository: AuroraSecurityContextRepository
 
     @MockkBean
-    private lateinit var storageGridObjectAreaService: StorageGridObjectAreaService
+    private lateinit var userClient: OpenShiftUserClient
 
     @Test
     fun `Return StorageGridObjectAreas`() {
-        coEvery {
-            storageGridObjectAreaService.findAllStorageGridObjectAreasForAffiliation(any())
-        } returns listOf(StorageGridObjectAreaBuilder().build())
+        coEvery { userClient.getProjectsInAffiliation(any()) } returns listOf(
+            newProject {
+                metadata = newObjectMeta {
+                    name = "aup"
+                    labels = mapOf("affiliation" to "aup")
+                }
+            }
+        )
+        coEvery { userClient.getStorageGridObjectAreas(any()) } returns listOf(
+            StorageGridObjectAreaBuilder().build()
+        )
 
         webTestClient
             .get("/api/auth/storagegridobjectarea?affiliation=aup") {

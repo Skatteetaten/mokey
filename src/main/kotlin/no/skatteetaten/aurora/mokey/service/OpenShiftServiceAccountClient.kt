@@ -24,9 +24,7 @@ import io.fabric8.openshift.api.model.ImageStreamTag
 import io.fabric8.openshift.api.model.Route
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
-import no.skatteetaten.aurora.mokey.model.StorageGridObjectArea
 import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
-import no.skatteetaten.aurora.mokey.model.newStorageGridObjectArea
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
@@ -117,14 +115,6 @@ class OpenShiftServiceAccountClient(@Qualifier("managementCoroutinesClient") val
             metadata {
                 this.namespace = namespace
                 this.labels = labels
-            }
-        }
-    )
-
-    suspend fun getStorageGridObjectAreas(namespace: String): List<StorageGridObjectArea> = client.getMany(
-        newStorageGridObjectArea {
-            metadata {
-                this.namespace = namespace
             }
         }
     )
