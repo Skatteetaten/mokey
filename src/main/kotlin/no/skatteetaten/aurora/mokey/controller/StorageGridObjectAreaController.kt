@@ -15,18 +15,6 @@ class StorageGridObjectAreaController(
     @GetMapping
     suspend fun getAll(@RequestParam(name = "affiliation") affiliation: String): List<StorageGridObjectAreaDetails> {
         return storageGridObjectAreaService.findAllStorageGridObjectAreasForAffiliation(affiliation)
-            .map {
-                StorageGridObjectAreaDetails(
-                    name = it.metadata.name,
-                    namespace = it.metadata.namespace,
-                    creationTimestamp = it.metadata.creationTimestamp,
-                    bucketPostfix = it.spec.bucketPostfix,
-                    objectArea = it.spec.objectArea,
-                    message = it.status.result.message,
-                    reason = it.status.result.reason,
-                    success = it.status.result.success
-                )
-            }
     }
 
     companion object {

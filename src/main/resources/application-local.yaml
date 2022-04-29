@@ -1,15 +1,15 @@
 openshift:
-    cluster: utv01
+    cluster: utv04
     port: 6443
 integrations:
     boober:
-        url: https://boober-aup.apps.utv01.paas.skead.no
+        url: https://boober-aup.apps.utv04.paas.skead.no
     metrics:
         url: http://metrics.skead.no
     splunk:
         url: http://splunk.skead.no
     cantus:
-        url: https://cantus-aup.apps.utv01.paas.skead.no
+        url: https://cantus-aup.apps.utv04.paas.skead.no
 
 mokey:
     cachewarmup:

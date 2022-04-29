@@ -168,6 +168,8 @@ data class StorageGridObjectAreaDetails(
     val creationTimestamp: String,
     val bucketPostfix: String,
     val objectArea: String,
+    val tenant: String,
+    val bucketName: String,
     val message: String,
     val reason: String,
     val success: Boolean,
