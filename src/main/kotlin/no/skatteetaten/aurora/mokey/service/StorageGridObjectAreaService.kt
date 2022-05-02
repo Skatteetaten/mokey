@@ -14,12 +14,12 @@ class StorageGridObjectAreaService(
         return userClient.getProjectsInAffiliation(affiliation)
             .flatMap { userClient.getStorageGridObjectAreas(it.metadata.name) }
             .map {
+                // TODO: retrieve tenant and bucketname from status
                 val tenant = "$affiliation-$cluster"
                 StorageGridObjectAreaDetails(
                     name = it.metadata.name,
                     namespace = it.metadata.namespace,
                     creationTimestamp = it.metadata.creationTimestamp,
-                    bucketPostfix = it.spec.bucketPostfix,
                     objectArea = it.spec.objectArea,
                     tenant = tenant,
                     bucketName = "$tenant-${it.spec.bucketPostfix}",

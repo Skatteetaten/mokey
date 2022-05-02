@@ -13,7 +13,7 @@ class StorageGridObjectAreaController(
     val storageGridObjectAreaService: StorageGridObjectAreaService
 ) {
     @GetMapping
-    suspend fun getAll(@RequestParam(name = "affiliation") affiliation: String): List<StorageGridObjectAreaDetails> {
+    suspend fun getAll(@RequestParam affiliation: String): List<StorageGridObjectAreaDetails> {
         return storageGridObjectAreaService.findAllStorageGridObjectAreasForAffiliation(affiliation)
     }
 
