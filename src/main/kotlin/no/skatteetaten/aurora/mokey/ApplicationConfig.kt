@@ -19,6 +19,7 @@ import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
 import no.skatteetaten.aurora.kubernetes.KubernetesReactorClient
 import no.skatteetaten.aurora.kubernetes.RetryConfiguration
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.StorageGridObjectArea
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanPostProcessor
@@ -91,6 +92,16 @@ class ApplicationConfig(val kubernetesClientConfig: KubernetesConfiguration) : B
             "skatteetaten.no/v1",
             "ApplicationDeployment",
             ApplicationDeployment::class.java
+        )
+        KubernetesDeserializer.registerCustomKind(
+            "skatteetaten.no/v1",
+            "StorageGridObjectAreaList",
+            KubernetesList::class.java
+        )
+        KubernetesDeserializer.registerCustomKind(
+            "skatteetaten.no/v1",
+            "StorageGridObjectArea",
+            StorageGridObjectArea::class.java
         )
 
         return super.postProcessAfterInitialization(bean, beanName)
