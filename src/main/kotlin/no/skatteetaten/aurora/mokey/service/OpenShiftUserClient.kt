@@ -1,7 +1,6 @@
 package no.skatteetaten.aurora.mokey.service
 
 import com.fkorotkov.kubernetes.metadata
-import com.fkorotkov.kubernetes.newLabelSelector
 import com.fkorotkov.kubernetes.newNamespace
 import com.fkorotkov.openshift.metadata
 import com.fkorotkov.openshift.newProject
@@ -10,6 +9,7 @@ import io.fabric8.kubernetes.api.model.authorization.SelfSubjectAccessReview
 import io.fabric8.openshift.api.model.Project
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
+import no.skatteetaten.aurora.kubernetes.newLabel
 import no.skatteetaten.aurora.mokey.model.StorageGridObjectArea
 import no.skatteetaten.aurora.mokey.model.newStorageGridObjectArea
 import no.skatteetaten.aurora.springboot.getToken
@@ -40,9 +40,7 @@ class OpenShiftUserClient(@Qualifier("managementCoroutinesClient") val client: K
     suspend fun getProjectsInAffiliation(affiliation: String): List<Project> = client.getMany(
         resource = newProject {
             metadata {
-                newLabelSelector {
-                    matchLabels = mapOf("affiliation" to affiliation)
-                }
+                labels = newLabel("affiliation", affiliation)
             }
         },
         token = getToken()
