@@ -1,3 +1,8 @@
+spring:
+    application:
+        name: mokey
+
+---
 info:
     serviceLinks:
         metrics: "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}"
@@ -5,8 +10,6 @@ info:
         metrics: "{metricsHostname}/dashboard/db/openshift-project-spring-actuator-view-instance?var-ds=openshift-{cluster}-ose&var-namespace={namespace}&var-app={name}&var-instance={podName}"
 
 spring:
-    application:
-        name: mokey
     config:
         activate:
             on-profile: default
@@ -62,8 +65,10 @@ mokey:
         enabled: false
 ---
 spring:
+    application:
+        name: mokey
     sleuth:
-        enabled: false
+        enabled: true
     codec:
         max-in-memory-size: -1 # Unlimited
     config:
