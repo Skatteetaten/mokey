@@ -11,6 +11,7 @@ import com.fkorotkov.kubernetes.newService
 import com.fkorotkov.openshift.metadata
 import com.fkorotkov.openshift.newDeploymentConfig
 import com.fkorotkov.openshift.newImageStreamTag
+import com.fkorotkov.openshift.newProject
 import com.fkorotkov.openshift.newRoute
 import io.fabric8.kubernetes.api.model.Namespace
 import io.fabric8.kubernetes.api.model.ObjectMeta
@@ -21,10 +22,14 @@ import io.fabric8.kubernetes.api.model.apps.ReplicaSet
 import io.fabric8.kubernetes.api.model.extensions.Ingress
 import io.fabric8.openshift.api.model.DeploymentConfig
 import io.fabric8.openshift.api.model.ImageStreamTag
+import io.fabric8.openshift.api.model.Project
 import io.fabric8.openshift.api.model.Route
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
+import no.skatteetaten.aurora.kubernetes.newLabel
 import no.skatteetaten.aurora.mokey.model.ApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.StorageGridObjectArea
 import no.skatteetaten.aurora.mokey.model.newApplicationDeployment
+import no.skatteetaten.aurora.mokey.model.newStorageGridObjectArea
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
@@ -115,6 +120,22 @@ class OpenShiftServiceAccountClient(@Qualifier("managementCoroutinesClient") val
             metadata {
                 this.namespace = namespace
                 this.labels = labels
+            }
+        }
+    )
+
+    suspend fun getProjectsInAffiliation(affiliation: String): List<Project> = client.getMany(
+        resource = newProject {
+            metadata {
+                labels = newLabel("affiliation", affiliation)
+            }
+        }
+    )
+
+    suspend fun getStorageGridObjectAreas(namespace: String): List<StorageGridObjectArea> = client.getMany(
+        resource = newStorageGridObjectArea {
+            metadata {
+                this.namespace = namespace
             }
         }
     )

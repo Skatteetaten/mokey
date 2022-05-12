@@ -14,7 +14,7 @@ class StorageGridObjectAreaController(
 ) {
     @GetMapping
     suspend fun getAll(@RequestParam affiliation: String): List<StorageGridObjectAreaDetails> {
-        return storageGridObjectAreaService.findAllStorageGridObjectAreasForAffiliation(affiliation)
+        return storageGridObjectAreaService.getAllStorageGridObjectAreasForAffiliationFromCache(affiliation)
     }
 
     companion object {

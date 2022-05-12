@@ -3,6 +3,7 @@ package no.skatteetaten.aurora.mokey
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.mokey.service.StorageGridObjectAreaService
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -23,6 +24,7 @@ private val logger = KotlinLogging.logger {}
 @Component
 class CacheWarmup(
     val applicationDataService: ApplicationDataService,
+    val storageGridObjectAreaService: StorageGridObjectAreaService,
 ) : InitializingBean {
     override fun afterPropertiesSet() {
         warmUp(attempt = 0)
@@ -31,7 +33,10 @@ class CacheWarmup(
     private fun warmUp(attempt: Int) {
         if (attempt < 5) {
             runCatching {
-                runBlocking { applicationDataService.cacheAtStartup() }
+                runBlocking {
+                    applicationDataService.cacheAtStartup()
+                    storageGridObjectAreaService.cacheAtStartup()
+                }
             }.getOrElse {
                 when {
                     attempt < 4 -> {
