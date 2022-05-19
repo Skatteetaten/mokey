@@ -5,7 +5,7 @@ import com.fkorotkov.kubernetes.newNamespace
 import com.fkorotkov.openshift.metadata
 import com.fkorotkov.openshift.newProject
 import io.fabric8.kubernetes.api.model.Namespace
-import io.fabric8.kubernetes.api.model.authorization.SelfSubjectAccessReview
+import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectAccessReview
 import io.fabric8.openshift.api.model.Project
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import no.skatteetaten.aurora.kubernetes.KubernetesCoroutinesClient
