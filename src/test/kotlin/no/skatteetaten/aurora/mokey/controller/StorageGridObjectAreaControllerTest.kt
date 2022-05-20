@@ -73,7 +73,7 @@ class StorageGridObjectAreaControllerTest : TestStubSetup() {
             "aup" to listOf(Environment("aup", "aup"))
         )
         runBlocking {
-            sgoaService.cacheAtStartup()
+            sgoaService.cacheAtStartup(mapOf("aup" to emptyList()))
         }
 
         webTestClient
