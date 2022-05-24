@@ -17,16 +17,16 @@ class StorageGridObjectAreaService(
     val cache = ConcurrentHashMap<String, List<StorageGridObjectArea>>()
 
     suspend fun getStorageGridObjectAreasForAffiliationFromCache(affiliation: String): List<StorageGridObjectArea> {
+        // get projects user has access to, otherwise user may see data they are unauthorized to see.
         val projects = userClient.getProjectsInAffiliation(affiliation)
+
+        if (projects.isEmpty()) {
+            return emptyList()
+        }
 
         return projects.flatMap {
             cache[cacheKey(affiliation, it.metadata.name)].orEmpty()
         }
-    }
-
-    override suspend fun cacheAtStartup(groupedAffiliations: Map<String, List<Environment>>) {
-        val time = refreshCacheForAffiliations(groupedAffiliations)
-        logger.debug("Prime cache completed total cached=${cache.keys.size} timeSeconds=$time")
     }
 
     override suspend fun refreshCache(groupedAffiliations: Map<String, List<Environment>>) {

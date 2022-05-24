@@ -240,7 +240,7 @@ class ApplicationDataServiceTest {
     fun `Initialize cache and find affiliations`() {
         runBlocking {
             val groupedAffiliations = dataServiceOpenShift.findAndGroupAffiliations(listOf("aurora"))
-            dataService.cacheAtStartup(groupedAffiliations)
+            dataService.refreshCache(groupedAffiliations)
             val visibleAffiliations = dataService.findAllVisibleAffiliations()
             val allAffiliations = dataService.findAllAffiliations()
 
@@ -263,7 +263,7 @@ class ApplicationDataServiceTest {
             }
 
             val groupedAffiliations = dataServiceOpenShift.findAndGroupAffiliations(listOf("aurora"))
-            dataService.cacheAtStartup(groupedAffiliations)
+            dataService.refreshCache(groupedAffiliations)
 
             val affiliations = dataService.findAllAffiliations()
             val applicationData = dataService.findAllApplicationData(listOf("aurora"))
@@ -284,7 +284,7 @@ class ApplicationDataServiceTest {
             }
 
             val groupedAffiliations = dataServiceOpenShift.findAndGroupAffiliations(listOf("aurora"))
-            dataService.cacheAtStartup(groupedAffiliations)
+            dataService.refreshCache(groupedAffiliations)
             val affiliations = dataService.findAllAffiliations()
             assertThat(affiliations).hasSize(1)
         }
@@ -294,7 +294,7 @@ class ApplicationDataServiceTest {
     fun `Initialize cache, add entry and remove entry`() {
         runBlocking {
             val groupedAffiliations = dataServiceOpenShift.findAndGroupAffiliations(listOf("aurora"))
-            dataService.cacheAtStartup(groupedAffiliations)
+            dataService.refreshCache(groupedAffiliations)
             val affiliations = dataService.findAllAffiliations()
             assertThat(affiliations).hasSize(1)
 

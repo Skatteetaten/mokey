@@ -98,11 +98,6 @@ class ApplicationDataService(
         .filter { if (affiliations.isEmpty()) true else affiliations.contains(it.affiliation) }
         .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
-    override suspend fun cacheAtStartup(groupedAffiliations: Map<String, List<Environment>>) {
-        val time = refreshCacheForAffiliations(groupedAffiliations)
-        logger.debug("Prime cache completed total cached=${cache.keys.size} timeSeconds=$time")
-    }
-
     override suspend fun refreshCache(groupedAffiliations: Map<String, List<Environment>>) {
         val time = refreshCacheForAffiliations(groupedAffiliations)
         logger.info("Crawler done total cached=${cache.keys.size} timeSeconds=$time")
