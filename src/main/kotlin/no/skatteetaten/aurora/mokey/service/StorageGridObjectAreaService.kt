@@ -31,7 +31,7 @@ class StorageGridObjectAreaService(
 
     override suspend fun refreshCache(groupedAffiliations: Map<String, List<Environment>>) {
         val time = refreshCacheForAffiliations(groupedAffiliations)
-        logger.info("Crawler done total cached=${cache.keys.size} timeSeconds=$time")
+        logger.info("Crawler done total cached=${cache.values.flatten().size} timeSeconds=$time")
     }
 
     override suspend fun refreshItem(applicationDeploymentId: String) {
