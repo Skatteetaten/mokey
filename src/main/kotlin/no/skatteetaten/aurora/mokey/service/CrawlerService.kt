@@ -32,7 +32,6 @@ class CrawlerService(
         initialDelayString = "\${mokey.crawler.delaySeconds:120000}",
     )
     fun cache() {
-        println(affiliations.size)
         kotlin.runCatching {
             runBlocking {
                 val groupedAffiliations = applicationDataServiceOpenShift.findAndGroupAffiliations(affiliations)
