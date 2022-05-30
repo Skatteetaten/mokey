@@ -1,8 +1,8 @@
 package no.skatteetaten.aurora.mokey.controller
 
-import com.fkorotkov.kubernetes.authorization.newSelfSubjectAccessReview
-import com.fkorotkov.kubernetes.authorization.resourceAttributes
-import com.fkorotkov.kubernetes.authorization.spec
+import com.fkorotkov.kubernetes.authorization.v1.newSelfSubjectAccessReview
+import com.fkorotkov.kubernetes.authorization.v1.resourceAttributes
+import com.fkorotkov.kubernetes.authorization.v1.spec
 import no.skatteetaten.aurora.mokey.service.OpenShiftUserClient
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

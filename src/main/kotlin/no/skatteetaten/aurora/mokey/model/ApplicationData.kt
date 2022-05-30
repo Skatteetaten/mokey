@@ -163,6 +163,7 @@ data class DeploymentResult(
 )
 
 data class StorageGridObjectAreaDetails(
+    val applicationDeploymentId: String,
     val name: String,
     val namespace: String,
     val creationTimestamp: String,

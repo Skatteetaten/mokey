@@ -4,7 +4,7 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig
-import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.mokey.service.CrawlerService
 import no.skatteetaten.aurora.springboot.AuroraSecurityContextRepository
 import no.skatteetaten.aurora.springboot.OpenShiftAuthenticationManager
 import no.skatteetaten.aurora.springboot.webclient.extensions.kotlin.TestStubSetup
@@ -27,11 +27,11 @@ class RefreshCacheControllerTest : TestStubSetup() {
     private lateinit var securityContextRepository: AuroraSecurityContextRepository
 
     @MockkBean(relaxed = true)
-    private lateinit var applicationDataService: ApplicationDataService
+    private lateinit var crawlerService: CrawlerService
 
     @BeforeEach
     fun setUp() {
-        clearMocks(applicationDataService)
+        clearMocks(crawlerService)
     }
 
     @Test
@@ -47,7 +47,7 @@ class RefreshCacheControllerTest : TestStubSetup() {
 
     @Test
     fun `Refresh cache with unknown applicationDeploymentId`() {
-        coEvery { applicationDataService.refreshItem(any()) } throws IllegalArgumentException("test exception")
+        coEvery { crawlerService.refreshItem(any()) } throws IllegalArgumentException("test exception")
 
         webTestClient.post("/api/auth/refresh") {
             contentTypeJson()

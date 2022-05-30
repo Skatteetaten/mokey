@@ -104,8 +104,13 @@ class ApplicationDataServiceTest {
     private val dataService = ApplicationDataService(
         dataServiceOpenShift,
         OpenShiftUserClient(coroutinesClient),
-        "aurora",
         mockk(relaxed = true),
+    )
+
+    private val crawlerService = CrawlerService(
+        dataServiceOpenShift,
+        listOf(dataService),
+        "aurora",
         ofMinutes(3)
     )
 
@@ -144,7 +149,7 @@ class ApplicationDataServiceTest {
     @Test
     fun `Initialize cache and read application data`() {
         runBlocking {
-            dataService.cache()
+            crawlerService.cache()
 
             delay(2000)
 
@@ -161,7 +166,7 @@ class ApplicationDataServiceTest {
     @Test
     fun `Initialize cache and read public application data`() {
         runBlocking {
-            dataService.cache()
+            crawlerService.cache()
 
             delay(2000)
 
@@ -180,7 +185,7 @@ class ApplicationDataServiceTest {
     @Test
     fun `Read public application data cached with ApplicationDeploymentRef`() {
         runBlocking {
-            dataService.cache()
+            crawlerService.cache()
 
             delay(2000)
 
@@ -202,7 +207,7 @@ class ApplicationDataServiceTest {
     @Test
     fun `Read public application data uncached with ApplicationDeploymentRef`() {
         runBlocking {
-            dataService.cache()
+            crawlerService.cache()
 
             delay(2000)
 
@@ -234,7 +239,8 @@ class ApplicationDataServiceTest {
     @Test
     fun `Initialize cache and find affiliations`() {
         runBlocking {
-            dataService.cacheAtStartup()
+            val groupedAffiliations = dataServiceOpenShift.findAndGroupAffiliations(listOf("aurora"))
+            dataService.refreshCache(groupedAffiliations)
             val visibleAffiliations = dataService.findAllVisibleAffiliations()
             val allAffiliations = dataService.findAllAffiliations()
 
@@ -256,7 +262,8 @@ class ApplicationDataServiceTest {
                 )
             }
 
-            dataService.cacheAtStartup()
+            val groupedAffiliations = dataServiceOpenShift.findAndGroupAffiliations(listOf("aurora"))
+            dataService.refreshCache(groupedAffiliations)
 
             val affiliations = dataService.findAllAffiliations()
             val applicationData = dataService.findAllApplicationData(listOf("aurora"))
@@ -276,7 +283,8 @@ class ApplicationDataServiceTest {
                 )
             }
 
-            dataService.cacheAtStartup()
+            val groupedAffiliations = dataServiceOpenShift.findAndGroupAffiliations(listOf("aurora"))
+            dataService.refreshCache(groupedAffiliations)
             val affiliations = dataService.findAllAffiliations()
             assertThat(affiliations).hasSize(1)
         }
@@ -285,7 +293,8 @@ class ApplicationDataServiceTest {
     @Test
     fun `Initialize cache, add entry and remove entry`() {
         runBlocking {
-            dataService.cacheAtStartup()
+            val groupedAffiliations = dataServiceOpenShift.findAndGroupAffiliations(listOf("aurora"))
+            dataService.refreshCache(groupedAffiliations)
             val affiliations = dataService.findAllAffiliations()
             assertThat(affiliations).hasSize(1)
 
@@ -293,7 +302,7 @@ class ApplicationDataServiceTest {
             registerProjectsResponse() // add response for /projects
             registerEmptyResponses() // all other requests will return empty response
 
-            dataService.cache()
+            crawlerService.cache()
 
             delay(2000)
 
@@ -346,8 +355,12 @@ class ApplicationDataServiceTryCatchTest {
             val service = ApplicationDataService(
                 dataServiceOpenshift,
                 mockk(),
-                "",
                 mockk(),
+            )
+            val crawlerService = CrawlerService(
+                dataServiceOpenshift,
+                listOf(service),
+                "",
                 ofMinutes(3)
             )
 
@@ -356,7 +369,7 @@ class ApplicationDataServiceTryCatchTest {
                 IllegalArgumentException("root cause message")
             )
 
-            service.cache()
+            crawlerService.cache()
 
             delay(2000)
 

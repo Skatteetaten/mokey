@@ -1,7 +1,8 @@
 package no.skatteetaten.aurora.mokey.controller
 
 import com.ninjasquad.springmockk.MockkBean
-import io.fabric8.kubernetes.api.model.authorization.SelfSubjectAccessReviewBuilder
+import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectAccessReviewBuilder
+
 import io.mockk.coEvery
 import no.skatteetaten.aurora.mokey.NamespaceDataBuilder
 import no.skatteetaten.aurora.mokey.controller.security.WebSecurityConfig

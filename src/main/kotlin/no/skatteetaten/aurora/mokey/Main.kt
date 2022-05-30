@@ -2,7 +2,7 @@ package no.skatteetaten.aurora.mokey
 
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import no.skatteetaten.aurora.mokey.service.ApplicationDataService
+import no.skatteetaten.aurora.mokey.service.CrawlerService
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -22,7 +22,7 @@ private val logger = KotlinLogging.logger {}
 @ConditionalOnProperty(name = ["mokey.cachewarmup.enabled"], havingValue = "true", matchIfMissing = true)
 @Component
 class CacheWarmup(
-    val applicationDataService: ApplicationDataService,
+    val crawlerService: CrawlerService,
 ) : InitializingBean {
     override fun afterPropertiesSet() {
         warmUp(attempt = 0)
@@ -31,7 +31,9 @@ class CacheWarmup(
     private fun warmUp(attempt: Int) {
         if (attempt < 5) {
             runCatching {
-                runBlocking { applicationDataService.cacheAtStartup() }
+                runBlocking {
+                    crawlerService.cacheAtStartup()
+                }
             }.getOrElse {
                 when {
                     attempt < 4 -> {

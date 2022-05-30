@@ -1,9 +1,5 @@
 package no.skatteetaten.aurora.mokey.service
 
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import no.skatteetaten.aurora.mokey.extensions.LABEL_AFFILIATION
 import no.skatteetaten.aurora.mokey.model.ApplicationData
@@ -12,13 +8,8 @@ import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentRef
 import no.skatteetaten.aurora.mokey.model.ApplicationDeploymentSpec
 import no.skatteetaten.aurora.mokey.model.ApplicationPublicData
 import no.skatteetaten.aurora.mokey.model.Environment
-import org.apache.commons.lang3.exception.ExceptionUtils
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
-import org.springframework.web.reactive.function.client.WebClientResponseException
-import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
@@ -27,13 +18,8 @@ private val logger = KotlinLogging.logger {}
 class ApplicationDataService(
     val applicationDataService: ApplicationDataServiceOpenShift,
     val client: OpenShiftUserClient,
-    @Value("\${mokey.cache.affiliations:}") val affiliationsConfig: String,
     val statusRegistry: ApplicationStatusRegistry,
-    @Value("\${mokey.crawler.timeout:3m}") val crawlerTimeout: Duration,
-) {
-    val affiliations: List<String>
-        get() = if (affiliationsConfig.isBlank()) emptyList()
-        else affiliationsConfig.split(",").map { it.trim() }
+) : CacheService {
     val cache = ConcurrentHashMap<String, ApplicationData>()
 
     fun findPublicApplicationDataByApplicationDeploymentId(id: String): ApplicationPublicData? = cache[id]?.publicData
@@ -112,92 +98,23 @@ class ApplicationDataService(
         .filter { if (affiliations.isEmpty()) true else affiliations.contains(it.affiliation) }
         .filter { if (ids.isEmpty()) true else ids.contains(it.applicationDeploymentId) }
 
-    @DelicateCoroutinesApi
-    @Scheduled(
-        fixedDelayString = "\${mokey.crawler.rateSeconds:120000}",
-        initialDelayString = "\${mokey.crawler.delaySeconds:120000}",
-    )
-    fun cache() {
-        runCatching {
-            runBlocking {
-                withTimeout(crawlerTimeout.toMillis()) {
-                    refreshCache(affiliations)
-                }
-            }
-        }.onFailure {
-            when (it) {
-                is TimeoutCancellationException -> logger.warn("Timed out running crawler")
-                is WebClientResponseException.TooManyRequests ->
-                    logger.warn("Aborting due to too many requests, aborting the current crawl")
-                is InterruptedException -> logger.info("Interrupted")
-                is Error -> {
-                    logger.error("Error when running crawler", it)
-
-                    throw it
-                }
-                else -> {
-                    val rootCause = ExceptionUtils.getRootCauseMessage(it)
-
-                    logger.error(
-                        "Exception in schedule, " +
-                            "type=${it::class.simpleName} " +
-                            "msg=\"${it.localizedMessage}\" " +
-                            "rootCause=\"$rootCause\""
-                    )
-                }
-            }
-        }
+    override suspend fun refreshCache(groupedAffiliations: Map<String, List<Environment>>) {
+        val time = refreshCacheForAffiliations(groupedAffiliations)
+        logger.info("Crawler=ApplicationData done total cached=${cache.keys.size} timeSeconds=$time")
     }
 
-    suspend fun refreshItem(applicationDeploymentId: String) = findApplicationDataByApplicationDeploymentId(
-        applicationDeploymentId
-    )?.let { current ->
-        val data = applicationDataService.createSingleItem(
-            current.namespace,
-            current.applicationDeploymentName
-        )
+    override suspend fun refreshItem(applicationDeploymentId: String) {
+        findApplicationDataByApplicationDeploymentId(applicationDeploymentId)?.let { current ->
+            val data = applicationDataService.createSingleItem(
+                current.namespace,
+                current.applicationDeploymentName
+            )
 
-        addCacheEntry(applicationDeploymentId, data)
-    } ?: throw IllegalArgumentException("ApplicationDeploymentId=$applicationDeploymentId is not cached")
-
-    suspend fun cacheAtStartup() =
-        applicationDataService.findAndGroupAffiliations(affiliations).forEach { refreshAffiliation(it.key, it.value) }
-
-    private fun addCacheEntry(applicationId: String, data: ApplicationData) {
-        cache[applicationId]?.let { old ->
-            statusRegistry.update(old.publicData, data.publicData)
-        } ?: statusRegistry.add(data.publicData)
-
-        cache[applicationId] = data
+            addCacheEntry(applicationDeploymentId, data)
+        } ?: throw IllegalArgumentException("ApplicationDeploymentId=$applicationDeploymentId is not cached")
     }
 
-    private fun removeCacheEntry(applicationId: String) {
-        cache[applicationId]?.let { app ->
-            statusRegistry.remove(app.publicData)
-            cache.remove(applicationId)
-        }
-    }
-
-    suspend fun refreshCache(affiliationInput: List<String> = emptyList()) {
-        val watch = StopWatch().also { it.start() }
-        val affiliations = applicationDataService.findAndGroupAffiliations(affiliationInput)
-
-        affiliations.forEach { (affiliation, env) ->
-            refreshAffiliation(affiliation, env)
-        }
-
-        val time: Double = watch.let {
-            it.stop()
-            it.totalTimeSeconds
-        }
-
-        logger.info("Crawler done total cached=${cache.keys.size} timeSeconds=$time")
-    }
-
-    private suspend fun refreshAffiliation(
-        affiliation: String,
-        env: List<Environment>,
-    ): List<ApplicationData> {
+    override suspend fun refreshResource(affiliation: String, env: List<Environment>) {
         val applicationDeployments: List<ApplicationDeployment> = applicationDataService.findAllApplicationDeployments(
             env
         )
@@ -209,11 +126,9 @@ class ApplicationDataService(
             removeCacheEntry(it)
         }
 
-        if (applicationDeployments.isEmpty()) return emptyList()
+        if (applicationDeployments.isEmpty()) return
 
-        val watch = StopWatch().also {
-            it.start()
-        }
+        val watch = StopWatch().also { it.start() }
 
         val applications = applicationDataService.findAllApplicationDataByEnvironments(applicationDeployments)
 
@@ -238,13 +153,39 @@ class ApplicationDataService(
                     "time=${watch.totalTimeSeconds}"
             )
         }
+    }
 
-        return applications
+    private suspend fun refreshCacheForAffiliations(groupedAffiliations: Map<String, List<Environment>>): Double {
+        val watch = StopWatch().also { it.start() }
+
+        groupedAffiliations.forEach {
+            this.refreshResource(it.key, it.value)
+        }
+
+        return watch.let {
+            it.stop()
+            it.totalTimeSeconds
+        }
     }
 
     private fun findCacheKeysForGivenAffiliation(affiliation: String): List<String> = cache
         .filter { it.value.affiliation == affiliation }
         .map { it.key }
+
+    private fun addCacheEntry(applicationDeploymentId: String, data: ApplicationData) {
+        cache[applicationDeploymentId]?.let { old ->
+            statusRegistry.update(old.publicData, data.publicData)
+        } ?: statusRegistry.add(data.publicData)
+
+        cache[applicationDeploymentId] = data
+    }
+
+    private fun removeCacheEntry(applicationDeploymentId: String) {
+        cache[applicationDeploymentId]?.let { app ->
+            statusRegistry.remove(app.publicData)
+            cache.remove(applicationDeploymentId)
+        }
+    }
 
     /**
      * Gets elements from the cache that can be accessed by the current user
