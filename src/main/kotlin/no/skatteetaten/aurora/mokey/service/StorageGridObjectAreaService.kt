@@ -35,7 +35,7 @@ class StorageGridObjectAreaService(
     }
 
     override suspend fun refreshItem(applicationDeploymentId: String) {
-        // NOOP
+        // TODO: ref. AOS-6741 implement refreshItem function to update SGOA resource for applicationDeploymentId
     }
 
     override suspend fun refreshResource(affiliation: String, env: List<Environment>) {
