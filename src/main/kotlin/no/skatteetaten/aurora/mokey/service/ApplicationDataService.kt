@@ -100,7 +100,7 @@ class ApplicationDataService(
 
     override suspend fun refreshCache(groupedAffiliations: Map<String, List<Environment>>) {
         val time = refreshCacheForAffiliations(groupedAffiliations)
-        logger.info("Crawler done total cached=${cache.keys.size} timeSeconds=$time")
+        logger.info("Crawler=ApplicationData done total cached=${cache.keys.size} timeSeconds=$time")
     }
 
     override suspend fun refreshItem(applicationDeploymentId: String) {
@@ -172,18 +172,18 @@ class ApplicationDataService(
         .filter { it.value.affiliation == affiliation }
         .map { it.key }
 
-    private fun addCacheEntry(applicationId: String, data: ApplicationData) {
-        cache[applicationId]?.let { old ->
+    private fun addCacheEntry(applicationDeploymentId: String, data: ApplicationData) {
+        cache[applicationDeploymentId]?.let { old ->
             statusRegistry.update(old.publicData, data.publicData)
         } ?: statusRegistry.add(data.publicData)
 
-        cache[applicationId] = data
+        cache[applicationDeploymentId] = data
     }
 
-    private fun removeCacheEntry(applicationId: String) {
-        cache[applicationId]?.let { app ->
+    private fun removeCacheEntry(applicationDeploymentId: String) {
+        cache[applicationDeploymentId]?.let { app ->
             statusRegistry.remove(app.publicData)
-            cache.remove(applicationId)
+            cache.remove(applicationDeploymentId)
         }
     }
 
