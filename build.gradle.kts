@@ -1,22 +1,22 @@
 plugins {
     id("java")
     id("idea")
-    id("no.skatteetaten.gradle.aurora") version "4.4.20"
+    id("no.skatteetaten.gradle.aurora") version "4.4.22"
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.6.2")
     implementation("io.projectreactor.addons:reactor-extra:3.4.8")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.3.27")
-    implementation("no.skatteetaten.aurora.springboot:aurora-spring-security-starter:1.9.0")
-    implementation("com.github.ben-manes.caffeine:caffeine:3.1.0")
+    implementation("no.skatteetaten.aurora.springboot:aurora-spring-security-starter:1.11.0")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.1")
     implementation("uk.q3c.rest:hal-kotlin:0.5.4.0.db32476")
     implementation("com.jayway.jsonpath:json-path:2.7.0")
     implementation("org.apache.commons:commons-lang3:3.12.0")
 
-    implementation("com.github.fkorotkov:k8s-kotlin-dsl:3.0.1")
+    implementation("com.github.fkorotkov:k8s-kotlin-dsl:3.1.1")
 
     testImplementation("no.skatteetaten.aurora.springboot:webtestclient-extensions-kotlin:1.1.0")
     testImplementation("org.springframework.security:spring-security-test")
@@ -30,9 +30,6 @@ dependencies {
 
     // M1 Mac configuration
     runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.1.77.Final:osx-aarch_64")
-
-    // TODO: These below here are fixed because of IQ violations
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
 }
 
 aurora {
