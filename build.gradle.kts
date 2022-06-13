@@ -5,8 +5,8 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.6.2")
     implementation("io.projectreactor.addons:reactor-extra:3.4.8")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("no.skatteetaten.aurora.kubernetes:kubernetes-reactor-coroutines-client:1.3.27")
@@ -16,7 +16,7 @@ dependencies {
     implementation("com.jayway.jsonpath:json-path:2.7.0")
     implementation("org.apache.commons:commons-lang3:3.12.0")
 
-    implementation("com.github.fkorotkov:k8s-kotlin-dsl:3.0.1")
+    implementation("com.github.fkorotkov:k8s-kotlin-dsl:3.1.1")
 
     testImplementation("no.skatteetaten.aurora.springboot:webtestclient-extensions-kotlin:1.1.0")
     testImplementation("org.springframework.security:spring-security-test")
