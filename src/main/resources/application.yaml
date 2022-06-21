@@ -2,6 +2,12 @@ spring:
     application:
         name: mokey
 
+management:
+    endpoints:
+        web:
+            exposure:
+                include: info,health,prometheus,env,loggers,metrics,prometheus-application-info,prometheus-application-status
+
 ---
 info:
     serviceLinks:

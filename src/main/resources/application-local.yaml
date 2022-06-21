@@ -15,7 +15,7 @@ mokey:
     cachewarmup:
         enabled: true
     cache:
-        affiliations: safir,aup
+        affiliations: aup
 
 logging:
     pattern:
