@@ -11,7 +11,7 @@ import org.springframework.lang.Nullable
 import org.springframework.stereotype.Component
 
 @Component
-@WebEndpoint(id = "prometheus-application-info")
+@WebEndpoint(id = "prometheusApplicationInfo")
 class ApplicationInfoEndpoint(collectorRegistry: CollectorRegistry) : PrometheusScrapeEndpoint(collectorRegistry) {
     @ReadOperation(producesFrom = TextOutputFormat::class)
     override fun scrape(
@@ -22,7 +22,7 @@ class ApplicationInfoEndpoint(collectorRegistry: CollectorRegistry) : Prometheus
 }
 
 @Component
-@WebEndpoint(id = "prometheus-application-status")
+@WebEndpoint(id = "prometheusApplicationStatus")
 class ApplicationStatusEndpoint(collectorRegistry: CollectorRegistry) : PrometheusScrapeEndpoint(collectorRegistry) {
     @ReadOperation(producesFrom = TextOutputFormat::class)
     override fun scrape(
