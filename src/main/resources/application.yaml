@@ -6,7 +6,7 @@ management:
     endpoints:
         web:
             exposure:
-                include: info,health,prometheus,env,loggers,metrics,prometheus-application-info,prometheus-application-status
+                include: info,health,prometheus,env,loggers,metrics,prometheusApplicationInfo,prometheusApplicationStatus
 
 ---
 info:
