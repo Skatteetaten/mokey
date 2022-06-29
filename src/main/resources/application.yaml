@@ -1,6 +1,9 @@
 spring:
     application:
         name: mokey
+    sleuth:
+        scheduled:
+            enabled: false
 
 management:
     endpoints:
